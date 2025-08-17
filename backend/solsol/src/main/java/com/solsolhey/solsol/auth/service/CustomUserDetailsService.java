@@ -1,0 +1,64 @@
+package com.solsolhey.solsol.auth.service;
+
+import com.solsolhey.solsol.auth.dto.CustomUserDetails;
+import com.solsolhey.solsol.common.exception.EntityNotFoundException;
+import com.solsolhey.solsol.entity.User;
+import com.solsolhey.solsol.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Spring Security UserDetailsService 구현체
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional(readOnly = true)
+public class CustomUserDetailsService implements UserDetailsService {
+
+    private final UserRepository userRepository;
+
+    /**
+     * 사용자명으로 UserDetails 로드
+     */
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        log.debug("Loading user by username: {}", username);
+        
+        User user = userRepository.findByUsernameAndIsActiveTrue(username)
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "사용자를 찾을 수 없습니다: " + username));
+        
+        return new CustomUserDetails(user);
+    }
+
+    /**
+     * 사용자 ID로 UserDetails 로드 (JWT 토큰용)
+     */
+    public UserDetails loadUserByUserId(Long userId) {
+        log.debug("Loading user by userId: {}", userId);
+        
+        User user = userRepository.findByUserIdAndIsActiveTrue(userId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자", userId));
+        
+        return new CustomUserDetails(user);
+    }
+
+    /**
+     * 이메일로 UserDetails 로드
+     */
+    public UserDetails loadUserByEmail(String email) {
+        log.debug("Loading user by email: {}", email);
+        
+        User user = userRepository.findByEmailAndIsActiveTrue(email)
+                .orElseThrow(() -> new UsernameNotFoundException(
+                        "사용자를 찾을 수 없습니다: " + email));
+        
+        return new CustomUserDetails(user);
+    }
+}
