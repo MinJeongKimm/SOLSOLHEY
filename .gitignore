@@ -1,6 +1,12 @@
 # Created by https://www.toptal.com/developers/gitignore/api/java,react,vue,vuejs,macos,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=java,react,vue,vuejs,macos,windows
 
+### documents ###
+documents/
+
+.lens/
+
+
 ### Java ###
 # Compiled class file
 *.class
