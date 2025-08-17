@@ -5,7 +5,7 @@
 ------------
 
 [런타임/빌드]
-- JDK: Java 21 LTS
+- JDK: Java 17 LTS
 - Spring Boot: 3.3.x 고정
 - 빌드: Gradle Kotlin DSL (Wrapper 필수)
 - 레포 구조: 모노레포
