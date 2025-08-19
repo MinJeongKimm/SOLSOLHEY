@@ -4,23 +4,23 @@
       <h1 class="text-2xl font-bold text-center text-blue-600 mb-2" tabindex="0">쏠쏠Hey 로그인</h1>
       <form @submit.prevent="onSubmit" class="flex flex-col gap-4" autocomplete="on" aria-live="polite">
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+          <label for="userId" class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
           <input
-            id="email"
-            v-model="email"
+            id="userId"
+            v-model="userId"
             type="email"
             autocomplete="email"
             required
             aria-required="true"
             aria-invalid="true"
-            aria-describedby="emailError"
+            aria-describedby="userIdError"
             class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none text-base min-h-[44px]"
-            :class="{'border-red-400 ring-2 ring-red-300': emailError, 'focus:ring-blue-400': !emailError}"
+            :class="{'border-red-400 ring-2 ring-red-300': userIdError, 'focus:ring-blue-400': !userIdError}"
             placeholder="example@email.com"
-            @input="emailError = validateEmail(email)"
+            @input="userIdError = validateUserId(userId)"
           />
           <transition name="fade">
-            <p v-if="emailError" id="emailError" class="text-xs text-red-500 mt-1 animate-shake">{{ emailError }}</p>
+            <p v-if="userIdError" id="userIdError" class="text-xs text-red-500 mt-1 animate-shake">{{ userIdError }}</p>
           </transition>
         </div>
         <div>
@@ -72,16 +72,18 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { login, auth, handleApiError } from '../api/index';
+import type { LoginRequest } from '../types/api';
 
-const email = ref('');
+const userId = ref('');
 const password = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
-const emailError = ref('');
+const userIdError = ref('');
 const passwordError = ref('');
 const router = useRouter();
 
-function validateEmail(value: string) {
+function validateUserId(value: string) {
   if (!value) return '이메일을 입력하세요.';
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!re.test(value)) return '올바른 이메일 형식이 아닙니다.';
@@ -95,22 +97,46 @@ function validatePassword(value: string) {
 }
 
 async function onSubmit() {
-  emailError.value = validateEmail(email.value);
+  // 클라이언트 측 유효성 검사
+  userIdError.value = validateUserId(userId.value);
   passwordError.value = validatePassword(password.value);
   errorMessage.value = '';
-  if (emailError.value || passwordError.value) return;
+  
+  if (userIdError.value || passwordError.value) {
+    return;
+  }
+
   loading.value = true;
+  
   try {
-    // 모킹: 이메일이 test@email.com, 비번이 123456일 때만 성공
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    if (email.value === 'test@email.com' && password.value === '123456') {
-      localStorage.setItem('token', 'mocked-jwt-token');
+    const loginData: LoginRequest = {
+      userId: userId.value,
+      password: password.value,
+    };
+
+    const response = await login(loginData);
+    
+    if (response.success && response.token) {
+      // 토큰 저장
+      auth.setToken(response.token);
+      
+      // 사용자 정보 저장 (있는 경우)
+      if (response.username) {
+        auth.setUser({
+          username: response.username,
+          userId: userId.value,
+        });
+      }
+      
+      // 대시보드로 리다이렉트
       router.push('/dashboard');
     } else {
-      throw new Error('INVALID');
+      // 서버에서 성공하지 않은 응답을 보낸 경우
+      errorMessage.value = response.message || '로그인에 실패했습니다.';
     }
-  } catch (e: any) {
-    errorMessage.value = '로그인에 실패했습니다. 이메일/비밀번호를 확인하세요.';
+  } catch (error: any) {
+    errorMessage.value = handleApiError(error);
+    console.error('로그인 오류:', error);
   } finally {
     loading.value = false;
   }

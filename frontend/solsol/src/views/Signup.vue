@@ -4,23 +4,23 @@
       <h1 class="text-2xl font-bold text-center text-blue-600 mb-2" tabindex="0">회원가입</h1>
       <form v-if="!successMessage" @submit.prevent="onSubmit" class="flex flex-col gap-4" autocomplete="on" aria-live="polite">
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+          <label for="userId" class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
           <input
-            id="email"
-            v-model="email"
+            id="userId"
+            v-model="userId"
             type="email"
             autocomplete="email"
             required
             aria-required="true"
             aria-invalid="true"
-            aria-describedby="emailError"
+            aria-describedby="userIdError"
             class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none text-base min-h-[44px]"
-            :class="{'border-red-400 ring-2 ring-red-300': emailError, 'focus:ring-blue-400': !emailError}"
+            :class="{'border-red-400 ring-2 ring-red-300': userIdError, 'focus:ring-blue-400': !userIdError}"
             placeholder="example@email.com"
-            @input="emailError = validateEmail(email)"
+            @input="userIdError = validateUserId(userId)"
           />
           <transition name="fade">
-            <p v-if="emailError" id="emailError" class="text-xs text-red-500 mt-1 animate-shake">{{ emailError }}</p>
+            <p v-if="userIdError" id="userIdError" class="text-xs text-red-500 mt-1 animate-shake">{{ userIdError }}</p>
           </transition>
         </div>
         <div>
@@ -84,26 +84,6 @@
             <p v-if="password2Error" id="password2Error" class="text-xs text-red-500 mt-1 animate-shake">{{ password2Error }}</p>
           </transition>
         </div>
-        <div>
-          <label for="address" class="block text-sm font-medium text-gray-700 mb-1">주소</label>
-          <input
-            id="address"
-            v-model="address"
-            type="text"
-            autocomplete="address-line1"
-            required
-            aria-required="true"
-            aria-invalid="true"
-            aria-describedby="addressError"
-            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none text-base min-h-[44px]"
-            :class="{'border-red-400 ring-2 ring-red-300': addressError, 'focus:ring-blue-400': !addressError}"
-            placeholder="주소"
-            @input="addressError = validateAddress(address)"
-          />
-          <transition name="fade">
-            <p v-if="addressError" id="addressError" class="text-xs text-red-500 mt-1 animate-shake">{{ addressError }}</p>
-          </transition>
-        </div>
         <button
           type="submit"
           class="w-full py-3 mt-2 rounded-lg bg-blue-500 text-white font-semibold text-lg shadow-md hover:bg-blue-600 transition active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
@@ -134,45 +114,44 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { signup, handleApiError } from '../api/index';
+import type { SignupRequest } from '../types/api';
 
-const email = ref('');
+const userId = ref('');
 const nickname = ref('');
 const password = ref('');
 const password2 = ref('');
-const address = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
-const emailError = ref('');
+const userIdError = ref('');
 const nicknameError = ref('');
 const passwordError = ref('');
 const password2Error = ref('');
-const addressError = ref('');
 const router = useRouter();
 
-function validateEmail(value: string) {
+function validateUserId(value: string) {
   if (!value) return '이메일을 입력하세요.';
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!re.test(value)) return '올바른 이메일 형식이 아닙니다.';
   return '';
 }
+
 function validateNickname(value: string) {
   if (!value) return '닉네임을 입력하세요.';
   if (value.length < 2) return '닉네임은 2자 이상이어야 합니다.';
   return '';
 }
+
 function validatePassword(value: string) {
   if (!value) return '비밀번호를 입력하세요.';
   if (value.length < 6) return '비밀번호는 6자 이상이어야 합니다.';
   return '';
 }
+
 function validatePassword2(value: string) {
   if (!value) return '비밀번호 확인을 입력하세요.';
   if (value !== password.value) return '비밀번호가 일치하지 않습니다.';
-  return '';
-}
-function validateAddress(value: string) {
-  if (!value) return '주소를 입력하세요.';
   return '';
 }
 
@@ -181,28 +160,65 @@ function goLogin() {
 }
 
 async function onSubmit() {
-  emailError.value = validateEmail(email.value);
+  // 클라이언트 측 유효성 검사
+  userIdError.value = validateUserId(userId.value);
   nicknameError.value = validateNickname(nickname.value);
   passwordError.value = validatePassword(password.value);
   password2Error.value = validatePassword2(password2.value);
-  addressError.value = validateAddress(address.value);
   errorMessage.value = '';
   successMessage.value = '';
-  if (emailError.value || nicknameError.value || passwordError.value || password2Error.value || addressError.value) return;
+  
+  if (userIdError.value || nicknameError.value || passwordError.value || password2Error.value) {
+    return;
+  }
+
   loading.value = true;
+  
   try {
-    // TODO: 실제 API 연동 (현재는 모킹)
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    if (email.value === 'test@email.com') {
-      throw new Error('이미 가입된 이메일입니다.');
+    const signupData: SignupRequest = {
+      userId: userId.value,
+      password: password.value,
+      nickname: nickname.value,
+    };
+
+    const response = await signup(signupData);
+    
+    if (response.success) {
+      successMessage.value = response.message || '회원가입이 완료되었습니다!';
+      
+      // 입력 필드 초기화
+      userId.value = '';
+      nickname.value = '';
+      password.value = '';
+      password2.value = '';
+      
+      // 1.5초 후 로그인 페이지로 이동
+      setTimeout(() => {
+        router.push('/');
+      }, 1500);
+    } else {
+      // 서버에서 성공하지 않은 응답을 보낸 경우
+      errorMessage.value = response.message || '회원가입에 실패했습니다.';
+      
+      // 서버 측 필드별 에러 처리
+      if (response.errors) {
+        if (response.errors.username) {
+          userIdError.value = response.errors.username;
+        }
+        if (response.errors.email) {
+          userIdError.value = response.errors.email;
+        }
+        if (response.errors.nickname) {
+          nicknameError.value = response.errors.nickname;
+        }
+        if (response.errors.password) {
+          passwordError.value = response.errors.password;
+        }
+      }
     }
-    successMessage.value = '회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.';
-    setTimeout(() => {
-      router.push('/');
-    }, 1500);
-    email.value = nickname.value = password.value = password2.value = address.value = '';
-  } catch (e: any) {
-    errorMessage.value = e.message || '회원가입에 실패했습니다.';
+  } catch (error: any) {
+    errorMessage.value = handleApiError(error);
+    console.error('회원가입 오류:', error);
   } finally {
     loading.value = false;
   }
