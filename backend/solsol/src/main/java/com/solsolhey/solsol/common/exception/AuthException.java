@@ -53,4 +53,30 @@ public class AuthException extends BaseException {
             super(message, HttpStatus.FORBIDDEN, "ACCESS_DENIED");
         }
     }
+    
+    /**
+     * 사용자를 찾을 수 없는 경우
+     */
+    public static class UserNotFoundException extends AuthException {
+        public UserNotFoundException() {
+            super("사용자를 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND");
+        }
+        
+        public UserNotFoundException(String message) {
+            super(message, HttpStatus.UNAUTHORIZED, "USER_NOT_FOUND");
+        }
+    }
+    
+    /**
+     * 잘못된 인증 정보인 경우
+     */
+    public static class InvalidCredentialsException extends AuthException {
+        public InvalidCredentialsException() {
+            super("아이디 또는 비밀번호가 잘못되었습니다.", HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS");
+        }
+        
+        public InvalidCredentialsException(String message) {
+            super(message, HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS");
+        }
+    }
 }
