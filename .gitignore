@@ -128,3 +128,28 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/java,react,vue,vuejs,macos,windows
+
+# 환경변수 파일 (보안상 중요)
+.env
+.env.local
+.env.development
+.env.production
+*.env
+
+# IDE 설정 파일
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+
+# 빌드 파일
+target/
+build/
+out/
+*.jar
+*.war
+
+# 로그 파일
+logs/
+*.log

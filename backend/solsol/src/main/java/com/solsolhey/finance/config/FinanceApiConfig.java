@@ -1,0 +1,76 @@
+package com.solsolhey.finance.config;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+import java.time.Duration;
+
+@Configuration
+@Slf4j
+public class FinanceApiConfig {
+    
+    @Value("${finance.api.base-url:https://finopenapi.ssafy.io/ssafy/api/v1/edu}")
+    private String baseUrl;
+    
+    @Value("${finance.api.timeout:10}")
+    private int timeoutSeconds;
+    
+    @Value("${finance.api.key:}")
+    private String apiKey;
+    
+    @Bean("financeWebClient")
+    public WebClient financeWebClient() {
+        return WebClient.builder()
+                .baseUrl(baseUrl)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .filter(authenticationFilter())
+                .filter(loggingFilter())
+                .filter(errorHandlingFilter())
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024))
+                .build();
+    }
+    
+    /**
+     * 인증 헤더 추가 필터
+     */
+    private ExchangeFilterFunction authenticationFilter() {
+        return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
+            if (apiKey != null && !apiKey.isEmpty()) {
+                return Mono.just(clientRequest.mutate()
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                        .build());
+            }
+            return Mono.just(clientRequest);
+        });
+    }
+    
+    /**
+     * 로깅 필터
+     */
+    private ExchangeFilterFunction loggingFilter() {
+        return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
+            log.info("외부 API 요청: {} {}", clientRequest.method(), clientRequest.url());
+            return Mono.just(clientRequest);
+        });
+    }
+    
+    /**
+     * 에러 처리 필터
+     */
+    private ExchangeFilterFunction errorHandlingFilter() {
+        return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
+            if (clientResponse.statusCode().isError()) {
+                log.error("외부 API 응답 오류: {} {}", clientResponse.statusCode(), clientResponse.statusCode().getReasonPhrase());
+            }
+            return Mono.just(clientResponse);
+        });
+    }
+}
