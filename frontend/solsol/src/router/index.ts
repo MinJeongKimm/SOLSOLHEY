@@ -9,6 +9,11 @@ import { auth } from '../api/index'
 const routes = [
   { 
     path: '/', 
+    component: Mascot,
+    meta: { requiresGuest: false }
+  },
+  { 
+    path: '/login', 
     component: Login,
     meta: { requiresGuest: true }
   },
@@ -39,7 +44,8 @@ const router = createRouter({
   routes,
 })
 
-// 인증 가드
+// 인증 가드 (임시 비활성화 - 마스코트 테스트용)
+/*
 router.beforeEach((to, from, next) => {
   const isAuthenticated = auth.isAuthenticated()
   
@@ -57,5 +63,6 @@ router.beforeEach((to, from, next) => {
   
   next()
 })
+*/
 
 export default router
