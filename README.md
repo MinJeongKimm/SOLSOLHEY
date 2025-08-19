@@ -9,6 +9,8 @@
 - **목표**: 대학생 금융 습관 형성 + 게임형 재미 요소 + 학교 커뮤니티 감성
 - **기술스택**: Spring Boot 3.4.8, Java 17, PostgreSQL, JPA, Spring Security
 - **외부 연동**: 신한금융 API
+  
+  프론트엔드: Vue 3, Vite, TypeScript, Vue Router, Tailwind CSS
 
 ## 🚀 8월 16일 완료사항 ✅
 
@@ -59,6 +61,22 @@
 - **테스트 컨트롤러**: `HealthController` (헬스체크 + 인증테스트)
 - **H2 호환성**: 예약어 충돌 해결 (`user` → `users`)
 
+## 🧪 8월 18일 완료사항 ✅
+
+### ✅ 백엔드 (인증 API)
+- `/api/auth/signup`, `/api/auth/login`, `/api/auth/logout(POST)` 구현 및 연동 완료
+- JWT 기반 인증 연동, `JwtAuthenticationFilter` 적용, Stateless 세션 구성
+- `Logout` 요청시 `Authorization: Bearer <token>` 처리, 기본 검증 및 토큰 무효화 수행
+- `/api/auth/refresh` 토큰 갱신 엔드포인트 구현
+- CORS 개발환경 허용(OriginPattern: `*`), 서버 컨텍스트 경로 `/api`
+
+### ✅ 프론트엔드 (인증 화면/라우팅)
+- 로그인/회원가입 화면 구현 및 입력값 검증, API 연동 완료
+- 공통 API 헬퍼 및 `auth` 유틸 작성(토큰/사용자정보 로컬스토리지 저장)
+- Vue Router 가드 적용: `requiresAuth`, `requiresGuest` 분기 처리
+- 헤더 컴포넌트 및 대시보드 기본 화면 구현, 인증페이지에서만 헤더 노출
+- Tailwind CSS 설정 및 전역 스타일 적용, Vite 빌드 구성 정리(`emptyOutDir` 포함)
+
 ## 🏗️ 프로젝트 구조
 
 ```
@@ -106,6 +124,27 @@ backend/solsol/
 ├── 개발일지_2024-08-16.md   # 1일차 개발일지
 ├── 개발일지_2024-08-17.md   # 2일차 개발일지
 └── build.gradle             # 빌드 설정
+
+frontend/
+├── solsol/
+│   ├── index.html
+│   └── src/
+│       ├── main.ts
+│       ├── App.vue
+│       ├── assets/main.css          # Tailwind 엔트리
+│       ├── router/index.ts          # 라우팅+가드
+│       ├── api/index.ts             # 공통 API 헬퍼 + auth 유틸
+│       ├── components/Header.vue
+│       └── views/
+│           ├── Login.vue
+│           ├── Signup.vue
+│           ├── Dashboard.vue
+│           ├── Challenge.vue
+│           └── Mascot.vue
+├── vite.config.ts                    # root: 'solsol', outDir: '../dist'
+├── tailwind.config.js
+├── postcss.config.js
+└── package.json
 ```
 
 ## 💻 로컬 개발 환경 실행
@@ -132,6 +171,45 @@ cd backend/solsol
 - Username: `sa`
 - Password: (빈칸)
 
+---
+
+### 🖥️ 프론트엔드 실행 (Vue 3 + Vite)
+
+#### 사전 요구사항
+- Node.js 18 이상, npm 9 이상 권장
+- 백엔드 서버: `http://localhost:8080/api` (기본값)
+
+#### 1) 의존성 설치
+```bash
+cd frontend
+npm ci
+```
+
+#### 2) 개발 서버 실행
+```bash
+npm run dev
+```
+- 접속: http://localhost:5173/
+- 주요 경로: `/`(로그인), `/signup`, `/dashboard`, `/challenge`, `/mascot`
+
+#### 3) API 베이스 URL 설정 (선택)
+백엔드 주소가 기본값과 다를 경우 다음 파일을 생성해 설정합니다.
+```bash
+# 파일 위치: frontend/solsol/.env
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+#### 4) 프로덕션 빌드/미리보기
+```bash
+npm run build
+npm run preview
+```
+- 접속: http://localhost:4173/
+
+#### 참고
+- 인증 API 경로: `/api/auth/signup`, `/api/auth/login`, `/api/auth/logout(POST)`
+- CORS: 개발 환경에서는 모든 Origin 허용으로 설정되어 있습니다.
+
 ## 📊 데이터베이스 스키마
 
 ### 핵심 테이블
@@ -142,12 +220,12 @@ cd backend/solsol
 - `item`: 꾸미기 아이템 (clothing, background, accessory)
 - `point_transaction`: 포인트 거래 내역
 
-## 🎯 다음 단계 (8월 18일 예정)
+## 🎯 다음 단계 (8월 19일 예정)
 
-1. **기본 API 개발** (P0)
-   - 회원가입/로그인/로그아웃 API
-   - JWT 토큰 갱신 API
+1. **기본 도메인 API 확장** (P0)
    - 마스코트 CRUD API
+   - 챌린지 생성/목록/상세 API
+   - 포인트 적립 로직(챌린지 보상) 기본 구현
 
 2. **챌린지 시스템 API** (P1)
    - 챌린지 목록/상세 조회
@@ -188,7 +266,7 @@ test: 테스트 코드 추가
 |------|------|----------|--------|
 | **8월 16일** | 개발환경+DB설계+ERD | 9개 Entity + Repository + Config | **110%** ✅ |
 | **8월 17일** | 공통모듈 개발 | 완전한 인증시스템 + 예외처리 + 응답포맷 | **140%** ✅ |
-| **8월 18일** | 기본 API 개발 | 예정 | - |
+| **8월 18일** | 기본 인증/FE Auth | BE 인증 API(회원가입/로그인/로그아웃/리프레시) + FE 로그인/회원가입/라우팅/가드 + Tailwind 빌드 | **120%** ✅ |
 
 **🎉 현재까지 계획 대비 125% 초과 달성!**  
 탄탄한 아키텍처 기반으로 본격적인 API 개발을 시작할 준비가 완료되었습니다. 🚀

@@ -60,7 +60,7 @@ async function apiRequest<T>(
 
 // 회원가입 API
 export async function signup(userData: SignupRequest): Promise<SignupResponse> {
-  return apiRequest<SignupResponse>('/signup', {
+  return apiRequest<SignupResponse>('/auth/signup', {
     method: 'POST',
     body: JSON.stringify(userData),
   });
@@ -68,7 +68,7 @@ export async function signup(userData: SignupRequest): Promise<SignupResponse> {
 
 // 로그인 API  
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  return apiRequest<LoginResponse>('/login', {
+  return apiRequest<LoginResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
   });
@@ -76,8 +76,8 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 
 // 로그아웃 API
 export async function logout(): Promise<LogoutResponse> {
-  return apiRequest<LogoutResponse>('/logout', {
-    method: 'DELETE',
+  return apiRequest<LogoutResponse>('/auth/logout', {
+    method: 'POST',
   });
 }
 
