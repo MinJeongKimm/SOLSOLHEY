@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.solsolhey.solsol.auth.dto.LoginRequestDto;
-import com.solsolhey.solsol.auth.dto.LoginResponseDto;
+import com.solsolhey.solsol.auth.dto.LoginResponse;
 import com.solsolhey.solsol.auth.dto.SignUpRequestDto;
-import com.solsolhey.solsol.auth.dto.SignUpResponseDto;
+import com.solsolhey.solsol.auth.dto.SignUpResponse;
 import com.solsolhey.solsol.auth.dto.TokenResponseDto;
 import com.solsolhey.solsol.auth.jwt.JwtTokenProvider;
 import com.solsolhey.solsol.common.exception.AuthException;
@@ -38,39 +38,39 @@ public class AuthService {
     /**
      * 회원가입
      */
-    public SignUpResponseDto signUp(SignUpRequestDto requestDto) {
-        log.info("회원가입 시도: username={}, email={}", requestDto.getUsername(), requestDto.getEmail());
+    public SignUpResponse signUp(SignUpRequestDto requestDto) {
+        log.info("회원가입 시도: userId={}", requestDto.getUserId());
 
         // 중복 검사
-        validateDuplicateUser(requestDto.getUsername(), requestDto.getEmail());
+        validateDuplicateUser(requestDto.getUserId());
 
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
 
-        // 사용자 생성
+        // 사용자 생성 (userId를 email과 username 모두에 설정)
         User user = User.builder()
-                .username(requestDto.getUsername())
-                .email(requestDto.getEmail())
+                .username(requestDto.getUserId()) // userId를 username으로 사용
+                .email(requestDto.getUserId())    // userId를 email로 사용
                 .passwordHash(encodedPassword)
                 .nickname(requestDto.getNickname())
-                .campus(requestDto.getCampus())
+                .campus(null) // campus는 더 이상 사용하지 않음
                 .build();
 
         User savedUser = userRepository.save(user);
         log.info("회원가입 완료: userId={}, username={}", savedUser.getUserId(), savedUser.getUsername());
 
-        return SignUpResponseDto.from(savedUser);
+        return SignUpResponse.success("회원가입이 완료되었습니다.", savedUser.getUserId());
     }
 
     /**
      * 로그인
      */
-    public LoginResponseDto login(LoginRequestDto requestDto) {
-        log.info("로그인 시도: usernameOrEmail={}", requestDto.getUsernameOrEmail());
+    public LoginResponse login(LoginRequestDto requestDto) {
+        log.info("로그인 시도: userId={}", requestDto.getUserId());
 
         try {
-            // 사용자 조회
-            User user = findUserByUsernameOrEmail(requestDto.getUsernameOrEmail());
+            // 사용자 조회 (userId는 이메일 형식)
+            User user = findUserByEmail(requestDto.getUserId());
             
             // 인증 수행
             authenticationManager.authenticate(
@@ -80,16 +80,23 @@ public class AuthService {
                     )
             );
 
-            // 토큰 생성
-            TokenResponseDto tokens = generateTokens(user);
+            // Access Token 생성
+            String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getUsername());
             
             log.info("로그인 완료: userId={}, username={}", user.getUserId(), user.getUsername());
             
-            return LoginResponseDto.from(user, tokens);
+            return LoginResponse.success(
+                "로그인 되었습니다.", 
+                accessToken, 
+                user.getUsername() // 로그인한 유저의 ID (실제로는 username)
+            );
 
+        } catch (AuthException.UserNotFoundException e) {
+            log.warn("로그인 실패: userId={}, 원인=사용자 없음", requestDto.getUserId());
+            return LoginResponse.authFailure("로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.");
         } catch (AuthenticationException e) {
-            log.warn("로그인 실패: usernameOrEmail={}, 원인={}", requestDto.getUsernameOrEmail(), e.getMessage());
-            throw new AuthException.InvalidCredentialsException();
+            log.warn("로그인 실패: userId={}, 원인={}", requestDto.getUserId(), e.getMessage());
+            return LoginResponse.authFailure("로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.");
         }
     }
 
@@ -129,42 +136,32 @@ public class AuthService {
     }
 
     /**
-     * 중복 사용자 검증
+     * 중복 사용자 검증 (userId는 이메일 형식)
      */
-    private void validateDuplicateUser(String username, String email) {
-        if (userRepository.existsByUsername(username)) {
-            throw new BusinessException("이미 사용 중인 사용자명입니다: " + username);
-        }
-        
-        if (userRepository.existsByEmail(email)) {
-            throw new BusinessException("이미 사용 중인 이메일입니다: " + email);
+    private void validateDuplicateUser(String userId) {
+        if (userRepository.existsByEmail(userId)) {
+            throw new BusinessException("이미 사용중인 아이디입니다.");
         }
     }
 
     /**
-     * 사용자명 또는 이메일로 사용자 조회
+     * 이메일로 사용자 조회
      */
-    private User findUserByUsernameOrEmail(String usernameOrEmail) {
-        // 이메일 형식인지 확인
-        if (usernameOrEmail.contains("@")) {
-            return userRepository.findByEmailAndIsActiveTrue(usernameOrEmail)
-                    .orElseThrow(() -> new AuthException.UserNotFoundException());
-        } else {
-            return userRepository.findByUsernameAndIsActiveTrue(usernameOrEmail)
-                    .orElseThrow(() -> new AuthException.UserNotFoundException());
-        }
+    private User findUserByEmail(String email) {
+        return userRepository.findByEmailAndIsActiveTrue(email)
+                .orElseThrow(() -> new AuthException.UserNotFoundException());
     }
 
     /**
-     * 사용자명 중복 체크
+     * 사용자명 중복 체크 (userId는 이메일 형식이므로 이메일 중복 체크)
      */
     @Transactional(readOnly = true)
     public boolean isUsernameExists(String username) {
-        return userRepository.existsByUsername(username);
+        return userRepository.existsByEmail(username);
     }
 
     /**
-     * 이메일 중복 체크
+     * 이메일 중복 체크 (userId 중복 체크와 동일)
      */
     @Transactional(readOnly = true)
     public boolean isEmailExists(String email) {
