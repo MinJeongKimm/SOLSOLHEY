@@ -4,12 +4,14 @@ import type {
   LoginRequest,
   LoginResponse,
   LogoutResponse,
-  ApiError,
-  ErrorResponse
+  ErrorResponse,
+  MascotCreateRequest,
+  MascotApiResponse
 } from '../types/api';
+import { ApiError } from '../types/api';
 
 // API 기본 설정
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 // API 요청 헬퍼 함수
 async function apiRequest<T>(
@@ -125,6 +127,21 @@ export const auth = {
     this.removeUser();
   }
 };
+
+// 마스코트 생성 API
+export async function createMascot(mascotData: MascotCreateRequest): Promise<MascotApiResponse> {
+  return apiRequest<MascotApiResponse>('/mascots', {
+    method: 'POST',
+    body: JSON.stringify(mascotData),
+  });
+}
+
+// 마스코트 조회 API
+export async function getMascot(): Promise<MascotApiResponse> {
+  return apiRequest<MascotApiResponse>('/mascots/me', {
+    method: 'GET',
+  });
+}
 
 // API 에러 핸들링 헬퍼
 export function handleApiError(error: unknown): string {
