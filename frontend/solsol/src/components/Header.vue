@@ -155,13 +155,13 @@ async function handleLogout() {
     isMobileMenuOpen.value = false;
     
     // 로그인 페이지로 리다이렉트
-    router.push('/');
+    router.push('/login');
   } catch (error: any) {
     console.error('로그아웃 오류:', error);
     
     // 서버 오류가 있어도 로컬 정보는 삭제
     auth.clearAuth();
-    router.push('/');
+    router.push('/login');
     
     // 사용자에게 알림 (선택사항)
     alert('로그아웃 처리 중 오류가 발생했지만, 로그아웃되었습니다.');
@@ -174,7 +174,7 @@ async function handleLogout() {
 onMounted(() => {
   // 로그인되지 않은 상태에서 헤더에 접근하는 경우 로그인 페이지로 리다이렉트
   if (!auth.isAuthenticated()) {
-    router.push('/');
+    router.push('/login');
   }
 });
 
@@ -182,7 +182,7 @@ onMounted(() => {
 window.addEventListener('storage', () => {
   // localStorage 변경 감지 (다른 탭에서 로그아웃 등)
   if (!auth.isAuthenticated()) {
-    router.push('/');
+    router.push('/login');
   }
 });
 </script>

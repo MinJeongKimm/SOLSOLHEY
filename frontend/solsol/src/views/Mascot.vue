@@ -57,7 +57,7 @@
           <div class="text-6xl mb-4">🥚</div>
           <p class="text-gray-600 mb-4">아직 마스코트가 없습니다</p>
           <button 
-            @click="showCreateModal = true"
+            @click="goToCreate"
             class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
           >
             마스코트 생성하기
@@ -77,9 +77,14 @@
           
           <!-- 마스코트 캐릭터 -->
           <div v-if="currentMascot" class="relative z-10 text-center">
-            <!-- 메인 캐릭터 (이모지로 대체) -->
-            <div class="text-9xl mb-4 animate-bounce">
-              {{ getMascotEmoji(currentMascot.type) }}
+            <!-- 메인 캐릭터 이미지 -->
+            <div class="mb-4 animate-bounce">
+              <img 
+                :src="getMascotImageUrl(currentMascot.type)" 
+                :alt="getMascotTypeDisplay(currentMascot.type)"
+                class="w-48 h-48 object-contain mx-auto rounded-xl"
+                @error="handleImageError"
+              />
             </div>
             
             <!-- 장착된 아이템 정보 -->
@@ -131,63 +136,7 @@
       </div>
     </div>
     
-    <!-- 마스코트 생성 모달 -->
-    <div v-if="showCreateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-        <h3 class="text-xl font-bold text-gray-800 mb-4">🐾 새 마스코트 생성</h3>
-        
-        <div class="space-y-4">
-          <!-- 이름 입력 -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">마스코트 이름</label>
-            <input 
-              v-model="newMascot.name"
-              type="text" 
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none"
-              placeholder="예: 쏠쏠이"
-              maxlength="20"
-            />
-          </div>
-          
-          <!-- 종류 선택 -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">마스코트 종류</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button 
-                v-for="type in mascotTypes" 
-                :key="type.id"
-                @click="newMascot.type = type.id"
-                :class="[
-                  'p-3 rounded-lg border-2 transition-all',
-                  newMascot.type === type.id 
-                    ? 'border-purple-500 bg-purple-50' 
-                    : 'border-gray-200 hover:border-gray-300'
-                ]"
-              >
-                <div class="text-2xl mb-1">{{ getMascotEmoji(type.id) }}</div>
-                <div class="text-sm font-medium">{{ type.name }}</div>
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <div class="flex space-x-3 mt-6">
-          <button 
-            @click="showCreateModal = false"
-            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
-          >
-            취소
-          </button>
-          <button 
-            @click="createMascot"
-            :disabled="!newMascot.name || !newMascot.type"
-            class="flex-1 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg font-medium transition-colors"
-          >
-            생성
-          </button>
-        </div>
-      </div>
-    </div>
+
     
     <!-- 알림 토스트 -->
     <div 
@@ -203,40 +152,33 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { createMascot as createMascotApi, handleApiError } from '../api/index';
+import { createMascot as createMascotApi, handleApiError, mascot } from '../api/index';
 import { mockMascot, mascotTypes, levelExperience } from '../data/mockData';
-import type { Mascot, CreateMascotRequest } from '../types/api';
+import type { Mascot } from '../types/api';
 
 const router = useRouter();
 
 // 반응형 데이터
-const currentMascot = ref<Mascot | null>(mockMascot);
+const currentMascot = ref<Mascot | null>(null);
 const userCoins = ref(15000);
 const userLikes = ref(151);
 
-// 모달 상태
-const showCreateModal = ref(false);
 
-// 폼 데이터
-const newMascot = ref<CreateMascotRequest>({
-  name: '',
-  type: ''
-});
 
 // 토스트 알림
 const showToast = ref(false);
 const toastMessage = ref('');
 
 // 유틸리티 함수들
-function getMascotEmoji(type: string): string {
-  const emojiMap: Record<string, string> = {
-    bear: '🐻',
-    tiger: '🐯',
-    eagle: '🦅',
-    lion: '🦁',
-    panda: '🐼'
-  };
-  return emojiMap[type] || '🐾';
+function getMascotImageUrl(type: string): string {
+  const typeObj = mascotTypes.find(t => t.id === type);
+  return typeObj ? typeObj.imageUrl : '/images/soll.png';
+}
+
+function handleImageError(event: Event) {
+  const target = event.target as HTMLImageElement;
+  target.src = '/images/soll.png'; // 기본 이미지로 대체
+  console.error('이미지 로드 실패:', target.src);
 }
 
 function getMascotTypeDisplay(type: string): string {
@@ -269,34 +211,9 @@ function goToCustomize() {
   router.push('/mascot/customize');
 }
 
-// 마스코트 생성
-async function createMascot() {
-  try {
-    // Mock 데이터로 시뮬레이션
-    const newMascotData: Mascot = {
-      id: Date.now(),
-      name: newMascot.value.name,
-      type: newMascot.value.type,
-      level: 1,
-      experiencePoint: 0,
-      evolutionStage: 0,
-      equippedItems: {},
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    currentMascot.value = newMascotData;
-    showCreateModal.value = false;
-    showToast.value = true;
-    toastMessage.value = `${newMascotData.name}이(가) 태어났습니다! 🎉`;
-    
-    setTimeout(() => {
-      showToast.value = false;
-    }, 3000);
-  } catch (error) {
-    console.error('마스코트 생성 실패:', error);
-    showNotReady('마스코트 생성');
-  }
+// 마스코트 생성 화면으로 이동
+function goToCreate() {
+  router.push('/mascot/create');
 }
 
 // 준비중 알림
@@ -309,9 +226,20 @@ function showNotReady(feature: string) {
   }, 2000);
 }
 
+// 마스코트 데이터 로드
+function loadMascotData() {
+  const mascotData = mascot.getMascot();
+  if (mascotData) {
+    currentMascot.value = mascotData;
+  } else {
+    // 마스코트가 없으면 생성 페이지로 이동
+    router.push('/mascot/create');
+  }
+}
+
 // 컴포넌트 마운트
 onMounted(() => {
-  console.log('마스코트 메인 페이지 로드됨');
+  loadMascotData();
 });
 </script>
 

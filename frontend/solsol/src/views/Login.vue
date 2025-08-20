@@ -116,17 +116,15 @@ async function onSubmit() {
 
     const response = await login(loginData);
     
-    if (response.success && response.token) {
-      // 토큰 저장
-      auth.setToken(response.token);
+    if (response.success && response.data) {
+      // 토큰 저장 (백엔드는 data 객체 안에 token과 username을 전송)
+      auth.setToken(response.data.token);
       
-      // 사용자 정보 저장 (있는 경우)
-      if (response.username) {
-        auth.setUser({
-          username: response.username,
-          userId: userId.value,
-        });
-      }
+      // 사용자 정보 저장
+      auth.setUser({
+        username: response.data.username,
+        userId: userId.value,
+      });
       
       // 대시보드로 리다이렉트
       router.push('/dashboard');

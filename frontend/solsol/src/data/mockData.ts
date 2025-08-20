@@ -165,11 +165,30 @@ export const mockItems: Item[] = [
 
 // 마스코트 종류 목록
 export const mascotTypes = [
-  { id: 'bear', name: '곰', description: '힘이 세고 온순한 곰 마스코트' },
-  { id: 'tiger', name: '호랑이', description: '용감하고 당당한 호랑이 마스코트' },
-  { id: 'eagle', name: '독수리', description: '자유롭고 날렵한 독수리 마스코트' },
-  { id: 'lion', name: '사자', description: '위엄있고 카리스마 넘치는 사자 마스코트' },
-  { id: 'panda', name: '판다', description: '귀엽고 사랑스러운 판다 마스코트' }
+  { 
+    id: 'soll', 
+    name: '쏠', 
+    description: '똑똑하고 신뢰할 수 있는 쏠 마스코트',
+    imageUrl: '/images/soll.png'
+  },
+  { 
+    id: 'ray', 
+    name: '레이', 
+    description: '활발하고 에너지 넘치는 레이 마스코트',
+    imageUrl: '/images/ray.png'
+  },
+  { 
+    id: 'rino', 
+    name: '리노', 
+    description: '차분하고 안정적인 리노 마스코트',
+    imageUrl: '/images/rino.png'
+  },
+  { 
+    id: 'pli', 
+    name: '플리', 
+    description: '귀엽고 사랑스러운 플리 마스코트',
+    imageUrl: '/images/pli.png'
+  }
 ];
 
 // 레벨별 필요 경험치
