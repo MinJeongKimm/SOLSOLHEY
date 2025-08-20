@@ -4,6 +4,7 @@ import Dashboard from '../views/Dashboard.vue'
 import Signup from '../views/Signup.vue'
 import Challenge from '../views/Challenge.vue'
 import Mascot from '../views/Mascot.vue'
+import MascotCreate from '../views/MascotCreate.vue'
 import MascotCustomize from '../views/MascotCustomize.vue'
 import { auth } from '../api/index'
 
@@ -36,6 +37,11 @@ const routes = [
   { 
     path: '/mascot', 
     component: Mascot,
+    meta: { requiresAuth: true }
+  },
+  { 
+    path: '/mascot/create', 
+    component: MascotCreate,
     meta: { requiresAuth: true }
   },
   { 
