@@ -24,7 +24,7 @@ import { ApiError } from '../types/api';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
 // API 요청 헬퍼 함수
-async function apiRequest<T>(
+export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
@@ -89,7 +89,7 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 // 로그아웃 API
 export async function logout(): Promise<LogoutResponse> {
   return apiRequest<LogoutResponse>('/auth/logout', {
-    method: 'POST',
+    method: 'DELETE',
   });
 }
 
@@ -201,6 +201,9 @@ export const mascot = {
     return !!this.getMascot();
   }
 };
+
+// 친구 관련 API 함수들
+export * from './friend';
 
 // API 에러 핸들링 헬퍼
 export function handleApiError(error: unknown): string {

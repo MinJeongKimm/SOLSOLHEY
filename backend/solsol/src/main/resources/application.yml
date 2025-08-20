@@ -7,7 +7,7 @@ finance:
 
 # JWT 인증 설정
 jwt:
-  secret-key: ${JWT_SECRET_KEY}
+  secret-key: ${JWT_SECRET_KEY:150b3ba29a26048e16a4413e8b4cab2d4b1f5552789dd0200eed3ae818e926a5}
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
 
