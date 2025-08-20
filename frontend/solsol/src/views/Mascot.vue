@@ -147,14 +147,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { createMascot as createMascotApi, handleApiError } from '../api/index';
+import { createMascot as createMascotApi, handleApiError, mascot } from '../api/index';
 import { mockMascot, mascotTypes, levelExperience } from '../data/mockData';
 import type { Mascot } from '../types/api';
 
 const router = useRouter();
 
 // 반응형 데이터
-const currentMascot = ref<Mascot | null>(mockMascot);
+const currentMascot = ref<Mascot | null>(null);
 const userCoins = ref(15000);
 const userLikes = ref(151);
 
@@ -221,9 +221,21 @@ function showNotReady(feature: string) {
   }, 2000);
 }
 
+// 마스코트 데이터 로드
+function loadMascotData() {
+  const mascotData = mascot.getMascot();
+  if (mascotData) {
+    currentMascot.value = mascotData;
+  } else {
+    // 마스코트가 없으면 생성 페이지로 이동
+    router.push('/mascot/create');
+  }
+}
+
 // 컴포넌트 마운트
 onMounted(() => {
   console.log('마스코트 메인 페이지 로드됨');
+  loadMascotData();
 });
 </script>
 

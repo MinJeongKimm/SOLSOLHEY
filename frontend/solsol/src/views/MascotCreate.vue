@@ -76,7 +76,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { createMascot as createMascotApi, handleApiError } from '../api/index';
+import { createMascot as createMascotApi, handleApiError, mascot } from '../api/index';
 import { mascotTypes } from '../data/mockData';
 import type { Mascot, CreateMascotRequest } from '../types/api';
 
@@ -106,7 +106,12 @@ function getMascotEmoji(type: string): string {
 
 // 뒤로가기
 function goBack() {
-  router.push('/mascot');
+  // 마스코트가 있으면 마스코트 페이지로, 없으면 대시보드로
+  if (mascot.hasMascot()) {
+    router.push('/mascot');
+  } else {
+    router.push('/dashboard');
+  }
 }
 
 // 마스코트 생성
@@ -124,6 +129,9 @@ async function createMascot() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    
+    // localStorage에 마스코트 데이터 저장
+    mascot.setMascot(newMascotData);
     
     showToast.value = true;
     toastMessage.value = `${newMascotData.name}이(가) 태어났습니다! 🎉`;

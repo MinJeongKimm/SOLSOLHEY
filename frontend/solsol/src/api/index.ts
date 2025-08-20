@@ -178,6 +178,30 @@ export async function getItems(): Promise<GetItemsResponse> {
   });
 }
 
+// 마스코트 관련 유틸리티 함수들
+export const mascot = {
+  // 마스코트 데이터 저장
+  setMascot(mascotData: any) {
+    localStorage.setItem('mascot', JSON.stringify(mascotData));
+  },
+
+  // 마스코트 데이터 가져오기
+  getMascot(): any | null {
+    const mascotData = localStorage.getItem('mascot');
+    return mascotData ? JSON.parse(mascotData) : null;
+  },
+
+  // 마스코트 데이터 삭제
+  removeMascot() {
+    localStorage.removeItem('mascot');
+  },
+
+  // 마스코트 존재 여부 확인
+  hasMascot(): boolean {
+    return !!this.getMascot();
+  }
+};
+
 // API 에러 핸들링 헬퍼
 export function handleApiError(error: unknown): string {
   if (error instanceof ApiError) {
