@@ -110,10 +110,10 @@ public class JwtTokenProvider {
         Claims claims = parseClaims(token);
         Object userId = claims.get("userId");
         
-        if (userId instanceof Integer) {
-            return ((Integer) userId).longValue();
-        } else if (userId instanceof Long) {
-            return (Long) userId;
+        if (userId instanceof Integer integer) {
+            return integer.longValue();
+        } else if (userId instanceof Long longValue) {
+            return longValue;
         } else {
             throw new AuthException.InvalidTokenException("Invalid userId in token");
         }
