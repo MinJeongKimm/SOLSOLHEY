@@ -56,14 +56,13 @@ const router = createRouter({
   routes,
 })
 
-// 인증 가드 (임시 비활성화 - 마스코트 테스트용)
-/*
+// 인증 가드
 router.beforeEach((to, from, next) => {
   const isAuthenticated = auth.isAuthenticated()
   
   // 인증이 필요한 페이지
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/')
+    next('/login')
     return
   }
   
@@ -75,6 +74,5 @@ router.beforeEach((to, from, next) => {
   
   next()
 })
-*/
 
 export default router
