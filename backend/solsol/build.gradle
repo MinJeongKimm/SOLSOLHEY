@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.4.8'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'nu.studer.dotenv' version '4.0.0'
 }
 
 group = 'com.solsolhey'
@@ -33,6 +34,9 @@ dependencies {
 	
 	// HTTP 클라이언트 (신한 API 연동용)
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	
+	// 환경변수 로드용 (.env 파일)
+	implementation 'io.github.cdimascio:dotenv-java:3.0.0'
 	
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'

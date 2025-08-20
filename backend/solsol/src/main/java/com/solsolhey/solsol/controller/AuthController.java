@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
  * 인증/인가 관련 컨트롤러
  */
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @Slf4j
 public class AuthController {
