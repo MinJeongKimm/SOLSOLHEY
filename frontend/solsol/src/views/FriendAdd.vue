@@ -3,13 +3,17 @@
     <div class="flex flex-col items-center justify-center min-h-screen pt-16">
       <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-lg">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-3xl font-bold text-blue-600">친구 추가</h2>
-          <router-link 
-            to="/friend" 
-            class="px-4 py-2 text-blue-500 hover:text-blue-700 transition-colors font-semibold"
-          >
-            ← 목록으로
-          </router-link>
+          <div class="flex items-center space-x-4">
+            <router-link 
+              to="/friend" 
+              class="p-2 text-blue-500 hover:text-blue-700 transition-colors rounded-full hover:bg-blue-50"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
+            </router-link>
+            <h2 class="text-3xl font-bold text-blue-600">친구 추가</h2>
+          </div>
         </div>
 
         <!-- 사용자 검색 -->
