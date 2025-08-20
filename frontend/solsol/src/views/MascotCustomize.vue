@@ -1,68 +1,96 @@
 <template>
-  <div class="min-h-screen bg-gray-100">
+  <div class="min-h-screen bg-gray-50 flex flex-col">
     <!-- 상단 헤더 -->
-    <div class="bg-white shadow-sm">
-      <div class="container mx-auto px-4 py-4">
-        <div class="flex justify-between items-center">
-          <!-- 뒤로가기 버튼 -->
-          <button 
-            @click="goBack"
-            class="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            <span class="text-xl">←</span>
-            <span class="font-medium">꾸미기</span>
-          </button>
-          
-          <!-- 코인 정보 -->
-          <div class="flex items-center space-x-2">
-            <span class="text-xl">🪙</span>
-            <span class="text-lg font-bold text-yellow-600">{{ userCoins }}P</span>
-          </div>
-        </div>
+    <div class="bg-white px-4 py-3 flex justify-between items-center shadow-sm">
+      <!-- 좌측: 뒤로가기 + 제목 -->
+      <div class="flex items-center space-x-3">
+        <button 
+          @click="goBack"
+          class="w-8 h-8 flex items-center justify-center"
+        >
+          <img src="/icons/icon_back.png" alt="뒤로가기" class="w-6 h-6" />
+        </button>
+        <h1 class="text-lg font-bold text-gray-800">Customize</h1>
+      </div>
+      
+      <!-- 우측: 포인트 -->
+      <div class="flex items-center space-x-2">
+        <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5" />
+        <span class="font-bold text-orange-600">{{ userCoins }}P</span>
       </div>
     </div>
 
     <!-- 메인 컨텐츠 -->
-    <div class="container mx-auto px-4 py-6">
+    <div class="flex-1 px-4 py-6 space-y-6">
       <!-- 마스코트 미리보기 영역 -->
-      <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
-        <div class="relative h-64 flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl">
-          <!-- 배경 -->
-          <div 
-            v-if="currentMascot?.equippedItems.background" 
-            class="absolute inset-0 rounded-xl opacity-40"
-            :style="{ backgroundImage: `url(${currentMascot.equippedItems.background.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }"
-          ></div>
+      <div class="bg-white rounded-2xl shadow-lg p-6">
+        <div 
+          class="relative h-64 rounded-xl overflow-hidden"
+          style="background: linear-gradient(135deg, #bfdbfe 0%, #ddd6fe 100%)"
+        >
+          <!-- 커스터마이즈 배경 -->
+          <img 
+            src="/backgrounds/bg_customize.png" 
+            alt="꾸미기 배경" 
+            class="absolute inset-0 w-full h-full object-cover"
+          />
           
-          <!-- 마스코트 캐릭터 -->
-          <div v-if="currentMascot" class="relative z-10 text-center">
-            <div class="text-8xl mb-2">
-              {{ getMascotEmoji(currentMascot.type) }}
+          <!-- 마스코트 + 장착된 아이템들 -->
+          <div class="absolute inset-0 flex items-center justify-center">
+            <div class="relative">
+              <!-- 마스코트 이미지 -->
+              <img 
+                src="/mascot/mascot_sol_base.png" 
+                alt="마스코트" 
+                class="w-28 h-28 object-contain"
+              />
+              
+              <!-- 장착된 아이템들 -->
+              <div class="absolute inset-0">
+                <!-- 머리 아이템 -->
+                <img 
+                  v-if="currentMascot?.equippedItems.head" 
+                  :src="currentMascot.equippedItems.head.imageUrl" 
+                  :alt="currentMascot.equippedItems.head.name"
+                  class="w-28 h-28 object-contain absolute top-0 left-0"
+                />
+                <!-- 액세서리 -->
+                <img 
+                  v-if="currentMascot?.equippedItems.accessory" 
+                  :src="currentMascot.equippedItems.accessory.imageUrl" 
+                  :alt="currentMascot.equippedItems.accessory.name"
+                  class="w-28 h-28 object-contain absolute top-0 left-0"
+                />
+              </div>
             </div>
-            <div class="text-sm text-gray-600">
-              {{ currentMascot.name }}
+          </div>
+          
+          <!-- 마스코트 이름 -->
+          <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+            <div class="bg-white bg-opacity-90 px-3 py-1 rounded-full">
+              <span class="text-sm font-medium text-gray-800">{{ currentMascot?.name || '쏠' }}</span>
             </div>
           </div>
         </div>
       </div>
       
-      <!-- 아이템 카테고리 버튼들 -->
-      <div class="bg-white rounded-2xl shadow-lg p-4 mb-6">
-        <div class="grid grid-cols-5 gap-3">
+      <!-- 카테고리 탭들 -->
+      <div class="bg-white rounded-2xl shadow-lg p-4">
+        <div class="flex space-x-2 overflow-x-auto pb-2">
           <button 
             v-for="category in itemCategories" 
             :key="category.id"
             @click="selectedCategory = category.id"
             :class="[
-              'flex flex-col items-center p-3 rounded-xl transition-all',
+              'flex-shrink-0 flex flex-col items-center p-3 rounded-xl transition-all min-w-[80px]',
               selectedCategory === category.id 
                 ? 'bg-purple-500 text-white shadow-lg' 
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             ]"
           >
-            <div class="w-12 h-12 rounded-full flex items-center justify-center mb-2" 
+            <div class="w-10 h-10 rounded-full flex items-center justify-center mb-2" 
                  :class="selectedCategory === category.id ? 'bg-white bg-opacity-20' : 'bg-white'">
-              <span class="text-2xl">{{ category.icon }}</span>
+              <span class="text-xl">{{ category.icon }}</span>
             </div>
             <span class="text-xs font-medium">{{ category.name }}</span>
           </button>
@@ -78,56 +106,52 @@
             v-for="item in filteredItems" 
             :key="item.id"
             :class="[
-              'border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-md',
-              rarityColors[item.rarity]?.bg,
-              rarityColors[item.rarity]?.border,
-              isEquipped(item) ? 'ring-2 ring-purple-500' : ''
+              'relative border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-md',
+              isEquipped(item) 
+                ? 'border-purple-500 bg-purple-50' 
+                : 'border-gray-200 hover:border-gray-300'
             ]"
-            @click="equipItem(item)"
+            @click="toggleEquipItem(item)"
           >
-            <!-- 아이템 이미지 영역 (임시) -->
-            <div class="w-full h-24 bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
-              <span class="text-3xl opacity-50">{{ getCategoryIcon(item.type) }}</span>
+            <!-- 아이템 이미지 -->
+            <div class="w-full h-20 bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+              <img 
+                :src="item.imageUrl" 
+                :alt="item.name"
+                class="w-full h-full object-contain"
+                @error="handleImageError"
+              />
             </div>
             
             <!-- 아이템 정보 -->
             <div>
-              <h4 :class="['font-medium text-sm mb-1', rarityColors[item.rarity]?.text]">
+              <h4 class="font-medium text-sm text-gray-800 mb-1 flex items-center">
                 {{ item.name }}
                 <span v-if="isEquipped(item)" class="text-purple-600 text-xs ml-1">✓</span>
               </h4>
-              <p class="text-xs text-gray-600 mb-2">{{ item.description }}</p>
+              <p class="text-xs text-gray-600 mb-2 line-clamp-2">{{ item.description }}</p>
               
-              <div class="flex justify-between items-center">
-                <span :class="['text-xs font-medium px-2 py-1 rounded', rarityColors[item.rarity]?.bg]">
-                  {{ getRarityDisplay(item.rarity) }}
-                </span>
-                <span class="text-xs font-bold text-yellow-600">{{ item.price }}P</span>
-              </div>
-              
-              <!-- 액션 버튼 -->
-              <div class="mt-3">
-                <button 
-                  v-if="item.isOwned"
-                  @click.stop="equipItem(item)"
-                  :disabled="isEquipped(item)"
+              <!-- 착용 상태 표시 -->
+              <div class="text-center">
+                <span 
                   :class="[
-                    'w-full py-2 px-3 rounded-lg text-xs font-medium transition-colors',
+                    'text-xs font-medium px-3 py-1 rounded-full',
                     isEquipped(item) 
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                      : 'bg-purple-500 hover:bg-purple-600 text-white'
+                      ? 'bg-purple-500 text-white' 
+                      : 'bg-gray-200 text-gray-600'
                   ]"
                 >
                   {{ isEquipped(item) ? '착용중' : '착용하기' }}
-                </button>
-                <button 
-                  v-else
-                  @click.stop="showNotReady('아이템 구매')"
-                  class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-3 rounded-lg text-xs font-medium transition-colors"
-                >
-                  구매하기
-                </button>
+                </span>
               </div>
+            </div>
+
+            <!-- 장착 아이콘 -->
+            <div 
+              v-if="isEquipped(item)"
+              class="absolute top-2 right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center"
+            >
+              <span class="text-white text-xs">✓</span>
             </div>
           </div>
         </div>
@@ -143,8 +167,7 @@
     <!-- 알림 토스트 -->
     <div 
       v-if="showToast" 
-      class="fixed bottom-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all"
-      :class="{ 'opacity-0': !showToast }"
+      class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all"
     >
       {{ toastMessage }}
     </div>
@@ -154,17 +177,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { equipItems, handleApiError } from '../api/index';
-import { mockMascot, mockItems, rarityColors } from '../data/mockData';
-import type { Mascot, Item, EquipItemsRequest } from '../types/api';
+import { mockMascot, realItems } from '../data/mockData';
+import type { Mascot, Item } from '../types/api';
 
 const router = useRouter();
 
 // 반응형 데이터
 const currentMascot = ref<Mascot | null>(mockMascot);
-const items = ref<Item[]>(mockItems);
+const items = ref<Item[]>(realItems);
 const userCoins = ref(15000);
-const selectedCategory = ref<'clothing' | 'background' | 'accessory' | 'shoes' | 'bag'>('clothing');
+const selectedCategory = ref<'top' | 'pants' | 'accessory' | 'shoes' | 'bag'>('top');
 
 // 토스트 알림
 const showToast = ref(false);
@@ -172,51 +194,31 @@ const toastMessage = ref('');
 
 // 아이템 카테고리
 const itemCategories = [
-  { id: 'clothing', name: 'Top', icon: '👕' },
-  { id: 'background', name: 'BG', icon: '🏞️' },
+  { id: 'top', name: 'Top', icon: '👕' },
+  { id: 'pants', name: 'Pants', icon: '👖' },
   { id: 'accessory', name: 'Acc', icon: '👓' },
   { id: 'shoes', name: 'Shoes', icon: '👟' },
   { id: 'bag', name: 'Bag', icon: '🎒' }
 ];
 
-// 필터링된 아이템 목록
+// 필터링된 아이템 목록 (보유한 아이템만)
 const filteredItems = computed(() => {
   let categoryType = selectedCategory.value;
   
-  // shoes와 bag은 아직 데이터에 없으므로 accessory로 대체
-  if (categoryType === 'shoes' || categoryType === 'bag') {
-    categoryType = 'accessory';
-  }
+  // 카테고리별 매핑
+  if (categoryType === 'top') categoryType = 'head'; // Top은 머리 아이템으로
+  if (categoryType === 'pants') categoryType = 'clothing'; // Pants는 의상으로
   
-  return items.value.filter(item => item.type === categoryType);
+  return items.value.filter(item => 
+    item.type === categoryType && item.isOwned
+  );
 });
 
 // 유틸리티 함수들
-function getMascotEmoji(type: string): string {
-  const emojiMap: Record<string, string> = {
-    bear: '🐻',
-    tiger: '🐯',
-    eagle: '🦅',
-    lion: '🦁',
-    panda: '🐼'
-  };
-  return emojiMap[type] || '🐾';
-}
-
-function getRarityDisplay(rarity: string): string {
-  const rarityMap: Record<string, string> = {
-    common: '일반',
-    rare: '희귀',
-    epic: '영웅',
-    legendary: '전설'
-  };
-  return rarityMap[rarity] || rarity;
-}
-
 function getCategoryName(category: string): string {
   const categoryMap: Record<string, string> = {
-    clothing: '상의',
-    background: '배경',
+    top: '상의',
+    pants: '하의', 
     accessory: '액세서리',
     shoes: '신발',
     bag: '가방'
@@ -224,26 +226,15 @@ function getCategoryName(category: string): string {
   return categoryMap[category] || category;
 }
 
-function getCategoryIcon(type: string): string {
-  const iconMap: Record<string, string> = {
-    clothing: '👕',
-    background: '🏞️',
-    accessory: '👓',
-    shoes: '👟',
-    bag: '🎒'
-  };
-  return iconMap[type] || '📦';
-}
-
 function isEquipped(item: Item): boolean {
   if (!currentMascot.value) return false;
   const equipped = currentMascot.value.equippedItems;
   
   switch (item.type) {
+    case 'head':
+      return equipped.head?.id === item.id;
     case 'clothing':
       return equipped.clothing?.id === item.id;
-    case 'background':
-      return equipped.background?.id === item.id;
     case 'accessory':
       return equipped.accessory?.id === item.id;
     default:
@@ -256,52 +247,51 @@ function goBack() {
   router.push('/');
 }
 
-// 아이템 장착
-async function equipItem(item: Item) {
-  if (!currentMascot.value || !item.isOwned) return;
+// 아이템 장착/해제 토글
+function toggleEquipItem(item: Item) {
+  if (!currentMascot.value) return;
   
   try {
-    // Mock 데이터로 시뮬레이션
     const updatedMascot = { ...currentMascot.value };
     updatedMascot.equippedItems = { ...updatedMascot.equippedItems };
     
+    const isCurrentlyEquipped = isEquipped(item);
+    
     switch (item.type) {
-      case 'clothing':
-        updatedMascot.equippedItems.clothing = item;
+      case 'head':
+        updatedMascot.equippedItems.head = isCurrentlyEquipped ? undefined : item;
         break;
-      case 'background':
-        updatedMascot.equippedItems.background = item;
+      case 'clothing':
+        updatedMascot.equippedItems.clothing = isCurrentlyEquipped ? undefined : item;
         break;
       case 'accessory':
-        updatedMascot.equippedItems.accessory = item;
+        updatedMascot.equippedItems.accessory = isCurrentlyEquipped ? undefined : item;
         break;
     }
     
     currentMascot.value = updatedMascot;
-    showToast.value = true;
-    toastMessage.value = `${item.name}을(를) 착용했습니다!`;
     
-    setTimeout(() => {
-      showToast.value = false;
-    }, 2000);
+    const message = isCurrentlyEquipped 
+      ? `${item.name}을(를) 해제했습니다!`
+      : `${item.name}을(를) 착용했습니다!`;
     
-    // 실제 API 호출 (주석 처리)
-    // const equipData: EquipItemsRequest = {
-    //   equipItems: {
-    //     [`${item.type}Id`]: item.id
-    //   }
-    // };
-    // const response = await equipItems(equipData);
+    showToastMessage(message);
   } catch (error) {
-    console.error('아이템 착용 실패:', error);
-    showNotReady('아이템 착용');
+    console.error('아이템 장착/해제 실패:', error);
+    showToastMessage('오류가 발생했습니다. 다시 시도해주세요.');
   }
 }
 
-// 준비중 알림
-function showNotReady(feature: string) {
+// 이미지 로드 에러 처리
+function handleImageError(event: Event) {
+  const img = event.target as HTMLImageElement;
+  img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjIwIiB5PSIyNCIgZmlsbD0iIzlDQTNBRiIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+📦PC90ZXh0Pgo8L3N2Zz4K';
+}
+
+// 토스트 메시지 표시
+function showToastMessage(message: string) {
+  toastMessage.value = message;
   showToast.value = true;
-  toastMessage.value = `${feature} 기능은 준비중입니다! 🚧`;
   
   setTimeout(() => {
     showToast.value = false;
@@ -315,22 +305,35 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 라인 클램프 */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* 스크롤바 스타일링 */
-.overflow-y-auto::-webkit-scrollbar {
-  width: 6px;
+.overflow-x-auto::-webkit-scrollbar {
+  height: 4px;
 }
 
-.overflow-y-auto::-webkit-scrollbar-track {
+.overflow-x-auto::-webkit-scrollbar-track {
   background: #f1f1f1;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
-.overflow-y-auto::-webkit-scrollbar-thumb {
+.overflow-x-auto::-webkit-scrollbar-thumb {
   background: #c1c1c1;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* 스무스 전환 */
+.transition-all {
+  transition: all 0.3s ease;
 }
 </style>

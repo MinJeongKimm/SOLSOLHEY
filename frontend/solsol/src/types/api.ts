@@ -109,12 +109,13 @@ export interface EquippedItems {
   clothing?: Item;
   background?: Item;
   accessory?: Item;
+  head?: Item;
 }
 
 export interface Item {
   id: number;
   name: string;
-  type: 'clothing' | 'background' | 'accessory';
+  type: 'clothing' | 'background' | 'accessory' | 'head';
   description: string;
   price: number;
   imageUrl?: string;
@@ -130,6 +131,7 @@ export interface CreateMascotRequest {
     clothingId?: number;
     backgroundId?: number;
     accessoryId?: number;
+    headId?: number;
   };
 }
 
@@ -146,6 +148,7 @@ export interface EquipItemsRequest {
     clothingId?: number;
     backgroundId?: number;
     accessoryId?: number;
+    headId?: number;
   };
 }
 
@@ -163,6 +166,7 @@ export interface UpdateMascotRequest {
     clothingId?: number;
     backgroundId?: number;
     accessoryId?: number;
+    headId?: number;
   };
   experiencePoint?: number;
 }

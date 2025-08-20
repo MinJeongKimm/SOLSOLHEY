@@ -186,6 +186,65 @@ export const levelExperience = [
   { level: 10, requiredExp: 4500 }
 ];
 
+// 실제 이미지를 사용한 아이템 데이터
+export const realItems: Item[] = [
+  // 머리 아이템들
+  {
+    id: 1001,
+    name: '토끼 귀',
+    type: 'head',
+    description: '귀여운 토끼 귀 머리띠입니다.',
+    price: 800,
+    imageUrl: '/items/item_head_bunny_ears.png',
+    rarity: 'rare',
+    isOwned: true
+  },
+  {
+    id: 1002,
+    name: '핑크 비니',
+    type: 'head',
+    description: '따뜻하고 스타일리시한 핑크 비니입니다.',
+    price: 500,
+    imageUrl: '/items/item_head_pink_beanie.png',
+    rarity: 'common',
+    isOwned: true
+  },
+  
+  // 액세서리들
+  {
+    id: 2001,
+    name: '하트 안경',
+    type: 'accessory',
+    description: '사랑스러운 하트 모양 안경입니다.',
+    price: 1200,
+    imageUrl: '/items/item_acc_glasses_heart.png',
+    rarity: 'epic',
+    isOwned: true
+  },
+  
+  // 의상들 (임시 데이터)
+  {
+    id: 3001,
+    name: '기본 티셔츠',
+    type: 'clothing',
+    description: '편안한 기본 티셔츠입니다.',
+    price: 300,
+    imageUrl: '/api/placeholder/100/100',
+    rarity: 'common',
+    isOwned: true
+  },
+  {
+    id: 3002,
+    name: '멋진 자켓',
+    type: 'clothing',
+    description: '스타일리시한 자켓입니다.',
+    price: 1000,
+    imageUrl: '/api/placeholder/100/100',
+    rarity: 'rare',
+    isOwned: true
+  }
+];
+
 // 희귀도별 색상 테마
 export const rarityColors = {
   common: {
