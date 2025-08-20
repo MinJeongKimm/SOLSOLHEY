@@ -13,13 +13,13 @@ import java.time.LocalDateTime;
 @Builder
 public class ShareImageResponse {
 
-    private Long shareImageId;
-    private String imageUrl;
-    private String templateName;
-    private Long fileSize;
-    private Integer downloadCount;
-    private String status;
-    private LocalDateTime createdAt;
+    private final Long shareImageId;
+    private final String imageUrl;
+    private final String templateName;
+    private final Long fileSize;
+    private final Integer downloadCount;
+    private final String status;
+    private final LocalDateTime createdAt;
     
     public static ShareImageResponse from(ShareImage shareImage) {
         return ShareImageResponse.builder()

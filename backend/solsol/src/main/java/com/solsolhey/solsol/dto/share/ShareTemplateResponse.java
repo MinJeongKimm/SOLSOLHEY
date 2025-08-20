@@ -14,15 +14,15 @@ import java.util.List;
 @Builder
 public class ShareTemplateResponse {
 
-    private Long templateId;
-    private String templateName;
-    private String templateType;
-    private String templateUrl;
-    private Integer width;
-    private Integer height;
-    private String description;
-    private Boolean isActive;
-    private LocalDateTime createdAt;
+    private final Long templateId;
+    private final String templateName;
+    private final String templateType;
+    private final String templateUrl;
+    private final Integer width;
+    private final Integer height;
+    private final String description;
+    private final Boolean isActive;
+    private final LocalDateTime createdAt;
     
     public static ShareTemplateResponse from(ShareTemplate template) {
         return ShareTemplateResponse.builder()

@@ -14,20 +14,20 @@ import lombok.Getter;
 @Builder
 public class FriendSearchResponse {
 
-    private List<FriendSearchResult> results;
-    private Integer totalCount;
-    private String query;
+    private final List<FriendSearchResult> results;
+    private final Integer totalCount;
+    private final String query;
     
     @Getter
     @Builder
     public static class FriendSearchResult {
-        private Long userId;
-        private String username;
-        private String nickname;
-        private String campus;
-        private Integer totalPoints;
-        private boolean isFriend; // 이미 친구인지 여부
-        private boolean isCurrentUser; // 현재 사용자 본인인지 여부
+        private final Long userId;
+        private final String username;
+        private final String nickname;
+        private final String campus;
+        private final Integer totalPoints;
+        private final boolean isFriend; // 이미 친구인지 여부
+        private final boolean isCurrentUser; // 현재 사용자 본인인지 여부
         
         public static FriendSearchResult fromUser(User user, boolean isFriend, boolean isCurrentUser) {
             return FriendSearchResult.builder()

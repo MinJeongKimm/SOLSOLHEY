@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+
 import java.util.stream.Collectors;
 
 /**
@@ -29,7 +29,6 @@ public class ShareServiceImpl implements ShareService {
     private final ShareLinkRepository shareLinkRepository;
     private final ShareTemplateRepository shareTemplateRepository;
     private final ShareImageRepository shareImageRepository;
-    private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
     @Value("${app.base-url:http://localhost:8080}")
@@ -135,7 +134,7 @@ public class ShareServiceImpl implements ShareService {
 
         // 실제 이미지 생성 로직은 여기서 구현
         // 현재는 더미 URL 생성
-        String imageUrl = generateImageUrl(currentUser, template, request.getData());
+        String imageUrl = generateImageUrl(currentUser, template);
 
         // 공유 이미지 엔티티 생성
         ShareImage shareImage = ShareImage.builder()
@@ -143,7 +142,7 @@ public class ShareServiceImpl implements ShareService {
                 .template(template)
                 .imageUrl(imageUrl)
                 .imageData(imageDataJson)
-                .fileSize(calculateImageFileSize(template, request.getData()))
+                .fileSize(calculateImageFileSize(template))
                 .build();
 
         ShareImage savedShareImage = shareImageRepository.save(shareImage);
@@ -296,7 +295,7 @@ public class ShareServiceImpl implements ShareService {
     /**
      * 이미지 URL 생성 (실제 이미지 생성 로직으로 대체 필요)
      */
-    private String generateImageUrl(User user, ShareTemplate template, Map<String, Object> data) {
+    private String generateImageUrl(User user, ShareTemplate template) {
         // 실제 구현에서는 이미지 생성 서비스를 호출하여 실제 이미지 URL을 반환
         String timestamp = String.valueOf(System.currentTimeMillis());
         return String.format("%s/api/v1/images/share/%s_%s_%s.png", 
@@ -306,7 +305,7 @@ public class ShareServiceImpl implements ShareService {
     /**
      * 이미지 파일 크기 계산 (실제 이미지 생성 후 크기 측정으로 대체 필요)
      */
-    private Long calculateImageFileSize(ShareTemplate template, Map<String, Object> data) {
+    private Long calculateImageFileSize(ShareTemplate template) {
         // 더미 파일 크기 계산 (실제로는 생성된 이미지의 크기를 측정)
         long baseSize = (long) template.getWidth() * template.getHeight() * 3; // RGB 기준
         return baseSize / 10; // 압축 고려한 대략적인 크기

@@ -12,10 +12,10 @@ import lombok.Getter;
 @Builder
 public class FriendListResponse {
 
-    private List<FriendResponse> friends;
-    private Integer totalCount;
-    private Integer size;
-    private boolean hasNext;
+    private final List<FriendResponse> friends;
+    private final Integer totalCount;
+    private final Integer size;
+    private final boolean hasNext;
     
     public static FriendListResponse of(List<FriendResponse> friends, Integer totalCount, 
                                        Integer requestedSize, boolean hasNext) {

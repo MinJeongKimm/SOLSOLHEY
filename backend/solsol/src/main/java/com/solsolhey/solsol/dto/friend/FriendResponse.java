@@ -15,18 +15,18 @@ import lombok.Getter;
 @Builder
 public class FriendResponse {
 
-    private Long friendId;
-    private Long userId;
-    private String username;
-    private String nickname;
-    private String campus;
-    private Integer totalPoints;
-    private String status;
-    private LocalDateTime createdAt;
+    private final Long friendId;
+    private final Long userId;
+    private final String username;
+    private final String nickname;
+    private final String campus;
+    private final Integer totalPoints;
+    private final String status;
+    private final LocalDateTime createdAt;
     
     // 마스코트 정보 (선택사항)
-    private Long mascotId;
-    private String mascotName;
+    private final Long mascotId;
+    private final String mascotName;
     
     public static FriendResponse from(Friend friend) {
         User friendUser = friend.getFriendUser();

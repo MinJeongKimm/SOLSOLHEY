@@ -14,15 +14,15 @@ import lombok.Getter;
 @Builder
 public class FriendInteractionResponse {
 
-    private Long interactionId;
-    private Long targetUserId;
-    private String targetUsername;
-    private String targetNickname;
-    private String interactionType;
-    private Integer pointsEarned;
-    private LocalDateTime createdAt;
-    private boolean success;
-    private String message;
+    private final Long interactionId;
+    private final Long targetUserId;
+    private final String targetUsername;
+    private final String targetNickname;
+    private final String interactionType;
+    private final Integer pointsEarned;
+    private final LocalDateTime createdAt;
+    private final boolean success;
+    private final String message;
     
     public static FriendInteractionResponse from(FriendInteraction interaction, boolean success, String message) {
         return FriendInteractionResponse.builder()

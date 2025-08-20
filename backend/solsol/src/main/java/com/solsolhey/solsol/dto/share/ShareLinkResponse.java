@@ -13,18 +13,18 @@ import java.time.LocalDateTime;
 @Builder
 public class ShareLinkResponse {
 
-    private Long shareLinkId;
-    private String shareCode;
-    private String shareUrl; // 완전한 공유 URL
-    private String targetType;
-    private Long referenceId;
-    private String title;
-    private String description;
-    private String imageUrl;
-    private Integer clickCount;
-    private String status;
-    private LocalDateTime expiresAt;
-    private LocalDateTime createdAt;
+    private final Long shareLinkId;
+    private final String shareCode;
+    private final String shareUrl; // 완전한 공유 URL
+    private final String targetType;
+    private final Long referenceId;
+    private final String title;
+    private final String description;
+    private final String imageUrl;
+    private final Integer clickCount;
+    private final String status;
+    private final LocalDateTime expiresAt;
+    private final LocalDateTime createdAt;
     
     public static ShareLinkResponse from(ShareLink shareLink, String baseUrl) {
         String shareUrl = baseUrl + "/share/" + shareLink.getShareCode();
