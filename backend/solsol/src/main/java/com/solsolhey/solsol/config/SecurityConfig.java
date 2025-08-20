@@ -1,12 +1,10 @@
 package com.solsolhey.solsol.config;
 
-import com.solsolhey.solsol.auth.jwt.JwtAuthenticationFilter;
-import com.solsolhey.solsol.auth.service.CustomUserDetailsService;
-import lombok.RequiredArgsConstructor;
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -24,8 +22,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.List;
+import com.solsolhey.solsol.auth.jwt.JwtAuthenticationFilter;
+import com.solsolhey.solsol.auth.service.CustomUserDetailsService;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Spring Security 설정
@@ -92,23 +92,18 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 허용할 Origin (환경변수에서 가져오거나 기본값 사용)
-        String allowedOrigins = System.getProperty("CORS_ALLOWED_ORIGINS", 
-                System.getenv().getOrDefault("CORS_ALLOWED_ORIGINS", 
-                        "http://localhost:3000,http://localhost:5173,http://localhost:8080"));
+        // 환경변수 또는 application.yml에서 CORS 설정 읽어오기
+        String allowedOrigins = environment.getProperty("cors.allowed-origins", "http://localhost:3000");
+        String allowedMethods = environment.getProperty("cors.allowed-methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+        String allowedHeaders = environment.getProperty("cors.allowed-headers", "*");
+        boolean allowCredentials = environment.getProperty("cors.allow-credentials", Boolean.class, true);
+        long maxAge = environment.getProperty("cors.max-age", Long.class, 3600L);
+        
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        
-        // 허용할 HTTP 메서드
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        
-        // 허용할 헤더
-        configuration.setAllowedHeaders(List.of("*"));
-        
-        // 인증 정보 포함 허용
-        configuration.setAllowCredentials(true);
-        
-        // 브라우저 캐시 시간 (초)
-        configuration.setMaxAge(3600L);
+        configuration.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
+        configuration.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
+        configuration.setAllowCredentials(allowCredentials);
+        configuration.setMaxAge(maxAge);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
