@@ -109,14 +109,14 @@
                     v-if="currentMascot.equippedItems.head" 
                     :src="currentMascot.equippedItems.head.imageUrl" 
                     :alt="currentMascot.equippedItems.head.name"
-                    class="w-40 h-40 object-contain absolute top-0 left-0"
+                    class="item-head absolute"
                   />
                   <!-- 액세서리 -->
                   <img 
                     v-if="currentMascot.equippedItems.accessory" 
                     :src="currentMascot.equippedItems.accessory.imageUrl" 
                     :alt="currentMascot.equippedItems.accessory.name"
-                    class="w-40 h-40 object-contain absolute top-0 left-0"
+                    class="item-accessory absolute"
                   />
                 </div>
               </div>
@@ -342,5 +342,36 @@ onMounted(() => {
 /* 스무스 전환 */
 .transition-all {
   transition: all 0.3s ease;
+}
+
+/* 아이템별 기본 스타일 */
+.item-head {
+  width: 60%;
+  height: 60%;
+  top: -15%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  object-fit: contain;
+}
+
+.item-accessory {
+  width: 30%;
+  height: 30%;
+  top: 25%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  object-fit: contain;
+}
+
+.item-clothing {
+  width: 80%;
+  height: 80%;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  object-fit: contain;
 }
 </style>
