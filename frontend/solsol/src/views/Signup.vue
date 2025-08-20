@@ -51,13 +51,13 @@
             type="password"
             autocomplete="new-password"
             required
-            minlength="6"
+            minlength="8"
             aria-required="true"
             aria-invalid="true"
             aria-describedby="passwordError"
             class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none text-base min-h-[44px]"
             :class="{'border-red-400 ring-2 ring-red-300': passwordError, 'focus:ring-blue-400': !passwordError}"
-            placeholder="비밀번호 (6자 이상)"
+            placeholder="비밀번호 (8자 이상)"
             @input="passwordError = validatePassword(password)"
           />
           <transition name="fade">
@@ -145,7 +145,7 @@ function validateNickname(value: string) {
 
 function validatePassword(value: string) {
   if (!value) return '비밀번호를 입력하세요.';
-  if (value.length < 6) return '비밀번호는 6자 이상이어야 합니다.';
+  if (value.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
   return '';
 }
 
