@@ -6,29 +6,28 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.solsolhey.solsol.auth.dto.CustomUserDetails;
 import com.solsolhey.solsol.auth.dto.LoginRequestDto;
-import com.solsolhey.solsol.auth.dto.LoginResponse;
-import com.solsolhey.solsol.auth.dto.LogoutResponse;
+import com.solsolhey.solsol.auth.dto.LoginSuccessDto;
 import com.solsolhey.solsol.auth.dto.RefreshTokenRequestDto;
 import com.solsolhey.solsol.auth.dto.SignUpRequestDto;
 import com.solsolhey.solsol.auth.dto.SignUpResponse;
 import com.solsolhey.solsol.auth.dto.TokenResponseDto;
 import com.solsolhey.solsol.auth.dto.UserInfoResponse;
-import com.solsolhey.solsol.auth.dto.CustomUserDetails;
 import com.solsolhey.solsol.auth.service.AuthService;
 import com.solsolhey.solsol.common.exception.BusinessException;
 import com.solsolhey.solsol.common.response.ApiResponse;
-// import com.solsolhey.solsol.common.security.RateLimitingService;  // 임시 비활성화
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -92,7 +91,7 @@ public class AuthController {
      * 로그인
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(
+    public ResponseEntity<ApiResponse<LoginSuccessDto>> login(
             @Valid @RequestBody LoginRequestDto requestDto,
             BindingResult bindingResult,
             HttpServletRequest request) {
@@ -106,15 +105,13 @@ public class AuthController {
                 errors.put(error.getField(), error.getDefaultMessage());
             }
             
-            LoginResponse response = LoginResponse.badRequest(
-                "로그인 요청이 올바르지 않습니다. 아이디와 비밀번호를 모두 입력해주세요.", 
-                errors
-            );
+            ApiResponse<LoginSuccessDto> response = ApiResponse.error(HttpStatus.BAD_REQUEST,
+                "로그인 요청이 올바르지 않습니다. 아이디와 비밀번호를 모두 입력해주세요.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
         
         // 로그인 처리
-        LoginResponse response = authService.login(requestDto);
+        ApiResponse<LoginSuccessDto> response = authService.login(requestDto);
         
         // 응답 상태 코드 결정
         if (response.isSuccess()) {
@@ -147,8 +144,8 @@ public class AuthController {
     /**
      * 로그아웃
      */
-    @PostMapping("/logout")
-    public ResponseEntity<LogoutResponse> logout(HttpServletRequest request) {
+    @DeleteMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request) {
         
         log.info("로그아웃 요청");
         
@@ -157,7 +154,7 @@ public class AuthController {
         
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
             log.warn("로그아웃 실패: Authorization 헤더가 없거나 잘못됨");
-            LogoutResponse response = LogoutResponse.authFailure("인증에 실패했습니다. 토큰을 확인해주세요.");
+            ApiResponse<Void> response = ApiResponse.unauthorized("인증에 실패했습니다. 토큰을 확인해주세요.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
         
@@ -172,12 +169,12 @@ public class AuthController {
             authService.logout(accessToken);
             
             log.info("로그아웃 완료");
-            LogoutResponse response = LogoutResponse.success("로그아웃 되었습니다.");
+            ApiResponse<Void> response = ApiResponse.<Void>success();
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
             log.warn("로그아웃 실패: {}", e.getMessage());
-            LogoutResponse response = LogoutResponse.authFailure("인증에 실패했습니다. 토큰을 확인해주세요.");
+            ApiResponse<Void> response = ApiResponse.unauthorized("인증에 실패했습니다. 토큰을 확인해주세요.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
     }
