@@ -5,10 +5,12 @@
         <div class="flex items-center justify-between mb-6">
           <div class="flex items-center space-x-4">
             <router-link 
-              to="/dashboard" 
-              class="px-4 py-2 text-blue-500 hover:text-blue-700 transition-colors font-semibold"
+              to="/mascot" 
+              class="p-2 text-blue-500 hover:text-blue-700 transition-colors rounded-full hover:bg-blue-50"
             >
-              ← 메인으로
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+              </svg>
             </router-link>
             <h2 class="text-3xl font-bold text-blue-600">친구 목록</h2>
           </div>
@@ -66,15 +68,6 @@
           </div>
           <h3 class="text-xl font-semibold text-gray-700 mb-2">친구가 없습니다</h3>
           <p class="text-gray-500 mb-6">새로운 친구를 추가하고 함께 쏠쏠Hey를 즐겨보세요!</p>
-          <router-link 
-            to="/friend/add" 
-            class="inline-flex items-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold text-lg"
-          >
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-            </svg>
-            친구 추가하러 가기
-          </router-link>
         </div>
       </div>
     </div>
