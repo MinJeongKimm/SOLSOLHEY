@@ -6,7 +6,6 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -204,35 +203,6 @@ public class AuthController {
         
         return ResponseEntity.ok(
                 ApiResponse.success(message, isAvailable));
-    }
-
-    /**
-     * 클라이언트 IP 주소 추출
-     * 프록시나 로드밸런서를 고려한 실제 IP 추출
-     */
-    private String getClientIpAddress(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (StringUtils.hasText(xForwardedFor)) {
-            // 첫 번째 IP가 실제 클라이언트 IP
-            return xForwardedFor.split(",")[0].trim();
-        }
-        
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (StringUtils.hasText(xRealIp)) {
-            return xRealIp;
-        }
-        
-        String xForwarded = request.getHeader("X-Forwarded");
-        if (StringUtils.hasText(xForwarded)) {
-            return xForwarded;
-        }
-        
-        String forwarded = request.getHeader("Forwarded");
-        if (StringUtils.hasText(forwarded)) {
-            return forwarded;
-        }
-        
-        return request.getRemoteAddr();
     }
 
     /**
