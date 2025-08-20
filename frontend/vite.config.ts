@@ -5,7 +5,7 @@ import path from 'path'
 export default defineConfig({
   plugins: [vue()],
   root: 'solsol',
-  publicDir: '../public',
+  publicDir: 'public',
   build: {
     outDir: '../dist',
     emptyOutDir: true

@@ -77,9 +77,14 @@
           
           <!-- 마스코트 캐릭터 -->
           <div v-if="currentMascot" class="relative z-10 text-center">
-            <!-- 메인 캐릭터 (이모지로 대체) -->
-            <div class="text-9xl mb-4 animate-bounce">
-              {{ getMascotEmoji(currentMascot.type) }}
+            <!-- 메인 캐릭터 이미지 -->
+            <div class="mb-4 animate-bounce">
+              <img 
+                :src="getMascotImageUrl(currentMascot.type)" 
+                :alt="getMascotTypeDisplay(currentMascot.type)"
+                class="w-48 h-48 object-contain mx-auto rounded-xl"
+                @error="handleImageError"
+              />
             </div>
             
             <!-- 장착된 아이템 정보 -->
@@ -165,15 +170,15 @@ const showToast = ref(false);
 const toastMessage = ref('');
 
 // 유틸리티 함수들
-function getMascotEmoji(type: string): string {
-  const emojiMap: Record<string, string> = {
-    bear: '🐻',
-    tiger: '🐯',
-    eagle: '🦅',
-    lion: '🦁',
-    panda: '🐼'
-  };
-  return emojiMap[type] || '🐾';
+function getMascotImageUrl(type: string): string {
+  const typeObj = mascotTypes.find(t => t.id === type);
+  return typeObj ? typeObj.imageUrl : '/images/soll.png';
+}
+
+function handleImageError(event: Event) {
+  const target = event.target as HTMLImageElement;
+  target.src = '/images/soll.png'; // 기본 이미지로 대체
+  console.error('이미지 로드 실패:', target.src);
 }
 
 function getMascotTypeDisplay(type: string): string {
@@ -234,7 +239,6 @@ function loadMascotData() {
 
 // 컴포넌트 마운트
 onMounted(() => {
-  console.log('마스코트 메인 페이지 로드됨');
   loadMascotData();
 });
 </script>
