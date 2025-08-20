@@ -17,7 +17,7 @@ import java.util.List;
  * 챌린지 관련 컨트롤러
  */
 @RestController
-@RequestMapping("/challenges")
+@RequestMapping("/api/v1/challenges")
 @RequiredArgsConstructor
 @Slf4j
 public class ChallengeController {

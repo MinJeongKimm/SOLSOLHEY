@@ -126,13 +126,37 @@ public class AuthService {
     }
 
     /**
-     * 로그아웃 (클라이언트에서 토큰 삭제)
-     * 서버에서는 별도 처리 없음 (토큰 블랙리스트 구현 시 추가 가능)
+     * 로그아웃 (토큰 블랙리스트 처리)
+     * 토큰을 블랙리스트에 추가하여 재사용을 방지
      */
     public void logout(String accessToken) {
-        log.info("로그아웃 처리");
-        // 현재는 클라이언트에서 토큰을 삭제하는 것으로 처리
-        // 향후 토큰 블랙리스트 기능을 구현할 수 있음
+        log.info("로그아웃 처리 시작");
+        
+        try {
+            // 토큰 유효성 기본 검증 (만료된 토큰도 블랙리스트에 추가)
+            if (accessToken == null || accessToken.isBlank()) {
+                log.warn("로그아웃 시도: 빈 토큰");
+                return;
+            }
+            
+            // 사용자 정보 추출 (로그 용도)
+            try {
+                Long userId = jwtTokenProvider.getUserIdFromToken(accessToken);
+                String username = jwtTokenProvider.getUsernameFromToken(accessToken);
+                log.info("로그아웃 사용자: userId={}, username={}", userId, username);
+            } catch (Exception e) {
+                log.debug("토큰에서 사용자 정보 추출 실패 (만료된 토큰일 수 있음): {}", e.getMessage());
+            }
+            
+            // 토큰을 블랙리스트에 추가
+            jwtTokenProvider.blacklistToken(accessToken);
+            
+            log.info("로그아웃 완료: 토큰이 블랙리스트에 추가됨");
+            
+        } catch (Exception e) {
+            log.error("로그아웃 처리 중 오류 발생: {}", e.getMessage(), e);
+            // 로그아웃은 실패해도 클라이언트에서 토큰을 제거하므로 예외를 던지지 않음
+        }
     }
 
     /**

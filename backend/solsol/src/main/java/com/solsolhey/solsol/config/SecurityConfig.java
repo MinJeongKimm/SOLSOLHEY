@@ -1,11 +1,10 @@
 package com.solsolhey.solsol.config;
 
-import com.solsolhey.solsol.auth.jwt.JwtAuthenticationFilter;
-import com.solsolhey.solsol.auth.service.CustomUserDetailsService;
-import lombok.RequiredArgsConstructor;
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -23,8 +22,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.List;
+import com.solsolhey.solsol.auth.jwt.JwtAuthenticationFilter;
+import com.solsolhey.solsol.auth.service.CustomUserDetailsService;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Spring Security 설정
@@ -37,6 +38,7 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final Environment environment;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -52,22 +54,23 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
             // 요청별 권한 설정
-            .authorizeHttpRequests(authz -> authz
+            .authorizeHttpRequests(authz -> {
                 // 공개 API (인증 불필요)
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/public/**").permitAll()
-                .requestMatchers("/health").permitAll()
+                authz.requestMatchers("/api/v1/auth/**").permitAll()  // 실제 API 경로에 맞게 수정
+                    .requestMatchers("/auth/**").permitAll()  // 혹시 모를 레거시 경로
+                    .requestMatchers("/public/**").permitAll()
+                    .requestMatchers("/health").permitAll();
                 
-                // H2 Console (개발환경용)
-                .requestMatchers("/h2-console/**").permitAll()
-                
-                // Swagger UI (개발환경용)
-                .requestMatchers("/swagger-ui/**").permitAll()
-                .requestMatchers("/v3/api-docs/**").permitAll()
+                // 개발환경에서만 허용되는 엔드포인트
+                if (isDevelopmentEnvironment()) {
+                    authz.requestMatchers("/h2-console/**").permitAll()  // H2 Console
+                         .requestMatchers("/swagger-ui/**").permitAll()   // Swagger UI
+                         .requestMatchers("/v3/api-docs/**").permitAll(); // Swagger API Docs
+                }
                 
                 // 기타 모든 요청은 인증 필요
-                .anyRequest().authenticated()
-            )
+                authz.anyRequest().authenticated();
+            })
             
             // JWT 인증 필터 추가
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -89,20 +92,18 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 허용할 Origin (프론트엔드 URL)
-        configuration.setAllowedOriginPatterns(List.of("*")); // 개발환경용, 운영환경에서는 구체적인 도메인 설정
+        // 환경변수 또는 application.yml에서 CORS 설정 읽어오기
+        String allowedOrigins = environment.getProperty("cors.allowed-origins", "http://localhost:3000");
+        String allowedMethods = environment.getProperty("cors.allowed-methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+        String allowedHeaders = environment.getProperty("cors.allowed-headers", "*");
+        boolean allowCredentials = environment.getProperty("cors.allow-credentials", Boolean.class, true);
+        long maxAge = environment.getProperty("cors.max-age", Long.class, 3600L);
         
-        // 허용할 HTTP 메서드
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        
-        // 허용할 헤더
-        configuration.setAllowedHeaders(List.of("*"));
-        
-        // 인증 정보 포함 허용
-        configuration.setAllowCredentials(true);
-        
-        // 브라우저 캐시 시간 (초)
-        configuration.setMaxAge(3600L);
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        configuration.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
+        configuration.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
+        configuration.setAllowCredentials(allowCredentials);
+        configuration.setMaxAge(maxAge);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -136,5 +137,27 @@ public class SecurityConfig {
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
+    }
+
+    /**
+     * 개발환경 여부 확인
+     * local, dev 프로파일인 경우 개발환경으로 판단
+     */
+    private boolean isDevelopmentEnvironment() {
+        String[] activeProfiles = environment.getActiveProfiles();
+        
+        // 활성 프로파일이 없을 때는 기본값 확인
+        if (activeProfiles.length == 0) {
+            String[] defaultProfiles = environment.getDefaultProfiles();
+            activeProfiles = defaultProfiles.length > 0 ? defaultProfiles : new String[]{"default"};
+        }
+        
+        for (String profile : activeProfiles) {
+            if ("local".equals(profile) || "dev".equals(profile) || "default".equals(profile)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }
