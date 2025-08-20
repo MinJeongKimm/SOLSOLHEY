@@ -2,12 +2,7 @@ package com.solsolhey.solsol.controller;
 
 import com.solsolhey.solsol.common.response.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 애플리케이션 상태 확인 컨트롤러
