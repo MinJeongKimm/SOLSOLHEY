@@ -3,7 +3,15 @@
     <div class="flex flex-col items-center justify-center min-h-screen pt-16">
       <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-4xl">
         <div class="flex items-center justify-between mb-6">
-          <h2 class="text-3xl font-bold text-blue-600">친구 목록</h2>
+          <div class="flex items-center space-x-4">
+            <router-link 
+              to="/dashboard" 
+              class="px-4 py-2 text-blue-500 hover:text-blue-700 transition-colors font-semibold"
+            >
+              ← 메인으로
+            </router-link>
+            <h2 class="text-3xl font-bold text-blue-600">친구 목록</h2>
+          </div>
           <router-link 
             to="/friend/add" 
             class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
