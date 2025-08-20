@@ -29,8 +29,10 @@ export interface LoginRequest {
 export interface LoginResponse {
   success: boolean;
   message: string;
-  token?: string;
-  username?: string;
+  data?: {
+    token: string;
+    username: string;
+  };
   errors?: Record<string, string>;
 }
 

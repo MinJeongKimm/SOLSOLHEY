@@ -7,12 +7,12 @@ import com.solsolhey.mascot.dto.MascotUpdateRequest;
 import com.solsolhey.mascot.exception.MascotAlreadyExistsException;
 import com.solsolhey.mascot.exception.MascotNotFoundException;
 import com.solsolhey.mascot.service.MascotService;
+import com.solsolhey.solsol.auth.dto.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,11 +32,11 @@ public class MascotController {
      */
     @PostMapping
     public ResponseEntity<Map<String, Object>> createMascot(
-            @AuthenticationPrincipal Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody MascotCreateRequest request) {
         
         try {
-            Long userId = getUserId(authentication);
+            Long userId = userDetails.getUserId();
             log.info("마스코트 생성 API 호출 - 사용자 ID: {}", userId);
             
             MascotResponse response = mascotService.createMascot(userId, request);
@@ -61,10 +61,10 @@ public class MascotController {
      */
     @GetMapping
     public ResponseEntity<Map<String, Object>> getMascot(
-            @AuthenticationPrincipal Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         
         try {
-            Long userId = getUserId(authentication);
+            Long userId = userDetails.getUserId();
             log.info("마스코트 조회 API 호출 - 사용자 ID: {}", userId);
             
             MascotResponse response = mascotService.getMascot(userId);
@@ -89,11 +89,11 @@ public class MascotController {
      */
     @PatchMapping
     public ResponseEntity<Map<String, Object>> updateMascot(
-            @AuthenticationPrincipal Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody MascotUpdateRequest request) {
         
         try {
-            Long userId = getUserId(authentication);
+            Long userId = userDetails.getUserId();
             log.info("마스코트 업데이트 API 호출 - 사용자 ID: {}", userId);
             
             MascotResponse response = mascotService.updateMascot(userId, request);
@@ -118,11 +118,11 @@ public class MascotController {
      */
     @PostMapping("/equip")
     public ResponseEntity<Map<String, Object>> equipMascot(
-            @AuthenticationPrincipal Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody MascotEquipRequest request) {
         
         try {
-            Long userId = getUserId(authentication);
+            Long userId = userDetails.getUserId();
             log.info("마스코트 아이템 장착 API 호출 - 사용자 ID: {}", userId);
             
             MascotResponse response = mascotService.equipMascot(userId, request);
@@ -147,10 +147,10 @@ public class MascotController {
      */
     @DeleteMapping
     public ResponseEntity<Map<String, Object>> deleteMascot(
-            @AuthenticationPrincipal Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         
         try {
-            Long userId = getUserId(authentication);
+            Long userId = userDetails.getUserId();
             log.info("마스코트 삭제 API 호출 - 사용자 ID: {}", userId);
             
             mascotService.deleteMascot(userId);
@@ -170,24 +170,7 @@ public class MascotController {
         }
     }
     
-    /**
-     * Authentication에서 사용자 ID 추출
-     * TODO: 실제 인증 구현에 맞게 수정 필요
-     */
-    private Long getUserId(Authentication authentication) {
-        // 임시로 하드코딩된 사용자 ID 반환 (실제 구현 시 수정 필요)
-        if (authentication == null || authentication.getName() == null) {
-            return 1L; // 기본 사용자 ID
-        }
-        
-        try {
-            return Long.parseLong(authentication.getName());
-        } catch (NumberFormatException e) {
-            log.warn("사용자 ID 파싱 실패: {}", authentication.getName());
-            return 1L; // 기본 사용자 ID
-        }
-    }
-    
+
     /**
      * 에러 응답 생성
      */

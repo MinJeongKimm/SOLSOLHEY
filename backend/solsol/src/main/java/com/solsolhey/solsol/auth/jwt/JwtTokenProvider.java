@@ -49,9 +49,9 @@ public class JwtTokenProvider {
                 .claim("userId", userId)
                 .claim("username", username)
                 .claim("tokenType", "access")
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(secretKey)
                 .compact();
     }
 
@@ -65,9 +65,9 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .claim("userId", userId)
                 .claim("tokenType", "refresh")
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(secretKey)
                 .compact();
     }
 
@@ -110,10 +110,10 @@ public class JwtTokenProvider {
         Claims claims = parseClaims(token);
         Object userId = claims.get("userId");
         
-        if (userId instanceof Integer) {
-            return ((Integer) userId).longValue();
-        } else if (userId instanceof Long) {
-            return (Long) userId;
+        if (userId instanceof Integer integer) {
+            return integer.longValue();
+        } else if (userId instanceof Long longValue) {
+            return longValue;
         } else {
             throw new AuthException.InvalidTokenException("Invalid userId in token");
         }
@@ -147,7 +147,7 @@ public class JwtTokenProvider {
                     .getPayload();
         } catch (ExpiredJwtException e) {
             return e.getClaims();
-        } catch (Exception e) {
+        } catch (SecurityException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException e) {
             throw new AuthException.InvalidTokenException("Failed to parse token claims");
         }
     }
@@ -169,7 +169,7 @@ public class JwtTokenProvider {
         try {
             Claims claims = parseClaims(token);
             return claims.getExpiration().before(new Date());
-        } catch (Exception e) {
+        } catch (SecurityException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException | ExpiredJwtException e) {
             return true;
         }
     }
@@ -214,7 +214,7 @@ public class JwtTokenProvider {
             
             tokenBlacklistService.blacklistToken(token, expirationTime);
             log.info("토큰이 블랙리스트에 추가됨");
-        } catch (Exception e) {
+        } catch (SecurityException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException | ExpiredJwtException e) {
             log.error("토큰 블랙리스트 추가 실패: {}", e.getMessage());
         }
     }
