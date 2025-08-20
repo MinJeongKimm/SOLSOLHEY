@@ -27,29 +27,20 @@ public class FinanceApiConfig {
     
     @Bean("financeWebClient")
     public WebClient financeWebClient() {
-        return WebClient.builder()
+        WebClient.Builder builder = WebClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
-                .filter(authenticationFilter())
                 .filter(loggingFilter())
                 .filter(errorHandlingFilter())
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024))
-                .build();
-    }
-    
-    /**
-     * 인증 헤더 추가 필터
-     */
-    private ExchangeFilterFunction authenticationFilter() {
-        return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
-            if (apiKey != null && !apiKey.isEmpty()) {
-                return Mono.just(clientRequest.mutate()
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-                        .build());
-            }
-            return Mono.just(clientRequest);
-        });
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024));
+        
+        // API 키가 있으면 기본 헤더에 추가
+        if (apiKey != null && !apiKey.isEmpty()) {
+            builder.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey);
+        }
+        
+        return builder.build();
     }
     
     /**
@@ -68,7 +59,9 @@ public class FinanceApiConfig {
     private ExchangeFilterFunction errorHandlingFilter() {
         return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
             if (clientResponse.statusCode().isError()) {
-                log.error("외부 API 응답 오류: {} {}", clientResponse.statusCode(), clientResponse.statusCode().getReasonPhrase());
+                log.error("외부 API 응답 오류: {} {}", 
+                    clientResponse.statusCode().value(), 
+                    clientResponse.statusCode());
             }
             return Mono.just(clientResponse);
         });

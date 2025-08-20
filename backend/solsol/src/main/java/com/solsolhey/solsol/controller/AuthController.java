@@ -9,6 +9,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,6 +25,7 @@ import com.solsolhey.solsol.auth.dto.TokenResponseDto;
 import com.solsolhey.solsol.auth.service.AuthService;
 import com.solsolhey.solsol.common.exception.BusinessException;
 import com.solsolhey.solsol.common.response.ApiResponse;
+import com.solsolhey.solsol.common.security.RateLimitingService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -40,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthController {
 
     private final AuthService authService;
+    private final RateLimitingService rateLimitingService;
 
     /**
      * 회원가입
@@ -88,7 +91,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequestDto requestDto,
-            BindingResult bindingResult) {
+            BindingResult bindingResult,
+            HttpServletRequest request) {
         
         log.info("로그인 요청: userId={}", requestDto.getUserId());
         
@@ -111,6 +115,11 @@ public class AuthController {
         
         // 응답 상태 코드 결정
         if (response.isSuccess()) {
+            // 로그인 성공 시 Rate Limiting 보상 토큰 지급
+            String clientIp = getClientIpAddress(request);
+            rateLimitingService.onLoginSuccess(clientIp);
+            log.debug("로그인 성공 보상 토큰 지급: IP={}", clientIp);
+            
             return ResponseEntity.ok(response); // 200 OK
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // 401 Unauthorized
@@ -200,5 +209,34 @@ public class AuthController {
         
         return ResponseEntity.ok(
                 ApiResponse.success(message, isAvailable));
+    }
+
+    /**
+     * 클라이언트 IP 주소 추출
+     * 프록시나 로드밸런서를 고려한 실제 IP 추출
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (StringUtils.hasText(xForwardedFor)) {
+            // 첫 번째 IP가 실제 클라이언트 IP
+            return xForwardedFor.split(",")[0].trim();
+        }
+        
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (StringUtils.hasText(xRealIp)) {
+            return xRealIp;
+        }
+        
+        String xForwarded = request.getHeader("X-Forwarded");
+        if (StringUtils.hasText(xForwarded)) {
+            return xForwarded;
+        }
+        
+        String forwarded = request.getHeader("Forwarded");
+        if (StringUtils.hasText(forwarded)) {
+            return forwarded;
+        }
+        
+        return request.getRemoteAddr();
     }
 }

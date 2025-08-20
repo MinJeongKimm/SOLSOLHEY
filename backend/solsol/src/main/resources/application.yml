@@ -5,6 +5,12 @@ finance:
     timeout: 10
     key: ${FINANCE_API_KEY:}
 
+# JWT 인증 설정
+jwt:
+  secret-key: ${JWT_SECRET_KEY:9ed4f9db32dc65abbbd68d960d467cdeb57f6aa920bbd790eec1b9fec5b4d5bc}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
+
 # 기존 설정들...
 spring:
   application:
