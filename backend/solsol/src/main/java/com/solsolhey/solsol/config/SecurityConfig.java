@@ -92,12 +92,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 환경변수 또는 application.yml에서 CORS 설정 읽어오기
-        String allowedOrigins = environment.getProperty("cors.allowed-origins", "http://localhost:3000");
-        String allowedMethods = environment.getProperty("cors.allowed-methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-        String allowedHeaders = environment.getProperty("cors.allowed-headers", "*");
-        boolean allowCredentials = environment.getProperty("cors.allow-credentials", Boolean.class, true);
-        long maxAge = environment.getProperty("cors.max-age", Long.class, 3600L);
+        // 직접 환경변수에서 CORS 설정 읽어오기
+        String allowedOrigins = environment.getProperty("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173");
+        String allowedMethods = environment.getProperty("CORS_ALLOWED_METHODS", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+        String allowedHeaders = environment.getProperty("CORS_ALLOWED_HEADERS", "*");
+        boolean allowCredentials = Boolean.parseBoolean(environment.getProperty("CORS_ALLOW_CREDENTIALS", "true"));
+        long maxAge = Long.parseLong(environment.getProperty("CORS_MAX_AGE", "3600"));
         
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         configuration.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
