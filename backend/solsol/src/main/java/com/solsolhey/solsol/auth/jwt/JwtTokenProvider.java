@@ -147,7 +147,7 @@ public class JwtTokenProvider {
                     .getPayload();
         } catch (ExpiredJwtException e) {
             return e.getClaims();
-        } catch (Exception e) {
+        } catch (SecurityException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException e) {
             throw new AuthException.InvalidTokenException("Failed to parse token claims");
         }
     }
@@ -169,7 +169,7 @@ public class JwtTokenProvider {
         try {
             Claims claims = parseClaims(token);
             return claims.getExpiration().before(new Date());
-        } catch (Exception e) {
+        } catch (SecurityException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException | ExpiredJwtException e) {
             return true;
         }
     }
@@ -214,7 +214,7 @@ public class JwtTokenProvider {
             
             tokenBlacklistService.blacklistToken(token, expirationTime);
             log.info("토큰이 블랙리스트에 추가됨");
-        } catch (Exception e) {
+        } catch (SecurityException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException | ExpiredJwtException e) {
             log.error("토큰 블랙리스트 추가 실패: {}", e.getMessage());
         }
     }
