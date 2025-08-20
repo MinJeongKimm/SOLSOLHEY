@@ -1,6 +1,5 @@
 package com.solsolhey.solsol.common.security;
 
-import com.solsolhey.solsol.common.response.ApiResponse;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -8,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
@@ -107,12 +105,8 @@ public class RateLimitingFilter implements Filter {
             return false;
         }
         
-        // H2 Console은 개발환경에서만 동작하므로 제외
-        if (requestPath.startsWith("/h2-console")) {
-            return false;
-        }
-        
-        return true;
+        // H2 Console은 개발환경에서만 동작하므로 제외하고, 나머지는 적용
+        return !requestPath.startsWith("/h2-console");
     }
 
     /**

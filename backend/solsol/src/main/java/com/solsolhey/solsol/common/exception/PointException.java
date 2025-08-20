@@ -1,7 +1,5 @@
 package com.solsolhey.solsol.common.exception;
 
-import org.springframework.http.HttpStatus;
-
 /**
  * 포인트 관련 예외
  */
