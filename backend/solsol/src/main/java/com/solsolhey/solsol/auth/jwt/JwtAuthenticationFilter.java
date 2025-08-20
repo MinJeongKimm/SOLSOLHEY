@@ -77,7 +77,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             
         } catch (AuthException e) {
             handleAuthenticationException(response, e);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("JWT authentication error: ", e);
             handleAuthenticationException(response, 
                 new AuthException.InvalidTokenException("토큰 처리 중 오류가 발생했습니다."));
