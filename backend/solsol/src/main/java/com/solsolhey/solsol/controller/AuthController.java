@@ -167,7 +167,7 @@ public class AuthController {
             ApiResponse<Void> response = ApiResponse.<Void>success();
             return ResponseEntity.ok(response);
             
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.warn("로그아웃 실패: {}", e.getMessage());
             ApiResponse<Void> response = ApiResponse.unauthorized("인증에 실패했습니다. 토큰을 확인해주세요.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
