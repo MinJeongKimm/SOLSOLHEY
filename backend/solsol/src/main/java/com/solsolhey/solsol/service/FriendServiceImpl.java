@@ -1,23 +1,38 @@
 package com.solsolhey.solsol.service;
 
-import com.solsolhey.solsol.common.exception.BusinessException;
-import com.solsolhey.solsol.common.exception.EntityNotFoundException;
-import com.solsolhey.solsol.dto.friend.*;
-import com.solsolhey.solsol.entity.*;
-import com.solsolhey.solsol.repository.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.sql.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Date;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.solsolhey.solsol.common.exception.BusinessException;
+import com.solsolhey.solsol.common.exception.EntityNotFoundException;
+import com.solsolhey.solsol.dto.friend.FriendAddRequest;
+import com.solsolhey.solsol.dto.friend.FriendInteractionRequest;
+import com.solsolhey.solsol.dto.friend.FriendInteractionResponse;
+import com.solsolhey.solsol.dto.friend.FriendListResponse;
+import com.solsolhey.solsol.dto.friend.FriendResponse;
+import com.solsolhey.solsol.dto.friend.FriendSearchResponse;
+import com.solsolhey.solsol.dto.friend.FriendStatsResponse;
+import com.solsolhey.solsol.entity.Friend;
+import com.solsolhey.solsol.entity.FriendInteraction;
+import com.solsolhey.solsol.entity.FriendInvitation;
+import com.solsolhey.solsol.entity.PointTransaction;
+import com.solsolhey.solsol.entity.User;
+import com.solsolhey.solsol.repository.FriendInteractionRepository;
+import com.solsolhey.solsol.repository.FriendInvitationRepository;
+import com.solsolhey.solsol.repository.FriendRepository;
+import com.solsolhey.solsol.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 친구 관리 서비스 구현체
