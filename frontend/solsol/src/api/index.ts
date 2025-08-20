@@ -4,7 +4,6 @@ import type {
   LoginRequest,
   LoginResponse,
   LogoutResponse,
-  ApiError,
   ErrorResponse,
   CreateMascotRequest,
   CreateMascotResponse,
@@ -13,11 +12,14 @@ import type {
   UpdateMascotRequest,
   UpdateMascotResponse,
   GetMascotResponse,
-  GetItemsResponse
+  GetItemsResponse,
+  MascotCreateRequest,
+  MascotApiResponse
 } from '../types/api';
+import { ApiError } from '../types/api';
 
 // API 기본 설정
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
 // API 요청 헬퍼 함수
 async function apiRequest<T>(
@@ -68,7 +70,7 @@ async function apiRequest<T>(
 
 // 회원가입 API
 export async function signup(userData: SignupRequest): Promise<SignupResponse> {
-  return apiRequest<SignupResponse>('/signup', {
+  return apiRequest<SignupResponse>('/auth/signup', {
     method: 'POST',
     body: JSON.stringify(userData),
   });
@@ -76,7 +78,7 @@ export async function signup(userData: SignupRequest): Promise<SignupResponse> {
 
 // 로그인 API  
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  return apiRequest<LoginResponse>('/login', {
+  return apiRequest<LoginResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
   });
@@ -84,8 +86,8 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 
 // 로그아웃 API
 export async function logout(): Promise<LogoutResponse> {
-  return apiRequest<LogoutResponse>('/logout', {
-    method: 'DELETE',
+  return apiRequest<LogoutResponse>('/auth/logout', {
+    method: 'POST',
   });
 }
 
@@ -160,8 +162,8 @@ export async function equipItems(data: EquipItemsRequest): Promise<EquipItemsRes
 }
 
 // 마스코트 정보 수정
-export async function updateMascot(data: UpdateMascotRequest): Promise<UpdateMascotResponse> {
-  return apiRequest<UpdateMascotResponse>('/mascot', {
+export async function updateMascot(data: CreateMascotRequest): Promise<CreateMascotResponse> {
+  return apiRequest<CreateMascotResponse>('/mascot', {
     method: 'PATCH',
     body: JSON.stringify(data),
   });

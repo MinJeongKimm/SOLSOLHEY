@@ -54,6 +54,32 @@ export interface User {
   nickname: string;
 }
 
+// 마스코트 관련 타입 (백엔드 Mascot 엔티티 기반)
+export interface MascotCreateRequest {
+  name: string;
+  mascotType: string;
+}
+
+export interface MascotResponse {
+  mascotId: number;
+  userId: number;
+  name: string;
+  mascotType: string;
+  experiencePoint: number;
+  level: number;
+  evolutionStage: number;
+  expToNextLevel: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MascotApiResponse {
+  success: boolean;
+  message: string;
+  data?: MascotResponse;
+  errors?: Record<string, string>;
+}
+
 // API 에러 클래스
 export class ApiError extends Error {
   constructor(
