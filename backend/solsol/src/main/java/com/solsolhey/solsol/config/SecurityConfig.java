@@ -142,4 +142,26 @@ public class SecurityConfig {
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
+
+    /**
+     * 개발환경 여부 확인
+     * local, dev 프로파일인 경우 개발환경으로 판단
+     */
+    private boolean isDevelopmentEnvironment() {
+        String[] activeProfiles = environment.getActiveProfiles();
+        
+        // 활성 프로파일이 없을 때는 기본값 확인
+        if (activeProfiles.length == 0) {
+            String[] defaultProfiles = environment.getDefaultProfiles();
+            activeProfiles = defaultProfiles.length > 0 ? defaultProfiles : new String[]{"default"};
+        }
+        
+        for (String profile : activeProfiles) {
+            if ("local".equals(profile) || "dev".equals(profile) || "default".equals(profile)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 }
