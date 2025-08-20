@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-gradient-to-b from-blue-100 to-blue-300">
     <div class="flex flex-col items-center justify-center min-h-screen pt-16">
-      <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-2xl">
+      <div class="bg-white rounded-2xl shadow-lg p-8 w-full max-w-lg">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-3xl font-bold text-blue-600">친구 추가</h2>
           <router-link 
