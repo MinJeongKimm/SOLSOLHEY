@@ -1,0 +1,54 @@
+package com.solsolhey.solsol.dto.friend;
+
+import com.solsolhey.solsol.entity.Friend;
+import com.solsolhey.solsol.entity.User;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.time.LocalDateTime;
+
+/**
+ * 친구 정보 응답 DTO
+ */
+@Getter
+@Builder
+public class FriendResponse {
+
+    private Long friendId;
+    private Long userId;
+    private String username;
+    private String nickname;
+    private String campus;
+    private Integer totalPoints;
+    private String status;
+    private LocalDateTime createdAt;
+    
+    // 마스코트 정보 (선택사항)
+    private Long mascotId;
+    private String mascotName;
+    
+    public static FriendResponse from(Friend friend) {
+        User friendUser = friend.getFriendUser();
+        
+        return FriendResponse.builder()
+                .friendId(friend.getFriendId())
+                .userId(friendUser.getUserId())
+                .username(friendUser.getUsername())
+                .nickname(friendUser.getNickname())
+                .campus(friendUser.getCampus())
+                .totalPoints(friendUser.getTotalPoints())
+                .status(friend.getStatus().name())
+                .createdAt(friend.getCreatedAt())
+                .build();
+    }
+    
+    public static FriendResponse fromUser(User user) {
+        return FriendResponse.builder()
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .campus(user.getCampus())
+                .totalPoints(user.getTotalPoints())
+                .build();
+    }
+}

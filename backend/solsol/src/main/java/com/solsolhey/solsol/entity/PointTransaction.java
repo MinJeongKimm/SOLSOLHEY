@@ -90,6 +90,8 @@ public class PointTransaction extends BaseEntity {
         ADMIN("관리자 지급"),
         EVENT("이벤트 참여"),
         SOCIAL("소셜 활동"),
+        FRIEND_INVITE("친구 초대"),
+        FRIEND_INTERACTION("친구 상호작용"),
         REFUND("환불");
 
         private final String displayName;

@@ -70,4 +70,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE u.isActive = true ORDER BY u.totalPoints DESC")
     java.util.List<User> findTopUsersOrderByTotalPointsDesc(
             org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * 사용자명이나 닉네임으로 검색 (대소문자 무관)
+     */
+    @Query("SELECT u FROM User u WHERE u.isActive = true AND " +
+           "(LOWER(u.username) LIKE LOWER(CONCAT('%', :username, '%')) OR " +
+           "LOWER(u.nickname) LIKE LOWER(CONCAT('%', :nickname, '%')))")
+    java.util.List<User> findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(
+            @Param("username") String username, @Param("nickname") String nickname);
 }

@@ -1,0 +1,51 @@
+package com.solsolhey.solsol.dto.friend;
+
+import com.solsolhey.solsol.entity.User;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.util.List;
+
+/**
+ * 친구 검색 응답 DTO
+ */
+@Getter
+@Builder
+public class FriendSearchResponse {
+
+    private List<FriendSearchResult> results;
+    private Integer totalCount;
+    private String query;
+    
+    @Getter
+    @Builder
+    public static class FriendSearchResult {
+        private Long userId;
+        private String username;
+        private String nickname;
+        private String campus;
+        private Integer totalPoints;
+        private boolean isFriend; // 이미 친구인지 여부
+        private boolean isCurrentUser; // 현재 사용자 본인인지 여부
+        
+        public static FriendSearchResult fromUser(User user, boolean isFriend, boolean isCurrentUser) {
+            return FriendSearchResult.builder()
+                    .userId(user.getUserId())
+                    .username(user.getUsername())
+                    .nickname(user.getNickname())
+                    .campus(user.getCampus())
+                    .totalPoints(user.getTotalPoints())
+                    .isFriend(isFriend)
+                    .isCurrentUser(isCurrentUser)
+                    .build();
+        }
+    }
+    
+    public static FriendSearchResponse of(List<FriendSearchResult> results, String query) {
+        return FriendSearchResponse.builder()
+                .results(results)
+                .totalCount(results.size())
+                .query(query)
+                .build();
+    }
+}
