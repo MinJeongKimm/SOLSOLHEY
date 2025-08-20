@@ -96,9 +96,10 @@
               <div class="relative">
                 <!-- 마스코트 이미지 (크기 키움) -->
                 <img 
-                  src="/mascot/mascot_sol_base.png" 
-                  alt="마스코트" 
+                  :src="getMascotImageUrl(currentMascot.type)" 
+                  :alt="currentMascot.name" 
                   class="w-40 h-40 object-contain animate-float"
+                  @error="handleImageError"
                 />
                 
                 <!-- 장착된 아이템들 -->
@@ -190,17 +191,11 @@
       </div>
     </div>
 
-    <!-- 하단 탭바 -->
-    <div class="bg-white border-t border-gray-200 px-4 py-3">
-      <div class="flex justify-center">
-        <img src="/icons/icon_home.png" alt="홈" class="w-14 h-14" />
-      </div>
-    </div>
-    
+
     <!-- 알림 토스트 -->
     <div 
       v-if="showToast" 
-      class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all"
+      class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all"
     >
       {{ toastMessage }}
     </div>
@@ -208,7 +203,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { createMascot as createMascotApi, handleApiError, mascot } from '../api/index';
 import { mockMascot, mascotTypes, levelExperience } from '../data/mockData';
@@ -235,13 +230,16 @@ const toastMessage = ref('');
 
 // 유틸리티 함수들
 function getMascotImageUrl(type: string): string {
+  console.log('getMascotImageUrl 호출됨:', { type });
   const typeObj = mascotTypes.find(t => t.id === type);
-  return typeObj ? typeObj.imageUrl : '/images/soll.png';
+  const imageUrl = typeObj ? typeObj.imageUrl : '/mascot/soll.png';
+  console.log('결정된 이미지 URL:', imageUrl);
+  return imageUrl;
 }
 
 function handleImageError(event: Event) {
   const target = event.target as HTMLImageElement;
-  target.src = '/images/soll.png'; // 기본 이미지로 대체
+  target.src = '/mascot/soll.png'; // 기본 이미지로 대체
   console.error('이미지 로드 실패:', target.src);
 }
 
@@ -298,16 +296,30 @@ function showToastMessage(message: string) {
 // 마스코트 데이터 로드
 function loadMascotData() {
   const mascotData = mascot.getMascot();
+  console.log('로드된 마스코트 데이터:', mascotData); // 디버깅용
   if (mascotData) {
     currentMascot.value = mascotData;
+    console.log('currentMascot 설정 완료:', currentMascot.value); // 디버깅용
   } else {
+    console.log('마스코트 데이터가 없습니다. 생성 페이지로 이동합니다.'); // 디버깅용
     // 마스코트가 없으면 생성 페이지로 이동
     router.push('/mascot/create');
   }
 }
 
+// currentMascot 변경 감지
+watch(currentMascot, (newValue, oldValue) => {
+  console.log('currentMascot 변경됨:', {
+    oldValue,
+    newValue,
+    type: newValue?.type,
+    name: newValue?.name
+  });
+}, { deep: true });
+
 // 컴포넌트 마운트
 onMounted(() => {
+  console.log('Mascot 컴포넌트 마운트됨');
   loadMascotData();
 });
 </script>

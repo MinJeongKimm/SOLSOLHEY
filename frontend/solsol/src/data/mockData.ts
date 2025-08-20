@@ -169,25 +169,25 @@ export const mascotTypes = [
     id: 'soll', 
     name: '쏠', 
     description: '똑똑하고 신뢰할 수 있는 쏠 마스코트',
-    imageUrl: '/images/soll.png'
+    imageUrl: '/mascot/soll.png'
   },
   { 
     id: 'ray', 
     name: '레이', 
     description: '활발하고 에너지 넘치는 레이 마스코트',
-    imageUrl: '/images/ray.png'
+    imageUrl: '/mascot/ray.png'
   },
   { 
     id: 'rino', 
     name: '리노', 
     description: '차분하고 안정적인 리노 마스코트',
-    imageUrl: '/images/rino.png'
+    imageUrl: '/mascot/rino.png'
   },
   { 
     id: 'pli', 
     name: '플리', 
     description: '귀엽고 사랑스러운 플리 마스코트',
-    imageUrl: '/images/pli.png'
+    imageUrl: '/mascot/pli.png'
   }
 ];
 

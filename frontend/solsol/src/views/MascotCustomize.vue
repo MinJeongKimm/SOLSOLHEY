@@ -40,9 +40,10 @@
             <div class="relative">
               <!-- 마스코트 이미지 (크기 키움) -->
               <img 
-                src="/mascot/mascot_sol_base.png" 
-                alt="마스코트" 
+                :src="currentMascot ? getMascotImageUrl(currentMascot.type) : '/mascot/soll.png'" 
+                :alt="currentMascot?.name || '마스코트'" 
                 class="w-36 h-36 object-contain"
+                @error="handleMascotImageError"
               />
               
               <!-- 장착된 아이템들 -->
@@ -178,13 +179,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { mockMascot, realItems } from '../data/mockData';
+import { realItems, mascotTypes } from '../data/mockData';
+import { mascot } from '../api/index';
 import type { Mascot, Item } from '../types/api';
 
 const router = useRouter();
 
 // 반응형 데이터
-const currentMascot = ref<Mascot | null>(mockMascot);
+const currentMascot = ref<Mascot | null>(null);
 const items = ref<Item[]>(realItems);
 const userCoins = ref(15000);
 const selectedCategory = ref<'top' | 'pants' | 'accessory' | 'shoes' | 'bag'>('top');
@@ -218,6 +220,14 @@ const filteredItems = computed(() => {
 });
 
 // 유틸리티 함수들
+function getMascotImageUrl(type: string): string {
+  console.log('꾸미기 화면에서 getMascotImageUrl 호출됨:', { type });
+  const typeObj = mascotTypes.find(t => t.id === type);
+  const imageUrl = typeObj ? typeObj.imageUrl : '/mascot/soll.png';
+  console.log('꾸미기 화면에서 결정된 이미지 URL:', imageUrl);
+  return imageUrl;
+}
+
 function getCategoryName(category: string): string {
   const categoryMap: Record<string, string> = {
     top: '상의',
@@ -247,7 +257,23 @@ function isEquipped(item: Item): boolean {
 
 // 뒤로가기
 function goBack() {
-  router.push('/');
+  // 변경사항이 있는지 확인
+  const originalMascot = mascot.getMascot();
+  if (originalMascot && currentMascot.value) {
+    const hasChanges = JSON.stringify(originalMascot.equippedItems) !== 
+                      JSON.stringify(currentMascot.value.equippedItems);
+    
+    if (hasChanges) {
+      // 변경사항이 있으면 확인 다이얼로그 표시
+      if (confirm('변경사항이 있습니다. 저장하고 나가시겠습니까?')) {
+        // 변경사항을 localStorage에 저장
+        mascot.setMascot(currentMascot.value);
+        console.log('변경사항 저장 후 뒤로가기');
+      }
+    }
+  }
+  
+  router.push('/mascot');
 }
 
 // 아이템 장착/해제 토글
@@ -272,7 +298,12 @@ function toggleEquipItem(item: Item) {
         break;
     }
     
+    // 마스코트 데이터 업데이트
     currentMascot.value = updatedMascot;
+    
+    // localStorage에 변경사항 저장
+    mascot.setMascot(updatedMascot);
+    console.log('아이템 변경사항 localStorage에 저장됨:', updatedMascot);
     
     const message = isCurrentlyEquipped 
       ? `${item.name}을(를) 해제했습니다!`
@@ -285,7 +316,14 @@ function toggleEquipItem(item: Item) {
   }
 }
 
-// 이미지 로드 에러 처리
+// 마스코트 이미지 에러 처리
+function handleMascotImageError(event: Event) {
+  const img = event.target as HTMLImageElement;
+  img.src = '/mascot/soll.png'; // 기본 마스코트 이미지로 대체
+  console.error('마스코트 이미지 로드 실패:', img.src);
+}
+
+// 아이템 이미지 에러 처리
 function handleImageError(event: Event) {
   const img = event.target as HTMLImageElement;
   img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRjNGNEY2Ii8+Cjx0ZXh0IHg9IjIwIiB5PSIyNCIgZmlsbD0iIzlDQTNBRiIgZm9udC1zaXplPSIyNCIgdGV4dC1hbmNob3I9Im1pZGRsZSI+📦PC90ZXh0Pgo8L3N2Zz4K';
@@ -301,9 +339,24 @@ function showToastMessage(message: string) {
   }, 2000);
 }
 
+// 마스코트 데이터 로드
+function loadMascotData() {
+  const mascotData = mascot.getMascot();
+  if (mascotData) {
+    currentMascot.value = mascotData;
+    console.log('마스코트 데이터 로드됨:', mascotData);
+  } else {
+    console.error('마스코트 데이터를 찾을 수 없습니다.');
+    // 마스코트가 없으면 메인 페이지로 이동
+    router.push('/mascot');
+  }
+}
+
 // 컴포넌트 마운트
 onMounted(() => {
   console.log('마스코트 꾸미기 페이지 로드됨');
+  loadMascotData();
+  console.log('사용 가능한 아이템들:', items.value);
 });
 </script>
 
