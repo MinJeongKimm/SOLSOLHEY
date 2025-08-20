@@ -36,12 +36,12 @@
           <!-- 포인트 -->
           <div class="flex items-center space-x-2">
             <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5" />
-            <span class="font-bold text-orange-600">{{ userCoins }}P</span>
+            <span class="font-bold text-gray-900">{{ userCoins }}P</span>
           </div>
           <!-- 좋아요 -->
           <div class="flex items-center space-x-2">
             <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5" />
-            <span class="font-bold text-red-500">{{ userLikes }}</span>
+            <span class="font-bold text-gray-900">{{ userLikes }}</span>
           </div>
         </div>
         
@@ -84,11 +84,11 @@
             class="w-full h-80 rounded-2xl shadow-lg relative overflow-hidden flex items-center justify-center"
             style="background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%)"
           >
-            <!-- 배경 이미지 (크기 줄임) -->
+            <!-- 배경 이미지 (크기 조정) -->
             <img 
               src="/backgrounds/bg_base.png" 
               alt="방 배경" 
-              class="w-4/5 h-4/5 object-contain"
+              class="w-8/12 h-8/12 object-contain"
             />
             
             <!-- 마스코트 -->
@@ -143,8 +143,11 @@
           <!-- 경험치 진행바 -->
           <div class="w-full bg-gray-200 rounded-full h-3">
             <div 
-              class="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full transition-all duration-500"
-              :style="{ width: getExpPercentage() + '%' }"
+              class="h-3 rounded-full transition-all duration-500"
+              :style="{ 
+                width: getExpPercentage() + '%',
+                background: 'linear-gradient(90deg, #0046FF 0%, #4A90E2 100%)'
+              }"
             ></div>
           </div>
         </div>
@@ -157,7 +160,7 @@
             class="bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center space-y-2 hover:shadow-xl transition-all transform hover:scale-105"
           >
             <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <span class="text-2xl">👗</span>
+              <img src="/action/action_customize.png" alt="꾸미기" class="w-8 h-8" />
             </div>
             <span class="text-sm font-medium text-gray-700">꾸미기</span>
           </button>
@@ -168,7 +171,7 @@
             class="bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center space-y-2 hover:shadow-xl transition-all transform hover:scale-105"
           >
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <span class="text-2xl">🥄</span>
+              <img src="/action/action_feed.png" alt="밥주기" class="w-8 h-8" />
             </div>
             <span class="text-sm font-medium text-gray-700">밥주기</span>
           </button>
@@ -179,7 +182,7 @@
             class="bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center space-y-2 hover:shadow-xl transition-all transform hover:scale-105"
           >
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <span class="text-2xl">🛒</span>
+              <img src="/action/action_shop.png" alt="쇼핑하기" class="w-8 h-8" />
             </div>
             <span class="text-sm font-medium text-gray-700">쇼핑하기</span>
           </button>
@@ -190,11 +193,7 @@
     <!-- 하단 탭바 -->
     <div class="bg-white border-t border-gray-200 px-4 py-3">
       <div class="flex justify-center">
-        <div class="flex items-center space-x-2 bg-gray-900 text-white px-4 py-2 rounded-full">
-          <!-- Home 아이콘 (실제 아이콘 파일이 있으면 교체 가능) -->
-          <span class="text-lg">🏠</span>
-          <span class="text-sm font-medium">Home</span>
-        </div>
+        <img src="/icons/icon_home.png" alt="홈" class="w-14 h-14" />
       </div>
     </div>
 

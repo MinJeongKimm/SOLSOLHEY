@@ -84,9 +84,10 @@
             :class="[
               'flex-shrink-0 flex flex-col items-center p-3 rounded-xl transition-all min-w-[80px]',
               selectedCategory === category.id 
-                ? 'bg-purple-500 text-white shadow-lg' 
+                ? 'text-white shadow-lg' 
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             ]"
+            :style="selectedCategory === category.id ? { backgroundColor: '#0046FF' } : {}"
           >
             <div class="w-10 h-10 rounded-full flex items-center justify-center mb-2" 
                  :class="selectedCategory === category.id ? 'bg-white bg-opacity-20' : 'bg-white'">
@@ -207,7 +208,9 @@ const filteredItems = computed(() => {
   
   // 카테고리별 매핑
   if (categoryType === 'top') categoryType = 'head'; // Top은 머리 아이템으로
-  if (categoryType === 'pants') categoryType = 'clothing'; // Pants는 의상으로
+  if (categoryType === 'pants') return []; // Pants는 아직 아이템이 없음
+  if (categoryType === 'shoes') return []; // Shoes는 아직 아이템이 없음
+  if (categoryType === 'bag') return []; // Bag은 아직 아이템이 없음
   
   return items.value.filter(item => 
     item.type === categoryType && item.isOwned
