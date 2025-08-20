@@ -6,7 +6,6 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -100,11 +99,6 @@ public class AuthController {
         
         // Validation 에러 처리 (400 Bad Request)
         if (bindingResult.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            for (FieldError error : bindingResult.getFieldErrors()) {
-                errors.put(error.getField(), error.getDefaultMessage());
-            }
-            
             ApiResponse<LoginSuccessDto> response = ApiResponse.error(HttpStatus.BAD_REQUEST,
                 "로그인 요청이 올바르지 않습니다. 아이디와 비밀번호를 모두 입력해주세요.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
@@ -172,7 +166,7 @@ public class AuthController {
             ApiResponse<Void> response = ApiResponse.<Void>success();
             return ResponseEntity.ok(response);
             
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.warn("로그아웃 실패: {}", e.getMessage());
             ApiResponse<Void> response = ApiResponse.unauthorized("인증에 실패했습니다. 토큰을 확인해주세요.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
@@ -210,8 +204,6 @@ public class AuthController {
         return ResponseEntity.ok(
                 ApiResponse.success(message, isAvailable));
     }
-
-
 
     /**
      * 현재 사용자 정보 조회

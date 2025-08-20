@@ -18,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.lang.NonNull;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -40,8 +41,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
-                                  FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, 
+                                  @NonNull FilterChain filterChain) throws ServletException, IOException {
         
         try {
             String token = extractTokenFromRequest(request);
@@ -76,7 +77,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             
         } catch (AuthException e) {
             handleAuthenticationException(response, e);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("JWT authentication error: ", e);
             handleAuthenticationException(response, 
                 new AuthException.InvalidTokenException("토큰 처리 중 오류가 발생했습니다."));
@@ -120,7 +121,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * 필터를 적용하지 않을 경로들
      */
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
         
         // 공통 인증 불필요 경로들
