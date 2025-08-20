@@ -169,25 +169,25 @@ export const mascotTypes = [
     id: 'soll', 
     name: '쏠', 
     description: '똑똑하고 신뢰할 수 있는 쏠 마스코트',
-    imageUrl: '/images/soll.png'
+    imageUrl: '/mascot/soll.png'
   },
   { 
     id: 'ray', 
     name: '레이', 
     description: '활발하고 에너지 넘치는 레이 마스코트',
-    imageUrl: '/images/ray.png'
+    imageUrl: '/mascot/ray.png'
   },
   { 
     id: 'rino', 
     name: '리노', 
     description: '차분하고 안정적인 리노 마스코트',
-    imageUrl: '/images/rino.png'
+    imageUrl: '/mascot/rino.png'
   },
   { 
     id: 'pli', 
     name: '플리', 
     description: '귀엽고 사랑스러운 플리 마스코트',
-    imageUrl: '/images/pli.png'
+    imageUrl: '/mascot/pli.png'
   }
 ];
 
@@ -203,6 +203,65 @@ export const levelExperience = [
   { level: 8, requiredExp: 2800 },
   { level: 9, requiredExp: 3600 },
   { level: 10, requiredExp: 4500 }
+];
+
+// 실제 이미지를 사용한 아이템 데이터
+export const realItems: Item[] = [
+  // 머리 아이템들
+  {
+    id: 1001,
+    name: '토끼 귀',
+    type: 'head',
+    description: '귀여운 토끼 귀 머리띠입니다.',
+    price: 800,
+    imageUrl: '/items/item_head_bunny_ears.png',
+    rarity: 'rare',
+    isOwned: true
+  },
+  {
+    id: 1002,
+    name: '핑크 비니',
+    type: 'head',
+    description: '따뜻하고 스타일리시한 핑크 비니입니다.',
+    price: 500,
+    imageUrl: '/items/item_head_pink_beanie.png',
+    rarity: 'common',
+    isOwned: true
+  },
+  
+  // 액세서리들
+  {
+    id: 2001,
+    name: '하트 안경',
+    type: 'accessory',
+    description: '사랑스러운 하트 모양 안경입니다.',
+    price: 1200,
+    imageUrl: '/items/item_acc_glasses_heart.png',
+    rarity: 'epic',
+    isOwned: true
+  },
+  
+  // 의상들 (임시 데이터)
+  {
+    id: 3001,
+    name: '기본 티셔츠',
+    type: 'clothing',
+    description: '편안한 기본 티셔츠입니다.',
+    price: 300,
+    imageUrl: '/api/placeholder/100/100',
+    rarity: 'common',
+    isOwned: true
+  },
+  {
+    id: 3002,
+    name: '멋진 자켓',
+    type: 'clothing',
+    description: '스타일리시한 자켓입니다.',
+    price: 1000,
+    imageUrl: '/api/placeholder/100/100',
+    rarity: 'rare',
+    isOwned: true
+  }
 ];
 
 // 희귀도별 색상 테마

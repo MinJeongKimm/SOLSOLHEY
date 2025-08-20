@@ -267,7 +267,7 @@ function handleImageError(event: Event) {
   const target = event.target as HTMLImageElement;
   console.error('이미지 로드 실패:', target.src);
   // 기본 이미지로 대체
-  target.src = '/images/soll.png';
+  target.src = '/mascot/soll.png';
 }
 
 // 이미지 로드 성공 핸들링
@@ -292,7 +292,9 @@ async function createMascot() {
     };
     
     // localStorage에 마스코트 데이터 저장
+    console.log('생성할 마스코트 데이터:', newMascotData); // 디버깅용
     mascot.setMascot(newMascotData);
+    console.log('localStorage에 저장 완료'); // 디버깅용
     
     showToast.value = true;
     toastMessage.value = `${newMascotData.name}이(가) 태어났습니다! 🎉`;
