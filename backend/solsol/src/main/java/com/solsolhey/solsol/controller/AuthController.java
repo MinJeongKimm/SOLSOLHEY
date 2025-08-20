@@ -100,11 +100,6 @@ public class AuthController {
         
         // Validation 에러 처리 (400 Bad Request)
         if (bindingResult.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            for (FieldError error : bindingResult.getFieldErrors()) {
-                errors.put(error.getField(), error.getDefaultMessage());
-            }
-            
             ApiResponse<LoginSuccessDto> response = ApiResponse.error(HttpStatus.BAD_REQUEST,
                 "로그인 요청이 올바르지 않습니다. 아이디와 비밀번호를 모두 입력해주세요.");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
