@@ -89,7 +89,7 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 // 로그아웃 API
 export async function logout(): Promise<LogoutResponse> {
   return apiRequest<LogoutResponse>('/auth/logout', {
-    method: 'POST',
+    method: 'DELETE',
   });
 }
 
