@@ -34,7 +34,7 @@ public class EnvironmentConfig {
             
             log.info(".env 파일 로드 완료");
             
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.warn(".env 파일 로드 실패 - 시스템 환경변수 사용: {}", e.getMessage());
         }
     }
