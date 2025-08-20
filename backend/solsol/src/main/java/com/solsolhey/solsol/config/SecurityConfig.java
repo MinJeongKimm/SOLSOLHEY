@@ -59,7 +59,8 @@ public class SecurityConfig {
                 authz.requestMatchers("/api/v1/auth/**").permitAll()  // 실제 API 경로에 맞게 수정
                     .requestMatchers("/auth/**").permitAll()  // 혹시 모를 레거시 경로
                     .requestMatchers("/public/**").permitAll()
-                    .requestMatchers("/health").permitAll();
+                    .requestMatchers("/health").permitAll()
+                    .requestMatchers("/api/v1/shop/**").permitAll();  // Shop API 허용
                 
                 // 개발환경에서만 허용되는 엔드포인트
                 if (isDevelopmentEnvironment()) {
