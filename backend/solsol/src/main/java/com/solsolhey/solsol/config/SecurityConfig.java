@@ -56,7 +56,8 @@ public class SecurityConfig {
             // 요청별 권한 설정
             .authorizeHttpRequests(authz -> {
                 // 공개 API (인증 불필요)
-                authz.requestMatchers("/auth/**").permitAll()
+                authz.requestMatchers("/api/v1/auth/**").permitAll()  // 실제 API 경로에 맞게 수정
+                    .requestMatchers("/auth/**").permitAll()  // 혹시 모를 레거시 경로
                     .requestMatchers("/public/**").permitAll()
                     .requestMatchers("/health").permitAll();
                 

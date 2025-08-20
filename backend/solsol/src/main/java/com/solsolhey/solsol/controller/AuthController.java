@@ -25,7 +25,7 @@ import com.solsolhey.solsol.auth.dto.TokenResponseDto;
 import com.solsolhey.solsol.auth.service.AuthService;
 import com.solsolhey.solsol.common.exception.BusinessException;
 import com.solsolhey.solsol.common.response.ApiResponse;
-import com.solsolhey.solsol.common.security.RateLimitingService;
+// import com.solsolhey.solsol.common.security.RateLimitingService;  // 임시 비활성화
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -42,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AuthController {
 
     private final AuthService authService;
-    private final RateLimitingService rateLimitingService;
+    // private final RateLimitingService rateLimitingService;  // 임시 비활성화
 
     /**
      * 회원가입
@@ -115,10 +115,10 @@ public class AuthController {
         
         // 응답 상태 코드 결정
         if (response.isSuccess()) {
-            // 로그인 성공 시 Rate Limiting 보상 토큰 지급
-            String clientIp = getClientIpAddress(request);
-            rateLimitingService.onLoginSuccess(clientIp);
-            log.debug("로그인 성공 보상 토큰 지급: IP={}", clientIp);
+            // 로그인 성공 시 Rate Limiting 보상 토큰 지급 (임시 비활성화)
+            // String clientIp = getClientIpAddress(request);
+            // rateLimitingService.onLoginSuccess(clientIp);
+            // log.debug("로그인 성공 보상 토큰 지급: IP={}", clientIp);
             
             return ResponseEntity.ok(response); // 200 OK
         } else {

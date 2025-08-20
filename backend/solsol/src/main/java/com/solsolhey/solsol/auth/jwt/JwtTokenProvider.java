@@ -1,34 +1,42 @@
 package com.solsolhey.solsol.auth.jwt;
 
+import com.solsolhey.solsol.auth.service.TokenBlacklistService;
 import com.solsolhey.solsol.common.exception.AuthException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 /**
  * JWT 토큰 생성 및 검증 유틸리티
  */
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class JwtTokenProvider {
 
     private final SecretKey secretKey;
     private final long accessTokenValidityInMilliseconds;
     private final long refreshTokenValidityInMilliseconds;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public JwtTokenProvider(
             @Value("${jwt.secret-key}") String secretKey,
             @Value("${jwt.access-token-expiration}") long accessTokenExpiration,
-            @Value("${jwt.refresh-token-expiration}") long refreshTokenExpiration) {
+            @Value("${jwt.refresh-token-expiration}") long refreshTokenExpiration,
+            TokenBlacklistService tokenBlacklistService) {
         
         this.secretKey = Keys.hmacShaKeyFor(secretKey.getBytes());
         this.accessTokenValidityInMilliseconds = accessTokenExpiration;
         this.refreshTokenValidityInMilliseconds = refreshTokenExpiration;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     /**
@@ -65,10 +73,17 @@ public class JwtTokenProvider {
     }
 
     /**
-     * 토큰 유효성 검증
+     * 토큰 유효성 검증 (블랙리스트 확인 포함)
      */
     public boolean validateToken(String token) {
         try {
+            // 1. 블랙리스트 확인 (가장 먼저 체크)
+            if (tokenBlacklistService.isBlacklisted(token)) {
+                log.warn("블랙리스트된 토큰 사용 시도");
+                return false;
+            }
+
+            // 2. JWT 서명 및 구조 검증
             Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
@@ -182,5 +197,44 @@ public class JwtTokenProvider {
         
         String tokenType = getTokenType(token);
         return "refresh".equals(tokenType);
+    }
+
+    /**
+     * 토큰을 블랙리스트에 추가
+     * 로그아웃 시 호출됨
+     */
+    public void blacklistToken(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            Date expirationDate = claims.getExpiration();
+            
+            // Date를 LocalDateTime으로 변환
+            LocalDateTime expirationTime = expirationDate.toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+            
+            tokenBlacklistService.blacklistToken(token, expirationTime);
+            log.info("토큰이 블랙리스트에 추가됨");
+        } catch (Exception e) {
+            log.error("토큰 블랙리스트 추가 실패: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 토큰의 만료 시간을 LocalDateTime으로 반환
+     */
+    public LocalDateTime getExpirationAsLocalDateTime(String token) {
+        Claims claims = parseClaims(token);
+        Date expirationDate = claims.getExpiration();
+        return expirationDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+    }
+
+    /**
+     * 토큰 블랙리스트 상태 조회
+     */
+    public TokenBlacklistService.BlacklistStatus getBlacklistStatus() {
+        return tokenBlacklistService.getStatus();
     }
 }
