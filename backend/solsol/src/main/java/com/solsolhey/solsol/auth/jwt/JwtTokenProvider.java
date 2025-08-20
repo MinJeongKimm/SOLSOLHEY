@@ -49,9 +49,9 @@ public class JwtTokenProvider {
                 .claim("userId", userId)
                 .claim("username", username)
                 .claim("tokenType", "access")
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(secretKey)
                 .compact();
     }
 
@@ -65,9 +65,9 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .claim("userId", userId)
                 .claim("tokenType", "refresh")
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(secretKey)
                 .compact();
     }
 
