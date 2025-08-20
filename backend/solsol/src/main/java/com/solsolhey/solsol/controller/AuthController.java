@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +23,8 @@ import com.solsolhey.solsol.auth.dto.RefreshTokenRequestDto;
 import com.solsolhey.solsol.auth.dto.SignUpRequestDto;
 import com.solsolhey.solsol.auth.dto.SignUpResponse;
 import com.solsolhey.solsol.auth.dto.TokenResponseDto;
+import com.solsolhey.solsol.auth.dto.UserInfoResponse;
+import com.solsolhey.solsol.auth.dto.CustomUserDetails;
 import com.solsolhey.solsol.auth.service.AuthService;
 import com.solsolhey.solsol.common.exception.BusinessException;
 import com.solsolhey.solsol.common.response.ApiResponse;
@@ -238,5 +241,28 @@ public class AuthController {
         }
         
         return request.getRemoteAddr();
+    }
+
+    /**
+     * 현재 사용자 정보 조회
+     */
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UserInfoResponse>> getCurrentUser(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        try {
+            log.info("현재 사용자 정보 조회: userId={}", userDetails.getUserId());
+            
+            // UserDetails에서 User 엔티티 가져오기
+            UserInfoResponse userInfo = UserInfoResponse.from(userDetails.getUser());
+            
+            return ResponseEntity.ok(
+                    ApiResponse.success("사용자 정보 조회 성공", userInfo));
+                    
+        } catch (Exception e) {
+            log.error("사용자 정보 조회 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, "사용자 정보 조회에 실패했습니다."));
+        }
     }
 }

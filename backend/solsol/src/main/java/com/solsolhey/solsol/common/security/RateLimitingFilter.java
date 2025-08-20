@@ -17,7 +17,7 @@ import java.io.IOException;
  * Rate Limiting 필터
  * 모든 HTTP 요청에 대해 Rate Limiting 적용
  */
-@Component
+// @Component  // 임시 비활성화 - 토큰 블랙리스트 테스트 완료 후 재활성화 예정
 @RequiredArgsConstructor
 @Slf4j
 public class RateLimitingFilter implements Filter {

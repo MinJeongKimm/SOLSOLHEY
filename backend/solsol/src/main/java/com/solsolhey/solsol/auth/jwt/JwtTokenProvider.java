@@ -18,7 +18,6 @@ import java.util.Date;
  * JWT 토큰 생성 및 검증 유틸리티
  */
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class JwtTokenProvider {
 
