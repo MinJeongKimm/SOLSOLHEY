@@ -173,11 +173,6 @@ public class FriendServiceImpl implements FriendService {
             return FriendInteractionResponse.failure(request.getTargetUserId(), "자기 자신과는 상호작용할 수 없습니다.");
         }
 
-        // 친구인지 확인 (선택사항 - 친구가 아니어도 상호작용 가능하도록 할 수 있음)
-        // if (!areFriends(currentUser, targetUser)) {
-        //     return FriendInteractionResponse.failure(request.getTargetUserId(), "친구가 아닌 사용자입니다.");
-        // }
-
         Date today = Date.valueOf(LocalDate.now());
         
         // 오늘 이미 같은 타입의 상호작용을 했는지 확인

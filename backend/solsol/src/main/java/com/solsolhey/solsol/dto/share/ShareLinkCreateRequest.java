@@ -1,6 +1,7 @@
 package com.solsolhey.solsol.dto.share;
 
 import com.solsolhey.solsol.entity.ShareLink;
+
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,9 +1,9 @@
 package com.solsolhey.solsol.dto.friend;
 
+import java.util.List;
+
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.List;
 
 /**
  * 친구 목록 응답 DTO

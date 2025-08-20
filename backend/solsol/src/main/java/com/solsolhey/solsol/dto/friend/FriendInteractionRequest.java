@@ -1,6 +1,7 @@
 package com.solsolhey.solsol.dto.friend;
 
 import com.solsolhey.solsol.entity.FriendInteraction;
+
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,11 +1,12 @@
 package com.solsolhey.solsol.dto.friend;
 
+import java.time.LocalDateTime;
+
 import com.solsolhey.solsol.entity.Friend;
 import com.solsolhey.solsol.entity.User;
+
 import lombok.Builder;
 import lombok.Getter;
-
-import java.time.LocalDateTime;
 
 /**
  * 친구 정보 응답 DTO
