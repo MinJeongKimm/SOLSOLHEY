@@ -4,11 +4,17 @@ import Dashboard from '../views/Dashboard.vue'
 import Signup from '../views/Signup.vue'
 import Challenge from '../views/Challenge.vue'
 import Mascot from '../views/Mascot.vue'
+import MascotCustomize from '../views/MascotCustomize.vue'
 import { auth } from '../api/index'
 
 const routes = [
   { 
     path: '/', 
+    component: Mascot,
+    meta: { requiresGuest: false }
+  },
+  { 
+    path: '/login', 
     component: Login,
     meta: { requiresGuest: true }
   },
@@ -31,6 +37,11 @@ const routes = [
     path: '/mascot', 
     component: Mascot,
     meta: { requiresAuth: true }
+  },
+  { 
+    path: '/mascot/customize', 
+    component: MascotCustomize,
+    meta: { requiresAuth: true }
   }
 ]
 
@@ -39,7 +50,8 @@ const router = createRouter({
   routes,
 })
 
-// 인증 가드
+// 인증 가드 (임시 비활성화 - 마스코트 테스트용)
+/*
 router.beforeEach((to, from, next) => {
   const isAuthenticated = auth.isAuthenticated()
   
@@ -57,5 +69,6 @@ router.beforeEach((to, from, next) => {
   
   next()
 })
+*/
 
 export default router

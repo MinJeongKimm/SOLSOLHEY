@@ -5,6 +5,14 @@ import type {
   LoginResponse,
   LogoutResponse,
   ErrorResponse,
+  CreateMascotRequest,
+  CreateMascotResponse,
+  EquipItemsRequest,
+  EquipItemsResponse,
+  UpdateMascotRequest,
+  UpdateMascotResponse,
+  GetMascotResponse,
+  GetItemsResponse,
   MascotCreateRequest,
   MascotApiResponse
 } from '../types/api';
@@ -128,17 +136,42 @@ export const auth = {
   }
 };
 
-// 마스코트 생성 API
-export async function createMascot(mascotData: MascotCreateRequest): Promise<MascotApiResponse> {
-  return apiRequest<MascotApiResponse>('/mascots', {
+// 마스코트 관련 API 함수들
+
+// 마스코트 생성
+export async function createMascot(data: CreateMascotRequest): Promise<CreateMascotResponse> {
+  return apiRequest<CreateMascotResponse>('/mascot', {
     method: 'POST',
-    body: JSON.stringify(mascotData),
+    body: JSON.stringify(data),
   });
 }
 
-// 마스코트 조회 API
-export async function getMascot(): Promise<MascotApiResponse> {
-  return apiRequest<MascotApiResponse>('/mascots/me', {
+// 마스코트 조회
+export async function getMascot(): Promise<GetMascotResponse> {
+  return apiRequest<GetMascotResponse>('/mascot', {
+    method: 'GET',
+  });
+}
+
+// 마스코트 아이템 장착/꾸미기
+export async function equipItems(data: EquipItemsRequest): Promise<EquipItemsResponse> {
+  return apiRequest<EquipItemsResponse>('/mascot/equip', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// 마스코트 정보 수정
+export async function updateMascot(data: CreateMascotRequest): Promise<CreateMascotResponse> {
+  return apiRequest<CreateMascotResponse>('/mascot', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+// 아이템 목록 조회
+export async function getItems(): Promise<GetItemsResponse> {
+  return apiRequest<GetItemsResponse>('/items', {
     method: 'GET',
   });
 }

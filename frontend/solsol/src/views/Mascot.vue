@@ -1,249 +1,338 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-6">
-    <div class="max-w-md mx-auto">
-      <!-- 헤더 -->
-      <div class="text-center mb-8">
-        <div class="text-6xl mb-4">🐾</div>
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">나만의 마스코트 만들기</h1>
-        <p class="text-gray-600">특별한 마스코트를 만들어보세요!</p>
-      </div>
-
-      <!-- 마스코트 생성 폼 -->
-      <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-        <form @submit.prevent="handleSubmit" class="space-y-6">
-          <!-- 마스코트 이름 -->
-          <div>
-            <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">
-              마스코트 이름 <span class="text-red-500">*</span>
-            </label>
-            <input
-              id="name"
-              v-model="formData.name"
-              type="text"
-              placeholder="마스코트의 이름을 입력해주세요"
-              class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200"
-              :class="{ 'border-red-300 bg-red-50': errors.name }"
-              maxlength="50"
-            />
-            <div class="mt-1 flex justify-between">
-              <span v-if="errors.name" class="text-red-500 text-sm">{{ errors.name }}</span>
-              <span class="text-gray-400 text-sm ml-auto">{{ formData.name.length }}/50</span>
+  <div class="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100">
+    <!-- 상단 정보 바 -->
+    <div class="bg-white shadow-sm">
+      <div class="container mx-auto px-4 py-4">
+        <div class="flex justify-between items-center">
+          <!-- 코인 정보 -->
+          <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
+              <span class="text-2xl">🪙</span>
+              <span class="text-lg font-bold text-yellow-600">{{ userCoins }}P</span>
             </div>
           </div>
+          
+          <!-- 좋아요 수 -->
+          <div class="flex items-center space-x-2">
+            <span class="text-xl">❤️</span>
+            <span class="text-lg font-bold text-red-500">{{ userLikes }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
 
-          <!-- 마스코트 타입 -->
+    <!-- 메인 컨텐츠 -->
+    <div class="container mx-auto px-4 py-8">
+      <!-- 마스코트 정보 카드 -->
+      <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div v-if="currentMascot" class="text-center">
+          <!-- 마스코트 이름 -->
+          <h2 class="text-2xl font-bold text-purple-600 mb-2">{{ currentMascot.name }}</h2>
+          <p class="text-gray-600 mb-4">{{ getMascotTypeDisplay(currentMascot.type) }}</p>
+          
+          <!-- 레벨 정보 -->
+          <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-4">
+            <div class="flex justify-between items-center mb-2">
+              <span class="font-semibold text-gray-700">레벨 {{ currentMascot.level }}</span>
+              <span class="text-sm text-gray-500">{{ currentMascot.experiencePoint }} / {{ getNextLevelExp() }} XP</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+              <div 
+                class="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                :style="{ width: getExpPercentage() + '%' }"
+              ></div>
+            </div>
+          </div>
+          
+          <!-- 진화 단계 -->
+          <div class="mb-6">
+            <span class="inline-block bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+              진화 단계 {{ currentMascot.evolutionStage }}
+            </span>
+          </div>
+        </div>
+        
+        <!-- 마스코트가 없는 경우 -->
+        <div v-else class="text-center py-8">
+          <div class="text-6xl mb-4">🥚</div>
+          <p class="text-gray-600 mb-4">아직 마스코트가 없습니다</p>
+          <button 
+            @click="showCreateModal = true"
+            class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+          >
+            마스코트 생성하기
+          </button>
+        </div>
+      </div>
+      
+      <!-- 마스코트 캐릭터 영역 -->
+      <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+        <div class="relative h-80 flex items-center justify-center">
+          <!-- 배경 -->
+          <div 
+            v-if="currentMascot?.equippedItems.background" 
+            class="absolute inset-0 rounded-xl opacity-30"
+            :style="{ backgroundImage: `url(${currentMascot.equippedItems.background.imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }"
+          ></div>
+          
+          <!-- 마스코트 캐릭터 -->
+          <div v-if="currentMascot" class="relative z-10 text-center">
+            <!-- 메인 캐릭터 (이모지로 대체) -->
+            <div class="text-9xl mb-4 animate-bounce">
+              {{ getMascotEmoji(currentMascot.type) }}
+            </div>
+            
+            <!-- 장착된 아이템 정보 -->
+            <div class="text-center space-y-1">
+              <div v-if="currentMascot.equippedItems.clothing" class="text-sm text-gray-600">
+                착용중: {{ currentMascot.equippedItems.clothing.name }}
+              </div>
+              <div v-if="currentMascot.equippedItems.accessory" class="text-sm text-gray-600">
+                액세서리: {{ currentMascot.equippedItems.accessory.name }}
+              </div>
+            </div>
+          </div>
+          
+          <div v-else class="text-center">
+            <div class="text-9xl mb-4 opacity-50">🥚</div>
+            <p class="text-gray-500">마스코트를 생성해주세요!</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 하단 액션 버튼들 -->
+      <div v-if="currentMascot" class="grid grid-cols-3 gap-4">
+        <!-- 꾸미기 -->
+        <button 
+          @click="goToCustomize"
+          class="bg-purple-500 hover:bg-purple-600 text-white py-4 px-6 rounded-2xl font-bold text-lg shadow-lg transition-all transform hover:scale-105 flex flex-col items-center space-y-2"
+        >
+          <span class="text-2xl">🎨</span>
+          <span>꾸미기</span>
+        </button>
+        
+        <!-- 밥주기 -->
+        <button 
+          @click="showNotReady('밥주기')"
+          class="bg-green-500 hover:bg-green-600 text-white py-4 px-6 rounded-2xl font-bold text-lg shadow-lg transition-all transform hover:scale-105 flex flex-col items-center space-y-2"
+        >
+          <span class="text-2xl">🍎</span>
+          <span>밥주기</span>
+        </button>
+        
+        <!-- 쇼핑하기 -->
+        <button 
+          @click="showNotReady('쇼핑하기')"
+          class="bg-blue-500 hover:bg-blue-600 text-white py-4 px-6 rounded-2xl font-bold text-lg shadow-lg transition-all transform hover:scale-105 flex flex-col items-center space-y-2"
+        >
+          <span class="text-2xl">🛍️</span>
+          <span>쇼핑하기</span>
+        </button>
+      </div>
+    </div>
+    
+    <!-- 마스코트 생성 모달 -->
+    <div v-if="showCreateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">🐾 새 마스코트 생성</h3>
+        
+        <div class="space-y-4">
+          <!-- 이름 입력 -->
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-3">
-              마스코트 타입 <span class="text-red-500">*</span>
-            </label>
-            <div class="grid grid-cols-2 gap-3">
-              <button
-                v-for="type in mascotTypes"
-                :key="type.value"
-                type="button"
-                @click="formData.mascotType = type.value"
-                class="p-4 rounded-xl border-2 transition duration-200 hover:shadow-md"
-                :class="formData.mascotType === type.value 
-                  ? 'border-purple-500 bg-purple-50 text-purple-700' 
-                  : 'border-gray-200 hover:border-gray-300'"
+            <label class="block text-sm font-medium text-gray-700 mb-2">마스코트 이름</label>
+            <input 
+              v-model="newMascot.name"
+              type="text" 
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none"
+              placeholder="예: 쏠쏠이"
+              maxlength="20"
+            />
+          </div>
+          
+          <!-- 종류 선택 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">마스코트 종류</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button 
+                v-for="type in mascotTypes" 
+                :key="type.id"
+                @click="newMascot.type = type.id"
+                :class="[
+                  'p-3 rounded-lg border-2 transition-all',
+                  newMascot.type === type.id 
+                    ? 'border-purple-500 bg-purple-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                ]"
               >
-                <div class="text-2xl mb-1">{{ type.icon }}</div>
-                <div class="text-sm font-medium">{{ type.label }}</div>
+                <div class="text-2xl mb-1">{{ getMascotEmoji(type.id) }}</div>
+                <div class="text-sm font-medium">{{ type.name }}</div>
               </button>
             </div>
-            <span v-if="errors.mascotType" class="text-red-500 text-sm mt-1 block">{{ errors.mascotType }}</span>
           </div>
-
-          <!-- 마스코트 진화 단계 정보 -->
-          <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
-            <h3 class="text-sm font-semibold text-blue-800 mb-2">🌟 진화 시스템</h3>
-            <div class="text-xs text-blue-700 space-y-1">
-              <div>• 1단계 (Lv.1) → 2단계 (Lv.10)</div>
-              <div>• 2단계 (Lv.10) → 3단계 (Lv.30)</div>
-              <div>• 3단계 (Lv.30) → 4단계 (Lv.60)</div>
-              <div class="mt-2 text-blue-600">챌린지를 완료해서 경험치를 얻어보세요!</div>
-            </div>
-          </div>
-
-          <!-- 에러 메시지 -->
-          <div v-if="apiError" class="bg-red-50 border border-red-200 rounded-xl p-4">
-            <div class="flex items-center">
-              <span class="text-red-500 text-xl mr-2">⚠️</span>
-              <span class="text-red-700 text-sm">{{ apiError }}</span>
-            </div>
-          </div>
-
-          <!-- 성공 메시지 -->
-          <div v-if="successMessage" class="bg-green-50 border border-green-200 rounded-xl p-4">
-            <div class="flex items-center">
-              <span class="text-green-500 text-xl mr-2">✅</span>
-              <span class="text-green-700 text-sm">{{ successMessage }}</span>
-            </div>
-          </div>
-
-          <!-- 생성된 마스코트 정보 표시 -->
-          <div v-if="createdMascot" class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200">
-            <h3 class="text-sm font-semibold text-purple-800 mb-2">🎉 생성된 마스코트</h3>
-            <div class="space-y-1 text-sm text-purple-700">
-              <div><span class="font-medium">이름:</span> {{ createdMascot.name }}</div>
-              <div><span class="font-medium">타입:</span> {{ getMascotTypeLabel(createdMascot.mascotType) }}</div>
-              <div><span class="font-medium">레벨:</span> {{ createdMascot.level }}</div>
-              <div><span class="font-medium">진화 단계:</span> {{ createdMascot.evolutionStage }}단계</div>
-              <div><span class="font-medium">경험치:</span> {{ createdMascot.experiencePoint }}XP</div>
-            </div>
-          </div>
-
-          <!-- 제출 버튼 -->
-          <button
-            type="submit"
-            :disabled="isLoading || !isFormValid || !!createdMascot"
-            class="w-full py-3 px-6 rounded-xl font-semibold text-white transition duration-200 transform hover:scale-105"
-            :class="isLoading || !isFormValid || !!createdMascot
-              ? 'bg-gray-300 cursor-not-allowed' 
-              : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg'"
+        </div>
+        
+        <div class="flex space-x-3 mt-6">
+          <button 
+            @click="showCreateModal = false"
+            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg font-medium transition-colors"
           >
-            <span v-if="isLoading" class="flex items-center justify-center">
-              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              생성 중...
-            </span>
-            <span v-else-if="createdMascot">🎉 마스코트가 생성되었습니다!</span>
-            <span v-else>🌟 마스코트 만들기</span>
+            취소
           </button>
-
-          <!-- 새로 만들기 버튼 -->
-          <button
-            v-if="createdMascot"
-            type="button"
-            @click="resetForm"
-            class="w-full py-2 px-4 rounded-xl font-medium text-purple-600 border border-purple-300 hover:bg-purple-50 transition duration-200"
+          <button 
+            @click="createMascot"
+            :disabled="!newMascot.name || !newMascot.type"
+            class="flex-1 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg font-medium transition-colors"
           >
-            다른 마스코트 만들기
+            생성
           </button>
-        </form>
+        </div>
       </div>
-
-      <!-- 도움말 -->
-      <div class="mt-6 text-center text-sm text-gray-500">
-        <p>💡 팁: 마스코트는 챌린지를 완료할 때마다 경험치를 얻어 성장해요!</p>
-        <p class="mt-1">✨ 레벨이 올라가면 새로운 모습으로 진화합니다!</p>
-      </div>
+    </div>
+    
+    <!-- 알림 토스트 -->
+    <div 
+      v-if="showToast" 
+      class="fixed bottom-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all"
+      :class="{ 'opacity-0': !showToast }"
+    >
+      {{ toastMessage }}
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { createMascot, handleApiError } from '../api'
-import type { MascotCreateRequest, MascotResponse } from '../types/api'
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { createMascot as createMascotApi, handleApiError } from '../api/index';
+import { mockMascot, mascotTypes, levelExperience } from '../data/mockData';
+import type { Mascot, CreateMascotRequest } from '../types/api';
+
+const router = useRouter();
+
+// 반응형 데이터
+const currentMascot = ref<Mascot | null>(mockMascot);
+const userCoins = ref(15000);
+const userLikes = ref(151);
+
+// 모달 상태
+const showCreateModal = ref(false);
 
 // 폼 데이터
-const formData = ref<MascotCreateRequest>({
+const newMascot = ref<CreateMascotRequest>({
   name: '',
-  mascotType: ''
-})
+  type: ''
+});
 
-// 상태 관리
-const isLoading = ref(false)
-const apiError = ref('')
-const successMessage = ref('')
-const createdMascot = ref<MascotResponse | null>(null)
+// 토스트 알림
+const showToast = ref(false);
+const toastMessage = ref('');
 
-// 에러 상태
-const errors = ref({
-  name: '',
-  mascotType: ''
-})
-
-// 마스코트 타입 옵션
-const mascotTypes = [
-  { value: 'cat', label: '고양이', icon: '🐱' },
-  { value: 'dog', label: '강아지', icon: '🐶' },
-  { value: 'rabbit', label: '토끼', icon: '🐰' },
-  { value: 'bear', label: '곰', icon: '🐻' },
-  { value: 'fox', label: '여우', icon: '🦊' },
-  { value: 'panda', label: '판다', icon: '🐼' },
-  { value: 'penguin', label: '펭귄', icon: '🐧' },
-  { value: 'lion', label: '사자', icon: '🦁' }
-]
-
-// 폼 유효성 검사
-const isFormValid = computed(() => {
-  return formData.value.name.trim().length > 0 && 
-         formData.value.mascotType.length > 0 && 
-         !errors.value.name && 
-         !errors.value.mascotType
-})
-
-// 마스코트 타입 레이블 가져오기
-const getMascotTypeLabel = (type: string) => {
-  const mascotType = mascotTypes.find(t => t.value === type)
-  return mascotType ? `${mascotType.icon} ${mascotType.label}` : type
+// 유틸리티 함수들
+function getMascotEmoji(type: string): string {
+  const emojiMap: Record<string, string> = {
+    bear: '🐻',
+    tiger: '🐯',
+    eagle: '🦅',
+    lion: '🦁',
+    panda: '🐼'
+  };
+  return emojiMap[type] || '🐾';
 }
 
-// 유효성 검사 함수
-const validateForm = () => {
-  errors.value = { name: '', mascotType: '' }
-  
-  // 이름 검사
-  if (!formData.value.name.trim()) {
-    errors.value.name = '마스코트 이름은 필수입니다'
-  } else if (formData.value.name.length > 50) {
-    errors.value.name = '마스코트 이름은 50자 이하여야 합니다'
-  }
-  
-  // 타입 검사
-  if (!formData.value.mascotType) {
-    errors.value.mascotType = '마스코트 타입을 선택해주세요'
-  }
-  
-  return !errors.value.name && !errors.value.mascotType
+function getMascotTypeDisplay(type: string): string {
+  const typeObj = mascotTypes.find(t => t.id === type);
+  return typeObj ? typeObj.name : type;
 }
 
-// 폼 초기화
-const resetForm = () => {
-  formData.value = { name: '', mascotType: '' }
-  errors.value = { name: '', mascotType: '' }
-  apiError.value = ''
-  successMessage.value = ''
-  createdMascot.value = null
+function getNextLevelExp(): number {
+  if (!currentMascot.value) return 0;
+  const nextLevel = currentMascot.value.level + 1;
+  const levelData = levelExperience.find(l => l.level === nextLevel);
+  return levelData ? levelData.requiredExp : 9999;
 }
 
-// 폼 제출 처리
-const handleSubmit = async () => {
-  // 메시지 초기화
-  apiError.value = ''
-  successMessage.value = ''
+function getExpPercentage(): number {
+  if (!currentMascot.value) return 0;
+  const currentLevel = levelExperience.find(l => l.level === currentMascot.value!.level);
+  const nextLevel = levelExperience.find(l => l.level === currentMascot.value!.level + 1);
   
-  // 유효성 검사
-  if (!validateForm()) {
-    return
-  }
+  if (!currentLevel || !nextLevel) return 100;
   
-  isLoading.value = true
+  const currentExp = currentMascot.value.experiencePoint - currentLevel.requiredExp;
+  const totalExp = nextLevel.requiredExp - currentLevel.requiredExp;
   
+  return Math.min(100, (currentExp / totalExp) * 100);
+}
+
+// 꾸미기 화면으로 이동
+function goToCustomize() {
+  router.push('/mascot/customize');
+}
+
+// 마스코트 생성
+async function createMascot() {
   try {
-    const requestData: MascotCreateRequest = {
-      name: formData.value.name.trim(),
-      mascotType: formData.value.mascotType
-    }
+    // Mock 데이터로 시뮬레이션
+    const newMascotData: Mascot = {
+      id: Date.now(),
+      name: newMascot.value.name,
+      type: newMascot.value.type,
+      level: 1,
+      experiencePoint: 0,
+      evolutionStage: 0,
+      equippedItems: {},
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
     
-    const response = await createMascot(requestData)
+    currentMascot.value = newMascotData;
+    showCreateModal.value = false;
+    showToast.value = true;
+    toastMessage.value = `${newMascotData.name}이(가) 태어났습니다! 🎉`;
     
-    if (response.success && response.data) {
-      successMessage.value = '🎉 마스코트가 성공적으로 생성되었습니다!'
-      createdMascot.value = response.data
-    } else {
-      apiError.value = response.message || '마스코트 생성에 실패했습니다.'
-    }
+    setTimeout(() => {
+      showToast.value = false;
+    }, 3000);
   } catch (error) {
-    apiError.value = handleApiError(error)
-  } finally {
-    isLoading.value = false
+    console.error('마스코트 생성 실패:', error);
+    showNotReady('마스코트 생성');
   }
 }
+
+// 준비중 알림
+function showNotReady(feature: string) {
+  showToast.value = true;
+  toastMessage.value = `${feature} 기능은 준비중입니다! 🚧`;
+  
+  setTimeout(() => {
+    showToast.value = false;
+  }, 2000);
+}
+
+// 컴포넌트 마운트
+onMounted(() => {
+  console.log('마스코트 메인 페이지 로드됨');
+});
 </script>
 
+<style scoped>
+/* 애니메이션 */
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0,0,0);
+  }
+  40%, 43% {
+    transform: translate3d(0,-30px,0);
+  }
+  70% {
+    transform: translate3d(0,-15px,0);
+  }
+  90% {
+    transform: translate3d(0,-4px,0);
+  }
+}
 
+.animate-bounce {
+  animation: bounce 2s infinite;
+}
+</style>

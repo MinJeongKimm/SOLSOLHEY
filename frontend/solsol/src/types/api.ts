@@ -92,6 +92,104 @@ export class ApiError extends Error {
   }
 }
 
+// 마스코트 관련 타입
+export interface Mascot {
+  id: number;
+  name: string;
+  type: string; // 마스코트 종류 (ex: '곰', '호랑이', '독수리' 등)
+  level: number;
+  experiencePoint: number;
+  evolutionStage: number;
+  equippedItems: EquippedItems;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface EquippedItems {
+  clothing?: Item;
+  background?: Item;
+  accessory?: Item;
+}
+
+export interface Item {
+  id: number;
+  name: string;
+  type: 'clothing' | 'background' | 'accessory';
+  description: string;
+  price: number;
+  imageUrl?: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  isOwned?: boolean;
+}
+
+// 마스코트 생성 요청/응답
+export interface CreateMascotRequest {
+  name: string;
+  type: string;
+  equippedItems?: {
+    clothingId?: number;
+    backgroundId?: number;
+    accessoryId?: number;
+  };
+}
+
+export interface CreateMascotResponse {
+  success: boolean;
+  message: string;
+  mascot?: Mascot;
+  errors?: Record<string, string>;
+}
+
+// 마스코트 꾸미기 요청/응답
+export interface EquipItemsRequest {
+  equipItems: {
+    clothingId?: number;
+    backgroundId?: number;
+    accessoryId?: number;
+  };
+}
+
+export interface EquipItemsResponse {
+  success: boolean;
+  message: string;
+  mascot?: Mascot;
+  errors?: Record<string, string>;
+}
+
+// 마스코트 수정 요청/응답
+export interface UpdateMascotRequest {
+  name?: string;
+  equipItems?: {
+    clothingId?: number;
+    backgroundId?: number;
+    accessoryId?: number;
+  };
+  experiencePoint?: number;
+}
+
+export interface UpdateMascotResponse {
+  success: boolean;
+  message: string;
+  mascot?: Mascot;
+  errors?: Record<string, string>;
+}
+
+// 마스코트 조회 응답
+export interface GetMascotResponse {
+  success: boolean;
+  message: string;
+  mascot?: Mascot;
+  errors?: Record<string, string>;
+}
+
+// 아이템 목록 조회 응답
+export interface GetItemsResponse {
+  success: boolean;
+  message: string;
+  items?: Item[];
+  errors?: Record<string, string>;
+}
+
 
 
 
