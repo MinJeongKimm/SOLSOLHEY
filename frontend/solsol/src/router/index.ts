@@ -6,6 +6,8 @@ import Challenge from '../views/Challenge.vue'
 import Mascot from '../views/Mascot.vue'
 import MascotCreate from '../views/MascotCreate.vue'
 import MascotCustomize from '../views/MascotCustomize.vue'
+import FriendList from '../views/FriendList.vue'
+import FriendAdd from '../views/FriendAdd.vue'
 import { auth, mascot } from '../api/index'
 
 const routes = [
@@ -47,6 +49,16 @@ const routes = [
   { 
     path: '/mascot/customize', 
     component: MascotCustomize,
+    meta: { requiresAuth: true }
+  },
+  { 
+    path: '/friend', 
+    component: FriendList,
+    meta: { requiresAuth: true }
+  },
+  { 
+    path: '/friend/add', 
+    component: FriendAdd,
     meta: { requiresAuth: true }
   }
 ]

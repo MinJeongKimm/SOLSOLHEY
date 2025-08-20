@@ -7,25 +7,31 @@
         <!-- 좌측: My Room 타이틀 -->
         <h1 class="text-xl font-bold text-gray-800">My Room</h1>
         
-        <!-- 우측: 3개 아이콘 버튼들 -->
-        <div class="flex space-x-3">
+        <!-- 우측: 4개 아이콘 버튼들 -->
+        <div class="flex space-x-2">
           <button 
             @click="showNotReady('출석체크')"
-            class="hover:opacity-70 transition-opacity"
+            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
           >
             <img src="/icons/icon_attendance.png" alt="출석" class="w-7 h-7" />
           </button>
           <button 
             @click="showNotReady('챌린지')"
-            class="hover:opacity-70 transition-opacity"
+            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
           >
             <img src="/icons/icon_challenge.png" alt="챌린지" class="w-7 h-7" />
           </button>
           <button 
             @click="showNotReady('랭킹')"
-            class="hover:opacity-70 transition-opacity"
+            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
           >
             <img src="/icons/icon_ranking.png" alt="랭킹" class="w-7 h-7" />
+          </button>
+          <button 
+            @click="goToFriends"
+            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
+          >
+            <img src="/icons/icon_friends.png" alt="친구" class="w-7 h-7" />
           </button>
         </div>
       </div>
@@ -274,6 +280,11 @@ function goToCustomize() {
 // 마스코트 생성 화면으로 이동
 function goToCreate() {
   router.push('/mascot/create');
+}
+
+// 친구 목록 화면으로 이동
+function goToFriends() {
+  router.push('/friend');
 }
 
 // 준비중 알림
