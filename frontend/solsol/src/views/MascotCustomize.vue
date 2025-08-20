@@ -38,11 +38,11 @@
           <!-- 마스코트 + 장착된 아이템들 -->
           <div class="absolute inset-0 flex items-center justify-center">
             <div class="relative">
-              <!-- 마스코트 이미지 -->
+              <!-- 마스코트 이미지 (크기 키움) -->
               <img 
                 src="/mascot/mascot_sol_base.png" 
                 alt="마스코트" 
-                class="w-28 h-28 object-contain"
+                class="w-36 h-36 object-contain"
               />
               
               <!-- 장착된 아이템들 -->
@@ -52,14 +52,14 @@
                   v-if="currentMascot?.equippedItems.head" 
                   :src="currentMascot.equippedItems.head.imageUrl" 
                   :alt="currentMascot.equippedItems.head.name"
-                  class="w-28 h-28 object-contain absolute top-0 left-0"
+                  class="w-36 h-36 object-contain absolute top-0 left-0"
                 />
                 <!-- 액세서리 -->
                 <img 
                   v-if="currentMascot?.equippedItems.accessory" 
                   :src="currentMascot.equippedItems.accessory.imageUrl" 
                   :alt="currentMascot.equippedItems.accessory.name"
-                  class="w-28 h-28 object-contain absolute top-0 left-0"
+                  class="w-36 h-36 object-contain absolute top-0 left-0"
                 />
               </div>
             </div>

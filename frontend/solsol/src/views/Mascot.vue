@@ -5,57 +5,58 @@
       <!-- 좌측: My Room 타이틀 -->
       <h1 class="text-xl font-bold text-gray-800">My Room</h1>
       
-      <!-- 우측: 3개 원형 아이콘 버튼들 -->
-      <div class="flex space-x-2">
+      <!-- 우측: 3개 아이콘 버튼들 -->
+      <div class="flex space-x-4">
         <button 
           @click="showNotReady('출석체크')"
-          class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center hover:bg-orange-200 transition-colors"
+          class="hover:opacity-70 transition-opacity"
         >
-          <img src="/icons/icon_attendance.png" alt="출석" class="w-6 h-6" />
+          <img src="/icons/icon_attendance.png" alt="출석" class="w-8 h-8" />
         </button>
         <button 
           @click="showNotReady('챌린지')"
-          class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors"
+          class="hover:opacity-70 transition-opacity"
         >
-          <img src="/icons/icon_challenge.png" alt="챌린지" class="w-6 h-6" />
+          <img src="/icons/icon_challenge.png" alt="챌린지" class="w-8 h-8" />
         </button>
         <button 
           @click="showNotReady('랭킹')"
-          class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center hover:bg-yellow-200 transition-colors"
+          class="hover:opacity-70 transition-opacity"
         >
-          <img src="/icons/icon_ranking.png" alt="랭킹" class="w-6 h-6" />
+          <img src="/icons/icon_ranking.png" alt="랭킹" class="w-8 h-8" />
         </button>
       </div>
     </div>
 
-    <!-- 포인트 & 좋아요 정보 -->
+    <!-- 포인트 & 좋아요 + 친구 썸네일 리스트 -->
     <div class="px-4 py-3 bg-white border-b border-gray-100">
-      <div class="flex items-center space-x-4">
-        <!-- 포인트 -->
-        <div class="flex items-center space-x-2">
-          <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5" />
-          <span class="font-bold text-orange-600">{{ userCoins }}P</span>
-        </div>
-        <!-- 좋아요 -->
-        <div class="flex items-center space-x-2">
-          <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5" />
-          <span class="font-bold text-red-500">{{ userLikes }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 친구 썸네일 리스트 -->
-    <div class="px-4 py-3 bg-white border-b border-gray-100">
-      <div class="flex space-x-3">
-        <div 
-          v-for="friend in friends" 
-          :key="friend.id"
-          class="flex flex-col items-center"
-        >
-          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm mb-1">
-            {{ friend.name.charAt(0) }}
+      <div class="flex items-center justify-between">
+        <!-- 좌측: 포인트 & 좋아요 (위아래 배치) -->
+        <div class="flex flex-col space-y-2">
+          <!-- 포인트 -->
+          <div class="flex items-center space-x-2">
+            <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5" />
+            <span class="font-bold text-orange-600">{{ userCoins }}P</span>
           </div>
-          <span class="text-xs text-gray-600 truncate w-12 text-center">{{ friend.name }}</span>
+          <!-- 좋아요 -->
+          <div class="flex items-center space-x-2">
+            <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5" />
+            <span class="font-bold text-red-500">{{ userLikes }}</span>
+          </div>
+        </div>
+        
+        <!-- 우측: 친구 썸네일 리스트 -->
+        <div class="flex space-x-3">
+          <div 
+            v-for="friend in friends" 
+            :key="friend.id"
+            class="flex flex-col items-center"
+          >
+            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm mb-1">
+              {{ friend.name.charAt(0) }}
+            </div>
+            <span class="text-xs text-gray-600 truncate w-12 text-center">{{ friend.name }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -80,24 +81,24 @@
         <div class="relative">
           <!-- 방 배경 -->
           <div 
-            class="w-full h-80 rounded-2xl shadow-lg relative overflow-hidden"
+            class="w-full h-80 rounded-2xl shadow-lg relative overflow-hidden flex items-center justify-center"
             style="background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%)"
           >
-            <!-- 배경 이미지 -->
+            <!-- 배경 이미지 (크기 줄임) -->
             <img 
               src="/backgrounds/bg_base.png" 
               alt="방 배경" 
-              class="absolute inset-0 w-full h-full object-cover"
+              class="w-4/5 h-4/5 object-contain"
             />
             
             <!-- 마스코트 -->
             <div class="absolute inset-0 flex items-center justify-center">
               <div class="relative">
-                <!-- 마스코트 이미지 -->
+                <!-- 마스코트 이미지 (크기 키움) -->
                 <img 
                   src="/mascot/mascot_sol_base.png" 
                   alt="마스코트" 
-                  class="w-32 h-32 object-contain animate-float"
+                  class="w-40 h-40 object-contain animate-float"
                 />
                 
                 <!-- 장착된 아이템들 -->
@@ -107,14 +108,14 @@
                     v-if="currentMascot.equippedItems.head" 
                     :src="currentMascot.equippedItems.head.imageUrl" 
                     :alt="currentMascot.equippedItems.head.name"
-                    class="w-32 h-32 object-contain absolute top-0 left-0"
+                    class="w-40 h-40 object-contain absolute top-0 left-0"
                   />
                   <!-- 액세서리 -->
                   <img 
                     v-if="currentMascot.equippedItems.accessory" 
                     :src="currentMascot.equippedItems.accessory.imageUrl" 
                     :alt="currentMascot.equippedItems.accessory.name"
-                    class="w-32 h-32 object-contain absolute top-0 left-0"
+                    class="w-40 h-40 object-contain absolute top-0 left-0"
                   />
                 </div>
               </div>
@@ -156,7 +157,7 @@
             class="bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center space-y-2 hover:shadow-xl transition-all transform hover:scale-105"
           >
             <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <span class="text-2xl">🎨</span>
+              <span class="text-2xl">👗</span>
             </div>
             <span class="text-sm font-medium text-gray-700">꾸미기</span>
           </button>
@@ -167,7 +168,7 @@
             class="bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center space-y-2 hover:shadow-xl transition-all transform hover:scale-105"
           >
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <span class="text-2xl">🍎</span>
+              <span class="text-2xl">🥄</span>
             </div>
             <span class="text-sm font-medium text-gray-700">밥주기</span>
           </button>
@@ -178,7 +179,7 @@
             class="bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center space-y-2 hover:shadow-xl transition-all transform hover:scale-105"
           >
             <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <span class="text-2xl">🛍️</span>
+              <span class="text-2xl">🛒</span>
             </div>
             <span class="text-sm font-medium text-gray-700">쇼핑하기</span>
           </button>
@@ -190,6 +191,7 @@
     <div class="bg-white border-t border-gray-200 px-4 py-3">
       <div class="flex justify-center">
         <div class="flex items-center space-x-2 bg-gray-900 text-white px-4 py-2 rounded-full">
+          <!-- Home 아이콘 (실제 아이콘 파일이 있으면 교체 가능) -->
           <span class="text-lg">🏠</span>
           <span class="text-sm font-medium">Home</span>
         </div>
