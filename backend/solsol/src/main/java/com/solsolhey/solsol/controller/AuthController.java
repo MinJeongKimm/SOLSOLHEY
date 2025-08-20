@@ -6,16 +6,18 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.solsolhey.solsol.auth.dto.CustomUserDetails;
 import com.solsolhey.solsol.auth.dto.LoginRequestDto;
 import com.solsolhey.solsol.auth.dto.LoginResponse;
 import com.solsolhey.solsol.auth.dto.LogoutResponse;
@@ -24,11 +26,9 @@ import com.solsolhey.solsol.auth.dto.SignUpRequestDto;
 import com.solsolhey.solsol.auth.dto.SignUpResponse;
 import com.solsolhey.solsol.auth.dto.TokenResponseDto;
 import com.solsolhey.solsol.auth.dto.UserInfoResponse;
-import com.solsolhey.solsol.auth.dto.CustomUserDetails;
 import com.solsolhey.solsol.auth.service.AuthService;
 import com.solsolhey.solsol.common.exception.BusinessException;
 import com.solsolhey.solsol.common.response.ApiResponse;
-// import com.solsolhey.solsol.common.security.RateLimitingService;  // 임시 비활성화
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -147,7 +147,7 @@ public class AuthController {
     /**
      * 로그아웃
      */
-    @PostMapping("/logout")
+    @DeleteMapping("/logout")
     public ResponseEntity<LogoutResponse> logout(HttpServletRequest request) {
         
         log.info("로그아웃 요청");
