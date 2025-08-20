@@ -5,7 +5,8 @@ import com.solsolhey.solsol.auth.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
+import org.springframework.core.env.Environment;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -37,6 +38,7 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final Environment environment;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -52,22 +54,22 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             
             // 요청별 권한 설정
-            .authorizeHttpRequests(authz -> authz
+            .authorizeHttpRequests(authz -> {
                 // 공개 API (인증 불필요)
-                .requestMatchers("/auth/**").permitAll()
-                .requestMatchers("/public/**").permitAll()
-                .requestMatchers("/health").permitAll()
+                authz.requestMatchers("/auth/**").permitAll()
+                    .requestMatchers("/public/**").permitAll()
+                    .requestMatchers("/health").permitAll();
                 
-                // H2 Console (개발환경용)
-                .requestMatchers("/h2-console/**").permitAll()
-                
-                // Swagger UI (개발환경용)
-                .requestMatchers("/swagger-ui/**").permitAll()
-                .requestMatchers("/v3/api-docs/**").permitAll()
+                // 개발환경에서만 허용되는 엔드포인트
+                if (isDevelopmentEnvironment()) {
+                    authz.requestMatchers("/h2-console/**").permitAll()  // H2 Console
+                         .requestMatchers("/swagger-ui/**").permitAll()   // Swagger UI
+                         .requestMatchers("/v3/api-docs/**").permitAll(); // Swagger API Docs
+                }
                 
                 // 기타 모든 요청은 인증 필요
-                .anyRequest().authenticated()
-            )
+                authz.anyRequest().authenticated();
+            })
             
             // JWT 인증 필터 추가
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
@@ -89,8 +91,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 허용할 Origin (프론트엔드 URL)
-        configuration.setAllowedOriginPatterns(List.of("*")); // 개발환경용, 운영환경에서는 구체적인 도메인 설정
+        // 허용할 Origin (환경변수에서 가져오거나 기본값 사용)
+        String allowedOrigins = System.getProperty("CORS_ALLOWED_ORIGINS", 
+                System.getenv().getOrDefault("CORS_ALLOWED_ORIGINS", 
+                        "http://localhost:3000,http://localhost:5173,http://localhost:8080"));
+        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         
         // 허용할 HTTP 메서드
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
