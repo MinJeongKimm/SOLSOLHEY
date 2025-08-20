@@ -11,8 +11,8 @@ import { auth } from '../api/index'
 const routes = [
   { 
     path: '/', 
-    component: Mascot,
-    meta: { requiresGuest: false }
+    component: Login,
+    meta: { requiresGuest: true }
   },
   { 
     path: '/login', 
