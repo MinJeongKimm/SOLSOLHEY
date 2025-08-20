@@ -28,12 +28,6 @@
           >
             마스코트
           </router-link>
-          <router-link 
-            to="/friend" 
-            class="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
-          >
-            친구
-          </router-link>
         </div>
       </div>
     </div>
