@@ -1,31 +1,31 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex flex-col">
-    <!-- 상단 헤더 -->
-    <div class="bg-white px-4 py-3 flex justify-between items-center shadow-sm">
-      <!-- 좌측: 뒤로가기 + 제목 -->
-      <div class="flex items-center space-x-3">
-        <button 
-          @click="goBack"
-          class="w-8 h-8 flex items-center justify-center"
-        >
-          <img src="/icons/icon_back.png" alt="뒤로가기" class="w-6 h-6" />
-        </button>
-        <h1 class="text-lg font-bold text-gray-800">Customize</h1>
+  <div class="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100 flex items-center justify-center p-4">
+    <!-- 커스터마이즈 카드 -->
+    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
+      <!-- 상단 헤더 -->
+      <div class="flex justify-between items-center mb-6">
+        <!-- 좌측: 뒤로가기 + 제목 -->
+        <div class="flex items-center space-x-3">
+          <button 
+            @click="goBack"
+            class="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <img src="/icons/icon_back.png" alt="뒤로가기" class="w-5 h-5" />
+          </button>
+          <h1 class="text-xl font-bold text-gray-800">Customize</h1>
+        </div>
+        
+        <!-- 우측: 포인트 -->
+        <div class="flex items-center space-x-2">
+          <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5" />
+          <span class="font-bold text-orange-600">{{ userCoins }}P</span>
+        </div>
       </div>
-      
-      <!-- 우측: 포인트 -->
-      <div class="flex items-center space-x-2">
-        <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5" />
-        <span class="font-bold text-orange-600">{{ userCoins }}P</span>
-      </div>
-    </div>
 
-    <!-- 메인 컨텐츠 -->
-    <div class="flex-1 px-4 py-6 space-y-6">
       <!-- 마스코트 미리보기 영역 -->
-      <div class="bg-white rounded-2xl shadow-lg p-6">
+      <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 mb-6">
         <div 
-          class="relative h-64 rounded-xl overflow-hidden"
+          class="relative h-64 rounded-xl overflow-hidden flex items-center justify-center"
           style="background: linear-gradient(135deg, #bfdbfe 0%, #ddd6fe 100%)"
         >
           <!-- 커스터마이즈 배경 -->
@@ -38,11 +38,11 @@
           <!-- 마스코트 + 장착된 아이템들 -->
           <div class="absolute inset-0 flex items-center justify-center">
             <div class="relative">
-              <!-- 마스코트 이미지 (크기 키움) -->
+              <!-- 마스코트 이미지 -->
               <img 
                 :src="currentMascot ? getMascotImageUrl(currentMascot.type) : '/mascot/soll.png'" 
                 :alt="currentMascot?.name || '마스코트'" 
-                class="w-36 h-36 object-contain"
+                class="w-32 h-32 object-contain"
                 @error="handleMascotImageError"
               />
               
@@ -76,8 +76,8 @@
       </div>
       
       <!-- 카테고리 탭들 -->
-      <div class="bg-white rounded-2xl shadow-lg p-4">
-        <div class="flex space-x-2 overflow-x-auto pb-2">
+      <div class="mb-6">
+        <div class="flex space-x-2 overflow-x-auto">
           <button 
             v-for="category in itemCategories" 
             :key="category.id"
@@ -85,10 +85,9 @@
             :class="[
               'flex-shrink-0 flex flex-col items-center p-3 rounded-xl transition-all min-w-[80px]',
               selectedCategory === category.id 
-                ? 'text-white shadow-lg' 
+                ? 'bg-purple-500 text-white shadow-lg' 
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             ]"
-            :style="selectedCategory === category.id ? { backgroundColor: '#0046FF' } : {}"
           >
             <div class="w-10 h-10 rounded-full flex items-center justify-center mb-2" 
                  :class="selectedCategory === category.id ? 'bg-white bg-opacity-20' : 'bg-white'">
@@ -100,8 +99,8 @@
       </div>
       
       <!-- 아이템 목록 -->
-      <div class="bg-white rounded-2xl shadow-lg p-4">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">{{ getCategoryName(selectedCategory) }}</h3>
+      <div class="space-y-4">
+        <h3 class="text-lg font-bold text-gray-800">{{ getCategoryName(selectedCategory) }}</h3>
         
         <div class="grid grid-cols-2 gap-4">
           <div 
