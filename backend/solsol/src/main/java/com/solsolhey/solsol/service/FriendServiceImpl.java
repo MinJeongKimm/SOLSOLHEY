@@ -168,8 +168,10 @@ public class FriendServiceImpl implements FriendService {
     public FriendResponse getFriendByUsername(User currentUser, String username) {
         log.info("사용자명으로 친구 조회: userId={}, username={}", currentUser.getUserId(), username);
 
+        // username 또는 nickname으로 사용자 검색
         User targetUser = userRepository.findByUsername(username)
-                .orElseThrow(() -> new EntityNotFoundException("사용자", username));
+                .orElseGet(() -> userRepository.findByNickname(username)
+                        .orElseThrow(() -> new EntityNotFoundException("사용자", username)));
 
         return FriendResponse.fromUser(targetUser);
     }
