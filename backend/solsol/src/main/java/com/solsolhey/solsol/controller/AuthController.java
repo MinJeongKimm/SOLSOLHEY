@@ -28,6 +28,8 @@ import com.solsolhey.solsol.auth.service.AuthService;
 import com.solsolhey.solsol.common.exception.BusinessException;
 import com.solsolhey.solsol.common.response.ApiResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "인증/인가", description = "사용자 인증 및 인가 관련 API")
 public class AuthController {
 
     private final AuthService authService;
@@ -49,6 +52,10 @@ public class AuthController {
      * 회원가입
      */
     @PostMapping("/signup")
+    @Operation(
+        summary = "회원가입",
+        description = "새로운 사용자를 등록합니다."
+    )
     public ResponseEntity<SignUpResponse> signUp(
             @Valid @RequestBody SignUpRequestDto requestDto, 
             BindingResult bindingResult) {
