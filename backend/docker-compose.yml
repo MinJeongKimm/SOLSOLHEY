@@ -1,7 +1,7 @@
 # =====================================
 # SOLSOLHEY Docker Compose
 # =====================================
-# 전체 스택 (Backend + Database) 관리
+# 전체 스택 (Backend + Database + 개발 도구) 관리
 
 # =====================================
 # 서비스 정의
@@ -93,7 +93,7 @@ services:
       start_period: 60s
 
   # =====================================
-  # Redis (캐시 & 세션) - 선택사항
+  # Redis (캐시 & 세션)
   # =====================================
   redis:
     image: redis:7-alpine
@@ -114,6 +114,54 @@ services:
       timeout: 10s
       retries: 3
 
+  # =====================================
+  # pgAdmin (PostgreSQL 관리 도구)
+  # =====================================
+  pgadmin:
+    image: dpage/pgadmin4:8.12
+    platform: linux/arm64/v8
+    container_name: solsol-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@solsol.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin123}
+      # 문자열 옵션은 파이썬 리터럴(따옴표 포함)이어야 함!
+      PGADMIN_CONFIG_LOGIN_BANNER: '"Development Environment - CSRF Protected"'
+      # 숫자 옵션은 정수로
+      GUNICORN_TIMEOUT: "60"
+      # CSRF 보호는 유지하되 세션 설정 최적화
+      PGADMIN_CONFIG_CSRF_PROTECTION: "${PGADMIN_CSRF_PROTECTION:-True}"
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "${PGADMIN_COOKIE_PROTECTION:-False}"
+      PGADMIN_CONFIG_SESSION_COOKIE_SECURE: "False"
+      PGADMIN_CONFIG_SESSION_COOKIE_HTTPONLY: "True"
+      PGADMIN_CONFIG_SESSION_COOKIE_SAMESITE: '"Lax"'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - solsol-network
+    depends_on:
+      - postgres
+
+  # =====================================
+  # Redis Commander (Redis 관리 도구)
+  # =====================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: solsol-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-password}
+      REDIS_PORT: 6379
+    ports:
+      - "8081:8081"
+    networks:
+      - solsol-network
+    depends_on:
+      - redis
+
 # =====================================
 # 볼륨 정의
 # =====================================
@@ -121,6 +169,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  pgadmin_data:
     driver: local
 
 # =====================================
