@@ -1,27 +1,24 @@
 # Finance API 설정
 finance:
   api:
-    base-url: https://finopenapi.ssafy.io/ssafy/api/v1/edu
-    timeout: 10
+    base-url: ${FINANCE_API_BASE_URL:https://finopenapi.ssafy.io/ssafy/api/v1/edu}
+    timeout: ${FINANCE_API_TIMEOUT:10}
     key: ${FINANCE_API_KEY:}
 
 # JWT 인증 설정
 jwt:
-  secret-key: ${JWT_SECRET_KEY:150b3ba29a26048e16a4413e8b4cab2d4b1f5552789dd0200eed3ae818e926a5}
+  secret-key: ${JWT_SECRET_KEY:}
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
 
-# 기존 설정들...
+# Spring 설정
 spring:
   application:
     name: solsol
   profiles:
-    active: local
-  config:
-    import: 
-      - "optional:file:.env[.properties]"
-    
-# 로컬 개발 환경
+    active: dev
+
+# 로컬 개발 환경 (H2)
 ---
 spring:
   config:
@@ -43,40 +40,49 @@ spring:
       hibernate:
         format_sql: true
 
-# 개발 환경
+# 개발 환경 (PostgreSQL)
 ---
 spring:
   config:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:solsol_dev}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:solsol}
     username: ${DB_USER:solsol}
-    password: ${DB_PASSWORD:password}
+    password: ${DB_PASSWORD:solsol123}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: ${JPA_HIBERNATE_DDL_AUTO:create-drop}
+      ddl-auto: ${JPA_HIBERNATE_DDL_AUTO:update}
     show-sql: ${JPA_SHOW_SQL:true}
     properties:
       hibernate:
         format_sql: ${JPA_FORMAT_SQL:true}
+  sql:
+    init:
+      mode: ${SPRING_SQL_INIT_MODE:always}
 
-# 운영 환경
+# 운영 환경 (PostgreSQL)
 ---
 spring:
   config:
     activate:
       on-profile: prod
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:solsol}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
-    show-sql: false
+      ddl-auto: ${JPA_HIBERNATE_DDL_AUTO:validate}
+    show-sql: ${JPA_SHOW_SQL:false}
+    properties:
+      hibernate:
+        format_sql: ${JPA_FORMAT_SQL:false}
+  sql:
+    init:
+      mode: ${SPRING_SQL_INIT_MODE:never}
 
 # CORS 설정
 cors:
@@ -89,7 +95,21 @@ cors:
 # 로깅 설정
 logging:
   level:
-    com.solsolhey: DEBUG
-    org.springframework.web.reactive.function.client: DEBUG
+    com.solsolhey: ${LOGGING_LEVEL_COM_SOLSOLHEY:DEBUG}
+    org.springframework.web.reactive.function.client: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_REACTIVE_FUNCTION_CLIENT:DEBUG}
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    console: ${LOGGING_PATTERN_CONSOLE:"%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"}
+
+# Tomcat 서버 설정
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    uri-encoding: ${SERVER_TOMCAT_URI_ENCODING:UTF-8}
+    connection-timeout: ${SERVER_TOMCAT_CONNECTION_TIMEOUT:20000}
+    relaxed-query-chars: ${SERVER_TOMCAT_RELAXED_QUERY_CHARS:"|,{,},[,],\\"}
+    relaxed-path-chars: ${SERVER_TOMCAT_RELAXED_PATH_CHARS:"|,{,},[,],\\"}
+  servlet:
+    encoding:
+      charset: ${SERVER_SERVLET_ENCODING_CHARSET:UTF-8}
+      force: ${SERVER_SERVLET_ENCODING_FORCE:true}
+      enabled: ${SERVER_SERVLET_ENCODING_ENABLED:true}

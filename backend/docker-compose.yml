@@ -15,9 +15,9 @@ services:
     container_name: solsol-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME:-solsol}
-      POSTGRES_USER: ${DB_USER:-solsol}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -47,14 +47,14 @@ services:
         condition: service_healthy
     environment:
       # Spring 프로필 설정
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
       
       # 데이터베이스 연결 설정
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${DB_NAME:-solsol}
-      DB_USER: ${DB_USER:-solsol}
-      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
       
       # JWT 설정
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
