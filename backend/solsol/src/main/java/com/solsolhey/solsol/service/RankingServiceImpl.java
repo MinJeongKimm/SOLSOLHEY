@@ -1,5 +1,12 @@
 package com.solsolhey.solsol.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.solsolhey.mascot.domain.Mascot;
 import com.solsolhey.mascot.repository.MascotRepository;
 import com.solsolhey.solsol.common.exception.BusinessException;
@@ -11,14 +18,9 @@ import com.solsolhey.solsol.entity.Vote;
 import com.solsolhey.solsol.repository.ContestEntryRepository;
 import com.solsolhey.solsol.repository.UserRepository;
 import com.solsolhey.solsol.repository.VoteRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * 랭킹 서비스 구현체

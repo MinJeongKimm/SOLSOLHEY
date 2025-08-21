@@ -1,7 +1,6 @@
 package com.solsolhey.solsol.service;
 
 import com.solsolhey.solsol.dto.ranking.RankingResponseDto;
-import com.solsolhey.solsol.dto.ranking.VoteRequestDto;
 import com.solsolhey.solsol.dto.ranking.VoteResponseDto;
 import com.solsolhey.solsol.entity.ContestEntry;
 

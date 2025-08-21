@@ -251,6 +251,57 @@ test: 테스트 코드 추가
 - **8/17**: 공통 응답/예외 처리, JWT 인증·보안 설정, 헬스체크 추가
 - **8/18**: 인증 API(회원가입/로그인/로그아웃/리프레시), FE 인증 플로우 및 라우팅/가드, Tailwind 적용
 - **8/20**: 🆕 **Docker 환경 완성** - PostgreSQL, Redis, pgAdmin, Redis Commander 통합
+- **8/21**: 🆕 **랭킹 API 개발 완료** - 교내/전국 랭킹 시스템, 마스코트 콘테스트 기능
+
+## 🏆 랭킹 시스템 (신규 개발)
+
+### 🎯 랭킹 시스템 개요
+- **교내 랭킹**: 같은 학교 내 마스코트 콘테스트
+- **전국 랭킹**: 전국 대학 간 마스코트 콘테스트
+- **투표 시스템**: 사용자들이 마스코트에 투표하여 점수 부여
+- **콘테스트 참가**: 마스코트를 콘테스트에 등록하여 경쟁 참여
+
+### 📊 API 엔드포인트
+
+#### 1. 교내 랭킹 조회
+```http
+GET /api/rankings/campus?sort=score
+Authorization: Bearer <JWT_TOKEN>
+```
+
+#### 2. 전국 랭킹 조회
+```http
+GET /api/rankings/national?sort=score
+Authorization: Bearer <JWT_TOKEN>
+```
+
+#### 3. 전국 랭킹 투표
+```http
+POST /api/rankings/national/{entryId}/vote
+Authorization: Bearer <JWT_TOKEN>
+Content-Type: application/json
+
+{
+  "entryId": 1,
+  "contestType": "NATIONAL"
+}
+```
+
+#### 4. 콘테스트 참가
+```http
+POST /api/rankings/participate?mascotId=1&contestType=CAMPUS
+Authorization: Bearer <JWT_TOKEN>
+```
+
+### 🏗️ 데이터베이스 구조
+- **ContestEntry**: 콘테스트 참가자 정보 (사용자, 마스코트, 콘테스트 타입, 점수, 투표수)
+- **Vote**: 투표 정보 (투표자, 참가자, 콘테스트 타입)
+- **랭킹 계산**: 투표 수 기반 점수 시스템 (투표 1개당 10점)
+
+### 🔐 보안 및 권한
+- **JWT 인증 필수**: 모든 랭킹 API는 인증된 사용자만 접근 가능
+- **중복 투표 방지**: 같은 사용자가 같은 참가자에게 중복 투표 불가
+- **콘테스트 타입 검증**: 전국 랭킹에만 투표 가능
 
 ## 🚀 향후 계획
 - **프론트엔드 Docker화**: Vue.js 애플리케이션 컨테이너화
