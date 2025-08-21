@@ -208,7 +208,7 @@ export * from './friend';
 // 공유 관련 API 함수들
 
 // 공유 링크 생성
-export async function createShareLink(data: { target: string; message?: string }): Promise<any> {
+export async function createShareLink(data: { target: string; description?: string }): Promise<any> {
   return apiRequest<any>('/share/link', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -216,7 +216,7 @@ export async function createShareLink(data: { target: string; message?: string }
 }
 
 // 공유 이미지 생성
-export async function createShareImage(data: { template: string; message?: string }): Promise<any> {
+export async function createShareImage(data: { template: string; data: any }): Promise<any> {
   return apiRequest<any>('/share/image', {
     method: 'POST',
     body: JSON.stringify(data),
