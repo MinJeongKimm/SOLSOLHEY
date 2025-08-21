@@ -73,7 +73,7 @@ services:
       
       # 서버 설정
       SERVER_PORT: 8080
-      SERVER_SERVLET_CONTEXT_PATH: /api/v1
+      # SERVER_SERVLET_CONTEXT_PATH: /api/v1  # 컨텍스트 패스 제거 - 컨트롤러에서 /api/v1 이미 사용 중
       
       # JVM 설정
       JAVA_OPTS: "-Xmx1g -Xms512m"
