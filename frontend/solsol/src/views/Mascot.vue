@@ -317,7 +317,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { createMascot as createMascotApi, handleApiError, mascot } from '../api/index';
+import { createMascot as createMascotApi, handleApiError, mascot, auth } from '../api/index';
 import { mockMascot, mascotTypes, levelExperience } from '../data/mockData';
 import type { Mascot } from '../types/api';
 
@@ -450,8 +450,12 @@ async function handleShare() {
       const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`; // 현재 마스코트 공유 URL
 
       // 링크 공유
+      const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+      const mascotName = currentMascot.value?.name || '마스코트';
+      const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
+      
       await navigator.share({
-        title: `${currentMascot.value?.name}의 마스코트`,
+        title: shareTitle,
         text: message,
         url: shareUrl
       });
@@ -459,12 +463,15 @@ async function handleShare() {
     } else {
       const message = shareImageData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
       const template = shareImageData.value.template;
+      const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+      const mascotName = currentMascot.value?.name || '마스코트';
+      const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
 
       if (template) {
         // 템플릿 이미지 공유
         const templateImageUrl = `/templates/template_${template}.png`;
         await navigator.share({
-          title: `${currentMascot.value?.name}의 마스코트`,
+          title: shareTitle,
           text: message,
           url: `${window.location.origin}/mascot/${currentMascot.value?.id}`,
           files: [
@@ -475,7 +482,7 @@ async function handleShare() {
       } else {
         // 기본 이미지 공유
         await navigator.share({
-          title: `${currentMascot.value?.name}의 마스코트`,
+          title: shareTitle,
           text: message,
           url: `${window.location.origin}/mascot/${currentMascot.value?.id}`
         });
