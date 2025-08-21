@@ -33,6 +33,12 @@
           >
             <img src="/icons/icon_friends.png" alt="친구" class="w-7 h-7" />
           </button>
+          <button 
+            @click="showSharePopup"
+            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
+          >
+            <img src="/icons/icon_share.png" alt="공유" class="w-7 h-7" />
+          </button>
         </div>
       </div>
 
@@ -197,6 +203,114 @@
       </div>
     </div>
 
+    <!-- 공유 팝업 -->
+    <div v-if="showShare" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <!-- 팝업 헤더 -->
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-gray-800">마스코트 공유하기</h3>
+          <button 
+            @click="closeSharePopup"
+            class="text-gray-400 hover:text-gray-600 text-2xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <!-- 공유 타입 선택 -->
+        <div class="mb-4">
+          <div class="flex space-x-2 mb-3">
+            <button 
+              @click="shareType = 'link'"
+              :class="[
+                'flex-1 py-2 px-4 rounded-lg font-medium transition-colors',
+                shareType === 'link' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ]"
+            >
+              링크 공유
+            </button>
+            <button 
+              @click="shareType = 'image'"
+              :class="[
+                'flex-1 py-2 px-4 rounded-lg font-medium transition-colors',
+                shareType === 'image' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ]"
+            >
+              이미지 공유
+            </button>
+          </div>
+        </div>
+
+        <!-- 링크 공유 폼 -->
+        <div v-if="shareType === 'link'" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">공유 대상</label>
+            <select v-model="shareLinkData.target" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="friends">친구들에게만</option>
+              <option value="public">전체 공개</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">메시지 (선택사항)</label>
+            <textarea 
+              v-model="shareLinkData.message" 
+              placeholder="마스코트와 함께한 이야기를 적어보세요!"
+              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- 이미지 공유 폼 -->
+        <div v-if="shareType === 'image'" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">템플릿 선택</label>
+            <select v-model="shareImageData.template" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option value="">템플릿을 선택하세요</option>
+              <option value="cute">귀여운 스타일</option>
+              <option value="cool">멋진 스타일</option>
+              <option value="funny">재미있는 스타일</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">메시지 (선택사항)</label>
+            <textarea 
+              v-model="shareImageData.message" 
+              placeholder="마스코트와 함께한 이야기를 적어보세요!"
+              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- 공유 버튼 -->
+        <div class="flex space-x-3 mt-6">
+          <button 
+            @click="closeSharePopup"
+            class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+          >
+            취소
+          </button>
+          <button 
+            @click="handleShare"
+            :disabled="!canShare"
+            :class="[
+              'flex-1 py-3 px-4 rounded-lg font-medium transition-colors',
+              canShare 
+                ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            ]"
+          >
+            공유하기
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 알림 토스트 -->
     <div 
       v-if="showToast" 
@@ -231,6 +345,27 @@ const friends = ref([
 // 토스트 알림
 const showToast = ref(false);
 const toastMessage = ref('');
+
+// 공유 팝업 관련 데이터
+const showShare = ref(false);
+const shareType = ref<'link' | 'image'>('link');
+const shareLinkData = ref({
+  target: 'friends' as 'friends' | 'public',
+  message: ''
+});
+const shareImageData = ref({
+  template: '',
+  message: ''
+});
+
+// 공유 가능 여부 계산
+const canShare = computed(() => {
+  if (shareType.value === 'link') {
+    return shareLinkData.value.target !== 'friends' || shareLinkData.value.message !== '';
+  } else {
+    return shareImageData.value.template !== '' || shareImageData.value.message !== '';
+  }
+});
 
 // 유틸리티 함수들
 function getMascotImageUrl(type: string): string {
@@ -300,6 +435,77 @@ function showToastMessage(message: string) {
   setTimeout(() => {
     showToast.value = false;
   }, 3000);
+}
+
+// 공유 팝업 표시
+function showSharePopup() {
+  showShare.value = true;
+  shareType.value = 'link'; // 기본값 설정
+  shareLinkData.value = { target: 'friends', message: '' };
+  shareImageData.value = { template: '', message: '' };
+}
+
+// 공유 팝업 닫기
+function closeSharePopup() {
+  showShare.value = false;
+}
+
+// 공유 처리
+async function handleShare() {
+  try {
+    if (shareType.value === 'link') {
+             const message = shareLinkData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
+       const target = shareLinkData.value.target;
+       const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`; // 현재 마스코트 공유 URL
+
+      if (target === 'friends') {
+        // 친구들에게 링크 공유
+        await navigator.share({
+          title: `${currentMascot.value?.name}의 마스코트`,
+          text: message,
+          url: shareUrl
+        });
+        showToastMessage('친구들에게 마스코트 링크를 공유했습니다!');
+      } else {
+        // 전체 공개 링크 공유
+        await navigator.share({
+          title: `${currentMascot.value?.name}의 마스코트`,
+          text: message,
+          url: shareUrl
+        });
+        showToastMessage('마스코트 링크를 전체 공개로 공유했습니다!');
+      }
+    } else {
+      const message = shareImageData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
+      const template = shareImageData.value.template;
+
+      if (template) {
+        // 템플릿 이미지 공유
+        const templateImageUrl = `/templates/template_${template}.png`;
+        await navigator.share({
+          title: `${currentMascot.value?.name}의 마스코트`,
+          text: message,
+          url: `${window.location.origin}/mascot/${currentMascot.value?.id}`,
+          files: [
+            new File([await (await fetch(templateImageUrl)).blob()], 'shared_mascot.png', { type: 'image/png' })
+          ]
+        });
+        showToastMessage('마스코트 이미지를 템플릿으로 공유했습니다!');
+      } else {
+        // 기본 이미지 공유
+        await navigator.share({
+          title: `${currentMascot.value?.name}의 마스코트`,
+          text: message,
+          url: `${window.location.origin}/mascot/${currentMascot.value?.id}`
+        });
+        showToastMessage('마스코트 이미지를 공유했습니다!');
+      }
+    }
+    closeSharePopup();
+  } catch (error) {
+    handleApiError(error);
+    showToastMessage('공유에 실패했습니다.');
+  }
 }
 
 // 마스코트 데이터 로드

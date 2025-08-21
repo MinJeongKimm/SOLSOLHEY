@@ -205,6 +205,38 @@ export const mascot = {
 // 친구 관련 API 함수들
 export * from './friend';
 
+// 공유 관련 API 함수들
+
+// 공유 링크 생성
+export async function createShareLink(data: { target: string; message?: string }): Promise<any> {
+  return apiRequest<any>('/share/link', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// 공유 이미지 생성
+export async function createShareImage(data: { template: string; message?: string }): Promise<any> {
+  return apiRequest<any>('/share/image', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// 사용 가능한 템플릿 목록 조회
+export async function getAvailableTemplates(): Promise<any> {
+  return apiRequest<any>('/share/templates', {
+    method: 'GET',
+  });
+}
+
+// 타입별 템플릿 조회
+export async function getTemplatesByType(templateType: string): Promise<any> {
+  return apiRequest<any>(`/share/templates/${templateType}`, {
+    method: 'GET',
+  });
+}
+
 // API 에러 핸들링 헬퍼
 export function handleApiError(error: unknown): string {
   if (error instanceof ApiError) {
