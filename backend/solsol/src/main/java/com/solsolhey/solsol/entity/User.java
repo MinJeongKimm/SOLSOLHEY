@@ -20,7 +20,7 @@ public class User extends BaseEntity {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "username", nullable = false, length = 50)
+    @Column(name = "username", unique = true, nullable = false, length = 50)
     private String username;
 
     @Column(name = "email", unique = true, nullable = false, length = 100)
@@ -51,23 +51,6 @@ public class User extends BaseEntity {
         this.campus = campus;
         this.totalPoints = 0;
         this.isActive = true;
-    }
-
-    /**
-     * 자동 생성된 username으로 User 생성
-     */
-    public static User createWithAutoUsername(String email, String passwordHash, 
-                                           String nickname, String campus) {
-        String autoUsername = generateUsernameFromEmail(email);
-        return new User(autoUsername, email, passwordHash, nickname, campus);
-    }
-
-    /**
-     * 이메일에서 username 자동 생성
-     */
-    private static String generateUsernameFromEmail(String email) {
-        String localPart = email.split("@")[0];
-        return localPart; // 기본적으로 이메일 앞부분 사용
     }
 
     /**
