@@ -248,13 +248,6 @@
         <!-- 링크 공유 폼 -->
         <div v-if="shareType === 'link'" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">공유 대상</label>
-            <select v-model="shareLinkData.target" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option value="friends">친구들에게만</option>
-              <option value="public">전체 공개</option>
-            </select>
-          </div>
-          <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">메시지 (선택사항)</label>
             <textarea 
               v-model="shareLinkData.message" 
@@ -350,18 +343,17 @@ const toastMessage = ref('');
 const showShare = ref(false);
 const shareType = ref<'link' | 'image'>('link');
 const shareLinkData = ref({
-  target: 'friends' as 'friends' | 'public',
   message: ''
 });
 const shareImageData = ref({
   template: '',
   message: ''
-});
+ });
 
 // 공유 가능 여부 계산
 const canShare = computed(() => {
   if (shareType.value === 'link') {
-    return shareLinkData.value.target !== 'friends' || shareLinkData.value.message !== '';
+    return true; // 링크 공유는 항상 가능
   } else {
     return shareImageData.value.template !== '' || shareImageData.value.message !== '';
   }
@@ -441,7 +433,7 @@ function showToastMessage(message: string) {
 function showSharePopup() {
   showShare.value = true;
   shareType.value = 'link'; // 기본값 설정
-  shareLinkData.value = { target: 'friends', message: '' };
+  shareLinkData.value = { message: '' };
   shareImageData.value = { template: '', message: '' };
 }
 
@@ -454,27 +446,16 @@ function closeSharePopup() {
 async function handleShare() {
   try {
     if (shareType.value === 'link') {
-             const message = shareLinkData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
-       const target = shareLinkData.value.target;
-       const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`; // 현재 마스코트 공유 URL
+      const message = shareLinkData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
+      const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`; // 현재 마스코트 공유 URL
 
-      if (target === 'friends') {
-        // 친구들에게 링크 공유
-        await navigator.share({
-          title: `${currentMascot.value?.name}의 마스코트`,
-          text: message,
-          url: shareUrl
-        });
-        showToastMessage('친구들에게 마스코트 링크를 공유했습니다!');
-      } else {
-        // 전체 공개 링크 공유
-        await navigator.share({
-          title: `${currentMascot.value?.name}의 마스코트`,
-          text: message,
-          url: shareUrl
-        });
-        showToastMessage('마스코트 링크를 전체 공개로 공유했습니다!');
-      }
+      // 링크 공유
+      await navigator.share({
+        title: `${currentMascot.value?.name}의 마스코트`,
+        text: message,
+        url: shareUrl
+      });
+      showToastMessage('마스코트 링크를 공유했습니다!');
     } else {
       const message = shareImageData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
       const template = shareImageData.value.template;
