@@ -158,3 +158,5 @@ out/
 # 로그 파일
 logs/
 *.log
+# Environment variables
+backend/.env
