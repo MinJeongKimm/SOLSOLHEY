@@ -261,15 +261,6 @@
         <!-- 이미지 공유 폼 -->
         <div v-if="shareType === 'image'" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">템플릿 선택</label>
-            <select v-model="shareImageData.template" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option value="">기본 템플릿</option>
-              <option value="cute">귀여운 스타일</option>
-              <option value="cool">멋진 스타일</option>
-              <option value="funny">재미있는 스타일</option>
-            </select>
-          </div>
-          <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">메시지 (선택사항)</label>
             <textarea 
               v-model="shareImageData.message" 
@@ -346,7 +337,6 @@ const shareLinkData = ref({
   message: ''
 });
 const shareImageData = ref({
-  template: '',
   message: ''
 });
 
@@ -443,7 +433,7 @@ function showSharePopup() {
   showShare.value = true;
   shareType.value = 'link'; // 기본값 설정
   shareLinkData.value = { message: '' };
-  shareImageData.value = { template: '', message: '' };
+  shareImageData.value = { message: '' };
   
   // 백엔드 연결 상태 확인
   checkBackendStatus();
@@ -545,29 +535,27 @@ async function handleShare() {
       }
     } else {
       const message = shareImageData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
-      const template = shareImageData.value.template || 'default';
       
-      console.log('이미지 공유 시도:', { template, message });
+      console.log('이미지 공유 시도:', { message });
       
       try {
         console.log('백엔드 API 호출 시작:', {
-          template: template,
           data: {
             mascotId: currentMascot.value?.id,
             mascotName: currentMascot.value?.name,
             message: message,
-            templateType: template || 'default'
+            templateType: 'default'
           }
         });
         
         // 백엔드 API로 공유 이미지 생성
         const response = await createShareImage({
-          template: template,
+          template: 'default',
           data: {
             mascotId: currentMascot.value?.id,
             mascotName: currentMascot.value?.name,
             message: message,
-            templateType: template || 'default'
+            templateType: 'default'
           }
         });
         
