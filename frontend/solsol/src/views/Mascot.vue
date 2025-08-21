@@ -261,15 +261,6 @@
         <!-- 이미지 공유 폼 -->
         <div v-if="shareType === 'image'" class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">템플릿 선택</label>
-            <select v-model="shareImageData.template" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option value="">템플릿을 선택하세요</option>
-              <option value="cute">귀여운 스타일</option>
-              <option value="cool">멋진 스타일</option>
-              <option value="funny">재미있는 스타일</option>
-            </select>
-          </div>
-          <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">메시지 (선택사항)</label>
             <textarea 
               v-model="shareImageData.message" 
@@ -346,16 +337,15 @@ const shareLinkData = ref({
   message: ''
 });
 const shareImageData = ref({
-  template: '',
   message: ''
- });
+});
 
 // 공유 가능 여부 계산
 const canShare = computed(() => {
   if (shareType.value === 'link') {
     return true; // 링크 공유는 항상 가능
   } else {
-    return shareImageData.value.template !== '' || shareImageData.value.message !== '';
+    return true; // 이미지 공유도 항상 가능
   }
 });
 
@@ -434,7 +424,7 @@ function showSharePopup() {
   showShare.value = true;
   shareType.value = 'link'; // 기본값 설정
   shareLinkData.value = { message: '' };
-  shareImageData.value = { template: '', message: '' };
+  shareImageData.value = { message: '' };
 }
 
 // 공유 팝업 닫기
@@ -462,32 +452,17 @@ async function handleShare() {
       showToastMessage('마스코트 링크를 공유했습니다!');
     } else {
       const message = shareImageData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
-      const template = shareImageData.value.template;
       const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
       const mascotName = currentMascot.value?.name || '마스코트';
       const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
 
-      if (template) {
-        // 템플릿 이미지 공유
-        const templateImageUrl = `/templates/template_${template}.png`;
-        await navigator.share({
-          title: shareTitle,
-          text: message,
-          url: `${window.location.origin}/mascot/${currentMascot.value?.id}`,
-          files: [
-            new File([await (await fetch(templateImageUrl)).blob()], 'shared_mascot.png', { type: 'image/png' })
-          ]
-        });
-        showToastMessage('마스코트 이미지를 템플릿으로 공유했습니다!');
-      } else {
-        // 기본 이미지 공유
-        await navigator.share({
-          title: shareTitle,
-          text: message,
-          url: `${window.location.origin}/mascot/${currentMascot.value?.id}`
-        });
-        showToastMessage('마스코트 이미지를 공유했습니다!');
-      }
+      // 이미지 공유 (현재는 링크 공유와 동일)
+      await navigator.share({
+        title: shareTitle,
+        text: message,
+        url: `${window.location.origin}/mascot/${currentMascot.value?.id}`
+      });
+      showToastMessage('마스코트 이미지를 공유했습니다!');
     }
     closeSharePopup();
   } catch (error) {
