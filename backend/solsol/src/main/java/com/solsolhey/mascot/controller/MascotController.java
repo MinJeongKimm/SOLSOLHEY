@@ -7,7 +7,7 @@ import com.solsolhey.mascot.dto.MascotUpdateRequest;
 import com.solsolhey.mascot.exception.MascotAlreadyExistsException;
 import com.solsolhey.mascot.exception.MascotNotFoundException;
 import com.solsolhey.mascot.service.MascotService;
-import com.solsolhey.solsol.auth.dto.CustomUserDetails;
+import com.solsolhey.auth.dto.response.CustomUserDetails;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
