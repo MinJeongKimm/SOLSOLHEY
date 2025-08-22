@@ -40,8 +40,7 @@ dependencies {
 	// Jakarta Annotations (PostConstruct 등)
 	implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
 	
-	// 환경변수 로드용 (.env 파일)
-	implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+	// 환경변수는 Spring Boot에서 자동으로 .env 파일을 인식합니다
 	
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'

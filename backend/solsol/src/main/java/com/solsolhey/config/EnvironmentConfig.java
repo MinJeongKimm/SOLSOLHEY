@@ -1,8 +1,9 @@
 package com.solsolhey.config;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import jakarta.annotation.PostConstruct;
 
@@ -10,32 +11,37 @@ import jakarta.annotation.PostConstruct;
 @Slf4j
 public class EnvironmentConfig {
     
+    @Autowired
+    private Environment environment;
+    
     @PostConstruct
-    public void loadEnvironmentVariables() {
+    public void logEnvironmentVariables() {
         try {
-            // .env 파일이 있으면 로드, 없으면 시스템 환경변수 사용
-            Dotenv dotenv = Dotenv.configure()
-                    .directory("./")  // 프로젝트 루트 디렉토리
-                    .filename(".env") // .env 파일명
-                    .ignoreIfMissing() // 파일이 없어도 오류 안남
-                    .load();
+            // Spring Boot가 이미 .env 파일을 로드했으므로 로깅만 수행
+            log.info("Spring Boot 환경변수 로드 완료");
+            log.debug("활성 프로파일: {}", String.join(", ", environment.getActiveProfiles()));
             
-            // 환경변수들을 시스템 프로퍼티로 설정 (Spring이 읽을 수 있도록)
-            dotenv.entries().forEach(entry -> {
-                String key = entry.getKey();
-                String value = entry.getValue();
-                
-                // 이미 시스템 환경변수나 JVM 옵션으로 설정된 값이 있으면 우선시
-                if (System.getProperty(key) == null && System.getenv(key) == null) {
-                    System.setProperty(key, value);
-                    log.debug("환경변수 로드: {} = {}", key, maskSensitiveValue(key, value));
-                }
-            });
+            // 주요 환경변수들 로깅 (민감한 정보는 마스킹)
+            logEnvironmentVariable("DB_HOST");
+            logEnvironmentVariable("DB_PORT");
+            logEnvironmentVariable("DB_NAME");
+            logEnvironmentVariable("JWT_SECRET_KEY");
+            logEnvironmentVariable("FINANCE_API_KEY");
             
-            log.info(".env 파일 로드 완료");
-            
-        } catch (RuntimeException e) {
-            log.warn(".env 파일 로드 실패 - 시스템 환경변수 사용: {}", e.getMessage());
+        } catch (Exception e) {
+            log.warn("환경변수 로깅 실패: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 환경변수 값을 안전하게 로깅
+     */
+    private void logEnvironmentVariable(String key) {
+        String value = environment.getProperty(key);
+        if (value != null) {
+            log.debug("환경변수 {} = {}", key, maskSensitiveValue(key, value));
+        } else {
+            log.debug("환경변수 {} = 설정되지 않음", key);
         }
     }
     

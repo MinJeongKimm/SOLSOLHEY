@@ -19,7 +19,7 @@ spring:
     active: local
   config:
     import: 
-      - "optional:file:.env[.properties]"
+      - "optional:file:../.env[.properties]"
     
 # 로컬 개발 환경
 ---
