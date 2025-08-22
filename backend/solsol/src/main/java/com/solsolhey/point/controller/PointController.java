@@ -7,6 +7,8 @@ import com.solsolhey.point.dto.request.PointSpendRequest;
 import com.solsolhey.point.dto.response.PointStatsResponse;
 import com.solsolhey.point.dto.response.PointTransactionResponse;
 import com.solsolhey.point.service.PointService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +32,7 @@ import java.util.Map;
 @RequestMapping("/api/v1/points")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Point API", description = "포인트 관리 관련 API")
 public class PointController {
 
     private final PointService pointService;
@@ -38,6 +41,7 @@ public class PointController {
      * 포인트 적립
      */
     @PostMapping("/earn")
+    @Operation(summary = "포인트 적립", description = "사용자에게 포인트를 적립합니다")
     public ResponseEntity<ApiResponse<PointTransactionResponse>> earnPoints(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody PointEarnRequest request) {
@@ -56,6 +60,7 @@ public class PointController {
      * 포인트 사용
      */
     @PostMapping("/spend")
+    @Operation(summary = "포인트 사용", description = "사용자의 포인트를 사용합니다")
     public ResponseEntity<ApiResponse<PointTransactionResponse>> spendPoints(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody PointSpendRequest request) {
@@ -74,6 +79,7 @@ public class PointController {
      * 일일 보너스 포인트 지급
      */
     @PostMapping("/daily-bonus")
+    @Operation(summary = "일일 보너스 포인트", description = "사용자에게 일일 보너스 포인트를 지급합니다")
     public ResponseEntity<ApiResponse<PointTransactionResponse>> giveDailyBonus(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
@@ -91,6 +97,7 @@ public class PointController {
      * 포인트 거래 내역 조회
      */
     @GetMapping("/transactions")
+    @Operation(summary = "포인트 거래 내역 조회", description = "사용자의 포인트 거래 내역을 페이지네이션으로 조회합니다")
     public ResponseEntity<ApiResponse<Page<PointTransactionResponse>>> getUserTransactions(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -108,6 +115,7 @@ public class PointController {
      * 특정 타입 거래 내역 조회
      */
     @GetMapping("/transactions/{transactionType}")
+    @Operation(summary = "타입별 거래 내역 조회", description = "특정 타입의 포인트 거래 내역을 조회합니다")
     public ResponseEntity<ApiResponse<List<PointTransactionResponse>>> getTransactionsByType(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable String transactionType) {
@@ -125,6 +133,7 @@ public class PointController {
      * 기간별 거래 내역 조회
      */
     @GetMapping("/transactions/date-range")
+    @Operation(summary = "기간별 거래 내역 조회", description = "특정 기간의 포인트 거래 내역을 조회합니다")
     public ResponseEntity<ApiResponse<List<PointTransactionResponse>>> getTransactionsByDateRange(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -145,6 +154,7 @@ public class PointController {
      * 포인트 통계 조회
      */
     @GetMapping("/stats")
+    @Operation(summary = "포인트 통계 조회", description = "사용자의 포인트 관련 통계 정보를 조회합니다")
     public ResponseEntity<ApiResponse<PointStatsResponse>> getUserPointStats(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
@@ -161,6 +171,7 @@ public class PointController {
      * 월별 포인트 통계 조회
      */
     @GetMapping("/stats/monthly/{year}")
+    @Operation(summary = "월별 포인트 통계 조회", description = "특정 연도의 월별 포인트 통계를 조회합니다")
     public ResponseEntity<ApiResponse<Map<Integer, PointStatsResponse>>> getMonthlyStats(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable int year) {
@@ -178,6 +189,7 @@ public class PointController {
      * 현재 포인트 잔액 조회
      */
     @GetMapping("/balance")
+    @Operation(summary = "포인트 잔액 조회", description = "사용자의 현재 포인트 잔액을 조회합니다")
     public ResponseEntity<ApiResponse<Integer>> getCurrentBalance(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
@@ -194,6 +206,7 @@ public class PointController {
      * 오늘 획득한 포인트 조회
      */
     @GetMapping("/today-earned")
+    @Operation(summary = "오늘 획득 포인트 조회", description = "사용자가 오늘 획득한 포인트를 조회합니다")
     public ResponseEntity<ApiResponse<Integer>> getTodayEarnedPoints(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
@@ -210,6 +223,7 @@ public class PointController {
      * 포인트 환불 (관리자용)
      */
     @PostMapping("/refund/{transactionId}")
+    @Operation(summary = "포인트 환불", description = "특정 거래의 포인트를 환불합니다 (관리자용)")
     public ResponseEntity<ApiResponse<PointTransactionResponse>> refundPoints(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long transactionId,
@@ -229,6 +243,7 @@ public class PointController {
      * 관리자 포인트 지급
      */
     @PostMapping("/admin-give")
+    @Operation(summary = "관리자 포인트 지급", description = "관리자가 사용자에게 포인트를 지급합니다")
     public ResponseEntity<ApiResponse<PointTransactionResponse>> adminGivePoints(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam Integer amount,

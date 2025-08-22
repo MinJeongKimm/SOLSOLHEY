@@ -35,7 +35,6 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
-    private final UsernameGenerator usernameGenerator;
 
     /**
      * 회원가입
@@ -50,8 +49,8 @@ public class AuthServiceImpl implements AuthService {
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
 
-        // 자동 username 생성
-        String autoUsername = usernameGenerator.generateUsername(requestDto.getUserId());
+        // 간단한 username 생성 (이메일의 @ 앞부분 사용)
+        String autoUsername = requestDto.getUserId().split("@")[0];
 
         // 사용자 생성
         User user = User.builder()

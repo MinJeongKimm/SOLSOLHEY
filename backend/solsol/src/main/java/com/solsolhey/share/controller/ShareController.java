@@ -6,6 +6,8 @@ import com.solsolhey.share.dto.request.ShareImageCreateRequest;
 import com.solsolhey.share.dto.request.ShareLinkCreateRequest;
 import com.solsolhey.share.dto.response.*;
 import com.solsolhey.share.service.ShareService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,7 @@ import java.util.List;
 @RequestMapping("/api/v1/shares")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Share API", description = "공유 기능 관련 API")
 public class ShareController {
 
     private final ShareService shareService;
@@ -34,6 +37,7 @@ public class ShareController {
      * 공유 링크 생성
      */
     @PostMapping("/links")
+    @Operation(summary = "공유 링크 생성", description = "사용자가 공유 링크를 생성합니다")
     public ResponseEntity<ApiResponse<ShareLinkResponse>> createShareLink(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody ShareLinkCreateRequest request) {
@@ -52,6 +56,7 @@ public class ShareController {
      * 공유 링크 조회 (코드로)
      */
     @GetMapping("/links/{linkCode}")
+    @Operation(summary = "공유 링크 조회", description = "링크 코드로 공유 링크 정보를 조회합니다")
     public ResponseEntity<ApiResponse<ShareLinkResponse>> getShareLinkByCode(@PathVariable String linkCode) {
         try {
             log.info("공유 링크 조회 API 호출: linkCode={}", linkCode);
@@ -67,6 +72,7 @@ public class ShareController {
      * 공유 링크 클릭 처리
      */
     @PostMapping("/links/{linkCode}/click")
+    @Operation(summary = "공유 링크 클릭 처리", description = "공유 링크 클릭을 처리하고 통계를 업데이트합니다")
     public ResponseEntity<ApiResponse<Void>> clickShareLink(@PathVariable String linkCode) {
         try {
             log.info("공유 링크 클릭 API 호출: linkCode={}", linkCode);
@@ -82,6 +88,7 @@ public class ShareController {
      * 사용자의 공유 링크 목록 조회
      */
     @GetMapping("/links")
+    @Operation(summary = "사용자 공유 링크 목록", description = "현재 사용자가 생성한 공유 링크 목록을 조회합니다")
     public ResponseEntity<ApiResponse<Page<ShareLinkResponse>>> getUserShareLinks(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -99,6 +106,7 @@ public class ShareController {
      * 공유 링크 비활성화
      */
     @PutMapping("/links/{linkId}/deactivate")
+    @Operation(summary = "공유 링크 비활성화", description = "사용자가 생성한 공유 링크를 비활성화합니다")
     public ResponseEntity<ApiResponse<Void>> deactivateShareLink(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long linkId) {
@@ -116,6 +124,7 @@ public class ShareController {
      * 공유 이미지 생성
      */
     @PostMapping("/images")
+    @Operation(summary = "공유 이미지 생성", description = "사용자가 공유 이미지를 생성합니다")
     public ResponseEntity<ApiResponse<ShareImageResponse>> createShareImage(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody ShareImageCreateRequest request) {
@@ -134,6 +143,7 @@ public class ShareController {
      * 사용자의 공유 이미지 목록 조회
      */
     @GetMapping("/images")
+    @Operation(summary = "사용자 공유 이미지 목록", description = "현재 사용자가 생성한 공유 이미지 목록을 조회합니다")
     public ResponseEntity<ApiResponse<Page<ShareImageResponse>>> getUserShareImages(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -151,6 +161,7 @@ public class ShareController {
      * 공개 공유 이미지 목록 조회 (인기순)
      */
     @GetMapping("/images/public")
+    @Operation(summary = "공개 공유 이미지 목록", description = "공개된 공유 이미지 목록을 인기순으로 조회합니다")
     public ResponseEntity<ApiResponse<Page<ShareImageResponse>>> getPublicShareImages(
             @PageableDefault(size = 20) Pageable pageable) {
         try {
@@ -167,6 +178,7 @@ public class ShareController {
      * 공유 이미지 공개/비공개 토글
      */
     @PutMapping("/images/{imageId}/toggle-visibility")
+    @Operation(summary = "공유 이미지 공개/비공개 토글", description = "공유 이미지의 공개/비공개 상태를 변경합니다")
     public ResponseEntity<ApiResponse<Void>> toggleImageVisibility(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long imageId) {
@@ -184,6 +196,7 @@ public class ShareController {
      * 공유 이미지 공유 카운트 증가
      */
     @PostMapping("/images/{imageId}/share")
+    @Operation(summary = "공유 이미지 공유 카운트 증가", description = "공유 이미지의 공유 카운트를 증가시킵니다")
     public ResponseEntity<ApiResponse<Void>> incrementImageShareCount(@PathVariable Long imageId) {
         try {
             log.info("공유 이미지 공유 카운트 증가 API 호출: imageId={}", imageId);
@@ -199,6 +212,7 @@ public class ShareController {
      * 공유 템플릿 목록 조회
      */
     @GetMapping("/templates")
+    @Operation(summary = "공유 템플릿 목록", description = "활성화된 공유 템플릿 목록을 조회합니다")
     public ResponseEntity<ApiResponse<List<ShareTemplateResponse>>> getActiveTemplates() {
         try {
             log.info("공유 템플릿 목록 API 호출");
@@ -214,6 +228,7 @@ public class ShareController {
      * 템플릿 타입별 조회
      */
     @GetMapping("/templates/{templateType}")
+    @Operation(summary = "템플릿 타입별 조회", description = "특정 타입의 공유 템플릿을 조회합니다")
     public ResponseEntity<ApiResponse<List<ShareTemplateResponse>>> getTemplatesByType(@PathVariable String templateType) {
         try {
             log.info("템플릿 타입별 조회 API 호출: templateType={}", templateType);
@@ -229,6 +244,7 @@ public class ShareController {
      * 사용자 공유 통계 조회
      */
     @GetMapping("/stats")
+    @Operation(summary = "사용자 공유 통계", description = "현재 사용자의 공유 관련 통계를 조회합니다")
     public ResponseEntity<ApiResponse<ShareStatsResponse>> getUserShareStats(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
@@ -245,6 +261,7 @@ public class ShareController {
      * 전체 공유 통계 조회 (관리자용)
      */
     @GetMapping("/stats/total")
+    @Operation(summary = "전체 공유 통계", description = "전체 공유 통계를 조회합니다 (관리자용)")
     public ResponseEntity<ApiResponse<ShareStatsResponse>> getTotalShareStats() {
         try {
             log.info("전체 공유 통계 API 호출");

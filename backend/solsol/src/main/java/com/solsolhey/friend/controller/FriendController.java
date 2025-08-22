@@ -6,6 +6,8 @@ import com.solsolhey.friend.dto.request.FriendAddRequest;
 import com.solsolhey.friend.dto.request.FriendInteractionRequest;
 import com.solsolhey.friend.dto.response.*;
 import com.solsolhey.friend.service.FriendService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,7 @@ import java.util.List;
 @RequestMapping("/api/v1/friends")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Friend API", description = "친구 관리 관련 API")
 public class FriendController {
 
     private final FriendService friendService;
@@ -34,6 +37,7 @@ public class FriendController {
      * 친구 요청 보내기
      */
     @PostMapping("/requests")
+    @Operation(summary = "친구 요청 보내기", description = "다른 사용자에게 친구 요청을 보냅니다")
     public ResponseEntity<ApiResponse<FriendResponse>> sendFriendRequest(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody FriendAddRequest request) {
@@ -52,6 +56,7 @@ public class FriendController {
      * 친구 요청 수락
      */
     @PutMapping("/requests/{friendId}/accept")
+    @Operation(summary = "친구 요청 수락", description = "받은 친구 요청을 수락합니다")
     public ResponseEntity<ApiResponse<FriendResponse>> acceptFriendRequest(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long friendId) {
@@ -69,6 +74,7 @@ public class FriendController {
      * 친구 요청 거절
      */
     @PutMapping("/requests/{friendId}/reject")
+    @Operation(summary = "친구 요청 거절", description = "받은 친구 요청을 거절합니다")
     public ResponseEntity<ApiResponse<Void>> rejectFriendRequest(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long friendId) {
@@ -86,6 +92,7 @@ public class FriendController {
      * 친구 삭제
      */
     @DeleteMapping("/{friendId}")
+    @Operation(summary = "친구 삭제", description = "기존 친구 관계를 삭제합니다")
     public ResponseEntity<ApiResponse<Void>> removeFriend(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long friendId) {
@@ -103,6 +110,7 @@ public class FriendController {
      * 친구 목록 조회
      */
     @GetMapping
+    @Operation(summary = "친구 목록 조회", description = "현재 사용자의 친구 목록을 페이지네이션으로 조회합니다")
     public ResponseEntity<ApiResponse<Page<FriendResponse>>> getFriends(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -120,6 +128,7 @@ public class FriendController {
      * 받은 친구 요청 목록 조회
      */
     @GetMapping("/requests/received")
+    @Operation(summary = "받은 친구 요청 목록", description = "다른 사용자로부터 받은 친구 요청 목록을 조회합니다")
     public ResponseEntity<ApiResponse<Page<FriendResponse>>> getPendingFriendRequests(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -137,6 +146,7 @@ public class FriendController {
      * 보낸 친구 요청 목록 조회
      */
     @GetMapping("/requests/sent")
+    @Operation(summary = "보낸 친구 요청 목록", description = "현재 사용자가 보낸 친구 요청 목록을 조회합니다")
     public ResponseEntity<ApiResponse<Page<FriendResponse>>> getSentFriendRequests(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -154,6 +164,7 @@ public class FriendController {
      * 친구 검색
      */
     @GetMapping("/search")
+    @Operation(summary = "친구 검색", description = "키워드로 친구를 검색합니다")
     public ResponseEntity<ApiResponse<List<FriendSearchResponse>>> searchFriends(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam String keyword) {
@@ -171,6 +182,7 @@ public class FriendController {
      * 친구 통계 조회
      */
     @GetMapping("/stats")
+    @Operation(summary = "친구 통계 조회", description = "친구 관련 통계 정보를 조회합니다")
     public ResponseEntity<ApiResponse<FriendStatsResponse>> getFriendStats(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
@@ -187,6 +199,7 @@ public class FriendController {
      * 친구 상호작용 보내기
      */
     @PostMapping("/interactions")
+    @Operation(summary = "상호작용 보내기", description = "친구에게 상호작용(좋아요, 응원 등)을 보냅니다")
     public ResponseEntity<ApiResponse<FriendInteractionResponse>> sendInteraction(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody FriendInteractionRequest request) {
@@ -205,6 +218,7 @@ public class FriendController {
      * 받은 상호작용 목록 조회
      */
     @GetMapping("/interactions")
+    @Operation(summary = "받은 상호작용 목록", description = "다른 사용자로부터 받은 상호작용 목록을 조회합니다")
     public ResponseEntity<ApiResponse<Page<FriendInteractionResponse>>> getReceivedInteractions(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -222,6 +236,7 @@ public class FriendController {
      * 읽지 않은 상호작용 수 조회
      */
     @GetMapping("/interactions/unread-count")
+    @Operation(summary = "읽지 않은 상호작용 수", description = "읽지 않은 상호작용의 개수를 조회합니다")
     public ResponseEntity<ApiResponse<Long>> getUnreadInteractionCount(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
@@ -238,6 +253,7 @@ public class FriendController {
      * 상호작용 읽음 처리
      */
     @PutMapping("/interactions/{interactionId}/read")
+    @Operation(summary = "상호작용 읽음 처리", description = "특정 상호작용을 읽음 처리합니다")
     public ResponseEntity<ApiResponse<Void>> markInteractionAsRead(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @PathVariable Long interactionId) {

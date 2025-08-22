@@ -6,6 +6,8 @@ import com.solsolhey.auth.dto.response.LoginSuccessDto;
 import com.solsolhey.auth.dto.response.SignUpResponse;
 import com.solsolhey.auth.service.AuthService;
 import com.solsolhey.common.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Auth API", description = "인증/인가 관련 API")
 public class AuthController {
 
     private final AuthService authService;
@@ -28,6 +31,7 @@ public class AuthController {
      * 회원가입
      */
     @PostMapping("/signup")
+    @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다")
     public ResponseEntity<ApiResponse<SignUpResponse>> signUp(
             @Valid @RequestBody SignUpRequestDto requestDto) {
         
@@ -46,6 +50,7 @@ public class AuthController {
      * 로그인
      */
     @PostMapping("/login")
+    @Operation(summary = "로그인", description = "사용자 인증을 수행하고 JWT 토큰을 반환합니다")
     public ResponseEntity<ApiResponse<LoginSuccessDto>> login(
             @Valid @RequestBody LoginRequestDto requestDto) {
         
@@ -68,6 +73,7 @@ public class AuthController {
      * 로그아웃
      */
     @PostMapping("/logout")
+    @Operation(summary = "로그아웃", description = "사용자 로그아웃을 수행하고 토큰을 무효화합니다")
     public ResponseEntity<ApiResponse<Void>> logout(
             @RequestHeader("Authorization") String authorizationHeader) {
         

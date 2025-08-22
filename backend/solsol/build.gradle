@@ -35,7 +35,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	
 	// Swagger/OpenAPI 문서화
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 	
 	// Jakarta Annotations (PostConstruct 등)
 	implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'

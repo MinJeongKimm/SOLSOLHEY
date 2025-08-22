@@ -6,6 +6,8 @@ import com.solsolhey.challenge.dto.request.*;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.challenge.service.ChallengeService;
 import com.solsolhey.common.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,7 @@ import java.util.List;
 @RequestMapping("/api/v1/challenges")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Challenge API", description = "챌린지 관련 API")
 public class ChallengeController {
 
     private final ChallengeService challengeService;
@@ -31,6 +34,7 @@ public class ChallengeController {
      * GET /challenges?category={category}
      */
     @GetMapping
+    @Operation(summary = "챌린지 목록 조회", description = "카테고리별로 챌린지 목록을 조회합니다")
     public ResponseEntity<List<ChallengeListResponseDto>> getChallenges(
             @RequestParam(required = false) String category,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -48,6 +52,7 @@ public class ChallengeController {
      * GET /challenges/{challengeId}
      */
     @GetMapping("/{challengeId}")
+    @Operation(summary = "챌린지 상세 조회", description = "특정 챌린지의 상세 정보를 조회합니다")
     public ResponseEntity<ChallengeDetailResponseDto> getChallengeDetail(
             @PathVariable Long challengeId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -65,6 +70,7 @@ public class ChallengeController {
      * POST /challenges/{challengeId}/join
      */
     @PostMapping("/{challengeId}/join")
+    @Operation(summary = "챌린지 참여", description = "사용자가 특정 챌린지에 참여합니다")
     public ResponseEntity<ChallengeJoinResponseDto> joinChallenge(
             @PathVariable Long challengeId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -86,6 +92,7 @@ public class ChallengeController {
      * POST /challenges/{challengeId}/progress
      */
     @PostMapping("/{challengeId}/progress")
+    @Operation(summary = "챌린지 진행도 갱신", description = "사용자의 챌린지 진행도를 업데이트합니다")
     public ResponseEntity<ChallengeProgressResponseDto> updateProgress(
             @PathVariable Long challengeId,
             @Valid @RequestBody ChallengeProgressRequestDto request,
@@ -109,6 +116,7 @@ public class ChallengeController {
      * GET /challenges/my?status={status}
      */
     @GetMapping("/my")
+    @Operation(summary = "내 챌린지 조회", description = "현재 사용자가 참여한 챌린지 목록을 조회합니다")
     public ResponseEntity<List<UserChallengeDto>> getMyChallenges(
             @RequestParam(required = false) String status,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
