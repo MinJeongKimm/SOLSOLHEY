@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -42,7 +43,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     /**
      * 닉네임으로 사용자 조회 (활성/비활성 무관)
      */
-    Optional<User> findByNickname(String nickname);
+    List<User> findByNickname(String nickname);
 
     /**
      * 사용자명 중복 체크
@@ -85,8 +86,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
     java.util.List<User> findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(
             @Param("username") String username, @Param("nickname") String nickname);
     
-    /**
-     * 닉네임으로 사용자 검색
-     */
-    java.util.List<User> findByNickname(String nickname);
 }
