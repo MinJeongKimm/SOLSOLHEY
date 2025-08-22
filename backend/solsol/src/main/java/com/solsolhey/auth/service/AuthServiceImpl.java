@@ -35,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final UsernameGenerator usernameGenerator;
 
     /**
      * 회원가입
@@ -49,9 +50,12 @@ public class AuthServiceImpl implements AuthService {
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
 
-        // 사용자 생성 (userId를 email과 username 모두에 설정)
+        // 자동 username 생성
+        String autoUsername = usernameGenerator.generateUsername(requestDto.getUserId());
+
+        // 사용자 생성
         User user = User.builder()
-                .username(requestDto.getUserId()) // userId를 username으로 사용
+                .username(autoUsername)           // 자동 생성된 username
                 .email(requestDto.getUserId())    // userId를 email로 사용
                 .passwordHash(encodedPassword)
                 .nickname(requestDto.getNickname())
@@ -59,7 +63,8 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
-        log.info("회원가입 완료: userId={}, username={}", savedUser.getUserId(), savedUser.getUsername());
+        log.info("회원가입 완료: userId={}, username={}, nickname={}", 
+                savedUser.getUserId(), savedUser.getUsername(), savedUser.getNickname());
 
         return SignUpResponse.success("회원가입이 완료되었습니다.", savedUser.getUserId());
     }
