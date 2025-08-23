@@ -442,7 +442,7 @@ function showSharePopup() {
 // 백엔드 연결 상태 확인
 async function checkBackendStatus() {
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/shares/templates`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/share/templates`, {
       headers: {
         'Authorization': `Bearer ${auth.getToken()}`
       }
@@ -508,11 +508,11 @@ async function handleShare() {
         
         if (response.success) {
           // 생성된 공유 링크로 공유
-          const generatedShareUrl = response.data?.shareUrl || shareUrl;
+          const shareUrl = response.data?.shareUrl || `${window.location.origin}/mascot/${currentMascot.value?.id}`;
           await navigator.share({
             title: shareTitle,
             text: message,
-            url: generatedShareUrl
+            url: shareUrl
           });
           showToastMessage('마스코트 링크가 생성되어 공유되었습니다!');
         } else {
@@ -555,7 +555,7 @@ async function handleShare() {
       console.log('이미지 공유 시도:', { message });
       
       try {
-        // 마스코트 이미지 URL 준비
+        // 마스코트 이미지 URL 준비 (절대 URL로 변환)
         const mascotImageUrl = currentMascot.value 
           ? `${window.location.origin}${getMascotImageUrl(currentMascot.value.type)}`
           : `${window.location.origin}/mascot/soll.png`;
@@ -581,16 +581,17 @@ async function handleShare() {
         console.log('백엔드 API 응답:', response);
         
         if (response.success) {
-          // 생성된 공유 이미지로 공유
-          const shareUrl = response.data?.imageUrl || `${window.location.origin}/mascot/${currentMascot.value?.id}`;
+          // 생성된 이미지 URL 가져오기
+          const generatedImageUrl = response.data?.imageUrl;
           const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
           const mascotName = currentMascot.value?.name || '마스코트';
           const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
           
+          // 백엔드에서 생성된 이미지 URL을 그대로 사용하여 공유
           await navigator.share({
             title: shareTitle,
-            text: message,
-            url: shareUrl
+            text: `${message}\n이미지: ${generatedImageUrl}`,
+            url: generatedImageUrl
           });
           showToastMessage('마스코트 이미지가 생성되어 공유되었습니다!');
         } else {
