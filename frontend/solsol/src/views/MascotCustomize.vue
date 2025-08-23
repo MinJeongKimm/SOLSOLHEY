@@ -71,7 +71,7 @@
               v-for="equippedItem in equippedItems"
               :key="equippedItem.id"
               :item="equippedItem.item"
-              :position="equippedItem.position"
+              :position="getAbsolutePosition(equippedItem)"
               :scale="equippedItem.scale"
               :rotation="equippedItem.rotation"
               :is-selected="selectedItemId === equippedItem.id"
@@ -97,7 +97,7 @@
           >
             <div class="font-medium text-gray-800 mb-1">{{ selectedItemInfo.name }}</div>
             <div class="text-gray-600 space-y-1">
-              <div>위치: {{ Math.round(selectedItemInfo.position.x) }}, {{ Math.round(selectedItemInfo.position.y) }}</div>
+              <div>위치: {{ Math.round(selectedItemInfo.relativePosition.x * 100) }}%, {{ Math.round(selectedItemInfo.relativePosition.y * 100) }}%</div>
               <div>크기: {{ Math.round(selectedItemInfo.scale * 100) }}%</div>
               <div>회전: {{ Math.round(selectedItemInfo.rotation) }}°</div>
             </div>
@@ -393,12 +393,22 @@ import { equipItems, getMascot, handleApiError } from '../api/index';
 import DraggableItem from '../components/DraggableItem.vue';
 import { mascotTypes, realItems } from '../data/mockData';
 import type { Item, Mascot } from '../types/api';
+import { 
+  toRelativePosition, 
+  toAbsolutePosition, 
+  getContainerSize, 
+  getDefaultRelativePosition,
+  isAbsolutePosition,
+  type RelativePosition,
+  type AbsolutePosition,
+  type ContainerSize
+} from '../utils/coordinates';
 
 // 아이템 상태 인터페이스 (다중 아이템 지원)
 interface EquippedItemState {
   id: string; // 고유 ID (item.id + 장착 순서)
   item: Item;
-  position: { x: number; y: number };
+  relativePosition: RelativePosition; // 상대 좌표 (0~1 비율)
   scale: number;
   rotation: number; // 회전 각도 (degrees)
   equippedAt: number; // 장착 시간 (타임스탬프)
@@ -499,7 +509,7 @@ const selectedItemInfo = computed(() => {
   
   return {
     name: state.item.name,
-    position: state.position,
+    relativePosition: state.relativePosition,
     scale: state.scale,
     rotation: state.rotation,
   };
@@ -524,18 +534,9 @@ function getCategoryName(category: 'head' | 'clothing' | 'accessory' | 'backgrou
   return categoryMap[category] || category;
 }
 
-// 아이템 타입별 기본 위치 설정
-function getDefaultPosition(itemType: string): { x: number; y: number } {
-  const canvasCenter = { x: 120, y: 120 }; // 캔버스 중앙 기준
-  
-  const defaultPositions: Record<string, { x: number; y: number }> = {
-    head: { x: canvasCenter.x - 60, y: canvasCenter.y - 80 },
-    clothing: { x: canvasCenter.x - 60, y: canvasCenter.y - 40 },
-    accessory: { x: canvasCenter.x - 60, y: canvasCenter.y - 20 },
-    background: { x: canvasCenter.x - 60, y: canvasCenter.y - 60 },
-  };
-  
-  return defaultPositions[itemType] || { x: canvasCenter.x - 60, y: canvasCenter.y - 60 };
+// 아이템 타입별 기본 상대 위치 설정
+function getDefaultPosition(itemType: string): RelativePosition {
+  return getDefaultRelativePosition(itemType);
 }
 
 // 다중 아이템 관리 함수들
@@ -554,7 +555,7 @@ function addEquippedItem(item: Item): boolean {
   const newEquippedItem: EquippedItemState = {
     id,
     item,
-    position: getDefaultPosition(item.type),
+    relativePosition: getDefaultPosition(item.type),
     scale: 1,
     rotation: 0,
     equippedAt: Date.now(),
@@ -592,17 +593,49 @@ function getEquippedCount(item: Item): number {
   return equippedItemsList.value.filter(equipped => equipped.item.id === item.id).length;
 }
 
+// 상대 좌표를 절대 좌표로 변환하여 반환
+function getAbsolutePosition(equippedItem: EquippedItemState): { x: number; y: number } {
+  if (!mascotCanvas.value) {
+    return { x: 0, y: 0 };
+  }
+  
+  const containerSize = getContainerSize(mascotCanvas.value);
+  return toAbsolutePosition(equippedItem.relativePosition, containerSize);
+}
+
 // 드래그 관련 메소드들
 function updateCanvasBounds() {
   if (mascotCanvas.value) {
-    canvasBounds.value = mascotCanvas.value.getBoundingClientRect();
+    const newBounds = mascotCanvas.value.getBoundingClientRect();
+    
+    // 캔버스 크기가 실제로 변경되었는지 확인
+    const oldBounds = canvasBounds.value;
+    const sizeChanged = !oldBounds || 
+      Math.abs(oldBounds.width - newBounds.width) > 1 || 
+      Math.abs(oldBounds.height - newBounds.height) > 1;
+    
+    canvasBounds.value = newBounds;
+    
+    // 크기 변경 시 상대 좌표 기반으로 아이템 위치 재계산
+    if (sizeChanged && oldBounds) {
+      console.log('화면 크기 변경 감지:', { 
+        old: { width: oldBounds.width, height: oldBounds.height },
+        new: { width: newBounds.width, height: newBounds.height }
+      });
+      
+      // 모든 아이템의 절대 위치를 상대 좌표 기준으로 재계산
+      // (상대 좌표는 이미 저장되어 있으므로 자동으로 새로운 크기에 맞춰 조정됨)
+      // 렌더링은 자동으로 업데이트되므로 별도 처리 불필요
+    }
   }
 }
 
 function updateItemPosition(itemId: string, position: { x: number; y: number }) {
   const state = equippedItemStates.value.get(itemId);
-  if (state) {
-    state.position = position;
+  if (state && mascotCanvas.value) {
+    // 절대 좌표를 상대 좌표로 변환
+    const containerSize = getContainerSize(mascotCanvas.value);
+    state.relativePosition = toRelativePosition(position, containerSize);
     equippedItemStates.value.set(itemId, state);
   }
 }
@@ -649,8 +682,7 @@ function adjustItemScale(itemId: string, scaleChange: number) {
 function resetItemPosition(itemId: string) {
   const state = equippedItemStates.value.get(itemId);
   if (state) {
-    const defaultPos = getDefaultPosition(state.item.type);
-    updateItemPosition(itemId, defaultPos);
+    state.relativePosition = getDefaultPosition(state.item.type);
     updateItemScale(itemId, 1);
     updateItemRotation(itemId, 0);
     
@@ -660,8 +692,11 @@ function resetItemPosition(itemId: string) {
 
 function setItemQuickPosition(itemId: string, quickPosition: { name: string; icon: string; position: { x: number; y: number } }) {
   const state = equippedItemStates.value.get(itemId);
-  if (state) {
-    updateItemPosition(itemId, quickPosition.position);
+  if (state && mascotCanvas.value) {
+    // 절대 좌표를 상대 좌표로 변환
+    const containerSize = getContainerSize(mascotCanvas.value);
+    state.relativePosition = toRelativePosition(quickPosition.position, containerSize);
+    equippedItemStates.value.set(itemId, state);
     
     showToastMessage(`${state.item.name} → ${quickPosition.name}`);
   }
@@ -735,37 +770,57 @@ function saveItemPositions() {
   // 현재는 localStorage에 저장하는 것으로 시뮬레이션
   try {
     const positionsData = {
+      version: 'relative', // 상대 좌표 버전임을 표시
       equippedItems: equippedItemsList.value,
       itemStates: {}
     };
     
     equippedItemStates.value.forEach((state, itemId) => {
       positionsData.itemStates[itemId] = {
-        position: state.position,
+        relativePosition: state.relativePosition,
         scale: state.scale,
         rotation: state.rotation,
       };
     });
     
-    localStorage.setItem('mascot-multiple-items', JSON.stringify(positionsData));
+    localStorage.setItem('mascot-multiple-items-v2', JSON.stringify(positionsData));
     showToastMessage('아이템 위치가 저장되었습니다! 💾');
     
-    console.log('저장된 다중 아이템 데이터:', positionsData);
+    console.log('저장된 다중 아이템 데이터 (상대 좌표):', positionsData);
   } catch (error) {
     console.error('위치 저장 실패:', error);
     showToastMessage('저장에 실패했습니다. 다시 시도해주세요.');
   }
 }
 
-// 저장된 위치 불러오기
+// 저장된 위치 불러오기 (완전한 마이그레이션 포함)
 function loadItemPositions() {
   try {
-    const savedData = localStorage.getItem('mascot-multiple-items');
+    // 1. 새로운 상대 좌표 데이터 먼저 시도
+    let savedData = localStorage.getItem('mascot-multiple-items-v2');
+    let isRelativeData = true;
+    let dataSource = 'relative-v2';
+    
+    // 2. 새 데이터가 없으면 기존 다중 아이템 절대 좌표 데이터 시도
+    if (!savedData) {
+      savedData = localStorage.getItem('mascot-multiple-items');
+      isRelativeData = false;
+      dataSource = 'absolute-multi';
+    }
+    
+    // 3. 그것도 없으면 기존 단일 아이템 데이터 시도
+    if (!savedData) {
+      savedData = localStorage.getItem('mascot-item-positions');
+      isRelativeData = false;
+      dataSource = 'absolute-single';
+    }
+    
     if (savedData) {
       const positionsData = JSON.parse(savedData);
       
+      // 새로운 다중 아이템 형식 처리
       if (positionsData.equippedItems) {
-        // 새로운 다중 아이템 데이터 형식
+        // 아이템 목록 로드
         equippedItemsList.value = positionsData.equippedItems;
         
         // 상태 맵 재구성
@@ -778,16 +833,65 @@ function loadItemPositions() {
         if (positionsData.itemStates) {
           Object.entries(positionsData.itemStates).forEach(([itemId, data]: [string, any]) => {
             const state = equippedItemStates.value.get(itemId);
-            if (state && data.position && data.scale !== undefined) {
-              state.position = data.position;
+            if (state && data && data.scale !== undefined) {
+              // 상대 좌표 데이터인지 절대 좌표 데이터인지 확인
+              if (isRelativeData && data.relativePosition) {
+                // 새로운 상대 좌표 데이터
+                state.relativePosition = data.relativePosition;
+              } else if (!isRelativeData && data.position && mascotCanvas.value) {
+                // 기존 절대 좌표 데이터를 상대 좌표로 마이그레이션
+                const containerSize = getContainerSize(mascotCanvas.value);
+                state.relativePosition = toRelativePosition(data.position, containerSize);
+                console.log(`마이그레이션 (${dataSource}): ${itemId}`, data.position, '→', state.relativePosition);
+              }
+              
               state.scale = data.scale;
               state.rotation = data.rotation || 0;
               equippedItemStates.value.set(itemId, state);
             }
           });
         }
+      } 
+      // 기존 단일 아이템 형식 처리 (position 데이터가 직접 저장된 경우)
+      else if (dataSource === 'absolute-single' && mascotCanvas.value) {
+        console.log('기존 단일 아이템 데이터 마이그레이션 시작:', positionsData);
         
-        console.log('저장된 다중 아이템 데이터 불러옴:', positionsData);
+        const containerSize = getContainerSize(mascotCanvas.value);
+        Object.entries(positionsData).forEach(([itemIdStr, data]: [string, any]) => {
+          if (data && data.position && data.scale !== undefined) {
+            // 기존 아이템 ID로 아이템 찾기
+            const itemId = parseInt(itemIdStr);
+            const item = items.value.find(i => i.id === itemId);
+            
+            if (item) {
+              // 새로운 다중 아이템 형식으로 변환
+              const newId = generateItemId(item);
+              const relativePosition = toRelativePosition(data.position, containerSize);
+              
+              const newEquippedItem: EquippedItemState = {
+                id: newId,
+                item,
+                relativePosition,
+                scale: data.scale,
+                rotation: data.rotation || 0,
+                equippedAt: Date.now(),
+              };
+              
+              equippedItemsList.value.push(newEquippedItem);
+              equippedItemStates.value.set(newId, newEquippedItem);
+              
+              console.log(`단일→다중 마이그레이션: ${item.name}`, data.position, '→', relativePosition);
+            }
+          }
+        });
+      }
+      
+      console.log(`저장된 데이터 불러옴 (${dataSource}):`, positionsData);
+      
+      // 마이그레이션된 경우 새 형식으로 저장
+      if (!isRelativeData || dataSource !== 'relative-v2') {
+        saveItemPositions();
+        showToastMessage('기존 데이터를 새 형식으로 마이그레이션했습니다! 📱💻');
       }
     }
   } catch (error) {
@@ -917,6 +1021,9 @@ async function loadMascotData() {
   }
 }
 
+// 화면 크기 변경 감지를 위한 ResizeObserver
+let resizeObserver: ResizeObserver | null = null;
+
 // 컴포넌트 마운트
 onMounted(async () => {
   console.log('마스코트 꾸미기 페이지 로드됨');
@@ -933,12 +1040,31 @@ onMounted(async () => {
   // 윈도우 리사이즈 이벤트 리스너 추가
   window.addEventListener('resize', updateCanvasBounds);
   
+  // 마스코트 캔버스의 크기 변경을 정확하게 감지하기 위해 ResizeObserver 사용
+  if (mascotCanvas.value && 'ResizeObserver' in window) {
+    resizeObserver = new ResizeObserver(() => {
+      // 다음 프레임에서 실행 (DOM 업데이트 완료 후)
+      nextTick(() => {
+        updateCanvasBounds();
+      });
+    });
+    resizeObserver.observe(mascotCanvas.value);
+    console.log('ResizeObserver가 마스코트 캔버스를 감시하기 시작했습니다.');
+  }
+  
   console.log('사용 가능한 아이템들:', items.value);
 });
 
 // 컴포넌트 언마운트 시 이벤트 리스너 제거
 onUnmounted(() => {
   window.removeEventListener('resize', updateCanvasBounds);
+  
+  // ResizeObserver 정리
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+    console.log('ResizeObserver 정리 완료');
+  }
 });
 </script>
 
