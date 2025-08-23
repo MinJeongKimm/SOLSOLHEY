@@ -16,8 +16,11 @@ spring:
   application:
     name: solsol
   profiles:
-    active: dev
-
+    active: local
+  config:
+    import: 
+      - "optional:file:../.env[.properties]"
+    
 # 로컬 개발 환경 (H2)
 ---
 spring:
