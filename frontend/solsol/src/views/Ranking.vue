@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-6xl w-full p-8">
+  <div class="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100 p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-6xl mx-auto p-8">
       <!-- 헤더 -->
       <div class="flex items-center justify-between mb-8">
         <div class="flex items-center space-x-4">
