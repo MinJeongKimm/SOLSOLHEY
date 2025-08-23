@@ -95,10 +95,20 @@ cors:
   allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
   max-age: ${CORS_MAX_AGE:3600}
 
+# Rate Limiting 설정
+rate-limit:
+  general:
+    requests-per-minute: ${RATE_LIMIT_GENERAL_REQUESTS_PER_MINUTE:100}
+  login:
+    attempts-per-15min: ${RATE_LIMIT_LOGIN_ATTEMPTS_PER_15MIN:5}
+  cleanup:
+    interval-hours: ${RATE_LIMIT_CLEANUP_INTERVAL_HOURS:1}
+
 # 로깅 설정
 logging:
   level:
     com.solsolhey: ${LOGGING_LEVEL_COM_SOLSOLHEY:DEBUG}
+    com.solsolhey.common.security: DEBUG
     org.springframework.web.reactive.function.client: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_REACTIVE_FUNCTION_CLIENT:DEBUG}
   pattern:
     console: ${LOGGING_PATTERN_CONSOLE:"%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"}
