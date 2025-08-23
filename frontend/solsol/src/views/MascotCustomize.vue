@@ -241,12 +241,15 @@
             v-for="item in filteredItems" 
             :key="item.id"
             :class="[
-              'relative border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-md',
+              'relative border-2 rounded-xl p-4 transition-all',
               isEquipped(item) 
                 ? 'border-purple-500 bg-purple-50' 
-                : 'border-gray-200 hover:border-gray-300'
+                : 'border-gray-200 hover:border-gray-300',
+              canEquipMoreItems || isEquipped(item)
+                ? 'cursor-pointer hover:shadow-md'
+                : 'cursor-not-allowed opacity-60'
             ]"
-            @click="toggleEquipItem(item)"
+            @click="handleItemClick(item)"
           >
             <!-- 아이템 이미지 -->
             <div class="w-full h-20 bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
@@ -275,12 +278,16 @@
                     'text-xs font-medium px-3 py-1 rounded-full',
                     isEquipped(item) 
                       ? 'bg-purple-500 text-white' 
-                      : 'bg-gray-200 text-gray-600'
+                      : canEquipMoreItems 
+                        ? 'bg-gray-200 text-gray-600' 
+                        : 'bg-red-100 text-red-600'
                   ]"
                 >
                   {{ isEquipped(item) 
                     ? `착용중 (${getEquippedCount(item)})` 
-                    : '착용하기' }}
+                    : canEquipMoreItems
+                      ? '착용하기' 
+                      : '장착 불가' }}
                 </span>
               </div>
             </div>
@@ -304,8 +311,12 @@
       
       <!-- 장착된 아이템 목록 -->
       <div v-if="equippedItemsList.length > 0" class="mb-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-3">
-          장착된 아이템 ({{ equippedItemsList.length }}/{{ maxEquippedItems }})
+        <h3 :class="[
+          'text-lg font-bold mb-3 flex items-center space-x-2',
+          equippedItemsList.length >= maxEquippedItems ? 'text-red-600' : 'text-gray-800'
+        ]">
+          <span>장착된 아이템 ({{ equippedItemsList.length }}/{{ maxEquippedItems }})</span>
+          <span v-if="equippedItemsList.length >= maxEquippedItems" class="text-red-500 text-sm">⚠️ 최대</span>
         </h3>
         
         <div class="space-y-2 max-h-32 overflow-y-auto">
@@ -448,6 +459,11 @@ const filteredItems = computed(() => {
 const equippedItems = computed(() => {
   // 새로운 다중 아이템 시스템에서는 equippedItemsList를 직접 사용
   return equippedItemsList.value;
+});
+
+// 더 많은 아이템을 장착할 수 있는지 확인
+const canEquipMoreItems = computed(() => {
+  return equippedItemsList.value.length < maxEquippedItems;
 });
 
 // 기존 마스코트 데이터에서 아이템 로드 (호환성을 위함)
@@ -678,6 +694,25 @@ function removeSelectedItem() {
   if (selectedItemId.value) {
     removeEquippedItem(selectedItemId.value);
   }
+}
+
+// 아이템 클릭 처리 (제한 체크 포함)
+function handleItemClick(item: Item) {
+  const isCurrentlyEquipped = isItemEquipped(item);
+  
+  // 장착 해제는 항상 가능
+  if (isCurrentlyEquipped) {
+    toggleEquipItem(item);
+    return;
+  }
+  
+  // 새로 장착할 때는 제한 체크
+  if (!canEquipMoreItems.value) {
+    showToastMessage(`최대 ${maxEquippedItems}개까지만 장착할 수 있습니다! 먼저 다른 아이템을 제거해주세요.`);
+    return;
+  }
+  
+  toggleEquipItem(item);
 }
 
 // 전체 조작 메소드들
