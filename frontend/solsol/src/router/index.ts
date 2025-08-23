@@ -80,8 +80,9 @@ router.beforeEach((to, from, next) => {
   
   // 게스트만 접근 가능한 페이지 (로그인, 회원가입)
   if (to.meta.requiresGuest && isAuthenticated) {
-    // 로그인한 사용자는 대시보드로 리디렉트
-    next('/dashboard')
+    // 로그인한 사용자는 마스코트 메인 페이지로 리디렉트
+    // 마스코트가 없으면 컴포넌트에서 자동으로 생성 페이지로 이동
+    next('/mascot')
     return
   }
   
