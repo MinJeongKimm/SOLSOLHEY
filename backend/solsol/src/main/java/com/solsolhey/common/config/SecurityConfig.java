@@ -1,4 +1,4 @@
-package com.solsolhey.solsol.config;
+package com.solsolhey.common.config;
 
 import java.util.Arrays;
 
@@ -24,6 +24,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.solsolhey.auth.jwt.JwtAuthenticationFilter;
 import com.solsolhey.auth.service.CustomUserDetailsService;
+import com.solsolhey.common.security.RateLimitingFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,6 +40,7 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitingFilter rateLimitingFilter;
     private final Environment environment;
 
     @Bean
@@ -60,7 +63,8 @@ public class SecurityConfig {
                     .requestMatchers("/auth/**").permitAll()  // 혹시 모를 레거시 경로
                     .requestMatchers("/public/**").permitAll()
                     .requestMatchers("/health").permitAll()
-                    .requestMatchers("/api/v1/shop/**").permitAll();  // Shop API 허용
+                    .requestMatchers("/api/v1/shop/**").permitAll()  // Shop API 허용
+                    .requestMatchers("/api/v1/test/**").permitAll();  // 테스트 API 허용
                 
                 // 개발환경에서만 허용되는 엔드포인트
                 if (isDevelopmentEnvironment()) {
@@ -73,7 +77,10 @@ public class SecurityConfig {
                 authz.anyRequest().authenticated();
             })
             
-            // JWT 인증 필터 추가
+            // Rate Limiting 필터 추가 (가장 먼저 실행)
+            .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
+            
+            // JWT 인증 필터 추가 (Rate Limiting 이후)
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             
             // 인증 제공자 설정
@@ -127,6 +134,28 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
+    }
+
+    /**
+     * RateLimitingFilter 자동 등록 비활성화
+     */
+    @Bean
+    public FilterRegistrationBean<RateLimitingFilter> rateLimitingFilterRegistration(RateLimitingFilter filter) {
+        FilterRegistrationBean<RateLimitingFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    /**
+     * JwtAuthenticationFilter 자동 등록 비활성화
+     */
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(JwtAuthenticationFilter filter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(filter);
+        registration.setEnabled(false);
+        return registration;
     }
 
     /**
