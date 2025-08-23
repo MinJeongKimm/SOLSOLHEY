@@ -17,6 +17,11 @@ import type {
   GetItemsResponse,
   MascotCreateRequest,
   MascotApiResponse,
+  Challenge,
+  ChallengeJoinResponse,
+  ChallengeProgressRequest,
+  ChallengeProgressResponse,
+  UserResponse,
   Mascot
 } from '../types/api';
 import { ApiError } from '../types/api';
@@ -339,6 +344,50 @@ export function handleApiError(error: unknown): string {
   }
   
   return '알 수 없는 오류가 발생했습니다.';
+}
+
+// 챌린지 관련 API 함수들
+export async function getChallenges(category?: string): Promise<Challenge[]> {
+  const endpoint = category ? `/challenges?category=${category}` : '/challenges';
+  return apiRequest<Challenge[]>(endpoint, {
+    method: 'GET',
+  });
+}
+
+export async function getChallengeDetail(challengeId: number): Promise<Challenge> {
+  return apiRequest<Challenge>(`/challenges/${challengeId}`, {
+    method: 'GET',
+  });
+}
+
+export async function joinChallenge(challengeId: number): Promise<ChallengeJoinResponse> {
+  return apiRequest<ChallengeJoinResponse>(`/challenges/${challengeId}/join`, {
+    method: 'POST',
+  });
+}
+
+export async function updateChallengeProgress(
+  challengeId: number, 
+  request: ChallengeProgressRequest
+): Promise<ChallengeProgressResponse> {
+  return apiRequest<ChallengeProgressResponse>(`/challenges/${challengeId}/progress`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+export async function getMyChallenges(status?: string): Promise<Challenge[]> {
+  const endpoint = status ? `/challenges/my?status=${status}` : '/challenges/my';
+  return apiRequest<Challenge[]>(endpoint, {
+    method: 'GET',
+  });
+}
+
+// 사용자 정보 조회 (포인트 포함)
+export async function getUserInfo(userId: number): Promise<UserResponse> {
+  return apiRequest<UserResponse>(`/users/${userId}`, {
+    method: 'GET',
+  });
 }
 
 
