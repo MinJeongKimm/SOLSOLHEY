@@ -46,18 +46,7 @@
           <span>홈</span>
         </router-link>
 
-        <!-- 챌린지 -->
-        <router-link 
-          to="/challenge" 
-          @click="closeMenu"
-          class="flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-          :class="{ 'bg-blue-50 text-blue-600': $route.path === '/challenge' }"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>챌린지</span>
-        </router-link>
+
 
         <!-- 출석체크 -->
         <router-link 
