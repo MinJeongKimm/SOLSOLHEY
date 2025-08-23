@@ -207,17 +207,55 @@ export * from './friend';
 
 // 공유 관련 API 함수들
 
+// ShareType enum (백엔드와 동일)
+export enum ShareType {
+  MASCOT = 'MASCOT',
+  CHALLENGE = 'CHALLENGE',
+  ACHIEVEMENT = 'ACHIEVEMENT',
+  RANKING = 'RANKING'
+}
+
+// ImageType enum (백엔드와 동일)
+export enum ImageType {
+  MASCOT_SHARE = 'MASCOT_SHARE',
+  CHALLENGE_ACHIEVEMENT = 'CHALLENGE_ACHIEVEMENT',
+  RANKING_SHARE = 'RANKING_SHARE',
+  CUSTOM = 'CUSTOM'
+}
+
+// 공유 링크 생성 요청 타입 (백엔드 ShareLinkCreateRequest와 동일)
+export interface ShareLinkCreateRequest {
+  title: string;          // 필수
+  description?: string;   // 선택
+  thumbnailUrl?: string;  // 선택
+  targetUrl?: string;     // 선택
+  shareType: ShareType;   // 필수
+  expiresAt?: string;     // 선택 (ISO 날짜 문자열)
+}
+
+// 공유 이미지 생성 요청 타입 (백엔드 ShareImageCreateRequest와 동일)
+export interface ShareImageCreateRequest {
+  templateId?: number;        // 선택
+  imageUrl: string;          // 필수
+  originalFilename?: string; // 선택
+  fileSize?: number;         // 선택
+  width?: number;            // 선택
+  height?: number;           // 선택
+  imageType: ImageType;      // 필수
+  isPublic?: boolean;        // 선택 (기본값 true)
+}
+
 // 공유 링크 생성
-export async function createShareLink(data: { target: string; description?: string }): Promise<any> {
-  return apiRequest<any>('/share/link', {
+export async function createShareLink(data: ShareLinkCreateRequest): Promise<any> {
+  return apiRequest<any>('/shares/links', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
 // 공유 이미지 생성
-export async function createShareImage(data: { template: string; data: any }): Promise<any> {
-  return apiRequest<any>('/share/image', {
+export async function createShareImage(data: ShareImageCreateRequest): Promise<any> {
+  return apiRequest<any>('/shares/images', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -225,14 +263,14 @@ export async function createShareImage(data: { template: string; data: any }): P
 
 // 사용 가능한 템플릿 목록 조회
 export async function getAvailableTemplates(): Promise<any> {
-  return apiRequest<any>('/share/templates', {
+  return apiRequest<any>('/shares/templates', {
     method: 'GET',
   });
 }
 
 // 타입별 템플릿 조회
 export async function getTemplatesByType(templateType: string): Promise<any> {
-  return apiRequest<any>(`/share/templates/${templateType}`, {
+  return apiRequest<any>(`/shares/templates/${templateType}`, {
     method: 'GET',
   });
 }

@@ -308,7 +308,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { createMascot as createMascotApi, handleApiError, mascot, auth, createShareLink, createShareImage } from '../api/index';
+import { createMascot as createMascotApi, handleApiError, mascot, auth, createShareLink, createShareImage, ShareType, ImageType, type ShareLinkCreateRequest, type ShareImageCreateRequest } from '../api/index';
 import { mockMascot, mascotTypes, levelExperience } from '../data/mockData';
 import type { Mascot } from '../types/api';
 
@@ -442,7 +442,7 @@ function showSharePopup() {
 // 백엔드 연결 상태 확인
 async function checkBackendStatus() {
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/share/templates`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/shares/templates`, {
       headers: {
         'Authorization': `Bearer ${auth.getToken()}`
       }
@@ -484,19 +484,24 @@ async function handleShare() {
       console.log('링크 공유 시도:', { shareTitle, message, shareUrl });
       
       try {
-        // 백엔드 API로 공유 링크 생성
-        const response = await createShareLink({
-          target: 'MASCOT',
-          description: message
-        });
+        // 백엔드 API로 공유 링크 생성 (새로운 ShareLinkCreateRequest 구조)
+        const shareLinkRequest: ShareLinkCreateRequest = {
+          title: shareTitle,
+          description: message,
+          targetUrl: shareUrl,
+          shareType: ShareType.MASCOT,
+          thumbnailUrl: currentMascot.value ? getMascotImageUrl(currentMascot.value.type) : undefined
+        };
+        
+        const response = await createShareLink(shareLinkRequest);
         
         if (response.success) {
           // 생성된 공유 링크로 공유
-          const shareUrl = response.data?.shareUrl || `${window.location.origin}/mascot/${currentMascot.value?.id}`;
+          const generatedShareUrl = response.data?.shareUrl || shareUrl;
           await navigator.share({
             title: shareTitle,
             text: message,
-            url: shareUrl
+            url: generatedShareUrl
           });
           showToastMessage('마스코트 링크가 생성되어 공유되었습니다!');
         } else {
@@ -539,25 +544,28 @@ async function handleShare() {
       console.log('이미지 공유 시도:', { message });
       
       try {
+        // 마스코트 이미지 URL 준비
+        const mascotImageUrl = currentMascot.value 
+          ? `${window.location.origin}${getMascotImageUrl(currentMascot.value.type)}`
+          : `${window.location.origin}/mascot/soll.png`;
+        
         console.log('백엔드 API 호출 시작:', {
-          data: {
-            mascotId: currentMascot.value?.id,
-            mascotName: currentMascot.value?.name,
-            message: message,
-            templateType: 'default'
-          }
+          imageUrl: mascotImageUrl,
+          imageType: ImageType.MASCOT_SHARE,
+          isPublic: true
         });
         
-        // 백엔드 API로 공유 이미지 생성
-        const response = await createShareImage({
-          template: 'default',
-          data: {
-            mascotId: currentMascot.value?.id,
-            mascotName: currentMascot.value?.name,
-            message: message,
-            templateType: 'default'
-          }
-        });
+        // 백엔드 API로 공유 이미지 생성 (새로운 ShareImageCreateRequest 구조)
+        const shareImageRequest: ShareImageCreateRequest = {
+          imageUrl: mascotImageUrl,
+          imageType: ImageType.MASCOT_SHARE,
+          originalFilename: `mascot_${currentMascot.value?.name || 'unknown'}_share.png`,
+          isPublic: true,
+          width: 320,  // 마스코트 이미지 기본 크기
+          height: 320
+        };
+        
+        const response = await createShareImage(shareImageRequest);
         
         console.log('백엔드 API 응답:', response);
         
