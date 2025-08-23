@@ -71,10 +71,12 @@
               :item="equippedItem.item"
               :position="equippedItem.position"
               :scale="equippedItem.scale"
+              :rotation="equippedItem.rotation"
               :is-selected="selectedItemId === equippedItem.item.id"
               :container-bounds="canvasBounds"
               @update:position="updateItemPosition(equippedItem.item.id, $event)"
               @update:scale="updateItemScale(equippedItem.item.id, $event)"
+              @update:rotation="updateItemRotation(equippedItem.item.id, $event)"
               @select="selectItem(equippedItem.item.id)"
             />
           </div>
@@ -275,18 +277,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { realItems, mascotTypes } from '../data/mockData';
-import { getMascot, equipItems, handleApiError } from '../api/index';
-import type { Mascot, Item } from '../types/api';
+import { equipItems, getMascot, handleApiError } from '../api/index';
 import DraggableItem from '../components/DraggableItem.vue';
+import { mascotTypes, realItems } from '../data/mockData';
+import type { Item, Mascot } from '../types/api';
 
 // 아이템 상태 인터페이스
 interface EquippedItemState {
   item: Item;
   position: { x: number; y: number };
   scale: number;
+  rotation: number; // 회전 각도 (degrees)
 }
 
 const router = useRouter();
@@ -354,6 +357,7 @@ const equippedItems = computed(() => {
           item,
           position: getDefaultPosition(item.type),
           scale: 1,
+          rotation: 0,
         };
         equippedItemStates.value.set(item.id, state);
       }
@@ -375,6 +379,7 @@ const selectedItemInfo = computed(() => {
     name: state.item.name,
     position: state.position,
     scale: state.scale,
+    rotation: state.rotation,
   };
 });
 
@@ -434,6 +439,14 @@ function updateItemScale(itemId: number, scale: number) {
   }
 }
 
+function updateItemRotation(itemId: number, rotation: number) {
+  const state = equippedItemStates.value.get(itemId);
+  if (state) {
+    state.rotation = rotation;
+    equippedItemStates.value.set(itemId, state);
+  }
+}
+
 function selectItem(itemId: number) {
   selectedItemId.value = itemId;
 }
@@ -463,6 +476,7 @@ function resetItemPosition(itemId: number) {
     const defaultPos = getDefaultPosition(state.item.type);
     updateItemPosition(itemId, defaultPos);
     updateItemScale(itemId, 1);
+    updateItemRotation(itemId, 0);
     
     showToastMessage(`${state.item.name} 위치가 초기화되었습니다`);
   }
@@ -500,6 +514,7 @@ function saveItemPositions() {
       positionsData[itemId] = {
         position: state.position,
         scale: state.scale,
+        rotation: state.rotation,
       };
     });
     
@@ -522,9 +537,10 @@ function loadItemPositions() {
       
       Object.entries(positionsData).forEach(([itemId, data]: [string, any]) => {
         const state = equippedItemStates.value.get(Number(itemId));
-        if (state && data.position && data.scale) {
+        if (state && data.position && data.scale !== undefined) {
           state.position = data.position;
           state.scale = data.scale;
+          state.rotation = data.rotation || 0; // 기존 데이터 호환성을 위해 기본값 설정
           equippedItemStates.value.set(Number(itemId), state);
         }
       });

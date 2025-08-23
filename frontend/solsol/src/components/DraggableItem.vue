@@ -49,6 +49,7 @@ interface Props {
   item: Item;
   position: { x: number; y: number };
   scale: number;
+  rotation: number;
   isSelected: boolean;
   containerBounds: DOMRect | null;
 }
@@ -56,6 +57,7 @@ interface Props {
 interface Emits {
   (e: 'update:position', position: { x: number; y: number }): void;
   (e: 'update:scale', scale: number): void;
+  (e: 'update:rotation', rotation: number): void;
   (e: 'select'): void;
   (e: 'deselect'): void;
 }
@@ -89,13 +91,17 @@ const itemStyle = computed(() => {
   const baseSize = 120; // 기본 크기
   const size = baseSize * props.scale;
   
+  const dragScale = isDragging.value ? 'scale(1.05)' : 'scale(1)';
+  const rotation = `rotate(${props.rotation}deg)`;
+  
   return {
     left: `${props.position.x}px`,
     top: `${props.position.y}px`,
     width: `${size}px`,
     height: `${size}px`,
     zIndex: props.isSelected ? 1000 : getZIndex(props.item.type),
-    transform: isDragging.value ? 'scale(1.05)' : 'scale(1)',
+    transform: `${dragScale} ${rotation}`,
+    transformOrigin: 'center center',
     transition: isDragging.value ? 'none' : 'transform 0.2s ease',
   };
 });
