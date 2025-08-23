@@ -24,6 +24,19 @@
 
       <!-- 마스코트 미리보기 영역 -->
       <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 mb-6">
+        <!-- 모바일 도움말 -->
+        <div v-if="isMobileDevice" class="mb-4 p-3 bg-blue-100 rounded-lg text-sm text-blue-800">
+          <div class="flex items-center space-x-2 mb-1">
+            <span>📱</span>
+            <span class="font-medium">터치 조작법</span>
+          </div>
+          <div class="text-xs space-y-1">
+            <div>• 한 손가락으로 드래그하여 이동</div>
+            <div>• 두 손가락으로 핀치하여 크기 조절</div>
+            <div>• 짧게 탭하여 아이템 선택</div>
+          </div>
+        </div>
+        
         <div 
           class="relative h-64 rounded-xl overflow-hidden flex items-center justify-center"
           style="background: linear-gradient(135deg, #bfdbfe 0%, #ddd6fe 100%)"
@@ -70,6 +83,18 @@
           <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2">
             <div class="bg-white bg-opacity-90 px-3 py-1 rounded-full">
               <span class="text-sm font-medium text-gray-800">{{ currentMascot?.name || '쏠' }}</span>
+            </div>
+          </div>
+          
+          <!-- 선택된 아이템 정보 (모바일) -->
+          <div 
+            v-if="isMobileDevice && selectedItemId && selectedItemInfo"
+            class="absolute top-2 right-2 bg-white bg-opacity-95 p-2 rounded-lg shadow-lg text-xs max-w-32"
+          >
+            <div class="font-medium text-gray-800 mb-1">{{ selectedItemInfo.name }}</div>
+            <div class="text-gray-600 space-y-1">
+              <div>위치: {{ Math.round(selectedItemInfo.position.x) }}, {{ Math.round(selectedItemInfo.position.y) }}</div>
+              <div>크기: {{ Math.round(selectedItemInfo.scale * 100) }}%</div>
             </div>
           </div>
         </div>
@@ -203,6 +228,7 @@ const mascotCanvas = ref<HTMLElement>();
 const canvasBounds = ref<DOMRect | null>(null);
 const selectedItemId = ref<number | null>(null);
 const equippedItemStates = ref<Map<number, EquippedItemState>>(new Map());
+const isMobileDevice = ref(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 
 // 토스트 알림
 const showToast = ref(false);
@@ -252,6 +278,20 @@ const equippedItems = computed(() => {
   });
   
   return equipped;
+});
+
+// 선택된 아이템의 정보
+const selectedItemInfo = computed(() => {
+  if (!selectedItemId.value) return null;
+  
+  const state = equippedItemStates.value.get(selectedItemId.value);
+  if (!state) return null;
+  
+  return {
+    name: state.item.name,
+    position: state.position,
+    scale: state.scale,
+  };
 });
 
 // 유틸리티 함수들

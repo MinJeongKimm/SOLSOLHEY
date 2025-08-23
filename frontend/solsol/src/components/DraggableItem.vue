@@ -61,6 +61,9 @@ const isMobile = ref(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.
 const touchStartPos = ref<{ x: number; y: number } | null>(null);
 const lastTouchDistance = ref<number | null>(null);
 const touchCenter = ref<{ x: number; y: number } | null>(null);
+const isMultiTouch = ref(false);
+const touchStartTime = ref<number>(0);
+const minimumMovement = 5; // 최소 이동 거리 (픽셀)
 
 // 마우스 드래그 관련 상태
 const dragStartPos = ref<{ x: number; y: number } | null>(null);
@@ -146,18 +149,29 @@ function handleTouchStart(e: TouchEvent) {
   e.preventDefault();
   e.stopPropagation();
   
-  emit('select');
+  touchStartTime.value = Date.now();
   
   if (e.touches.length === 1) {
-    // 단일 터치 - 드래그 시작
+    // 단일 터치 - 드래그 준비
     const touch = e.touches[0];
     touchStartPos.value = { x: touch.clientX, y: touch.clientY };
     dragStartPosition.value = { ...props.position };
-    isDragging.value = true;
+    isMultiTouch.value = false;
+    
+    // 즉시 드래그 모드로 들어가지 않고 최소 이동 거리 체크 후 결정
+    isDragging.value = false;
+    
+    emit('select');
   } else if (e.touches.length === 2) {
     // 두 손가락 터치 - 핀치 시작
     isDragging.value = false;
+    isMultiTouch.value = true;
     setupPinchGesture(e);
+    
+    // 아이템이 선택되지 않은 경우에만 선택
+    if (!props.isSelected) {
+      emit('select');
+    }
   }
 }
 
@@ -165,20 +179,29 @@ function handleTouchStart(e: TouchEvent) {
 function handleTouchMove(e: TouchEvent) {
   e.preventDefault();
   
-  if (e.touches.length === 1 && isDragging.value && touchStartPos.value && dragStartPosition.value) {
-    // 단일 터치 드래그
+  if (e.touches.length === 1 && !isMultiTouch.value && touchStartPos.value && dragStartPosition.value) {
+    // 단일 터치 처리
     const touch = e.touches[0];
     const deltaX = touch.clientX - touchStartPos.value.x;
     const deltaY = touch.clientY - touchStartPos.value.y;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     
-    const newPosition = {
-      x: dragStartPosition.value.x + deltaX,
-      y: dragStartPosition.value.y + deltaY,
-    };
+    // 최소 이동 거리를 넘었을 때만 드래그 모드 활성화
+    if (!isDragging.value && distance > minimumMovement) {
+      isDragging.value = true;
+    }
     
-    const boundedPosition = constrainPosition(newPosition);
-    emit('update:position', boundedPosition);
-  } else if (e.touches.length === 2) {
+    // 드래그 모드일 때만 위치 업데이트
+    if (isDragging.value) {
+      const newPosition = {
+        x: dragStartPosition.value.x + deltaX,
+        y: dragStartPosition.value.y + deltaY,
+      };
+      
+      const boundedPosition = constrainPosition(newPosition);
+      emit('update:position', boundedPosition);
+    }
+  } else if (e.touches.length === 2 && isMultiTouch.value) {
     // 핀치 제스처
     handlePinchGesture(e);
   }
@@ -186,23 +209,33 @@ function handleTouchMove(e: TouchEvent) {
 
 // 터치 종료
 function handleTouchEnd(e: TouchEvent) {
+  const touchDuration = Date.now() - touchStartTime.value;
+  
   if (e.touches.length === 0) {
     // 모든 터치 종료
     isDragging.value = false;
+    isMultiTouch.value = false;
     touchStartPos.value = null;
     dragStartPosition.value = null;
     lastTouchDistance.value = null;
     touchCenter.value = null;
-  } else if (e.touches.length === 1) {
+    
+    // 짧은 터치(탭)는 선택으로 처리
+    if (touchDuration < 200 && !isDragging.value) {
+      emit('select');
+    }
+  } else if (e.touches.length === 1 && isMultiTouch.value) {
     // 핀치에서 단일 터치로 변경
     lastTouchDistance.value = null;
     touchCenter.value = null;
+    isMultiTouch.value = false;
     
     // 새로운 단일 터치 드래그 준비
     const touch = e.touches[0];
     touchStartPos.value = { x: touch.clientX, y: touch.clientY };
     dragStartPosition.value = { ...props.position };
-    isDragging.value = true;
+    isDragging.value = false; // 최소 이동 거리 체크를 위해 false로 시작
+    touchStartTime.value = Date.now();
   }
 }
 
@@ -226,11 +259,18 @@ function handlePinchGesture(e: TouchEvent) {
   const touch2 = e.touches[1];
   const currentDistance = getDistance(touch1, touch2);
   
-  // 스케일 계산
+  // 스케일 계산 (더 부드러운 변화를 위해 조정)
   const scaleChange = currentDistance / lastTouchDistance.value;
-  const newScale = Math.max(0.5, Math.min(3, props.scale * scaleChange));
   
-  emit('update:scale', newScale);
+  // 급격한 변화 방지
+  const dampedScaleChange = 1 + (scaleChange - 1) * 0.5;
+  const newScale = Math.max(0.3, Math.min(4, props.scale * dampedScaleChange));
+  
+  // 최소 변화량 체크 (불필요한 업데이트 방지)
+  const scaleThreshold = 0.02;
+  if (Math.abs(newScale - props.scale) > scaleThreshold) {
+    emit('update:scale', newScale);
+  }
   
   lastTouchDistance.value = currentDistance;
 }
