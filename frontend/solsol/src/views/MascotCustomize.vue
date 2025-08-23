@@ -46,13 +46,44 @@
                 @error="handleMascotImageError"
               />
               
-                              <!-- 장착된 아이템들 (단순 문자열로 표시) -->
-                <div class="absolute inset-0">
-                  <!-- 아이템 정보 표시 -->
-                  <div v-if="currentMascot?.equippedItem" class="absolute top-0 right-0 bg-white bg-opacity-90 px-2 py-1 rounded-full text-xs">
-                    {{ currentMascot.equippedItem }}
-                  </div>
-                </div>
+              <!-- 장착된 아이템들 (실제 이미지로 오버레이) -->
+              <div class="absolute inset-0">
+                <!-- 머리 아이템 -->
+                <img 
+                  v-if="getEquippedItemImage('head')" 
+                  :src="getEquippedItemImage('head')" 
+                  :alt="getEquippedItemName('head')"
+                  class="absolute w-32 h-32 object-contain pointer-events-none"
+                  style="top: -20px; left: 0; z-index: 10;"
+                />
+                
+                <!-- 의상 아이템 -->
+                <img 
+                  v-if="getEquippedItemImage('clothing')" 
+                  :src="getEquippedItemImage('clothing')" 
+                  :alt="getEquippedItemName('clothing')"
+                  class="absolute w-32 h-32 object-contain pointer-events-none"
+                  style="top: 0; left: 0; z-index: 5;"
+                />
+                
+                <!-- 액세서리 아이템 -->
+                <img 
+                  v-if="getEquippedItemImage('accessory')" 
+                  :src="getEquippedItemImage('accessory')" 
+                  :alt="getEquippedItemName('accessory')"
+                  class="absolute w-32 h-32 object-contain pointer-events-none"
+                  style="top: 10px; left: 0; z-index: 15;"
+                />
+                
+                <!-- 배경 아이템 (마스코트 뒤에 배치) -->
+                <img 
+                  v-if="getEquippedItemImage('background')" 
+                  :src="getEquippedItemImage('background')" 
+                  :alt="getEquippedItemName('background')"
+                  class="absolute w-32 h-32 object-contain pointer-events-none"
+                  style="top: 0; left: 0; z-index: 1;"
+                />
+              </div>
             </div>
           </div>
           
@@ -178,7 +209,7 @@ const router = useRouter();
 const currentMascot = ref<Mascot | null>(null);
 const items = ref<Item[]>(realItems);
 const userCoins = ref(15000);
-const selectedCategory = ref<'top' | 'pants' | 'accessory' | 'shoes' | 'bag'>('top');
+const selectedCategory = ref<'head' | 'clothing' | 'accessory' | 'background'>('head');
 
 // 토스트 알림
 const showToast = ref(false);
@@ -186,25 +217,16 @@ const toastMessage = ref('');
 
 // 아이템 카테고리
 const itemCategories = [
-  { id: 'top', name: 'Top', icon: '👕' },
-  { id: 'pants', name: 'Pants', icon: '👖' },
-  { id: 'accessory', name: 'Acc', icon: '👓' },
-  { id: 'shoes', name: 'Shoes', icon: '👟' },
-  { id: 'bag', name: 'Bag', icon: '🎒' }
+  { id: 'head', name: 'Head', icon: '👕' },
+  { id: 'clothing', name: 'Clothing', icon: '👖' },
+  { id: 'accessory', name: 'Accessory', icon: '👓' },
+  { id: 'background', name: 'Background', icon: '🖼️' }
 ];
 
 // 필터링된 아이템 목록 (보유한 아이템만)
 const filteredItems = computed(() => {
-  let categoryType = selectedCategory.value;
-  
-  // 카테고리별 매핑
-  if (categoryType === 'top') categoryType = 'head'; // Top은 머리 아이템으로
-  if (categoryType === 'pants') return []; // Pants는 아직 아이템이 없음
-  if (categoryType === 'shoes') return []; // Shoes는 아직 아이템이 없음
-  if (categoryType === 'bag') return []; // Bag은 아직 아이템이 없음
-  
   return items.value.filter(item => 
-    item.type === categoryType && item.isOwned
+    item.type === selectedCategory.value && item.isOwned
   );
 });
 
@@ -217,15 +239,40 @@ function getMascotImageUrl(type: string): string {
   return imageUrl;
 }
 
-function getCategoryName(category: string): string {
+function getCategoryName(category: 'head' | 'clothing' | 'accessory' | 'background'): string {
   const categoryMap: Record<string, string> = {
-    top: '상의',
-    pants: '하의', 
+    head: '머리',
+    clothing: '의상', 
     accessory: '액세서리',
-    shoes: '신발',
-    bag: '가방'
+    background: '배경'
   };
   return categoryMap[category] || category;
+}
+
+// 장착된 아이템의 이미지 URL 가져오기
+function getEquippedItemImage(itemType: 'head' | 'clothing' | 'accessory' | 'background'): string | undefined {
+  if (!currentMascot.value?.equippedItem) return undefined;
+  
+  // equippedItem 문자열에서 해당 타입의 아이템 찾기
+  const equippedItem = items.value.find(item => 
+    item.type === itemType && 
+    currentMascot.value!.equippedItem!.includes(item.name)
+  );
+  
+  return equippedItem?.imageUrl;
+}
+
+// 장착된 아이템의 이름 가져오기
+function getEquippedItemName(itemType: 'head' | 'clothing' | 'accessory' | 'background'): string | undefined {
+  if (!currentMascot.value?.equippedItem) return undefined;
+  
+  // equippedItem 문자열에서 해당 타입의 아이템 찾기
+  const equippedItem = items.value.find(item => 
+    item.type === itemType && 
+    currentMascot.value!.equippedItem!.includes(item.name)
+  );
+  
+  return equippedItem?.name;
 }
 
 function isEquipped(item: Item): boolean {

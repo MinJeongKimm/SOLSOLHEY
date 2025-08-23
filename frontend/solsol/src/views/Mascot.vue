@@ -61,12 +61,43 @@
                   @error="handleImageError"
                 />
                 
-                <!-- 장착된 아이템들 (현재는 단순 문자열로 표시) -->
+                <!-- 장착된 아이템들 (실제 이미지로 오버레이) -->
                 <div class="absolute inset-0">
-                  <!-- 아이템 정보 표시 -->
-                  <div v-if="currentMascot.equippedItem" class="absolute top-0 right-0 bg-white bg-opacity-90 px-2 py-1 rounded-full text-xs">
-                    {{ currentMascot.equippedItem }}
-                  </div>
+                  <!-- 머리 아이템 -->
+                  <img 
+                    v-if="getEquippedItemImage('head')" 
+                    :src="getEquippedItemImage('head')" 
+                    :alt="getEquippedItemName('head')"
+                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
+                    style="top: -20px; left: 0; z-index: 10;"
+                  />
+                  
+                  <!-- 의상 아이템 -->
+                  <img 
+                    v-if="getEquippedItemImage('clothing')" 
+                    :src="getEquippedItemImage('clothing')" 
+                    :alt="getEquippedItemName('clothing')"
+                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
+                    style="top: 0; left: 0; z-index: 5;"
+                  />
+                  
+                  <!-- 액세서리 아이템 -->
+                  <img 
+                    v-if="getEquippedItemImage('accessory')" 
+                    :src="getEquippedItemImage('accessory')" 
+                    :alt="getEquippedItemName('accessory')"
+                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
+                    style="top: 10px; left: 0; z-index: 15;"
+                  />
+                  
+                  <!-- 배경 아이템 (마스코트 뒤에 배치) -->
+                  <img 
+                    v-if="getEquippedItemImage('background')" 
+                    :src="getEquippedItemImage('background')" 
+                    :alt="getEquippedItemName('background')"
+                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
+                    style="top: 0; left: 0; z-index: 1;"
+                  />
                 </div>
               </div>
             </div>
@@ -153,9 +184,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { mascotTypes, levelExperience, realItems } from '../data/mockData';
 import { getMascot, handleApiError } from '../api/index';
-import { mascotTypes, levelExperience } from '../data/mockData';
-import type { Mascot } from '../types/api';
+import type { Mascot, Item } from '../types/api';
 
 const router = useRouter();
 
@@ -206,6 +237,32 @@ function getExpPercentage(): number {
   const totalExp = nextLevel.requiredExp - currentLevel.requiredExp;
   
   return Math.min(100, (currentExp / totalExp) * 100);
+}
+
+// 장착된 아이템의 이미지 URL 가져오기
+function getEquippedItemImage(itemType: 'head' | 'clothing' | 'accessory' | 'background'): string | undefined {
+  if (!currentMascot.value?.equippedItem) return undefined;
+  
+  // equippedItem 문자열에서 해당 타입의 아이템 찾기
+  const equippedItem = realItems.find(item => 
+    item.type === itemType && 
+    currentMascot.value!.equippedItem!.includes(item.name)
+  );
+  
+  return equippedItem?.imageUrl;
+}
+
+// 장착된 아이템의 이름 가져오기
+function getEquippedItemName(itemType: 'head' | 'clothing' | 'accessory' | 'background'): string | undefined {
+  if (!currentMascot.value?.equippedItem) return undefined;
+  
+  // equippedItem 문자열에서 해당 타입의 아이템 찾기
+  const equippedItem = realItems.find(item => 
+    item.type === itemType && 
+    currentMascot.value!.equippedItem!.includes(item.name)
+  );
+  
+  return equippedItem?.name;
 }
 
 // 꾸미기 화면으로 이동
