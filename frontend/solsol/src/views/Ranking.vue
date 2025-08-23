@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100 p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-6xl mx-auto p-8">
       <!-- 헤더 -->
-      <div class="flex items-center justify-between mb-8">
+      <div class="flex items-center mb-8">
         <div class="flex items-center space-x-4">
           <router-link 
             to="/mascot" 
@@ -12,9 +12,8 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
           </router-link>
-          <h1 class="text-3xl font-bold text-gray-800">🏆 랭킹</h1>
+          <h1 class="text-xl font-bold text-gray-800">🏆 랭킹</h1>
         </div>
-        <p class="text-gray-600 text-sm">마스코트 콘테스트 랭킹을 확인해보세요</p>
       </div>
 
       <!-- 탭 네비게이션 -->
