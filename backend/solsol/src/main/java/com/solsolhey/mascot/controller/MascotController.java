@@ -1,9 +1,16 @@
 package com.solsolhey.mascot.controller;
 
+import java.util.Arrays;
+import java.util.List;
+
+import com.solsolhey.mascot.dto.ApplyBackgroundRequest;
+import com.solsolhey.mascot.dto.ApplyBackgroundResponse;
+import com.solsolhey.mascot.dto.BackgroundResponse;
 import com.solsolhey.mascot.dto.MascotCreateRequest;
 import com.solsolhey.mascot.dto.MascotEquipRequest;
 import com.solsolhey.mascot.dto.MascotResponse;
 import com.solsolhey.mascot.dto.MascotUpdateRequest;
+import com.solsolhey.mascot.dto.UserBackgroundResponse;
 import com.solsolhey.mascot.exception.MascotAlreadyExistsException;
 import com.solsolhey.mascot.exception.MascotNotFoundException;
 import com.solsolhey.mascot.service.MascotService;
@@ -170,6 +177,124 @@ public class MascotController {
         }
     }
     
+
+    // === 배경 관련 엔드포인트 ===
+    
+    /**
+     * 배경 목록 조회
+     */
+    @GetMapping("/backgrounds")
+    public ResponseEntity<List<BackgroundResponse>> getBackgrounds(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam(required = false, defaultValue = "true") Boolean enabled,
+            @RequestParam(required = false) String tags) {
+        
+        try {
+            Long userId = userDetails.getUserId();
+            log.info("배경 목록 조회 API 호출 - 사용자 ID: {}, enabled: {}, tags: {}", userId, enabled, tags);
+            
+            List<String> tagList = null;
+            if (tags != null && !tags.trim().isEmpty()) {
+                tagList = Arrays.asList(tags.split(","))
+                        .stream()
+                        .map(String::trim)
+                        .toList();
+            }
+            
+            List<BackgroundResponse> response = mascotService.getBackgrounds(enabled, tagList, userId);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("배경 목록 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * 사용자 보유 배경 목록 조회
+     */
+    @GetMapping("/backgrounds/owned")
+    public ResponseEntity<List<UserBackgroundResponse>> getUserOwnedBackgrounds(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        try {
+            Long userId = userDetails.getUserId();
+            log.info("사용자 보유 배경 목록 조회 API 호출 - 사용자 ID: {}", userId);
+            
+            List<UserBackgroundResponse> response = mascotService.getUserOwnedBackgrounds(userId);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("사용자 보유 배경 목록 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * 마스코트 배경 적용
+     */
+    @PutMapping("/mascots/{mascotId}/background")
+    public ResponseEntity<ApplyBackgroundResponse> applyBackground(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long mascotId,
+            @Valid @RequestBody ApplyBackgroundRequest request) {
+        
+        try {
+            Long userId = userDetails.getUserId();
+            log.info("마스코트 배경 적용 API 호출 - 사용자 ID: {}, 마스코트 ID: {}, 배경 ID: {}", 
+                     userId, mascotId, request.getBackgroundId());
+            
+            ApplyBackgroundResponse response = mascotService.applyBackground(mascotId, request, userId);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            log.warn("마스코트 배경 적용 실패: {}", e.getMessage());
+            
+            if (e.getMessage().contains("권한이 없습니다")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            } else if (e.getMessage().contains("보유하고 있지 않습니다")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
+        } catch (Exception e) {
+            log.error("마스코트 배경 적용 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
+    /**
+     * 마스코트 배경 해제 (기본 배경 적용)
+     */
+    @DeleteMapping("/mascots/{mascotId}/background")
+    public ResponseEntity<ApplyBackgroundResponse> resetBackground(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long mascotId) {
+        
+        try {
+            Long userId = userDetails.getUserId();
+            log.info("마스코트 배경 해제 API 호출 - 사용자 ID: {}, 마스코트 ID: {}", userId, mascotId);
+            
+            ApplyBackgroundResponse response = mascotService.resetBackground(mascotId, userId);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            log.warn("마스코트 배경 해제 실패: {}", e.getMessage());
+            
+            if (e.getMessage().contains("권한이 없습니다")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            }
+        } catch (Exception e) {
+            log.error("마스코트 배경 해제 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     /**
      * 에러 응답 생성
