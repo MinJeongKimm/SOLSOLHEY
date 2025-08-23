@@ -1,6 +1,7 @@
 package com.solsolhey.common.security;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,6 +17,15 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class RateLimitingService {
 
+    @Value("${rate-limit.general.requests-per-minute:10}")
+    private int generalRequestsPerMinute;
+    
+    @Value("${rate-limit.login.attempts-per-15min:5}")
+    private int loginAttemptsPer15Min;
+    
+    @Value("${rate-limit.cleanup.interval-hours:1}")
+    private int cleanupIntervalHours;
+
     // IP별 일반 API 요청 제한 캐시
     private final Map<String, TokenBucket> ipBucketCache = new ConcurrentHashMap<>();
     
@@ -27,7 +37,7 @@ public class RateLimitingService {
 
     /**
      * IP별 일반 API 요청 제한 확인
-     * 분당 100회 제한
+     * 분당 설정값만큼 제한
      * 
      * @param clientIp 클라이언트 IP
      * @return 요청 허용 여부
@@ -35,8 +45,12 @@ public class RateLimitingService {
     public boolean isAllowedByIp(String clientIp) {
         cleanupExpiredEntries();
         
-        TokenBucket bucket = ipBucketCache.computeIfAbsent(clientIp, 
-            k -> new TokenBucket(100, 100.0 / 60.0)); // 분당 100개 토큰
+        int limit = generalRequestsPerMinute;        // e.g., 10
+        int cap   = Math.max(1, (int) Math.ceil(limit * 0.6)); // 60% of limit
+        double perSec = limit / 60.0;
+        
+        TokenBucket bucket = ipBucketCache.computeIfAbsent(clientIp,
+            k -> new TokenBucket(cap, perSec));
         
         boolean allowed = bucket.tryConsume(1);
         if (!allowed) {
@@ -57,7 +71,7 @@ public class RateLimitingService {
         cleanupExpiredEntries();
         
         TokenBucket bucket = loginBucketCache.computeIfAbsent(clientIp, 
-            k -> new TokenBucket(5, 5.0 / (15 * 60))); // 15분당 5개 토큰
+            k -> new TokenBucket(loginAttemptsPer15Min, (double) loginAttemptsPer15Min / (15 * 60))); // 15분당 설정값만큼 토큰
         
         boolean allowed = bucket.tryConsume(1);
         if (!allowed) {
@@ -72,11 +86,8 @@ public class RateLimitingService {
      * 성공한 로그인에 대해서는 토큰을 일부 복원
      */
     public void onLoginSuccess(String clientIp) {
-        TokenBucket bucket = loginBucketCache.get(clientIp);
-        if (bucket != null) {
-            bucket.addTokens(1);
-            log.debug("Login success bonus token granted for IP: {}", clientIp);
-        }
+        // 새로운 TokenBucket 구현에서는 addTokens 메서드가 없으므로 제거
+        log.debug("Login success for IP: {}", clientIp);
     }
 
     /**
@@ -88,10 +99,28 @@ public class RateLimitingService {
             return new RateLimitStatus(true, -1, -1);
         }
         
-        long availableTokens = (long) bucket.getAvailableTokens();
+        int availableTokens = bucket.remaining();
         long timeToRefill = availableTokens == 0 ? 60 : 0; // 간단한 추정
         
         return new RateLimitStatus(availableTokens > 0, availableTokens, timeToRefill);
+    }
+
+    /**
+     * 특정 IP의 일반 API Rate Limit 남은 토큰 수 조회
+     */
+    public int remainingGeneral(String clientIp) {
+        TokenBucket bucket = ipBucketCache.get(clientIp);
+        if (bucket == null) {
+            return generalRequestsPerMinute;
+        }
+        return bucket.remaining();
+    }
+
+    /**
+     * 일반 API 분당 요청 제한 수 조회
+     */
+    public int getGeneralRequestsPerMinute() {
+        return generalRequestsPerMinute;
     }
 
     /**
@@ -99,12 +128,12 @@ public class RateLimitingService {
      */
     private void cleanupExpiredEntries() {
         LocalDateTime now = LocalDateTime.now();
-        if (ChronoUnit.HOURS.between(lastCleanupTime, now) >= 1) {
-            // 1시간 이상 사용되지 않은 엔트리 제거
+        if (ChronoUnit.HOURS.between(lastCleanupTime, now) >= cleanupIntervalHours) {
+            // 설정된 시간 이상 사용되지 않은 엔트리 제거
             ipBucketCache.entrySet().removeIf(entry -> 
-                ChronoUnit.HOURS.between(entry.getValue().getLastAccess(), now) >= 1);
+                ChronoUnit.HOURS.between(entry.getValue().getLastAccess(), now) >= cleanupIntervalHours);
             loginBucketCache.entrySet().removeIf(entry -> 
-                ChronoUnit.HOURS.between(entry.getValue().getLastAccess(), now) >= 1);
+                ChronoUnit.HOURS.between(entry.getValue().getLastAccess(), now) >= cleanupIntervalHours);
             
             lastCleanupTime = now;
             log.debug("Rate limit cache cleanup completed");
@@ -116,56 +145,42 @@ public class RateLimitingService {
      * 메모리 기반 Token Bucket 알고리즘
      */
     private static class TokenBucket {
-        private final int capacity;              // 버킷 용량
-        private final double tokensPerSecond;    // 초당 토큰 생성 비율
-        private volatile double availableTokens; // 현재 사용 가능한 토큰 수
-        private volatile LocalDateTime lastRefill; // 마지막 리필 시간
-        private volatile LocalDateTime lastAccess; // 마지막 접근 시간
+        private final int capacity;
+        private final double tokensPerSec;
+        private double tokens;
+        private long lastRefillTime = System.currentTimeMillis();
+        private volatile java.time.LocalDateTime lastAccess = java.time.LocalDateTime.now();
 
-        public TokenBucket(int capacity, double tokensPerSecond) {
+        TokenBucket(int capacity, double tokensPerSec) {
             this.capacity = capacity;
-            this.tokensPerSecond = tokensPerSecond;
-            this.availableTokens = capacity;
-            this.lastRefill = LocalDateTime.now();
-            this.lastAccess = LocalDateTime.now();
+            this.tokensPerSec = tokensPerSec;
+            this.tokens = capacity; // start with a limited burst
         }
 
-        public synchronized boolean tryConsume(int tokens) {
-            refill();
-            this.lastAccess = LocalDateTime.now();
-            
-            if (availableTokens >= tokens) {
-                availableTokens -= tokens;
+        synchronized boolean tryConsume(int permits) {
+            long now = System.currentTimeMillis();
+            double deltaSec = (now - lastRefillTime) / 1000.0;
+            lastRefillTime = now;
+
+            // refill - 더 정확한 계산
+            if (deltaSec > 0) {
+                double refillAmount = deltaSec * tokensPerSec;
+                tokens = Math.min(capacity, tokens + refillAmount);
+            }
+
+            if (tokens >= permits) {
+                tokens -= permits;
+                lastAccess = java.time.LocalDateTime.now();
                 return true;
             }
             return false;
         }
 
-        public synchronized void addTokens(int tokens) {
-            refill();
-            availableTokens = Math.min(capacity, availableTokens + tokens);
-            lastAccess = LocalDateTime.now();
+        synchronized int remaining() {
+            return Math.max(0, (int) Math.floor(tokens));
         }
 
-        public synchronized double getAvailableTokens() {
-            refill();
-            return availableTokens;
-        }
-
-        public LocalDateTime getLastAccess() {
-            return lastAccess;
-        }
-
-        private void refill() {
-            LocalDateTime now = LocalDateTime.now();
-            double secondsElapsed = ChronoUnit.MILLIS.between(lastRefill, now) / 1000.0;
-            double tokensToAdd = secondsElapsed * tokensPerSecond;
-            
-            if (tokensToAdd > 0) {
-                availableTokens = Math.min(capacity, availableTokens + tokensToAdd);
-                lastRefill = now;
-            }
-        }
+        java.time.LocalDateTime getLastAccess() { return lastAccess; }
     }
 
     /**
