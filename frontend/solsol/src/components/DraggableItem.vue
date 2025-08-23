@@ -11,21 +11,32 @@
     <img
       :src="item.imageUrl"
       :alt="item.name"
-      class="w-full h-full object-contain pointer-events-none"
-      :style="{ filter: isDragging ? 'brightness(1.1)' : 'none' }"
+      class="w-full h-full object-contain pointer-events-none transition-all duration-200"
+      :style="{ 
+        filter: isDragging ? 'brightness(1.1) drop-shadow(0 4px 8px rgba(0,0,0,0.3))' : 'none',
+        transform: isDragging ? 'rotate(2deg)' : 'rotate(0deg)'
+      }"
     />
     
     <!-- 선택된 아이템 표시 -->
     <div 
       v-if="isSelected"
-      class="absolute inset-0 border-2 border-blue-400 rounded-lg bg-blue-50 bg-opacity-20"
+      class="absolute inset-0 border-2 border-blue-400 rounded-lg bg-blue-50 bg-opacity-20 animate-pulse-border"
     >
+      <!-- 모서리 표시 -->
+      <div class="absolute -top-1 -left-1 w-2 h-2 bg-blue-500 rounded-full"></div>
+      <div class="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></div>
+      <div class="absolute -bottom-1 -left-1 w-2 h-2 bg-blue-500 rounded-full"></div>
+      <div class="absolute -bottom-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></div>
+      
       <!-- 크기 조절 핸들 (웹용) -->
       <div 
         v-if="!isMobile"
-        class="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize border-2 border-white"
+        class="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow-lg hover:scale-110 transition-transform"
         @mousedown.stop="handleResizeStart"
-      ></div>
+      >
+        <div class="absolute inset-1 bg-white rounded-full opacity-50"></div>
+      </div>
     </div>
   </div>
 </template>
@@ -332,3 +343,46 @@ function constrainPosition(position: { x: number; y: number }) {
   };
 }
 </script>
+
+<style scoped>
+/* 선택된 아이템 테두리 애니메이션 */
+@keyframes pulse-border {
+  0%, 100% {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.4);
+  }
+  50% {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.2);
+  }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+/* 드래그 중 스타일 */
+.cursor-move {
+  cursor: move;
+}
+
+.cursor-se-resize {
+  cursor: se-resize;
+}
+
+/* 모바일 터치 최적화 */
+@media (max-width: 768px) {
+  .cursor-move {
+    cursor: grab;
+  }
+  
+  .cursor-move:active {
+    cursor: grabbing;
+  }
+}
+
+/* 부드러운 전환 효과 */
+.transition-all {
+  transition: all 0.2s ease;
+}
+</style>

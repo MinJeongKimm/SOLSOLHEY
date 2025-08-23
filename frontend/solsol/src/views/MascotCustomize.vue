@@ -100,13 +100,69 @@
         </div>
       </div>
       
+      <!-- 선택된 아이템 조작 패널 -->
+      <div v-if="selectedItemId" class="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="text-blue-600 font-medium">{{ selectedItemInfo?.name }}</span>
+            <span class="text-xs text-blue-500">(선택됨)</span>
+          </div>
+          <button 
+            @click="resetItemPosition(selectedItemId)"
+            class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition-colors"
+          >
+            위치 초기화
+          </button>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <!-- 크기 조절 버튼들 -->
+          <div class="space-y-2">
+            <div class="text-xs text-gray-600 font-medium">크기</div>
+            <div class="flex space-x-1">
+              <button 
+                @click="adjustItemScale(selectedItemId, -0.1)"
+                class="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded text-sm transition-colors"
+              >
+                -
+              </button>
+              <div class="flex-1 bg-gray-100 rounded px-2 py-1 text-center text-xs">
+                {{ Math.round((selectedItemInfo?.scale || 1) * 100) }}%
+              </div>
+              <button 
+                @click="adjustItemScale(selectedItemId, 0.1)"
+                class="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded text-sm transition-colors"
+              >
+                +
+              </button>
+            </div>
+          </div>
+          
+          <!-- 퀵 포지션 버튼들 -->
+          <div class="space-y-2">
+            <div class="text-xs text-gray-600 font-medium">퀵 포지션</div>
+            <div class="grid grid-cols-3 gap-1">
+              <button 
+                v-for="position in quickPositions" 
+                :key="position.name"
+                @click="setItemQuickPosition(selectedItemId, position)"
+                class="text-xs bg-gray-100 hover:bg-gray-200 p-1 rounded transition-colors"
+                :title="position.name"
+              >
+                {{ position.icon }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <!-- 카테고리 탭들 -->
       <div class="mb-6">
         <div class="flex space-x-2 overflow-x-auto">
           <button 
             v-for="category in itemCategories" 
             :key="category.id"
-            @click="selectedCategory = category.id"
+            @click="selectedCategory = category.id as 'head' | 'clothing' | 'accessory' | 'background'"
             :class="[
               'flex-shrink-0 flex flex-col items-center p-3 rounded-xl transition-all min-w-[80px]',
               selectedCategory === category.id 
@@ -188,6 +244,24 @@
           <p class="text-gray-500">해당 카테고리에 아이템이 없습니다.</p>
         </div>
       </div>
+      
+      <!-- 전체 조작 버튼들 -->
+      <div class="flex space-x-3 mt-6">
+        <button 
+          @click="resetAllItems"
+          class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+        >
+          <span>🔄</span>
+          <span>전체 초기화</span>
+        </button>
+        <button 
+          @click="saveItemPositions"
+          class="flex-1 bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+        >
+          <span>💾</span>
+          <span>저장하기</span>
+        </button>
+      </div>
     </div>
     
     <!-- 알림 토스트 -->
@@ -240,6 +314,16 @@ const itemCategories = [
   { id: 'clothing', name: 'Clothing', icon: '👖' },
   { id: 'accessory', name: 'Accessory', icon: '👓' },
   { id: 'background', name: 'Background', icon: '🖼️' }
+];
+
+// 퀵 포지션 옵션
+const quickPositions = [
+  { name: '좌상', icon: '↖', position: { x: 20, y: 20 } },
+  { name: '상단', icon: '↑', position: { x: 120, y: 20 } },
+  { name: '우상', icon: '↗', position: { x: 200, y: 20 } },
+  { name: '좌측', icon: '←', position: { x: 20, y: 120 } },
+  { name: '중앙', icon: '⊙', position: { x: 120, y: 120 } },
+  { name: '우측', icon: '→', position: { x: 200, y: 120 } },
 ];
 
 // 필터링된 아이템 목록 (보유한 아이템만)
@@ -358,6 +442,97 @@ function handleCanvasClick(e: Event) {
   // 캔버스 빈 공간 클릭 시 선택 해제
   if (e.target === mascotCanvas.value) {
     selectedItemId.value = null;
+  }
+}
+
+// UI 개선 메소드들
+function adjustItemScale(itemId: number, scaleChange: number) {
+  const state = equippedItemStates.value.get(itemId);
+  if (state) {
+    const newScale = Math.max(0.3, Math.min(4, state.scale + scaleChange));
+    updateItemScale(itemId, newScale);
+    
+    // 시각적 피드백
+    showToastMessage(`크기: ${Math.round(newScale * 100)}%`);
+  }
+}
+
+function resetItemPosition(itemId: number) {
+  const state = equippedItemStates.value.get(itemId);
+  if (state) {
+    const defaultPos = getDefaultPosition(state.item.type);
+    updateItemPosition(itemId, defaultPos);
+    updateItemScale(itemId, 1);
+    
+    showToastMessage(`${state.item.name} 위치가 초기화되었습니다`);
+  }
+}
+
+function setItemQuickPosition(itemId: number, quickPosition: { name: string; icon: string; position: { x: number; y: number } }) {
+  const state = equippedItemStates.value.get(itemId);
+  if (state) {
+    updateItemPosition(itemId, quickPosition.position);
+    
+    showToastMessage(`${state.item.name} → ${quickPosition.name}`);
+  }
+}
+
+// 전체 조작 메소드들
+function resetAllItems() {
+  // 확인 다이얼로그 (간단한 confirm 사용)
+  if (confirm('모든 아이템의 위치와 크기를 초기화하시겠습니까?')) {
+    equippedItemStates.value.clear();
+    selectedItemId.value = null;
+    
+    // 다음 프레임에서 다시 기본값으로 설정되도록 함
+    setTimeout(() => {
+      showToastMessage('모든 아이템이 초기화되었습니다');
+    }, 100);
+  }
+}
+
+function saveItemPositions() {
+  // 실제 저장 로직은 백엔드 연동이 필요하지만, 
+  // 현재는 localStorage에 저장하는 것으로 시뮬레이션
+  try {
+    const positionsData = {};
+    equippedItemStates.value.forEach((state, itemId) => {
+      positionsData[itemId] = {
+        position: state.position,
+        scale: state.scale,
+      };
+    });
+    
+    localStorage.setItem('mascot-item-positions', JSON.stringify(positionsData));
+    showToastMessage('아이템 위치가 저장되었습니다! 💾');
+    
+    console.log('저장된 아이템 위치:', positionsData);
+  } catch (error) {
+    console.error('위치 저장 실패:', error);
+    showToastMessage('저장에 실패했습니다. 다시 시도해주세요.');
+  }
+}
+
+// 저장된 위치 불러오기
+function loadItemPositions() {
+  try {
+    const savedData = localStorage.getItem('mascot-item-positions');
+    if (savedData) {
+      const positionsData = JSON.parse(savedData);
+      
+      Object.entries(positionsData).forEach(([itemId, data]: [string, any]) => {
+        const state = equippedItemStates.value.get(Number(itemId));
+        if (state && data.position && data.scale) {
+          state.position = data.position;
+          state.scale = data.scale;
+          equippedItemStates.value.set(Number(itemId), state);
+        }
+      });
+      
+      console.log('저장된 위치 불러옴:', positionsData);
+    }
+  } catch (error) {
+    console.error('위치 불러오기 실패:', error);
   }
 }
 
@@ -492,6 +667,10 @@ onMounted(async () => {
   await nextTick();
   updateCanvasBounds();
   
+  // 저장된 아이템 위치 불러오기
+  await nextTick();
+  loadItemPositions();
+  
   // 윈도우 리사이즈 이벤트 리스너 추가
   window.addEventListener('resize', updateCanvasBounds);
   
@@ -510,6 +689,7 @@ onUnmounted(() => {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  line-clamp: 2;
   overflow: hidden;
 }
 
