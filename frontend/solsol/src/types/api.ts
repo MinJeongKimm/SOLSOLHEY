@@ -263,6 +263,50 @@ export interface UserResponse {
   updatedAt?: string;
 }
 
+// 상점 관련 타입 정의
+export interface ShopItem {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  type: string;
+  imageUrl: string;
+  isActive: boolean;
+}
+
+export interface Gifticon {
+  id: number;
+  name: string;
+  imageUrl: string;
+  price: number;
+  description: string;
+  sku: string;
+}
+
+export interface OrderRequest {
+  type: 'ITEM' | 'GIFTICON';
+  itemId?: number;
+  quantity?: number;
+  sku?: string;
+}
+
+export interface OrderResponse {
+  id: number;
+  userId: number;
+  type: string;
+  totalPrice: number;
+  status: string;
+  message: string;
+}
+
+export interface UserItem {
+  id: number;
+  userId: number;
+  itemId: number;
+  quantity: number;
+  item: ShopItem;
+}
+
 
 
 
