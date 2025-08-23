@@ -46,23 +46,13 @@
                 @error="handleMascotImageError"
               />
               
-              <!-- 장착된 아이템들 -->
-              <div class="absolute inset-0">
-                <!-- 머리 아이템 -->
-                <img 
-                  v-if="currentMascot?.equippedItems.head" 
-                  :src="currentMascot.equippedItems.head.imageUrl" 
-                  :alt="currentMascot.equippedItems.head.name"
-                  class="item-head absolute"
-                />
-                <!-- 액세서리 -->
-                <img 
-                  v-if="currentMascot?.equippedItems.accessory" 
-                  :src="currentMascot.equippedItems.accessory.imageUrl" 
-                  :alt="currentMascot.equippedItems.accessory.name"
-                  class="item-accessory absolute"
-                />
-              </div>
+                              <!-- 장착된 아이템들 (단순 문자열로 표시) -->
+                <div class="absolute inset-0">
+                  <!-- 아이템 정보 표시 -->
+                  <div v-if="currentMascot?.equippedItem" class="absolute top-0 right-0 bg-white bg-opacity-90 px-2 py-1 rounded-full text-xs">
+                    {{ currentMascot.equippedItem }}
+                  </div>
+                </div>
             </div>
           </div>
           
@@ -179,7 +169,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { realItems, mascotTypes } from '../data/mockData';
-import { mascot } from '../api/index';
+import { getMascot, equipItems, handleApiError } from '../api/index';
 import type { Mascot, Item } from '../types/api';
 
 const router = useRouter();
@@ -239,70 +229,35 @@ function getCategoryName(category: string): string {
 }
 
 function isEquipped(item: Item): boolean {
-  if (!currentMascot.value) return false;
-  const equipped = currentMascot.value.equippedItems;
+  if (!currentMascot.value || !currentMascot.value.equippedItem) return false;
   
-  switch (item.type) {
-    case 'head':
-      return equipped.head?.id === item.id;
-    case 'clothing':
-      return equipped.clothing?.id === item.id;
-    case 'accessory':
-      return equipped.accessory?.id === item.id;
-    default:
-      return false;
-  }
+  // 단순 문자열 비교로 아이템 장착 여부 확인
+  return currentMascot.value.equippedItem.includes(item.name);
 }
 
 // 뒤로가기
 function goBack() {
-  // 변경사항이 있는지 확인
-  const originalMascot = mascot.getMascot();
-  if (originalMascot && currentMascot.value) {
-    const hasChanges = JSON.stringify(originalMascot.equippedItems) !== 
-                      JSON.stringify(currentMascot.value.equippedItems);
-    
-    if (hasChanges) {
-      // 변경사항이 있으면 확인 다이얼로그 표시
-      if (confirm('변경사항이 있습니다. 저장하고 나가시겠습니까?')) {
-        // 변경사항을 localStorage에 저장
-        mascot.setMascot(currentMascot.value);
-        console.log('변경사항 저장 후 뒤로가기');
-      }
-    }
-  }
-  
+  // 백엔드와 실시간 동기화되므로 변경사항 확인 불필요
+  // 바로 메인 페이지로 이동
   router.push('/mascot');
 }
 
 // 아이템 장착/해제 토글
-function toggleEquipItem(item: Item) {
+async function toggleEquipItem(item: Item) {
   if (!currentMascot.value) return;
   
   try {
-    const updatedMascot = { ...currentMascot.value };
-    updatedMascot.equippedItems = { ...updatedMascot.equippedItems };
-    
     const isCurrentlyEquipped = isEquipped(item);
     
-    switch (item.type) {
-      case 'head':
-        updatedMascot.equippedItems.head = isCurrentlyEquipped ? undefined : item;
-        break;
-      case 'clothing':
-        updatedMascot.equippedItems.clothing = isCurrentlyEquipped ? undefined : item;
-        break;
-      case 'accessory':
-        updatedMascot.equippedItems.accessory = isCurrentlyEquipped ? undefined : item;
-        break;
-    }
+    // 백엔드 API 호출
+    const updatedMascot = await equipItems({
+      equippedItem: isCurrentlyEquipped ? '' : item.name
+    });
     
     // 마스코트 데이터 업데이트
     currentMascot.value = updatedMascot;
     
-    // localStorage에 변경사항 저장
-    mascot.setMascot(updatedMascot);
-    console.log('아이템 변경사항 localStorage에 저장됨:', updatedMascot);
+    console.log('백엔드에서 아이템 변경 완료:', updatedMascot);
     
     const message = isCurrentlyEquipped 
       ? `${item.name}을(를) 해제했습니다!`
@@ -311,7 +266,10 @@ function toggleEquipItem(item: Item) {
     showToastMessage(message);
   } catch (error) {
     console.error('아이템 장착/해제 실패:', error);
-    showToastMessage('오류가 발생했습니다. 다시 시도해주세요.');
+    
+    // 에러 메시지 표시
+    const errorMessage = handleApiError(error);
+    showToastMessage(`아이템 변경 실패: ${errorMessage}`);
   }
 }
 
@@ -339,15 +297,30 @@ function showToastMessage(message: string) {
 }
 
 // 마스코트 데이터 로드
-function loadMascotData() {
-  const mascotData = mascot.getMascot();
-  if (mascotData) {
-    currentMascot.value = mascotData;
-    console.log('마스코트 데이터 로드됨:', mascotData);
-  } else {
-    console.error('마스코트 데이터를 찾을 수 없습니다.');
-    // 마스코트가 없으면 메인 페이지로 이동
-    router.push('/mascot');
+async function loadMascotData() {
+  try {
+    console.log('백엔드에서 마스코트 데이터를 로드합니다...');
+    
+    const mascotData = await getMascot();
+    if (mascotData) {
+      currentMascot.value = mascotData;
+      console.log('마스코트 데이터 로드됨:', mascotData);
+    } else {
+      console.error('마스코트 데이터를 찾을 수 없습니다.');
+      // 마스코트가 없으면 메인 페이지로 이동
+      router.push('/mascot');
+    }
+  } catch (error) {
+    console.error('마스코트 데이터 로드 실패:', error);
+    
+    // 에러 메시지 표시
+    const errorMessage = handleApiError(error);
+    showToastMessage(`마스코트 로드 실패: ${errorMessage}`);
+    
+    // 에러 발생 시 메인 페이지로 이동
+    setTimeout(() => {
+      router.push('/mascot');
+    }, 2000);
   }
 }
 

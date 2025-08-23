@@ -56,21 +56,20 @@ export interface User {
   nickname: string;
 }
 
-// 마스코트 관련 타입 (백엔드 Mascot 엔티티 기반)
+// 마스코트 관련 타입 (백엔드 응답 구조에 맞춤)
 export interface MascotCreateRequest {
   name: string;
-  mascotType: string;
+  type: string;
 }
 
 export interface MascotResponse {
-  mascotId: number;
+  id: number;
   userId: number;
   name: string;
-  mascotType: string;
-  experiencePoint: number;
+  type: string;
+  equippedItem?: string;
+  exp: number;
   level: number;
-  evolutionStage: number;
-  expToNextLevel: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -94,19 +93,19 @@ export class ApiError extends Error {
   }
 }
 
-// 마스코트 관련 타입
+// 마스코트 관련 타입 (백엔드 응답 구조에 맞춤)
 export interface Mascot {
   id: number;
   name: string;
-  type: string; // 마스코트 종류 (ex: '곰', '호랑이', '독수리' 등)
+  type: string; // 마스코트 종류 (ex: 'soll', 'ray', 'rino', 'pli' 등)
   level: number;
-  experiencePoint: number;
-  evolutionStage: number;
-  equippedItems: EquippedItems;
+  exp: number; // 백엔드의 exp 필드와 일치
+  equippedItem?: string; // 백엔드의 equippedItem 필드와 일치 (단순 문자열)
   createdAt?: string;
   updatedAt?: string;
 }
 
+// evolutionStage는 level 기반으로 계산 (프론트엔드에서 처리)
 export interface EquippedItems {
   clothing?: Item;
   background?: Item;
@@ -125,16 +124,11 @@ export interface Item {
   isOwned?: boolean;
 }
 
-// 마스코트 생성 요청/응답
+// 마스코트 생성 요청/응답 (백엔드 구조에 맞춤)
 export interface CreateMascotRequest {
   name: string;
   type: string;
-  equippedItems?: {
-    clothingId?: number;
-    backgroundId?: number;
-    accessoryId?: number;
-    headId?: number;
-  };
+  equippedItem?: string; // 백엔드의 equippedItem 필드와 일치
 }
 
 export interface CreateMascotResponse {
@@ -144,14 +138,9 @@ export interface CreateMascotResponse {
   errors?: Record<string, string>;
 }
 
-// 마스코트 꾸미기 요청/응답
+// 마스코트 꾸미기 요청/응답 (백엔드 구조에 맞춤)
 export interface EquipItemsRequest {
-  equipItems: {
-    clothingId?: number;
-    backgroundId?: number;
-    accessoryId?: number;
-    headId?: number;
-  };
+  equippedItem: string; // 백엔드의 equippedItem 필드와 일치
 }
 
 export interface EquipItemsResponse {
@@ -161,16 +150,11 @@ export interface EquipItemsResponse {
   errors?: Record<string, string>;
 }
 
-// 마스코트 수정 요청/응답
+// 마스코트 수정 요청/응답 (백엔드 구조에 맞춤)
 export interface UpdateMascotRequest {
   name?: string;
-  equipItems?: {
-    clothingId?: number;
-    backgroundId?: number;
-    accessoryId?: number;
-    headId?: number;
-  };
-  experiencePoint?: number;
+  equippedItem?: string; // 백엔드의 equippedItem 필드와 일치
+  expToAdd?: number; // 백엔드의 expToAdd 필드와 일치
 }
 
 export interface UpdateMascotResponse {

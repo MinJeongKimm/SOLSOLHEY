@@ -61,22 +61,12 @@
                   @error="handleImageError"
                 />
                 
-                <!-- 장착된 아이템들 -->
+                <!-- 장착된 아이템들 (현재는 단순 문자열로 표시) -->
                 <div class="absolute inset-0">
-                  <!-- 머리 아이템 -->
-                  <img 
-                    v-if="currentMascot.equippedItems.head" 
-                    :src="currentMascot.equippedItems.head.imageUrl" 
-                    :alt="currentMascot.equippedItems.head.name"
-                    class="item-head absolute"
-                  />
-                  <!-- 액세서리 -->
-                  <img 
-                    v-if="currentMascot.equippedItems.accessory" 
-                    :src="currentMascot.equippedItems.accessory.imageUrl" 
-                    :alt="currentMascot.equippedItems.accessory.name"
-                    class="item-accessory absolute"
-                  />
+                  <!-- 아이템 정보 표시 -->
+                  <div v-if="currentMascot.equippedItem" class="absolute top-0 right-0 bg-white bg-opacity-90 px-2 py-1 rounded-full text-xs">
+                    {{ currentMascot.equippedItem }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -97,7 +87,7 @@
               <span class="text-xl">⭐</span>
               <span class="text-lg font-bold text-gray-800">Lv.{{ currentMascot.level }}</span>
             </div>
-            <span class="text-sm text-gray-500">{{ currentMascot.experiencePoint }} / {{ getNextLevelExp() }} XP</span>
+            <span class="text-sm text-gray-500">{{ currentMascot.exp }} / {{ getNextLevelExp() }} XP</span>
           </div>
           
           <!-- 경험치 진행바 -->
@@ -163,8 +153,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { createMascot as createMascotApi, handleApiError, mascot } from '../api/index';
-import { mockMascot, mascotTypes, levelExperience } from '../data/mockData';
+import { getMascot, handleApiError } from '../api/index';
+import { mascotTypes, levelExperience } from '../data/mockData';
 import type { Mascot } from '../types/api';
 
 const router = useRouter();
@@ -212,7 +202,7 @@ function getExpPercentage(): number {
   
   if (!currentLevel || !nextLevel) return 100;
   
-  const currentExp = currentMascot.value.experiencePoint - currentLevel.requiredExp;
+  const currentExp = currentMascot.value.exp - currentLevel.requiredExp;
   const totalExp = nextLevel.requiredExp - currentLevel.requiredExp;
   
   return Math.min(100, (currentExp / totalExp) * 100);
@@ -239,16 +229,32 @@ function showToastMessage(message: string) {
 }
 
 // 마스코트 데이터 로드
-function loadMascotData() {
-  const mascotData = mascot.getMascot();
-  console.log('로드된 마스코트 데이터:', mascotData); // 디버깅용
-  if (mascotData) {
-    currentMascot.value = mascotData;
-    console.log('currentMascot 설정 완료:', currentMascot.value); // 디버깅용
-  } else {
-    console.log('마스코트 데이터가 없습니다. 생성 페이지로 이동합니다.'); // 디버깅용
-    // 마스코트가 없으면 생성 페이지로 이동
-    router.push('/mascot/create');
+async function loadMascotData() {
+  try {
+    console.log('백엔드에서 마스코트 데이터를 로드합니다...'); // 디버깅용
+    
+    const mascotData = await getMascot();
+    console.log('로드된 마스코트 데이터:', mascotData); // 디버깅용
+    
+    if (mascotData) {
+      currentMascot.value = mascotData;
+      console.log('currentMascot 설정 완료:', currentMascot.value); // 디버깅용
+    } else {
+      console.log('마스코트 데이터가 없습니다. 생성 페이지로 이동합니다.'); // 디버깅용
+      // 마스코트가 없으면 생성 페이지로 이동
+      router.push('/mascot/create');
+    }
+  } catch (error) {
+    console.error('마스코트 데이터 로드 실패:', error);
+    
+    // 에러 메시지 표시
+    const errorMessage = handleApiError(error);
+    showToastMessage(`마스코트 로드 실패: ${errorMessage}`);
+    
+    // 에러 발생 시 생성 페이지로 이동
+    setTimeout(() => {
+      router.push('/mascot/create');
+    }, 2000);
   }
 }
 

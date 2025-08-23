@@ -8,7 +8,7 @@ import MascotCreate from '../views/MascotCreate.vue'
 import MascotCustomize from '../views/MascotCustomize.vue'
 import FriendList from '../views/FriendList.vue'
 import FriendAdd from '../views/FriendAdd.vue'
-import { auth, mascot } from '../api/index'
+import { auth } from '../api/index'
 
 const routes = [
   { 
@@ -71,7 +71,6 @@ const router = createRouter({
 // 인증 가드
 router.beforeEach((to, from, next) => {
   const isAuthenticated = auth.isAuthenticated()
-  const hasMascot = mascot.hasMascot()
   
   // 인증이 필요한 페이지
   if (to.meta.requiresAuth && !isAuthenticated) {
@@ -81,29 +80,13 @@ router.beforeEach((to, from, next) => {
   
   // 게스트만 접근 가능한 페이지 (로그인, 회원가입)
   if (to.meta.requiresGuest && isAuthenticated) {
-    // 로그인한 사용자의 경우 마스코트 생성 여부에 따라 리디렉트
-    if (!hasMascot) {
-      next('/mascot/create')
-    } else {
-      next('/dashboard')
-    }
+    // 로그인한 사용자는 대시보드로 리디렉트
+    next('/dashboard')
     return
   }
   
-  // 인증된 사용자가 마스코트 관련 페이지에 접근할 때
-  if (isAuthenticated && to.meta.requiresAuth) {
-    // 마스코트가 없는데 마스코트 메인 페이지나 꾸미기 페이지에 접근하려는 경우
-    if (!hasMascot && (to.path === '/mascot' || to.path === '/mascot/customize')) {
-      next('/mascot/create')
-      return
-    }
-    
-    // 마스코트가 있는데 생성 페이지에 접근하려는 경우
-    if (hasMascot && to.path === '/mascot/create') {
-      next('/mascot')
-      return
-    }
-  }
+  // 인증된 사용자의 마스코트 관련 페이지 접근 제어는 컴포넌트 레벨에서 처리
+  // (백엔드 API 호출로 실시간 확인)
   
   next()
 })

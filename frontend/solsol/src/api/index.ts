@@ -141,34 +141,69 @@ export const auth = {
 // 마스코트 관련 API 함수들
 
 // 마스코트 생성
-export async function createMascot(data: CreateMascotRequest): Promise<CreateMascotResponse> {
-  return apiRequest<CreateMascotResponse>('/mascot', {
+export async function createMascot(data: CreateMascotRequest): Promise<Mascot> {
+  const response = await apiRequest<any>('/mascot', {
     method: 'POST',
     body: JSON.stringify(data),
   });
+  
+  // 백엔드 응답을 프론트엔드 타입으로 변환
+  const mascotData = mascot.transformBackendResponse(response);
+  if (!mascotData) {
+    throw new Error('마스코트 생성에 실패했습니다.');
+  }
+  
+  return mascotData;
 }
 
 // 마스코트 조회
-export async function getMascot(): Promise<GetMascotResponse> {
-  return apiRequest<GetMascotResponse>('/mascot', {
-    method: 'GET',
-  });
+export async function getMascot(): Promise<Mascot | null> {
+  try {
+    const response = await apiRequest<any>('/mascot', {
+      method: 'GET',
+    });
+    
+    // 백엔드 응답을 프론트엔드 타입으로 변환
+    return mascot.transformBackendResponse(response);
+  } catch (error) {
+    // 404 에러는 마스코트가 없는 것으로 처리
+    if (error instanceof ApiError && error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 // 마스코트 아이템 장착/꾸미기
-export async function equipItems(data: EquipItemsRequest): Promise<EquipItemsResponse> {
-  return apiRequest<EquipItemsResponse>('/mascot/equip', {
+export async function equipItems(data: EquipItemsRequest): Promise<Mascot> {
+  const response = await apiRequest<any>('/mascot/equip', {
     method: 'POST',
     body: JSON.stringify(data),
   });
+  
+  // 백엔드 응답을 프론트엔드 타입으로 변환
+  const mascotData = mascot.transformBackendResponse(response);
+  if (!mascotData) {
+    throw new Error('아이템 장착에 실패했습니다.');
+  }
+  
+  return mascotData;
 }
 
 // 마스코트 정보 수정
-export async function updateMascot(data: CreateMascotRequest): Promise<CreateMascotResponse> {
-  return apiRequest<CreateMascotResponse>('/mascot', {
+export async function updateMascot(data: UpdateMascotRequest): Promise<Mascot> {
+  const response = await apiRequest<any>('/mascot', {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
+  
+  // 백엔드 응답을 프론트엔드 타입으로 변환
+  const mascotData = mascot.transformBackendResponse(response);
+  if (!mascotData) {
+    throw new Error('마스코트 수정에 실패했습니다.');
+  }
+  
+  return mascotData;
 }
 
 // 아이템 목록 조회
@@ -180,25 +215,41 @@ export async function getItems(): Promise<GetItemsResponse> {
 
 // 마스코트 관련 유틸리티 함수들
 export const mascot = {
-  // 마스코트 데이터 저장
-  setMascot(mascotData: any) {
-    localStorage.setItem('mascot', JSON.stringify(mascotData));
+  // 백엔드 응답을 프론트엔드 타입으로 변환
+  transformBackendResponse(backendResponse: any): Mascot | null {
+    if (!backendResponse || !backendResponse.data) return null;
+    
+    const data = backendResponse.data;
+    return {
+      id: data.id,
+      name: data.name,
+      type: data.type,
+      level: data.level,
+      exp: data.exp,
+      equippedItem: data.equippedItem,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt
+    };
   },
 
-  // 마스코트 데이터 가져오기
-  getMascot(): any | null {
-    const mascotData = localStorage.getItem('mascot');
-    return mascotData ? JSON.parse(mascotData) : null;
+  // 프론트엔드 타입을 백엔드 요청 형태로 변환
+  transformToBackendRequest(mascotData: Mascot): CreateMascotRequest {
+    return {
+      name: mascotData.name,
+      type: mascotData.type,
+      equippedItem: mascotData.equippedItem
+    };
   },
 
-  // 마스코트 데이터 삭제
-  removeMascot() {
-    localStorage.removeItem('mascot');
+  // evolutionStage 계산 (level 기반)
+  calculateEvolutionStage(level: number): number {
+    return Math.floor(level / 10);
   },
 
-  // 마스코트 존재 여부 확인
-  hasMascot(): boolean {
-    return !!this.getMascot();
+  // 다음 레벨까지 필요한 경험치 계산
+  calculateExpToNextLevel(currentExp: number, currentLevel: number): number {
+    const nextLevelExp = (currentLevel + 1) * 100;
+    return Math.max(0, nextLevelExp - currentExp);
   }
 };
 
