@@ -35,6 +35,7 @@
             <div>• 두 손가락으로 핀치하여 크기 조절</div>
             <div>• 두 손가락으로 비틀어서 회전</div>
             <div>• 짧게 탭하여 아이템 선택</div>
+            <div>• 같은 아이템 중복 장착 가능 (최대 10개)</div>
           </div>
         </div>
         
@@ -111,12 +112,21 @@
             <span class="text-blue-600 font-medium">{{ selectedItemInfo?.name }}</span>
             <span class="text-xs text-blue-500">(선택됨)</span>
           </div>
-          <button 
-            @click="resetItemPosition(selectedItemId)"
-            class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition-colors"
-          >
-            위치 초기화
-          </button>
+          <div class="flex space-x-2">
+            <button 
+              @click="resetItemPosition(selectedItemId!)"
+              class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition-colors"
+            >
+              초기화
+            </button>
+            <button 
+              @click="removeSelectedItem()"
+              class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded transition-colors"
+              title="아이템 제거"
+            >
+              🗑️ 제거
+            </button>
+          </div>
         </div>
         
         <div class="grid grid-cols-3 gap-3">
@@ -289,6 +299,50 @@
         <div v-if="filteredItems.length === 0" class="text-center py-8">
           <div class="text-4xl mb-2 opacity-50">📦</div>
           <p class="text-gray-500">해당 카테고리에 아이템이 없습니다.</p>
+        </div>
+      </div>
+      
+      <!-- 장착된 아이템 목록 -->
+      <div v-if="equippedItemsList.length > 0" class="mb-6">
+        <h3 class="text-lg font-bold text-gray-800 mb-3">
+          장착된 아이템 ({{ equippedItemsList.length }}/{{ maxEquippedItems }})
+        </h3>
+        
+        <div class="space-y-2 max-h-32 overflow-y-auto">
+          <div 
+            v-for="equippedItem in equippedItemsList" 
+            :key="equippedItem.id"
+            :class="[
+              'flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer',
+              selectedItemId === equippedItem.id 
+                ? 'border-blue-400 bg-blue-50' 
+                : 'border-gray-200 bg-white hover:border-gray-300'
+            ]"
+            @click="selectItem(equippedItem.id)"
+          >
+            <div class="flex items-center space-x-2">
+              <img 
+                :src="equippedItem.item.imageUrl" 
+                :alt="equippedItem.item.name"
+                class="w-8 h-8 object-contain bg-gray-100 rounded"
+                @error="handleImageError"
+              />
+              <div>
+                <div class="text-sm font-medium text-gray-800">{{ equippedItem.item.name }}</div>
+                <div class="text-xs text-gray-500">
+                  {{ Math.round(equippedItem.scale * 100) }}% | {{ Math.round(equippedItem.rotation) }}°
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              @click.stop="removeEquippedItem(equippedItem.id)"
+              class="w-6 h-6 bg-red-100 hover:bg-red-200 text-red-600 rounded-full flex items-center justify-center text-xs transition-colors"
+              title="아이템 제거"
+            >
+              ×
+            </button>
+          </div>
         </div>
       </div>
       
@@ -616,6 +670,13 @@ function setItemQuickRotation(itemId: string, angle: number) {
     updateItemRotation(itemId, angle);
     
     showToastMessage(`${state.item.name} → ${angle}°`);
+  }
+}
+
+// 선택된 아이템 제거
+function removeSelectedItem() {
+  if (selectedItemId.value) {
+    removeEquippedItem(selectedItemId.value);
   }
 }
 
