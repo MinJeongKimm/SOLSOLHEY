@@ -98,15 +98,7 @@
       <div 
         v-for="item in filteredItems" 
         :key="item.id"
-        :class="[
-          'relative border-2 rounded-xl p-4 transition-all',
-          isOwned(item) 
-            ? 'border-purple-500 bg-purple-50' 
-            : 'border-gray-200 hover:border-gray-300',
-          isOwned(item)
-            ? 'cursor-default'
-            : 'cursor-pointer hover:shadow-md'
-        ]"
+        class="relative border-2 border-gray-200 rounded-xl p-4 transition-all cursor-pointer hover:border-gray-300 hover:shadow-md"
         @click="handleItemClick(item)"
       >
         <!-- 아이템 이미지 -->
@@ -114,21 +106,15 @@
           <img 
             :src="item.imageUrl" 
             :alt="item.name"
-            :class="[
-              'w-full h-full object-contain',
-              isOwned(item) ? 'opacity-60' : ''
-            ]"
+            class="w-full h-full object-contain"
             @error="handleImageError"
           />
         </div>
 
         <!-- 아이템 정보 -->
         <div>
-          <h4 class="font-medium text-sm text-gray-800 mb-1 flex items-center">
+          <h4 class="font-medium text-sm text-gray-800 mb-1">
             {{ item.name }}
-            <span v-if="isOwned(item)" class="text-purple-600 text-xs ml-1">
-              ✓ 보유중
-            </span>
           </h4>
           <p class="text-xs text-gray-500 mb-2 line-clamp-2">{{ item.description }}</p>
           
@@ -137,26 +123,13 @@
             <div class="text-lg font-bold text-blue-600 mb-2">
               {{ item.price }}P
             </div>
-            <span 
-              :class="[
-                'text-xs font-medium px-3 py-1 rounded-full',
-                isOwned(item) 
-                  ? 'bg-purple-500 text-white' 
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
-              ]"
-            >
-              {{ isOwned(item) ? '보유중' : '구매하기' }}
+            <span class="text-xs font-medium px-3 py-1 rounded-full bg-blue-500 text-white hover:bg-blue-600">
+              구매하기
             </span>
           </div>
         </div>
 
-        <!-- 보유중 아이콘 -->
-        <div 
-          v-if="isOwned(item)"
-          class="absolute top-2 right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center"
-        >
-          <span class="text-white text-xs">✓</span>
-        </div>
+
       </div>
     </div>
 
@@ -182,8 +155,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { getShopItems, getUserItems, createOrder } from '../../api/index';
-import type { ShopItem, UserItem } from '../../types/api';
+import { getShopItems, createOrder } from '../../api/index';
+import type { ShopItem } from '../../types/api';
 import PurchaseDialog from './PurchaseDialog.vue';
 
 // Props
@@ -200,7 +173,6 @@ const emit = defineEmits<{
 
 // 반응형 데이터
 const items = ref<ShopItem[]>([]);
-const userItems = ref<UserItem[]>([]);
 const loading = ref(false);
 const error = ref('');
 const selectedCategory = ref<'all' | 'head' | 'clothing' | 'accessory' | 'background'>('all');
@@ -250,18 +222,13 @@ function getCategoryDisplayName(category: string): string {
   return categoryNames[category] || '아이템';
 }
 
-// 아이템 보유 여부 확인
+// 아이템 보유 여부 확인 (임시로 항상 false 반환)
 function isOwned(item: ShopItem): boolean {
-  return userItems.value.some(userItem => userItem.itemId === item.id);
+  return false; // 보유여부 표시 기능 비활성화
 }
 
 // 아이템 클릭 처리
 function handleItemClick(item: ShopItem) {
-  if (isOwned(item)) {
-    // 이미 보유중인 아이템
-    return;
-  }
-  
   selectedItem.value = item;
   showPurchaseDialog.value = true;
 }
@@ -310,13 +277,8 @@ async function loadItems() {
   error.value = '';
   
   try {
-    const [itemsData, userItemsData] = await Promise.all([
-      getShopItems(),
-      getUserItems()
-    ]);
-    
+    const itemsData = await getShopItems();
     items.value = itemsData;
-    userItems.value = userItemsData;
   } catch (err: any) {
     console.error('아이템 목록 로드 실패:', err);
     error.value = '아이템 목록을 불러오는데 실패했습니다.';
