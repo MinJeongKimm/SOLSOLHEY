@@ -108,6 +108,16 @@
                 <span class="text-xs font-medium text-gray-800">{{ currentMascot.name }}</span>
               </div>
             </div>
+            
+            <!-- 공유 버튼 -->
+            <div class="absolute top-3 right-3">
+              <button 
+                @click="showSharePopup"
+                class="bg-white bg-opacity-90 p-1 rounded-lg hover:bg-opacity-100 transition-all flex items-center justify-center w-8 h-8"
+              >
+                <img src="/icons/icon_share.png" alt="공유" class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
