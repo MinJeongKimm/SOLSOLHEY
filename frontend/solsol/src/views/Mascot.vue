@@ -587,13 +587,52 @@ async function handleShare() {
           const mascotName = currentMascot.value?.name || '마스코트';
           const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
           
-          // 백엔드에서 생성된 이미지 URL을 그대로 사용하여 공유
-          await navigator.share({
-            title: shareTitle,
-            text: `${message}\n이미지: ${generatedImageUrl}`,
-            url: generatedImageUrl
-          });
-          showToastMessage('마스코트 이미지가 생성되어 공유되었습니다!');
+          try {
+            // 1. fetch와 Blob을 사용해서 원격 URL에서 File 객체 생성
+            console.log('이미지 파일 다운로드 시작:', generatedImageUrl);
+            const imageResponse = await fetch(generatedImageUrl);
+            const imageBlob = await imageResponse.blob();
+            
+            // 이미지 파일 객체 생성
+            const imageFile = new File([imageBlob], `${mascotName}_share.png`, {
+              type: imageBlob.type
+            });
+            
+            console.log('이미지 파일 생성 완료:', imageFile);
+            
+            // 2. navigator.canShare()로 파일 공유 지원 여부 확인
+            if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+              // 3. 파일 공유 지원: title, text, url, files 모두 포함해서 공유
+              console.log('파일 공유 지원됨 - 이미지와 텍스트를 함께 공유');
+              await navigator.share({
+                title: shareTitle,
+                text: message,
+                url: `${window.location.origin}/mascot/${currentMascot.value?.id}`,
+                files: [imageFile]
+              });
+              showToastMessage('마스코트 이미지와 메시지가 함께 공유되었습니다!');
+            } else {
+              // 4. 파일 공유 미지원: title, text, url만 공유 (url은 이미지 볼 수 있는 페이지 링크)
+              console.log('파일 공유 미지원 - 텍스트와 링크로 공유');
+              const imagePageUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
+              await navigator.share({
+                title: shareTitle,
+                text: `${message}\n이미지: ${generatedImageUrl}`,
+                url: imagePageUrl
+              });
+              showToastMessage('마스코트 이미지 링크를 공유했습니다!');
+            }
+          } catch (fileError) {
+            console.error('이미지 파일 처리 실패:', fileError);
+            // 파일 처리 실패 시 기본 링크 공유로 fallback
+            const fallbackUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
+            await navigator.share({
+              title: shareTitle,
+              text: `${message}\n이미지: ${generatedImageUrl}`,
+              url: fallbackUrl
+            });
+            showToastMessage('마스코트 링크를 공유했습니다!');
+          }
         } else {
           showToastMessage('이미지 생성에 실패했습니다. 링크로 공유합니다.');
           // 이미지 생성 실패 시 링크 공유로 fallback
