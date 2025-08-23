@@ -34,22 +34,30 @@ public class UsernameGenerator {
             return generateRandomUsername();
         }
         
-        // 이메일에서 @ 앞부분 추출
+        // 이메일에서 @ 앞부분과 도메인 일부 추출
         String localPart = email.split("@")[0];
+        String domain = email.split("@")[1];
+        
+        // 도메인의 첫 3글자 추출 (최대 3글자)
+        String domainPrefix = domain.length() > 3 ? domain.substring(0, 3) : domain;
         
         // 특수문자 제거 및 길이 제한
         String cleanUsername = localPart.replaceAll("[^a-zA-Z0-9가-힣]", "");
+        String cleanDomain = domainPrefix.replaceAll("[^a-zA-Z0-9]", "");
         
-        if (cleanUsername.length() > 20) {
-            cleanUsername = cleanUsername.substring(0, 20);
+        // username + 도메인 접두사 + 랜덤 숫자로 고유성 보장
+        String uniqueUsername = cleanUsername + cleanDomain + random.nextInt(100);
+        
+        if (uniqueUsername.length() > 20) {
+            uniqueUsername = uniqueUsername.substring(0, 20);
         }
         
-        if (cleanUsername.isEmpty()) {
+        if (uniqueUsername.isEmpty()) {
             return generateRandomUsername();
         }
         
-        log.info("생성된 username: {} (원본 이메일: {})", cleanUsername, email);
-        return cleanUsername;
+        log.info("생성된 username: {} (원본 이메일: {})", uniqueUsername, email);
+        return uniqueUsername;
     }
     
     /**
