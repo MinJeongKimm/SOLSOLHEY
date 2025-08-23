@@ -3,68 +3,21 @@
     <!-- 메인 카드 -->
     <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
       <!-- 상단 헤더 -->
-      <div class="flex justify-between items-center mb-6">
+      <div class="flex justify-between items-start mb-6">
         <!-- 좌측: My Room 타이틀 -->
         <h1 class="text-xl font-bold text-gray-800">My Room</h1>
         
-        <!-- 우측: 4개 아이콘 버튼들 -->
-        <div class="flex space-x-2">
-          <button 
-            @click="showNotReady('출석체크')"
-            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
-          >
-            <img src="/icons/icon_attendance.png" alt="출석" class="w-7 h-7" />
-          </button>
-          <button 
-            @click="showNotReady('챌린지')"
-            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
-          >
-            <img src="/icons/icon_challenge.png" alt="챌린지" class="w-7 h-7" />
-          </button>
-          <button 
-            @click="showNotReady('랭킹')"
-            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
-          >
-            <img src="/icons/icon_ranking.png" alt="랭킹" class="w-7 h-7" />
-          </button>
-          <button 
-            @click="goToFriends"
-            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
-          >
-            <img src="/icons/icon_friends.png" alt="친구" class="w-7 h-7" />
-          </button>
-        </div>
-      </div>
-
-      <!-- 포인트 & 좋아요 + 친구 썸네일 리스트 -->
-      <div class="pb-4 mb-6 border-b border-gray-100">
-        <div class="flex items-center justify-between">
-          <!-- 좌측: 포인트 & 좋아요 (위아래 배치) -->
-          <div class="flex flex-col space-y-2">
-            <!-- 포인트 -->
-            <div class="flex items-center space-x-2">
-              <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5" />
-              <span class="font-bold text-gray-900">{{ userCoins }}P</span>
-            </div>
-            <!-- 좋아요 -->
-            <div class="flex items-center space-x-2">
-              <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5" />
-              <span class="font-bold text-gray-900">{{ userLikes }}</span>
-            </div>
+        <!-- 우측: 포인트 & 좋아요 -->
+        <div class="flex flex-col space-y-1">
+          <!-- 포인트 -->
+          <div class="flex items-center justify-end">
+            <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5 mr-2" />
+            <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userCoins }}P</span>
           </div>
-          
-          <!-- 우측: 친구 썸네일 리스트 -->
-          <div class="flex space-x-2">
-            <div 
-              v-for="friend in friends" 
-              :key="friend.id"
-              class="flex flex-col items-center"
-            >
-              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-xs mb-1">
-                {{ friend.name.charAt(0) }}
-              </div>
-              <span class="text-xs text-gray-600 truncate w-10 text-center">{{ friend.name }}</span>
-            </div>
+          <!-- 좋아요 -->
+          <div class="flex items-center justify-end">
+            <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5 mr-2" />
+            <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userLikes }}</span>
           </div>
         </div>
       </div>
@@ -82,7 +35,7 @@
       </div>
 
       <!-- 마스코트가 있는 경우 메인 영역 -->
-      <div v-else class="space-y-6">
+      <div v-else class="space-y-4">
         <!-- 메인 캔버스: 방 배경 + 마스코트 -->
         <div class="relative">
           <!-- 방 배경 -->
@@ -174,7 +127,7 @@
           
           <!-- 밥주기 -->
           <button 
-            @click="showNotReady('밥주기')"
+            @click="showToastMessage('밥주기 기능은 준비중입니다! 🚧')"
             class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105"
           >
             <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -185,7 +138,7 @@
           
           <!-- 쇼핑하기 -->
           <button 
-            @click="showNotReady('쇼핑하기')"
+            @click="showToastMessage('쇼핑하기 기능은 준비중입니다! 🚧')"
             class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105"
           >
             <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -220,13 +173,6 @@ const router = useRouter();
 const currentMascot = ref<Mascot | null>(null);
 const userCoins = ref(15000);
 const userLikes = ref(151);
-
-// 친구 목록 데이터
-const friends = ref([
-  { id: 1, name: 'Danne' },
-  { id: 2, name: 'Joan Co' },
-  { id: 3, name: 'Jerome' }
-]);
 
 // 토스트 알림
 const showToast = ref(false);
@@ -280,16 +226,6 @@ function goToCustomize() {
 // 마스코트 생성 화면으로 이동
 function goToCreate() {
   router.push('/mascot/create');
-}
-
-// 친구 목록 화면으로 이동
-function goToFriends() {
-  router.push('/friend');
-}
-
-// 준비중 알림
-function showNotReady(feature: string) {
-  showToastMessage(`${feature} 기능은 준비중입니다! 🚧`);
 }
 
 // 토스트 메시지 표시
