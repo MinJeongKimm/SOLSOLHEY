@@ -1,6 +1,7 @@
 package com.solsolhey.ranking.dto.response;
 
 import com.solsolhey.ranking.entity.ContestEntry;
+
 import lombok.Builder;
 import lombok.Getter;
 

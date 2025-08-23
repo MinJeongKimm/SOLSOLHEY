@@ -1,9 +1,9 @@
 package com.solsolhey.ranking.dto.response;
 
+import java.util.List;
+
 import lombok.Builder;
 import lombok.Getter;
-
-import java.util.List;
 
 /**
  * 랭킹 조회 응답 DTO (교내/전국 공통)

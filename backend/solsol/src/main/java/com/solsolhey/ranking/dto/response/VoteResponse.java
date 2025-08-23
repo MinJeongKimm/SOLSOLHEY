@@ -1,10 +1,10 @@
 package com.solsolhey.ranking.dto.response;
 
-import lombok.Builder;
-import lombok.Getter;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
+import lombok.Builder;
+import lombok.Getter;
 
 /**
  * 투표 응답 DTO
