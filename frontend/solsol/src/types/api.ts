@@ -11,6 +11,7 @@ export interface SignupRequest {
   userId: string;
   password: string;
   nickname: string;
+  campus: string;
 }
 
 export interface SignupResponse {
