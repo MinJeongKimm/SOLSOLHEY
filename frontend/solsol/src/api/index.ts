@@ -16,7 +16,8 @@ import type {
   GetMascotResponse,
   GetItemsResponse,
   MascotCreateRequest,
-  MascotApiResponse
+  MascotApiResponse,
+  Mascot
 } from '../types/api';
 import { ApiError } from '../types/api';
 
@@ -116,12 +117,12 @@ export const auth = {
   },
 
   // 사용자 정보 저장
-  setUser(user: { username: string; userId: string; nickname?: string }) {
+  setUser(user: { username: string; userId: string; nickname?: string; campus?: string }) {
     localStorage.setItem('user', JSON.stringify(user));
   },
 
   // 사용자 정보 가져오기
-  getUser(): { username: string; userId: string; nickname?: string } | null {
+  getUser(): { username: string; userId: string; nickname?: string; campus?: string } | null {
     const userData = localStorage.getItem('user');
     return userData ? JSON.parse(userData) : null;
   },
