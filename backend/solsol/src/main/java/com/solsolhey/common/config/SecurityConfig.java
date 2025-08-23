@@ -18,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -46,8 +47,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // CSRF 비활성화 (JWT 사용으로 인해)
-            .csrf(AbstractHttpConfigurer::disable)
+            // CSRF 활성화 (쿠키 기반 인증)
+            .csrf(csrf -> csrf
+                .csrfTokenRepository(csrfRepo())
+                .ignoringRequestMatchers(
+                    "/api/v1/auth/login",
+                    "/api/v1/auth/refresh",
+                    "/api/v1/auth/logout",
+                    "/api/v1/auth/signup"
+                )
+            )
             
             // CORS 설정
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -59,8 +68,7 @@ public class SecurityConfig {
             // 요청별 권한 설정
             .authorizeHttpRequests(authz -> {
                 // 공개 API (인증 불필요)
-                authz.requestMatchers("/api/v1/auth/**").permitAll()  // 실제 API 경로에 맞게 수정
-                    .requestMatchers("/auth/**").permitAll()  // 혹시 모를 레거시 경로
+                authz.requestMatchers("/api/v1/auth/**").permitAll()  // 인증 관련 API
                     .requestMatchers("/public/**").permitAll()
                     .requestMatchers("/health").permitAll()
                     .requestMatchers("/api/v1/shop/**").permitAll()  // Shop API 허용
@@ -117,6 +125,14 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         
         return source;
+    }
+
+    /**
+     * CSRF 토큰 저장소
+     */
+    @Bean
+    public CookieCsrfTokenRepository csrfRepo() {
+        return CookieCsrfTokenRepository.withHttpOnlyFalse();
     }
 
     /**

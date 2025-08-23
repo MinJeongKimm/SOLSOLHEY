@@ -7,7 +7,10 @@ finance:
 
 # JWT 인증 설정
 jwt:
-  secret-key: ${JWT_SECRET_KEY}
+  secret: ${JWT_SECRET_KEY:YOUR_BASE64_SECRET}        # 256+ bit key, Base64 encoded
+  access-minutes: ${JWT_ACCESS_MINUTES:15}
+  refresh-days: ${JWT_REFRESH_DAYS:14}
+  secret-key: ${JWT_SECRET_KEY}                       # 기존 호환성 유지
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
 

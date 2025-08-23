@@ -39,6 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
+    private static final String ACCESS_TOKEN_COOKIE = "ACCESS_TOKEN";
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, 
@@ -85,11 +86,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * 요청에서 JWT 토큰 추출
+     * 요청에서 JWT 토큰 추출 (쿠키 우선, 헤더 fallback)
      */
     private String extractTokenFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
+        // 1. 쿠키에서 ACCESS_TOKEN 확인 (우선순위)
+        jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (jakarta.servlet.http.Cookie cookie : cookies) {
+                if (ACCESS_TOKEN_COOKIE.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
         
+        // 2. Authorization 헤더에서 Bearer 토큰 확인 (fallback)
+        String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
             return bearerToken.substring(BEARER_PREFIX.length());
         }
@@ -122,22 +133,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
-        String path = request.getRequestURI();
-        
-        // 공통 인증 불필요 경로들
-        if (path.startsWith("/api/auth/") || 
-            path.startsWith("/api/public/") || 
-            path.equals("/api/health")) {
-            return true;
-        }
-        
-        // 개발환경에서만 인증 불필요 경로들
-        if (isDevelopmentEnvironment()) {
-            return path.startsWith("/h2-console") ||
-                   path.startsWith("/swagger-ui") ||
-                   path.startsWith("/v3/api-docs");
-        }
-        
+        String p = request.getRequestURI();
+        if (p.startsWith("/api/v1/auth/") || p.equals("/health") || p.startsWith("/public/")) return true;
+        if (isDevelopmentEnvironment() &&
+            (p.startsWith("/h2-console") || p.startsWith("/swagger-ui") || p.startsWith("/v3/api-docs"))) return true;
         return false;
     }
 
