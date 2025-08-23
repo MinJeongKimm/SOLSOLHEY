@@ -44,6 +44,10 @@ public class Mascot {
     @Column(name = "equipped_item", length = 100)
     private String equippedItem;
     
+    @Column(name = "background_id", length = 50)
+    @Builder.Default
+    private String backgroundId = "bg_room_basic"; // 기본 배경
+    
     @Column(name = "exp", nullable = false)
     @Builder.Default
     private Integer exp = 0;
@@ -79,5 +83,15 @@ public class Mascot {
     // 이름 변경
     public void changeName(String newName) {
         this.name = newName;
+    }
+    
+    // 배경 변경
+    public void changeBackground(String backgroundId) {
+        this.backgroundId = backgroundId;
+    }
+    
+    // 기본 배경으로 초기화
+    public void resetToDefaultBackground() {
+        this.backgroundId = "bg_room_basic";
     }
 }
