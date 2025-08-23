@@ -100,7 +100,7 @@ rate-limit:
   general:
     requests-per-minute: ${RATE_LIMIT_GENERAL_REQUESTS_PER_MINUTE:100}
   login:
-    attempts-per-15min: ${RATE_LIMIT_LOGIN_ATTEMPTS_PER_15MIN:5}
+    attempts-per-15min: ${RATE_LIMIT_LOGIN_ATTEMPTS_PER_15MIN:10}
   cleanup:
     interval-hours: ${RATE_LIMIT_CLEANUP_INTERVAL_HOURS:1}
 
