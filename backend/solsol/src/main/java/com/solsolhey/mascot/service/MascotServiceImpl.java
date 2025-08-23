@@ -1,8 +1,9 @@
 package com.solsolhey.mascot.service;
 
-import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.solsolhey.mascot.domain.Background;
 import com.solsolhey.mascot.domain.Mascot;
@@ -20,10 +21,9 @@ import com.solsolhey.mascot.exception.MascotNotFoundException;
 import com.solsolhey.mascot.repository.BackgroundRepository;
 import com.solsolhey.mascot.repository.MascotRepository;
 import com.solsolhey.mascot.repository.UserBackgroundRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -190,7 +190,7 @@ public class MascotServiceImpl implements MascotService {
         }
         
         // 배경 존재 여부 및 활성화 상태 확인
-        Background background = backgroundRepository.findByIdAndEnabledTrue(request.getBackgroundId())
+        backgroundRepository.findByIdAndEnabledTrue(request.getBackgroundId())
                 .orElseThrow(() -> new RuntimeException("해당 배경은 사용할 수 없습니다."));
         
         // 사용자 배경 보유 여부 확인
