@@ -84,11 +84,40 @@
             <p v-if="password2Error" id="password2Error" class="text-xs text-red-500 mt-1 animate-shake">{{ password2Error }}</p>
           </transition>
         </div>
+
+        <!-- 캠퍼스 선택 -->
+        <div>
+          <label for="campus" class="block text-sm font-medium text-gray-700 mb-1">
+            캠퍼스 선택 <span class="text-red-500">*</span>
+          </label>
+          <select
+            id="campus"
+            v-model="campus"
+            required
+            aria-required="true"
+            aria-invalid="true"
+            aria-describedby="campusError"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none text-base min-h-[44px]"
+            :class="{'border-red-400 ring-2 ring-red-300': campusError, 'focus:ring-blue-400': !campusError}"
+          >
+            <option value="" disabled>캠퍼스를 선택해주세요</option>
+            <option value="ssafy_seoul">SSAFY 서울캠퍼스</option>
+            <option value="ssafy_daejeon">SSAFY 대전캠퍼스</option>
+            <option value="ssafy_gwangju">SSAFY 광주캠퍼스</option>
+            <option value="ssafy_gumi">SSAFY 구미캠퍼스</option>
+            <option value="ssafy_busan">SSAFY 부울경캠퍼스</option>
+          </select>
+          <transition name="fade">
+            <p v-if="campusError" id="campusError" class="text-xs text-red-500 mt-1 animate-shake">
+              {{ campusError }}
+            </p>
+          </transition>
+        </div>
+
         <button
           type="submit"
           class="w-full py-3 mt-2 rounded-lg bg-blue-500 text-white font-semibold text-lg shadow-md hover:bg-blue-600 transition active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
           :disabled="loading"
-          aria-busy="loading"
         >
           <span v-if="loading" class="flex items-center justify-center gap-2">
             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
@@ -121,6 +150,7 @@ const userId = ref('');
 const nickname = ref('');
 const password = ref('');
 const password2 = ref('');
+const campus = ref('');
 const loading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
@@ -128,6 +158,7 @@ const userIdError = ref('');
 const nicknameError = ref('');
 const passwordError = ref('');
 const password2Error = ref('');
+const campusError = ref('');
 const router = useRouter();
 
 function validateUserId(value: string) {
@@ -155,6 +186,11 @@ function validatePassword2(value: string) {
   return '';
 }
 
+function validateCampus(value: string) {
+  if (!value) return '캠퍼스를 선택해주세요.';
+  return '';
+}
+
 function goLogin() {
   router.push('/');
 }
@@ -164,11 +200,12 @@ async function onSubmit() {
   userIdError.value = validateUserId(userId.value);
   nicknameError.value = validateNickname(nickname.value);
   passwordError.value = validatePassword(password.value);
-  password2Error.value = validatePassword2(password2.value);
+  password2Error.value = validatePassword2(password.value);
+  campusError.value = validateCampus(campus.value);
   errorMessage.value = '';
   successMessage.value = '';
   
-  if (userIdError.value || nicknameError.value || passwordError.value || password2Error.value) {
+  if (userIdError.value || nicknameError.value || passwordError.value || password2Error.value || campusError.value) {
     return;
   }
 
@@ -179,6 +216,7 @@ async function onSubmit() {
       userId: userId.value,
       password: password.value,
       nickname: nickname.value,
+      campus: campus.value,
     };
 
     const response = await signup(signupData);
@@ -191,6 +229,7 @@ async function onSubmit() {
       nickname.value = '';
       password.value = '';
       password2.value = '';
+      campus.value = '';
       
       // 1.5초 후 로그인 페이지로 이동
       setTimeout(() => {
@@ -213,6 +252,9 @@ async function onSubmit() {
         }
         if (response.errors.password) {
           passwordError.value = response.errors.password;
+        }
+        if (response.errors.campus) {
+          campusError.value = response.errors.campus;
         }
       }
     }
