@@ -72,7 +72,7 @@ public class AuthController {
     /**
      * 로그아웃
      */
-    @PostMapping("/logout")
+    @DeleteMapping("/logout")
     @Operation(summary = "로그아웃", description = "사용자 로그아웃을 수행하고 토큰을 무효화합니다")
     public ResponseEntity<ApiResponse<Void>> logout(
             @RequestHeader("Authorization") String authorizationHeader) {
