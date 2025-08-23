@@ -181,6 +181,88 @@ export interface GetItemsResponse {
   errors?: Record<string, string>;
 }
 
+// 챌린지 관련 타입 정의
+export interface Challenge {
+  challengeId: number;
+  challengeName: string;
+  description: string;
+  rewardPoints: number;
+  rewardExp: number;
+  challengeType: string;
+  difficulty: string;
+  categoryName: string;
+  categoryDisplayName: string;
+  startDate?: string;
+  endDate?: string;
+  targetCount: number;
+  isActive: boolean;
+  isAvailable: boolean;
+  participantCount?: number;
+  completedCount?: number;
+  isJoined: boolean;
+  userStatus: string;
+}
+
+export interface ChallengeListResponse {
+  success: boolean;
+  message: string;
+  data?: Challenge[];
+  errors?: Record<string, string>;
+}
+
+export interface ChallengeDetailResponse {
+  success: boolean;
+  message: string;
+  data?: Challenge;
+  errors?: Record<string, string>;
+}
+
+export interface ChallengeJoinRequest {
+  challengeId: number;
+}
+
+export interface ChallengeJoinResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    challengeId: number;
+    userId: number;
+    status: string;
+  };
+  errors?: Record<string, string>;
+}
+
+export interface ChallengeProgressRequest {
+  step: number;
+  description?: string;
+}
+
+export interface ChallengeProgressResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    challengeId: number;
+    userId: number;
+    currentStep: number;
+    isCompleted: boolean;
+    rewardPoints?: number;
+  };
+  errors?: Record<string, string>;
+}
+
+// 사용자 관련 타입 정의
+export interface UserResponse {
+  userId: number;
+  username: string;
+  email: string;
+  nickname: string;
+  campus?: string;
+  totalPoints: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 
 
 
