@@ -33,6 +33,7 @@
           <div class="text-xs space-y-1">
             <div>• 한 손가락으로 드래그하여 이동</div>
             <div>• 두 손가락으로 핀치하여 크기 조절</div>
+            <div>• 두 손가락으로 비틀어서 회전</div>
             <div>• 짧게 탭하여 아이템 선택</div>
           </div>
         </div>
@@ -97,6 +98,7 @@
             <div class="text-gray-600 space-y-1">
               <div>위치: {{ Math.round(selectedItemInfo.position.x) }}, {{ Math.round(selectedItemInfo.position.y) }}</div>
               <div>크기: {{ Math.round(selectedItemInfo.scale * 100) }}%</div>
+              <div>회전: {{ Math.round(selectedItemInfo.rotation) }}°</div>
             </div>
           </div>
         </div>
@@ -117,32 +119,56 @@
           </button>
         </div>
         
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-3 gap-3">
           <!-- 크기 조절 버튼들 -->
           <div class="space-y-2">
             <div class="text-xs text-gray-600 font-medium">크기</div>
             <div class="flex space-x-1">
               <button 
                 @click="adjustItemScale(selectedItemId, -0.1)"
-                class="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded text-sm transition-colors"
+                class="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded text-xs transition-colors"
               >
                 -
               </button>
-              <div class="flex-1 bg-gray-100 rounded px-2 py-1 text-center text-xs">
+              <div class="flex-1 bg-gray-100 rounded px-1 py-1 text-center text-xs">
                 {{ Math.round((selectedItemInfo?.scale || 1) * 100) }}%
               </div>
               <button 
                 @click="adjustItemScale(selectedItemId, 0.1)"
-                class="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded text-sm transition-colors"
+                class="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded text-xs transition-colors"
               >
                 +
               </button>
             </div>
           </div>
           
+          <!-- 회전 조절 버튼들 -->
+          <div class="space-y-2">
+            <div class="text-xs text-gray-600 font-medium">회전</div>
+            <div class="flex space-x-1">
+              <button 
+                @click="adjustItemRotation(selectedItemId, -15)"
+                class="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded text-xs transition-colors"
+                title="반시계 방향"
+              >
+                ↺
+              </button>
+              <div class="flex-1 bg-gray-100 rounded px-1 py-1 text-center text-xs">
+                {{ Math.round(selectedItemInfo?.rotation || 0) }}°
+              </div>
+              <button 
+                @click="adjustItemRotation(selectedItemId, 15)"
+                class="w-6 h-6 bg-gray-100 hover:bg-gray-200 rounded text-xs transition-colors"
+                title="시계 방향"
+              >
+                ↻
+              </button>
+            </div>
+          </div>
+          
           <!-- 퀵 포지션 버튼들 -->
           <div class="space-y-2">
-            <div class="text-xs text-gray-600 font-medium">퀵 포지션</div>
+            <div class="text-xs text-gray-600 font-medium">위치</div>
             <div class="grid grid-cols-3 gap-1">
               <button 
                 v-for="position in quickPositions" 
@@ -154,6 +180,21 @@
                 {{ position.icon }}
               </button>
             </div>
+          </div>
+        </div>
+        
+        <!-- 퀵 회전 버튼들 -->
+        <div class="mt-3 p-2 bg-gray-50 rounded-lg">
+          <div class="text-xs text-gray-600 font-medium mb-2">퀵 회전</div>
+          <div class="grid grid-cols-4 gap-2">
+            <button 
+              v-for="angle in quickRotations" 
+              :key="angle"
+              @click="setItemQuickRotation(selectedItemId, angle)"
+              class="text-xs bg-white hover:bg-gray-100 py-1 px-2 rounded border transition-colors"
+            >
+              {{ angle }}°
+            </button>
           </div>
         </div>
       </div>
@@ -329,6 +370,9 @@ const quickPositions = [
   { name: '우측', icon: '→', position: { x: 200, y: 120 } },
 ];
 
+// 퀵 회전 옵션
+const quickRotations = [0, 90, 180, 270];
+
 // 필터링된 아이템 목록 (보유한 아이템만)
 const filteredItems = computed(() => {
   return items.value.filter(item => 
@@ -491,10 +535,32 @@ function setItemQuickPosition(itemId: number, quickPosition: { name: string; ico
   }
 }
 
+// 회전 조작 메소드들
+function adjustItemRotation(itemId: number, rotationChange: number) {
+  const state = equippedItemStates.value.get(itemId);
+  if (state) {
+    let newRotation = state.rotation + rotationChange;
+    newRotation = ((newRotation % 360) + 360) % 360; // 0-360 범위로 정규화
+    updateItemRotation(itemId, newRotation);
+    
+    // 시각적 피드백
+    showToastMessage(`회전: ${Math.round(newRotation)}°`);
+  }
+}
+
+function setItemQuickRotation(itemId: number, angle: number) {
+  const state = equippedItemStates.value.get(itemId);
+  if (state) {
+    updateItemRotation(itemId, angle);
+    
+    showToastMessage(`${state.item.name} → ${angle}°`);
+  }
+}
+
 // 전체 조작 메소드들
 function resetAllItems() {
   // 확인 다이얼로그 (간단한 confirm 사용)
-  if (confirm('모든 아이템의 위치와 크기를 초기화하시겠습니까?')) {
+  if (confirm('모든 아이템의 위치, 크기, 회전을 초기화하시겠습니까?')) {
     equippedItemStates.value.clear();
     selectedItemId.value = null;
     
