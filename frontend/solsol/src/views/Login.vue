@@ -49,7 +49,7 @@
           type="submit"
           class="w-full py-3 mt-2 rounded-lg bg-blue-500 text-white font-semibold text-lg shadow-md hover:bg-blue-600 transition active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
           :disabled="loading"
-          aria-busy="loading"
+          :aria-busy="loading"
         >
           <span v-if="loading" class="flex items-center justify-center gap-2">
             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { login, auth, handleApiError } from '../api/index';
+import { login, auth, handleApiError, getMascot } from '../api/index';
 import type { LoginRequest } from '../types/api';
 
 const userId = ref('');
@@ -126,8 +126,21 @@ async function onSubmit() {
         userId: userId.value,
       });
       
-      // 대시보드로 리다이렉트
-      router.push('/dashboard');
+      // 마스코트 존재 여부 확인
+      try {
+        const mascotData = await getMascot();
+        if (mascotData) {
+          // 마스코트가 있으면 마스코트 메인 화면으로 리다이렉트
+          router.push('/mascot');
+        } else {
+          // 마스코트가 없으면 마스코트 생성 화면으로 리다이렉트
+          router.push('/mascot/create');
+        }
+      } catch (error) {
+        // 마스코트 조회 실패 시 마스코트 생성 화면으로 이동
+        console.warn('마스코트 조회 실패, 생성 화면으로 이동:', error);
+        router.push('/mascot/create');
+      }
     } else {
       // 서버에서 성공하지 않은 응답을 보낸 경우
       errorMessage.value = response.message || '로그인에 실패했습니다.';
