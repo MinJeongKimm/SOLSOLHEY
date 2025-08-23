@@ -606,7 +606,27 @@ function getAbsolutePosition(equippedItem: EquippedItemState): { x: number; y: n
 // 드래그 관련 메소드들
 function updateCanvasBounds() {
   if (mascotCanvas.value) {
-    canvasBounds.value = mascotCanvas.value.getBoundingClientRect();
+    const newBounds = mascotCanvas.value.getBoundingClientRect();
+    
+    // 캔버스 크기가 실제로 변경되었는지 확인
+    const oldBounds = canvasBounds.value;
+    const sizeChanged = !oldBounds || 
+      Math.abs(oldBounds.width - newBounds.width) > 1 || 
+      Math.abs(oldBounds.height - newBounds.height) > 1;
+    
+    canvasBounds.value = newBounds;
+    
+    // 크기 변경 시 상대 좌표 기반으로 아이템 위치 재계산
+    if (sizeChanged && oldBounds) {
+      console.log('화면 크기 변경 감지:', { 
+        old: { width: oldBounds.width, height: oldBounds.height },
+        new: { width: newBounds.width, height: newBounds.height }
+      });
+      
+      // 모든 아이템의 절대 위치를 상대 좌표 기준으로 재계산
+      // (상대 좌표는 이미 저장되어 있으므로 자동으로 새로운 크기에 맞춰 조정됨)
+      // 렌더링은 자동으로 업데이트되므로 별도 처리 불필요
+    }
   }
 }
 
@@ -773,22 +793,32 @@ function saveItemPositions() {
   }
 }
 
-// 저장된 위치 불러오기 (마이그레이션 포함)
+// 저장된 위치 불러오기 (완전한 마이그레이션 포함)
 function loadItemPositions() {
   try {
-    // 새로운 상대 좌표 데이터 먼저 시도
+    // 1. 새로운 상대 좌표 데이터 먼저 시도
     let savedData = localStorage.getItem('mascot-multiple-items-v2');
     let isRelativeData = true;
+    let dataSource = 'relative-v2';
     
-    // 새 데이터가 없으면 기존 절대 좌표 데이터 시도
+    // 2. 새 데이터가 없으면 기존 다중 아이템 절대 좌표 데이터 시도
     if (!savedData) {
       savedData = localStorage.getItem('mascot-multiple-items');
       isRelativeData = false;
+      dataSource = 'absolute-multi';
+    }
+    
+    // 3. 그것도 없으면 기존 단일 아이템 데이터 시도
+    if (!savedData) {
+      savedData = localStorage.getItem('mascot-item-positions');
+      isRelativeData = false;
+      dataSource = 'absolute-single';
     }
     
     if (savedData) {
       const positionsData = JSON.parse(savedData);
       
+      // 새로운 다중 아이템 형식 처리
       if (positionsData.equippedItems) {
         // 아이템 목록 로드
         equippedItemsList.value = positionsData.equippedItems;
@@ -812,7 +842,7 @@ function loadItemPositions() {
                 // 기존 절대 좌표 데이터를 상대 좌표로 마이그레이션
                 const containerSize = getContainerSize(mascotCanvas.value);
                 state.relativePosition = toRelativePosition(data.position, containerSize);
-                console.log(`마이그레이션: ${itemId}`, data.position, '→', state.relativePosition);
+                console.log(`마이그레이션 (${dataSource}): ${itemId}`, data.position, '→', state.relativePosition);
               }
               
               state.scale = data.scale;
@@ -821,13 +851,47 @@ function loadItemPositions() {
             }
           });
         }
+      } 
+      // 기존 단일 아이템 형식 처리 (position 데이터가 직접 저장된 경우)
+      else if (dataSource === 'absolute-single' && mascotCanvas.value) {
+        console.log('기존 단일 아이템 데이터 마이그레이션 시작:', positionsData);
         
-        console.log(`저장된 데이터 불러옴 (${isRelativeData ? '상대' : '절대→마이그레이션'}):`, positionsData);
-        
-        // 마이그레이션된 경우 새 형식으로 저장
-        if (!isRelativeData) {
-          saveItemPositions();
-        }
+        const containerSize = getContainerSize(mascotCanvas.value);
+        Object.entries(positionsData).forEach(([itemIdStr, data]: [string, any]) => {
+          if (data && data.position && data.scale !== undefined) {
+            // 기존 아이템 ID로 아이템 찾기
+            const itemId = parseInt(itemIdStr);
+            const item = items.value.find(i => i.id === itemId);
+            
+            if (item) {
+              // 새로운 다중 아이템 형식으로 변환
+              const newId = generateItemId(item);
+              const relativePosition = toRelativePosition(data.position, containerSize);
+              
+              const newEquippedItem: EquippedItemState = {
+                id: newId,
+                item,
+                relativePosition,
+                scale: data.scale,
+                rotation: data.rotation || 0,
+                equippedAt: Date.now(),
+              };
+              
+              equippedItemsList.value.push(newEquippedItem);
+              equippedItemStates.value.set(newId, newEquippedItem);
+              
+              console.log(`단일→다중 마이그레이션: ${item.name}`, data.position, '→', relativePosition);
+            }
+          }
+        });
+      }
+      
+      console.log(`저장된 데이터 불러옴 (${dataSource}):`, positionsData);
+      
+      // 마이그레이션된 경우 새 형식으로 저장
+      if (!isRelativeData || dataSource !== 'relative-v2') {
+        saveItemPositions();
+        showToastMessage('기존 데이터를 새 형식으로 마이그레이션했습니다! 📱💻');
       }
     }
   } catch (error) {
@@ -957,6 +1021,9 @@ async function loadMascotData() {
   }
 }
 
+// 화면 크기 변경 감지를 위한 ResizeObserver
+let resizeObserver: ResizeObserver | null = null;
+
 // 컴포넌트 마운트
 onMounted(async () => {
   console.log('마스코트 꾸미기 페이지 로드됨');
@@ -973,12 +1040,31 @@ onMounted(async () => {
   // 윈도우 리사이즈 이벤트 리스너 추가
   window.addEventListener('resize', updateCanvasBounds);
   
+  // 마스코트 캔버스의 크기 변경을 정확하게 감지하기 위해 ResizeObserver 사용
+  if (mascotCanvas.value && 'ResizeObserver' in window) {
+    resizeObserver = new ResizeObserver(() => {
+      // 다음 프레임에서 실행 (DOM 업데이트 완료 후)
+      nextTick(() => {
+        updateCanvasBounds();
+      });
+    });
+    resizeObserver.observe(mascotCanvas.value);
+    console.log('ResizeObserver가 마스코트 캔버스를 감시하기 시작했습니다.');
+  }
+  
   console.log('사용 가능한 아이템들:', items.value);
 });
 
 // 컴포넌트 언마운트 시 이벤트 리스너 제거
 onUnmounted(() => {
   window.removeEventListener('resize', updateCanvasBounds);
+  
+  // ResizeObserver 정리
+  if (resizeObserver) {
+    resizeObserver.disconnect();
+    resizeObserver = null;
+    console.log('ResizeObserver 정리 완료');
+  }
 });
 </script>
 
