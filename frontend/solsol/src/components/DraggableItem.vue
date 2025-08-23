@@ -34,8 +34,22 @@
         v-if="!isMobile"
         class="absolute -bottom-2 -right-2 w-4 h-4 bg-blue-500 rounded-full cursor-se-resize border-2 border-white shadow-lg hover:scale-110 transition-transform"
         @mousedown.stop="handleResizeStart"
+        title="크기 조절"
       >
         <div class="absolute inset-1 bg-white rounded-full opacity-50"></div>
+      </div>
+      
+      <!-- 회전 핸들 (웹용) -->
+      <div 
+        v-if="!isMobile"
+        class="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full cursor-grab border-2 border-white shadow-lg hover:scale-110 transition-transform"
+        @mousedown.stop="handleRotateStart"
+        title="회전"
+      >
+        <div class="absolute inset-1 bg-white rounded-full opacity-50"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-1 h-1 bg-green-700 rounded-full"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -85,6 +99,11 @@ const dragStartPosition = ref<{ x: number; y: number } | null>(null);
 // 리사이즈 관련 상태
 const resizeStartPos = ref<{ x: number; y: number } | null>(null);
 const resizeStartScale = ref<number>(1);
+
+// 회전 관련 상태
+const isRotating = ref(false);
+const rotateStartPos = ref<{ x: number; y: number } | null>(null);
+const rotateStartRotation = ref<number>(0);
 
 // 아이템 스타일 계산
 const itemStyle = computed(() => {
@@ -333,6 +352,51 @@ function handleResizeEnd() {
   
   document.removeEventListener('mousemove', handleResizeMove);
   document.removeEventListener('mouseup', handleResizeEnd);
+}
+
+// 회전 시작 (웹용)
+function handleRotateStart(e: MouseEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  isRotating.value = true;
+  rotateStartPos.value = { x: e.clientX, y: e.clientY };
+  rotateStartRotation.value = props.rotation;
+  
+  document.addEventListener('mousemove', handleRotateMove);
+  document.addEventListener('mouseup', handleRotateEnd);
+}
+
+// 회전 중 (웹용)
+function handleRotateMove(e: MouseEvent) {
+  if (!isRotating.value || !rotateStartPos.value || !itemElement.value) return;
+  
+  // 아이템의 중심점 계산
+  const rect = itemElement.value.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  
+  // 시작점과 현재점의 각도 계산
+  const startAngle = Math.atan2(rotateStartPos.value.y - centerY, rotateStartPos.value.x - centerX);
+  const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+  
+  // 각도 차이 계산 (라디안을 도로 변환)
+  const deltaAngle = (currentAngle - startAngle) * (180 / Math.PI);
+  
+  // 새로운 회전 각도 계산 (정규화)
+  let newRotation = rotateStartRotation.value + deltaAngle;
+  newRotation = ((newRotation % 360) + 360) % 360; // 0-360 범위로 정규화
+  
+  emit('update:rotation', newRotation);
+}
+
+// 회전 종료 (웹용)
+function handleRotateEnd() {
+  isRotating.value = false;
+  rotateStartPos.value = null;
+  
+  document.removeEventListener('mousemove', handleRotateMove);
+  document.removeEventListener('mouseup', handleRotateEnd);
 }
 
 // 위치 제한 (경계 내에 유지)
