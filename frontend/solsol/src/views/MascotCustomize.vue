@@ -35,6 +35,7 @@
             <div>• 두 손가락으로 핀치하여 크기 조절</div>
             <div>• 두 손가락으로 비틀어서 회전</div>
             <div>• 짧게 탭하여 아이템 선택</div>
+            <div>• 같은 아이템 중복 장착 가능 (최대 10개)</div>
           </div>
         </div>
         
@@ -68,17 +69,17 @@
             <!-- 드래그 가능한 장착된 아이템들 -->
             <DraggableItem
               v-for="equippedItem in equippedItems"
-              :key="equippedItem.item.id"
+              :key="equippedItem.id"
               :item="equippedItem.item"
               :position="equippedItem.position"
               :scale="equippedItem.scale"
               :rotation="equippedItem.rotation"
-              :is-selected="selectedItemId === equippedItem.item.id"
+              :is-selected="selectedItemId === equippedItem.id"
               :container-bounds="canvasBounds"
-              @update:position="updateItemPosition(equippedItem.item.id, $event)"
-              @update:scale="updateItemScale(equippedItem.item.id, $event)"
-              @update:rotation="updateItemRotation(equippedItem.item.id, $event)"
-              @select="selectItem(equippedItem.item.id)"
+              @update:position="updateItemPosition(equippedItem.id, $event)"
+              @update:scale="updateItemScale(equippedItem.id, $event)"
+              @update:rotation="updateItemRotation(equippedItem.id, $event)"
+              @select="selectItem(equippedItem.id)"
             />
           </div>
           
@@ -111,12 +112,21 @@
             <span class="text-blue-600 font-medium">{{ selectedItemInfo?.name }}</span>
             <span class="text-xs text-blue-500">(선택됨)</span>
           </div>
-          <button 
-            @click="resetItemPosition(selectedItemId)"
-            class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition-colors"
-          >
-            위치 초기화
-          </button>
+          <div class="flex space-x-2">
+            <button 
+              @click="resetItemPosition(selectedItemId!)"
+              class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition-colors"
+            >
+              초기화
+            </button>
+            <button 
+              @click="removeSelectedItem()"
+              class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded transition-colors"
+              title="아이템 제거"
+            >
+              🗑️ 제거
+            </button>
+          </div>
         </div>
         
         <div class="grid grid-cols-3 gap-3">
@@ -231,12 +241,15 @@
             v-for="item in filteredItems" 
             :key="item.id"
             :class="[
-              'relative border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-md',
+              'relative border-2 rounded-xl p-4 transition-all',
               isEquipped(item) 
                 ? 'border-purple-500 bg-purple-50' 
-                : 'border-gray-200 hover:border-gray-300'
+                : 'border-gray-200 hover:border-gray-300',
+              canEquipMoreItems || isEquipped(item)
+                ? 'cursor-pointer hover:shadow-md'
+                : 'cursor-not-allowed opacity-60'
             ]"
-            @click="toggleEquipItem(item)"
+            @click="handleItemClick(item)"
           >
             <!-- 아이템 이미지 -->
             <div class="w-full h-20 bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
@@ -252,7 +265,9 @@
             <div>
               <h4 class="font-medium text-sm text-gray-800 mb-1 flex items-center">
                 {{ item.name }}
-                <span v-if="isEquipped(item)" class="text-purple-600 text-xs ml-1">✓</span>
+                <span v-if="isEquipped(item)" class="text-purple-600 text-xs ml-1">
+                  ✓{{ getEquippedCount(item) > 1 ? ` (${getEquippedCount(item)})` : '' }}
+                </span>
               </h4>
               <p class="text-xs text-gray-600 mb-2 line-clamp-2">{{ item.description }}</p>
               
@@ -263,10 +278,16 @@
                     'text-xs font-medium px-3 py-1 rounded-full',
                     isEquipped(item) 
                       ? 'bg-purple-500 text-white' 
-                      : 'bg-gray-200 text-gray-600'
+                      : canEquipMoreItems 
+                        ? 'bg-gray-200 text-gray-600' 
+                        : 'bg-red-100 text-red-600'
                   ]"
                 >
-                  {{ isEquipped(item) ? '착용중' : '착용하기' }}
+                  {{ isEquipped(item) 
+                    ? `착용중 (${getEquippedCount(item)})` 
+                    : canEquipMoreItems
+                      ? '착용하기' 
+                      : '장착 불가' }}
                 </span>
               </div>
             </div>
@@ -285,6 +306,54 @@
         <div v-if="filteredItems.length === 0" class="text-center py-8">
           <div class="text-4xl mb-2 opacity-50">📦</div>
           <p class="text-gray-500">해당 카테고리에 아이템이 없습니다.</p>
+        </div>
+      </div>
+      
+      <!-- 장착된 아이템 목록 -->
+      <div v-if="equippedItemsList.length > 0" class="mb-6">
+        <h3 :class="[
+          'text-lg font-bold mb-3 flex items-center space-x-2',
+          equippedItemsList.length >= maxEquippedItems ? 'text-red-600' : 'text-gray-800'
+        ]">
+          <span>장착된 아이템 ({{ equippedItemsList.length }}/{{ maxEquippedItems }})</span>
+          <span v-if="equippedItemsList.length >= maxEquippedItems" class="text-red-500 text-sm">⚠️ 최대</span>
+        </h3>
+        
+        <div class="space-y-2 max-h-32 overflow-y-auto">
+          <div 
+            v-for="equippedItem in equippedItemsList" 
+            :key="equippedItem.id"
+            :class="[
+              'flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer',
+              selectedItemId === equippedItem.id 
+                ? 'border-blue-400 bg-blue-50' 
+                : 'border-gray-200 bg-white hover:border-gray-300'
+            ]"
+            @click="selectItem(equippedItem.id)"
+          >
+            <div class="flex items-center space-x-2">
+              <img 
+                :src="equippedItem.item.imageUrl" 
+                :alt="equippedItem.item.name"
+                class="w-8 h-8 object-contain bg-gray-100 rounded"
+                @error="handleImageError"
+              />
+              <div>
+                <div class="text-sm font-medium text-gray-800">{{ equippedItem.item.name }}</div>
+                <div class="text-xs text-gray-500">
+                  {{ Math.round(equippedItem.scale * 100) }}% | {{ Math.round(equippedItem.rotation) }}°
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              @click.stop="removeEquippedItem(equippedItem.id)"
+              class="w-6 h-6 bg-red-100 hover:bg-red-200 text-red-600 rounded-full flex items-center justify-center text-xs transition-colors"
+              title="아이템 제거"
+            >
+              ×
+            </button>
+          </div>
         </div>
       </div>
       
@@ -325,12 +394,14 @@ import DraggableItem from '../components/DraggableItem.vue';
 import { mascotTypes, realItems } from '../data/mockData';
 import type { Item, Mascot } from '../types/api';
 
-// 아이템 상태 인터페이스
+// 아이템 상태 인터페이스 (다중 아이템 지원)
 interface EquippedItemState {
+  id: string; // 고유 ID (item.id + 장착 순서)
   item: Item;
   position: { x: number; y: number };
   scale: number;
   rotation: number; // 회전 각도 (degrees)
+  equippedAt: number; // 장착 시간 (타임스탬프)
 }
 
 const router = useRouter();
@@ -344,9 +415,13 @@ const selectedCategory = ref<'head' | 'clothing' | 'accessory' | 'background'>('
 // 드래그 관련 상태
 const mascotCanvas = ref<HTMLElement>();
 const canvasBounds = ref<DOMRect | null>(null);
-const selectedItemId = ref<number | null>(null);
-const equippedItemStates = ref<Map<number, EquippedItemState>>(new Map());
+const selectedItemId = ref<string | null>(null); // 고유 ID로 변경
+const equippedItemStates = ref<Map<string, EquippedItemState>>(new Map()); // 다중 아이템 지원
 const isMobileDevice = ref(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+
+// 다중 아이템 관리
+const equippedItemsList = ref<EquippedItemState[]>([]); // 장착된 아이템 목록
+const maxEquippedItems = 10; // 최대 장착 가능 아이템 수
 
 // 토스트 알림
 const showToast = ref(false);
@@ -380,13 +455,22 @@ const filteredItems = computed(() => {
   );
 });
 
-// 장착된 아이템들의 상태 목록
+// 장착된 아이템들의 상태 목록 (다중 아이템 지원)
 const equippedItems = computed(() => {
-  if (!currentMascot.value?.equippedItem) return [];
+  // 새로운 다중 아이템 시스템에서는 equippedItemsList를 직접 사용
+  return equippedItemsList.value;
+});
+
+// 더 많은 아이템을 장착할 수 있는지 확인
+const canEquipMoreItems = computed(() => {
+  return equippedItemsList.value.length < maxEquippedItems;
+});
+
+// 기존 마스코트 데이터에서 아이템 로드 (호환성을 위함)
+function loadEquippedItemsFromMascot() {
+  if (!currentMascot.value?.equippedItem) return;
   
-  const equipped: EquippedItemState[] = [];
-  
-  // 각 카테고리별로 장착된 아이템 찾기
+  // 기존 단일 아이템 시스템과의 호환성
   ['head', 'clothing', 'accessory', 'background'].forEach(type => {
     const item = items.value.find(item => 
       item.type === type && 
@@ -394,23 +478,17 @@ const equippedItems = computed(() => {
     );
     
     if (item) {
-      // 저장된 상태가 있으면 사용, 없으면 기본값 설정
-      let state = equippedItemStates.value.get(item.id);
-      if (!state) {
-        state = {
-          item,
-          position: getDefaultPosition(item.type),
-          scale: 1,
-          rotation: 0,
-        };
-        equippedItemStates.value.set(item.id, state);
+      // 이미 장착된 아이템인지 확인
+      const existingItem = equippedItemsList.value.find(equipped => 
+        equipped.item.id === item.id
+      );
+      
+      if (!existingItem) {
+        addEquippedItem(item);
       }
-      equipped.push(state);
     }
   });
-  
-  return equipped;
-});
+}
 
 // 선택된 아이템의 정보
 const selectedItemInfo = computed(() => {
@@ -460,6 +538,60 @@ function getDefaultPosition(itemType: string): { x: number; y: number } {
   return defaultPositions[itemType] || { x: canvasCenter.x - 60, y: canvasCenter.y - 60 };
 }
 
+// 다중 아이템 관리 함수들
+function generateItemId(item: Item): string {
+  return `${item.id}_${Date.now()}`;
+}
+
+function addEquippedItem(item: Item): boolean {
+  // 최대 개수 체크
+  if (equippedItemsList.value.length >= maxEquippedItems) {
+    showToastMessage(`최대 ${maxEquippedItems}개까지만 장착할 수 있습니다!`);
+    return false;
+  }
+  
+  const id = generateItemId(item);
+  const newEquippedItem: EquippedItemState = {
+    id,
+    item,
+    position: getDefaultPosition(item.type),
+    scale: 1,
+    rotation: 0,
+    equippedAt: Date.now(),
+  };
+  
+  equippedItemsList.value.push(newEquippedItem);
+  equippedItemStates.value.set(id, newEquippedItem);
+  
+  showToastMessage(`${item.name}을(를) 장착했습니다!`);
+  return true;
+}
+
+function removeEquippedItem(itemId: string): boolean {
+  const index = equippedItemsList.value.findIndex(item => item.id === itemId);
+  if (index === -1) return false;
+  
+  const removedItem = equippedItemsList.value[index];
+  equippedItemsList.value.splice(index, 1);
+  equippedItemStates.value.delete(itemId);
+  
+  // 선택된 아이템이 제거되면 선택 해제
+  if (selectedItemId.value === itemId) {
+    selectedItemId.value = null;
+  }
+  
+  showToastMessage(`${removedItem.item.name}을(를) 해제했습니다!`);
+  return true;
+}
+
+function isItemEquipped(item: Item): boolean {
+  return equippedItemsList.value.some(equipped => equipped.item.id === item.id);
+}
+
+function getEquippedCount(item: Item): number {
+  return equippedItemsList.value.filter(equipped => equipped.item.id === item.id).length;
+}
+
 // 드래그 관련 메소드들
 function updateCanvasBounds() {
   if (mascotCanvas.value) {
@@ -467,7 +599,7 @@ function updateCanvasBounds() {
   }
 }
 
-function updateItemPosition(itemId: number, position: { x: number; y: number }) {
+function updateItemPosition(itemId: string, position: { x: number; y: number }) {
   const state = equippedItemStates.value.get(itemId);
   if (state) {
     state.position = position;
@@ -475,7 +607,7 @@ function updateItemPosition(itemId: number, position: { x: number; y: number }) 
   }
 }
 
-function updateItemScale(itemId: number, scale: number) {
+function updateItemScale(itemId: string, scale: number) {
   const state = equippedItemStates.value.get(itemId);
   if (state) {
     state.scale = scale;
@@ -483,7 +615,7 @@ function updateItemScale(itemId: number, scale: number) {
   }
 }
 
-function updateItemRotation(itemId: number, rotation: number) {
+function updateItemRotation(itemId: string, rotation: number) {
   const state = equippedItemStates.value.get(itemId);
   if (state) {
     state.rotation = rotation;
@@ -491,7 +623,7 @@ function updateItemRotation(itemId: number, rotation: number) {
   }
 }
 
-function selectItem(itemId: number) {
+function selectItem(itemId: string) {
   selectedItemId.value = itemId;
 }
 
@@ -503,7 +635,7 @@ function handleCanvasClick(e: Event) {
 }
 
 // UI 개선 메소드들
-function adjustItemScale(itemId: number, scaleChange: number) {
+function adjustItemScale(itemId: string, scaleChange: number) {
   const state = equippedItemStates.value.get(itemId);
   if (state) {
     const newScale = Math.max(0.3, Math.min(4, state.scale + scaleChange));
@@ -514,7 +646,7 @@ function adjustItemScale(itemId: number, scaleChange: number) {
   }
 }
 
-function resetItemPosition(itemId: number) {
+function resetItemPosition(itemId: string) {
   const state = equippedItemStates.value.get(itemId);
   if (state) {
     const defaultPos = getDefaultPosition(state.item.type);
@@ -526,7 +658,7 @@ function resetItemPosition(itemId: number) {
   }
 }
 
-function setItemQuickPosition(itemId: number, quickPosition: { name: string; icon: string; position: { x: number; y: number } }) {
+function setItemQuickPosition(itemId: string, quickPosition: { name: string; icon: string; position: { x: number; y: number } }) {
   const state = equippedItemStates.value.get(itemId);
   if (state) {
     updateItemPosition(itemId, quickPosition.position);
@@ -536,7 +668,7 @@ function setItemQuickPosition(itemId: number, quickPosition: { name: string; ico
 }
 
 // 회전 조작 메소드들
-function adjustItemRotation(itemId: number, rotationChange: number) {
+function adjustItemRotation(itemId: string, rotationChange: number) {
   const state = equippedItemStates.value.get(itemId);
   if (state) {
     let newRotation = state.rotation + rotationChange;
@@ -548,7 +680,7 @@ function adjustItemRotation(itemId: number, rotationChange: number) {
   }
 }
 
-function setItemQuickRotation(itemId: number, angle: number) {
+function setItemQuickRotation(itemId: string, angle: number) {
   const state = equippedItemStates.value.get(itemId);
   if (state) {
     updateItemRotation(itemId, angle);
@@ -557,11 +689,38 @@ function setItemQuickRotation(itemId: number, angle: number) {
   }
 }
 
+// 선택된 아이템 제거
+function removeSelectedItem() {
+  if (selectedItemId.value) {
+    removeEquippedItem(selectedItemId.value);
+  }
+}
+
+// 아이템 클릭 처리 (제한 체크 포함)
+function handleItemClick(item: Item) {
+  const isCurrentlyEquipped = isItemEquipped(item);
+  
+  // 장착 해제는 항상 가능
+  if (isCurrentlyEquipped) {
+    toggleEquipItem(item);
+    return;
+  }
+  
+  // 새로 장착할 때는 제한 체크
+  if (!canEquipMoreItems.value) {
+    showToastMessage(`최대 ${maxEquippedItems}개까지만 장착할 수 있습니다! 먼저 다른 아이템을 제거해주세요.`);
+    return;
+  }
+  
+  toggleEquipItem(item);
+}
+
 // 전체 조작 메소드들
 function resetAllItems() {
   // 확인 다이얼로그 (간단한 confirm 사용)
   if (confirm('모든 아이템의 위치, 크기, 회전을 초기화하시겠습니까?')) {
     equippedItemStates.value.clear();
+    equippedItemsList.value = []; // 다중 아이템 목록도 초기화
     selectedItemId.value = null;
     
     // 다음 프레임에서 다시 기본값으로 설정되도록 함
@@ -575,19 +734,23 @@ function saveItemPositions() {
   // 실제 저장 로직은 백엔드 연동이 필요하지만, 
   // 현재는 localStorage에 저장하는 것으로 시뮬레이션
   try {
-    const positionsData = {};
+    const positionsData = {
+      equippedItems: equippedItemsList.value,
+      itemStates: {}
+    };
+    
     equippedItemStates.value.forEach((state, itemId) => {
-      positionsData[itemId] = {
+      positionsData.itemStates[itemId] = {
         position: state.position,
         scale: state.scale,
         rotation: state.rotation,
       };
     });
     
-    localStorage.setItem('mascot-item-positions', JSON.stringify(positionsData));
+    localStorage.setItem('mascot-multiple-items', JSON.stringify(positionsData));
     showToastMessage('아이템 위치가 저장되었습니다! 💾');
     
-    console.log('저장된 아이템 위치:', positionsData);
+    console.log('저장된 다중 아이템 데이터:', positionsData);
   } catch (error) {
     console.error('위치 저장 실패:', error);
     showToastMessage('저장에 실패했습니다. 다시 시도해주세요.');
@@ -597,21 +760,35 @@ function saveItemPositions() {
 // 저장된 위치 불러오기
 function loadItemPositions() {
   try {
-    const savedData = localStorage.getItem('mascot-item-positions');
+    const savedData = localStorage.getItem('mascot-multiple-items');
     if (savedData) {
       const positionsData = JSON.parse(savedData);
       
-      Object.entries(positionsData).forEach(([itemId, data]: [string, any]) => {
-        const state = equippedItemStates.value.get(Number(itemId));
-        if (state && data.position && data.scale !== undefined) {
-          state.position = data.position;
-          state.scale = data.scale;
-          state.rotation = data.rotation || 0; // 기존 데이터 호환성을 위해 기본값 설정
-          equippedItemStates.value.set(Number(itemId), state);
+      if (positionsData.equippedItems) {
+        // 새로운 다중 아이템 데이터 형식
+        equippedItemsList.value = positionsData.equippedItems;
+        
+        // 상태 맵 재구성
+        equippedItemStates.value.clear();
+        equippedItemsList.value.forEach(item => {
+          equippedItemStates.value.set(item.id, item);
+        });
+        
+        // 저장된 상태 적용
+        if (positionsData.itemStates) {
+          Object.entries(positionsData.itemStates).forEach(([itemId, data]: [string, any]) => {
+            const state = equippedItemStates.value.get(itemId);
+            if (state && data.position && data.scale !== undefined) {
+              state.position = data.position;
+              state.scale = data.scale;
+              state.rotation = data.rotation || 0;
+              equippedItemStates.value.set(itemId, state);
+            }
+          });
         }
-      });
-      
-      console.log('저장된 위치 불러옴:', positionsData);
+        
+        console.log('저장된 다중 아이템 데이터 불러옴:', positionsData);
+      }
     }
   } catch (error) {
     console.error('위치 불러오기 실패:', error);
@@ -645,10 +822,7 @@ function getEquippedItemName(itemType: 'head' | 'clothing' | 'accessory' | 'back
 }
 
 function isEquipped(item: Item): boolean {
-  if (!currentMascot.value || !currentMascot.value.equippedItem) return false;
-  
-  // 단순 문자열 비교로 아이템 장착 여부 확인
-  return currentMascot.value.equippedItem.includes(item.name);
+  return isItemEquipped(item);
 }
 
 // 뒤로가기
@@ -658,28 +832,28 @@ function goBack() {
   router.push('/mascot');
 }
 
-// 아이템 장착/해제 토글
+// 아이템 장착/해제 토글 (다중 아이템 지원)
 async function toggleEquipItem(item: Item) {
   if (!currentMascot.value) return;
   
   try {
-    const isCurrentlyEquipped = isEquipped(item);
+    const isCurrentlyEquipped = isItemEquipped(item);
     
-    // 백엔드 API 호출
-    const updatedMascot = await equipItems({
-      equippedItem: isCurrentlyEquipped ? '' : item.name
-    });
+    if (isCurrentlyEquipped) {
+      // 해제: 해당 아이템 중 하나 제거
+      const equippedItem = equippedItemsList.value.find(equipped => equipped.item.id === item.id);
+      if (equippedItem) {
+        removeEquippedItem(equippedItem.id);
+      }
+    } else {
+      // 장착: 새 아이템 추가
+      addEquippedItem(item);
+    }
     
-    // 마스코트 데이터 업데이트
-    currentMascot.value = updatedMascot;
+    // TODO: 나중에 백엔드 API 호출 추가
+    // const updatedMascot = await equipItems({ equippedItems: equippedItemsList.value });
     
-    console.log('백엔드에서 아이템 변경 완료:', updatedMascot);
-    
-    const message = isCurrentlyEquipped 
-      ? `${item.name}을(를) 해제했습니다!`
-      : `${item.name}을(를) 착용했습니다!`;
-    
-    showToastMessage(message);
+    console.log('다중 아이템 변경 완료:', equippedItemsList.value);
   } catch (error) {
     console.error('아이템 장착/해제 실패:', error);
     
@@ -721,6 +895,9 @@ async function loadMascotData() {
     if (mascotData) {
       currentMascot.value = mascotData;
       console.log('마스코트 데이터 로드됨:', mascotData);
+      
+      // 기존 장착된 아이템들 로드 (호환성)
+      loadEquippedItemsFromMascot();
     } else {
       console.error('마스코트 데이터를 찾을 수 없습니다.');
       // 마스코트가 없으면 메인 페이지로 이동
