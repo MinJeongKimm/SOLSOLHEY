@@ -3,74 +3,21 @@
     <!-- 메인 카드 -->
     <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
       <!-- 상단 헤더 -->
-      <div class="flex justify-between items-center mb-6">
+      <div class="flex justify-between items-start mb-6">
         <!-- 좌측: My Room 타이틀 -->
         <h1 class="text-xl font-bold text-gray-800">My Room</h1>
         
-        <!-- 우측: 4개 아이콘 버튼들 -->
-        <div class="flex space-x-2">
-          <button 
-            @click="showNotReady('출석체크')"
-            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
-          >
-            <img src="/icons/icon_attendance.png" alt="출석" class="w-7 h-7" />
-          </button>
-          <button 
-            @click="showNotReady('챌린지')"
-            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
-          >
-            <img src="/icons/icon_challenge.png" alt="챌린지" class="w-7 h-7" />
-          </button>
-          <button 
-            @click="showNotReady('랭킹')"
-            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
-          >
-            <img src="/icons/icon_ranking.png" alt="랭킹" class="w-7 h-7" />
-          </button>
-          <button 
-            @click="goToFriends"
-            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
-          >
-            <img src="/icons/icon_friends.png" alt="친구" class="w-7 h-7" />
-          </button>
-          <button 
-            @click="showSharePopup"
-            class="hover:opacity-70 transition-opacity p-1 rounded-lg hover:bg-gray-100"
-          >
-            <img src="/icons/icon_share.png" alt="공유" class="w-7 h-7" />
-          </button>
-        </div>
-      </div>
-
-      <!-- 포인트 & 좋아요 + 친구 썸네일 리스트 -->
-      <div class="pb-4 mb-6 border-b border-gray-100">
-        <div class="flex items-center justify-between">
-          <!-- 좌측: 포인트 & 좋아요 (위아래 배치) -->
-          <div class="flex flex-col space-y-2">
-            <!-- 포인트 -->
-            <div class="flex items-center space-x-2">
-              <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5" />
-              <span class="font-bold text-gray-900">{{ userCoins }}P</span>
-            </div>
-            <!-- 좋아요 -->
-            <div class="flex items-center space-x-2">
-              <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5" />
-              <span class="font-bold text-gray-900">{{ userLikes }}</span>
-            </div>
+        <!-- 우측: 포인트 & 좋아요 -->
+        <div class="flex flex-col space-y-1">
+          <!-- 포인트 -->
+          <div class="flex items-center justify-end">
+            <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5 mr-2" />
+            <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userCoins }}P</span>
           </div>
-          
-          <!-- 우측: 친구 썸네일 리스트 -->
-          <div class="flex space-x-2">
-            <div 
-              v-for="friend in friends" 
-              :key="friend.id"
-              class="flex flex-col items-center"
-            >
-              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-xs mb-1">
-                {{ friend.name.charAt(0) }}
-              </div>
-              <span class="text-xs text-gray-600 truncate w-10 text-center">{{ friend.name }}</span>
-            </div>
+          <!-- 좋아요 -->
+          <div class="flex items-center justify-end">
+            <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5 mr-2" />
+            <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userLikes }}</span>
           </div>
         </div>
       </div>
@@ -88,7 +35,7 @@
       </div>
 
       <!-- 마스코트가 있는 경우 메인 영역 -->
-      <div v-else class="space-y-6">
+      <div v-else class="space-y-4">
         <!-- 메인 캔버스: 방 배경 + 마스코트 -->
         <div class="relative">
           <!-- 방 배경 -->
@@ -114,21 +61,42 @@
                   @error="handleImageError"
                 />
                 
-                <!-- 장착된 아이템들 -->
+                <!-- 장착된 아이템들 (실제 이미지로 오버레이) -->
                 <div class="absolute inset-0">
                   <!-- 머리 아이템 -->
                   <img 
-                    v-if="currentMascot.equippedItems.head" 
-                    :src="currentMascot.equippedItems.head.imageUrl" 
-                    :alt="currentMascot.equippedItems.head.name"
-                    class="item-head absolute"
+                    v-if="getEquippedItemImage('head')" 
+                    :src="getEquippedItemImage('head')" 
+                    :alt="getEquippedItemName('head')"
+                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
+                    style="top: -20px; left: 0; z-index: 10;"
                   />
-                  <!-- 액세서리 -->
+                  
+                  <!-- 의상 아이템 -->
                   <img 
-                    v-if="currentMascot.equippedItems.accessory" 
-                    :src="currentMascot.equippedItems.accessory.imageUrl" 
-                    :alt="currentMascot.equippedItems.accessory.name"
-                    class="item-accessory absolute"
+                    v-if="getEquippedItemImage('clothing')" 
+                    :src="getEquippedItemImage('clothing')" 
+                    :alt="getEquippedItemName('clothing')"
+                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
+                    style="top: 0; left: 0; z-index: 5;"
+                  />
+                  
+                  <!-- 액세서리 아이템 -->
+                  <img 
+                    v-if="getEquippedItemImage('accessory')" 
+                    :src="getEquippedItemImage('accessory')" 
+                    :alt="getEquippedItemName('accessory')"
+                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
+                    style="top: 10px; left: 0; z-index: 15;"
+                  />
+                  
+                  <!-- 배경 아이템 (마스코트 뒤에 배치) -->
+                  <img 
+                    v-if="getEquippedItemImage('background')" 
+                    :src="getEquippedItemImage('background')" 
+                    :alt="getEquippedItemName('background')"
+                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
+                    style="top: 0; left: 0; z-index: 1;"
                   />
                 </div>
               </div>
@@ -150,7 +118,7 @@
               <span class="text-xl">⭐</span>
               <span class="text-lg font-bold text-gray-800">Lv.{{ currentMascot.level }}</span>
             </div>
-            <span class="text-sm text-gray-500">{{ currentMascot.experiencePoint }} / {{ getNextLevelExp() }} XP</span>
+            <span class="text-sm text-gray-500">{{ currentMascot.exp }} / {{ getNextLevelExp() }} XP</span>
           </div>
           
           <!-- 경험치 진행바 -->
@@ -180,7 +148,7 @@
           
           <!-- 밥주기 -->
           <button 
-            @click="showNotReady('밥주기')"
+            @click="showToastMessage('밥주기 기능은 준비중입니다! 🚧')"
             class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105"
           >
             <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -191,7 +159,7 @@
           
           <!-- 쇼핑하기 -->
           <button 
-            @click="showNotReady('쇼핑하기')"
+            @click="showToastMessage('쇼핑하기 기능은 준비중입니다! 🚧')"
             class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105"
           >
             <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -308,9 +276,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { createMascot as createMascotApi, handleApiError, mascot, auth, createShareLink, createShareImage, ShareType, ImageType, type ShareLinkCreateRequest, type ShareImageCreateRequest } from '../api/index';
-import { mockMascot, mascotTypes, levelExperience } from '../data/mockData';
-import type { Mascot } from '../types/api';
+import { mascotTypes, levelExperience, realItems } from '../data/mockData';
+import { getMascot, handleApiError, auth, createShareLink, createShareImage, ShareType, ImageType, type ShareLinkCreateRequest, type ShareImageCreateRequest } from '../api/index';
+import type { Mascot, Item } from '../types/api';
 
 const router = useRouter();
 
@@ -318,13 +286,6 @@ const router = useRouter();
 const currentMascot = ref<Mascot | null>(null);
 const userCoins = ref(15000);
 const userLikes = ref(151);
-
-// 친구 목록 데이터
-const friends = ref([
-  { id: 1, name: 'Danne' },
-  { id: 2, name: 'Joan Co' },
-  { id: 3, name: 'Jerome' }
-]);
 
 // 토스트 알림
 const showToast = ref(false);
@@ -383,10 +344,36 @@ function getExpPercentage(): number {
   
   if (!currentLevel || !nextLevel) return 100;
   
-  const currentExp = currentMascot.value.experiencePoint - currentLevel.requiredExp;
+  const currentExp = currentMascot.value.exp - currentLevel.requiredExp;
   const totalExp = nextLevel.requiredExp - currentLevel.requiredExp;
   
   return Math.min(100, (currentExp / totalExp) * 100);
+}
+
+// 장착된 아이템의 이미지 URL 가져오기
+function getEquippedItemImage(itemType: 'head' | 'clothing' | 'accessory' | 'background'): string | undefined {
+  if (!currentMascot.value?.equippedItem) return undefined;
+  
+  // equippedItem 문자열에서 해당 타입의 아이템 찾기
+  const equippedItem = realItems.find(item => 
+    item.type === itemType && 
+    currentMascot.value!.equippedItem!.includes(item.name)
+  );
+  
+  return equippedItem?.imageUrl;
+}
+
+// 장착된 아이템의 이름 가져오기
+function getEquippedItemName(itemType: 'head' | 'clothing' | 'accessory' | 'background'): string | undefined {
+  if (!currentMascot.value?.equippedItem) return undefined;
+  
+  // equippedItem 문자열에서 해당 타입의 아이템 찾기
+  const equippedItem = realItems.find(item => 
+    item.type === itemType && 
+    currentMascot.value!.equippedItem!.includes(item.name)
+  );
+  
+  return equippedItem?.name;
 }
 
 // 꾸미기 화면으로 이동
@@ -397,16 +384,6 @@ function goToCustomize() {
 // 마스코트 생성 화면으로 이동
 function goToCreate() {
   router.push('/mascot/create');
-}
-
-// 친구 목록 화면으로 이동
-function goToFriends() {
-  router.push('/friend');
-}
-
-// 준비중 알림
-function showNotReady(feature: string) {
-  showToastMessage(`${feature} 기능은 준비중입니다! 🚧`);
 }
 
 // 토스트 메시지 표시
@@ -711,16 +688,32 @@ async function handleShare() {
 }
 
 // 마스코트 데이터 로드
-function loadMascotData() {
-  const mascotData = mascot.getMascot();
-  console.log('로드된 마스코트 데이터:', mascotData); // 디버깅용
-  if (mascotData) {
-    currentMascot.value = mascotData;
-    console.log('currentMascot 설정 완료:', currentMascot.value); // 디버깅용
-  } else {
-    console.log('마스코트 데이터가 없습니다. 생성 페이지로 이동합니다.'); // 디버깅용
-    // 마스코트가 없으면 생성 페이지로 이동
-    router.push('/mascot/create');
+async function loadMascotData() {
+  try {
+    console.log('백엔드에서 마스코트 데이터를 로드합니다...'); // 디버깅용
+    
+    const mascotData = await getMascot();
+    console.log('로드된 마스코트 데이터:', mascotData); // 디버깅용
+    
+    if (mascotData) {
+      currentMascot.value = mascotData;
+      console.log('currentMascot 설정 완료:', currentMascot.value); // 디버깅용
+    } else {
+      console.log('마스코트 데이터가 없습니다. 생성 페이지로 이동합니다.'); // 디버깅용
+      // 마스코트가 없으면 생성 페이지로 이동
+      router.push('/mascot/create');
+    }
+  } catch (error) {
+    console.error('마스코트 데이터 로드 실패:', error);
+    
+    // 에러 메시지 표시
+    const errorMessage = handleApiError(error);
+    showToastMessage(`마스코트 로드 실패: ${errorMessage}`);
+    
+    // 에러 발생 시 생성 페이지로 이동
+    setTimeout(() => {
+      router.push('/mascot/create');
+    }, 2000);
   }
 }
 
