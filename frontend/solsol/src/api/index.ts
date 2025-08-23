@@ -209,18 +209,18 @@ export * from './friend';
 
 // ShareType enum (백엔드와 동일)
 export enum ShareType {
-  MASCOT = 'MASCOT',
-  CHALLENGE = 'CHALLENGE',
-  ACHIEVEMENT = 'ACHIEVEMENT',
-  RANKING = 'RANKING'
+  CHALLENGE_INVITE = 'CHALLENGE_INVITE',  // 챌린지 초대
+  FRIEND_INVITE = 'FRIEND_INVITE',        // 친구 초대
+  ACHIEVEMENT = 'ACHIEVEMENT',            // 업적 공유
+  GENERAL = 'GENERAL'                     // 일반 공유 (마스코트 공유 포함)
 }
 
 // ImageType enum (백엔드와 동일)
 export enum ImageType {
-  MASCOT_SHARE = 'MASCOT_SHARE',
-  CHALLENGE_ACHIEVEMENT = 'CHALLENGE_ACHIEVEMENT',
-  RANKING_SHARE = 'RANKING_SHARE',
-  CUSTOM = 'CUSTOM'
+  CHALLENGE_CARD = 'CHALLENGE_CARD',      // 챌린지 카드
+  ACHIEVEMENT_BADGE = 'ACHIEVEMENT_BADGE', // 업적 배지
+  MASCOT_SHARE = 'MASCOT_SHARE',          // 마스코트 공유
+  CUSTOM = 'CUSTOM'                       // 커스텀 이미지
 }
 
 // 공유 링크 생성 요청 타입 (백엔드 ShareLinkCreateRequest와 동일)

@@ -489,7 +489,7 @@ async function handleShare() {
           title: shareTitle,
           description: message,
           targetUrl: shareUrl,
-          shareType: ShareType.MASCOT,
+          shareType: ShareType.GENERAL,  // 마스코트 공유는 GENERAL 타입 사용
           thumbnailUrl: currentMascot.value ? getMascotImageUrl(currentMascot.value.type) : undefined
         };
         
