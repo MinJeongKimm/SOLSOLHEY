@@ -87,6 +87,7 @@ const isMobile = ref(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.
 // 터치 관련 상태
 const touchStartPos = ref<{ x: number; y: number } | null>(null);
 const lastTouchDistance = ref<number | null>(null);
+const lastTouchAngle = ref<number | null>(null); // 핀치 회전을 위한 각도 추적
 const touchCenter = ref<{ x: number; y: number } | null>(null);
 const isMultiTouch = ref(false);
 const touchStartTime = ref<number>(0);
@@ -254,6 +255,7 @@ function handleTouchEnd(e: TouchEvent) {
     touchStartPos.value = null;
     dragStartPosition.value = null;
     lastTouchDistance.value = null;
+    lastTouchAngle.value = null;
     touchCenter.value = null;
     
     // 짧은 터치(탭)는 선택으로 처리
@@ -263,6 +265,7 @@ function handleTouchEnd(e: TouchEvent) {
   } else if (e.touches.length === 1 && isMultiTouch.value) {
     // 핀치에서 단일 터치로 변경
     lastTouchDistance.value = null;
+    lastTouchAngle.value = null;
     touchCenter.value = null;
     isMultiTouch.value = false;
     
@@ -281,6 +284,7 @@ function setupPinchGesture(e: TouchEvent) {
   const touch2 = e.touches[1];
   
   lastTouchDistance.value = getDistance(touch1, touch2);
+  lastTouchAngle.value = getTouchAngle(touch1, touch2);
   touchCenter.value = {
     x: (touch1.clientX + touch2.clientX) / 2,
     y: (touch1.clientY + touch2.clientY) / 2,
@@ -289,11 +293,12 @@ function setupPinchGesture(e: TouchEvent) {
 
 // 핀치 제스처 처리
 function handlePinchGesture(e: TouchEvent) {
-  if (e.touches.length !== 2 || !lastTouchDistance.value) return;
+  if (e.touches.length !== 2 || !lastTouchDistance.value || !lastTouchAngle.value) return;
   
   const touch1 = e.touches[0];
   const touch2 = e.touches[1];
   const currentDistance = getDistance(touch1, touch2);
+  const currentAngle = getTouchAngle(touch1, touch2);
   
   // 스케일 계산 (더 부드러운 변화를 위해 조정)
   const scaleChange = currentDistance / lastTouchDistance.value;
@@ -302,6 +307,21 @@ function handlePinchGesture(e: TouchEvent) {
   const dampedScaleChange = 1 + (scaleChange - 1) * 0.5;
   const newScale = Math.max(0.3, Math.min(4, props.scale * dampedScaleChange));
   
+  // 회전 계산 (라디안을 도로 변환)
+  const rotationDelta = (currentAngle - lastTouchAngle.value) * (180 / Math.PI);
+  
+  // 급격한 회전 변화 방지 (30도 이상 변화 시 무시)
+  if (Math.abs(rotationDelta) < 30) {
+    let newRotation = props.rotation + rotationDelta;
+    newRotation = ((newRotation % 360) + 360) % 360; // 0-360 범위로 정규화
+    
+    // 최소 변화량 체크 (불필요한 업데이트 방지)
+    const rotationThreshold = 2; // 2도
+    if (Math.abs(rotationDelta) > rotationThreshold) {
+      emit('update:rotation', newRotation);
+    }
+  }
+  
   // 최소 변화량 체크 (불필요한 업데이트 방지)
   const scaleThreshold = 0.02;
   if (Math.abs(newScale - props.scale) > scaleThreshold) {
@@ -309,6 +329,7 @@ function handlePinchGesture(e: TouchEvent) {
   }
   
   lastTouchDistance.value = currentDistance;
+  lastTouchAngle.value = currentAngle;
 }
 
 // 두 터치 포인트 간 거리 계산
@@ -316,6 +337,13 @@ function getDistance(touch1: Touch, touch2: Touch): number {
   const dx = touch1.clientX - touch2.clientX;
   const dy = touch1.clientY - touch2.clientY;
   return Math.sqrt(dx * dx + dy * dy);
+}
+
+// 두 터치 포인트 간 각도 계산
+function getTouchAngle(touch1: Touch, touch2: Touch): number {
+  const dx = touch2.clientX - touch1.clientX;
+  const dy = touch2.clientY - touch1.clientY;
+  return Math.atan2(dy, dx);
 }
 
 // 리사이즈 시작 (웹용)
