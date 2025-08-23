@@ -3,11 +3,11 @@ finance:
   api:
     base-url: ${FINANCE_API_BASE_URL:https://finopenapi.ssafy.io/ssafy/api/v1/edu}
     timeout: ${FINANCE_API_TIMEOUT:10}
-    key: ${FINANCE_API_KEY:}
+    key: ${FINANCE_API_KEY}
 
 # JWT 인증 설정
 jwt:
-  secret-key: ${JWT_SECRET_KEY:mySecretKey12345678901234567890123456789012345678901234567890}
+  secret-key: ${JWT_SECRET_KEY}
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
 
