@@ -256,6 +256,76 @@ export const mascot = {
 // 친구 관련 API 함수들
 export * from './friend';
 
+// 공유 관련 API 함수들
+
+// ShareType enum (백엔드와 동일)
+export enum ShareType {
+  CHALLENGE_INVITE = 'CHALLENGE_INVITE',  // 챌린지 초대
+  FRIEND_INVITE = 'FRIEND_INVITE',        // 친구 초대
+  ACHIEVEMENT = 'ACHIEVEMENT',            // 업적 공유
+  GENERAL = 'GENERAL'                     // 일반 공유 (마스코트 공유 포함)
+}
+
+// ImageType enum (백엔드와 동일)
+export enum ImageType {
+  CHALLENGE_CARD = 'CHALLENGE_CARD',      // 챌린지 카드
+  ACHIEVEMENT_BADGE = 'ACHIEVEMENT_BADGE', // 업적 배지
+  MASCOT_SHARE = 'MASCOT_SHARE',          // 마스코트 공유
+  CUSTOM = 'CUSTOM'                       // 커스텀 이미지
+}
+
+// 공유 링크 생성 요청 타입 (백엔드 ShareLinkCreateRequest와 동일)
+export interface ShareLinkCreateRequest {
+  title: string;          // 필수
+  description?: string;   // 선택
+  thumbnailUrl?: string;  // 선택
+  targetUrl?: string;     // 선택
+  shareType: ShareType;   // 필수
+  expiresAt?: string;     // 선택 (ISO 날짜 문자열)
+}
+
+// 공유 이미지 생성 요청 타입 (백엔드 ShareImageCreateRequest와 동일)
+export interface ShareImageCreateRequest {
+  templateId?: number;        // 선택
+  imageUrl: string;          // 필수
+  originalFilename?: string; // 선택
+  fileSize?: number;         // 선택
+  width?: number;            // 선택
+  height?: number;           // 선택
+  imageType: ImageType;      // 필수
+  isPublic?: boolean;        // 선택 (기본값 true)
+}
+
+// 공유 링크 생성
+export async function createShareLink(data: ShareLinkCreateRequest): Promise<any> {
+  return apiRequest<any>('/shares/links', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// 공유 이미지 생성
+export async function createShareImage(data: ShareImageCreateRequest): Promise<any> {
+  return apiRequest<any>('/shares/images', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// 사용 가능한 템플릿 목록 조회
+export async function getAvailableTemplates(): Promise<any> {
+  return apiRequest<any>('/shares/templates', {
+    method: 'GET',
+  });
+}
+
+// 타입별 템플릿 조회
+export async function getTemplatesByType(templateType: string): Promise<any> {
+  return apiRequest<any>(`/shares/templates/${templateType}`, {
+    method: 'GET',
+  });
+}
+
 // API 에러 핸들링 헬퍼
 export function handleApiError(error: unknown): string {
   if (error instanceof ApiError) {

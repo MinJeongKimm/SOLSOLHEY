@@ -108,6 +108,16 @@
                 <span class="text-xs font-medium text-gray-800">{{ currentMascot.name }}</span>
               </div>
             </div>
+            
+            <!-- 공유 버튼 -->
+            <div class="absolute top-3 right-3">
+              <button 
+                @click="showSharePopup"
+                class="bg-white bg-opacity-90 p-1 rounded-lg hover:bg-opacity-100 transition-all flex items-center justify-center w-8 h-8"
+              >
+                <img src="/icons/icon_share.png" alt="공유" class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -171,6 +181,98 @@
       </div>
     </div>
 
+    <!-- 공유 팝업 -->
+    <div v-if="showShare" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <!-- 팝업 헤더 -->
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-gray-800">마스코트 공유하기</h3>
+          <button 
+            @click="closeSharePopup"
+            class="text-gray-400 hover:text-gray-600 text-2xl"
+          >
+            ×
+          </button>
+        </div>
+
+        <!-- 공유 타입 선택 -->
+        <div class="mb-4">
+          <div class="flex space-x-2 mb-3">
+            <button 
+              @click="shareType = 'link'"
+              :class="[
+                'flex-1 py-2 px-4 rounded-lg font-medium transition-colors',
+                shareType === 'link' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ]"
+            >
+              링크 공유
+            </button>
+            <button 
+              @click="shareType = 'image'"
+              :class="[
+                'flex-1 py-2 px-4 rounded-lg font-medium transition-colors',
+                shareType === 'image' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ]"
+            >
+              이미지 공유
+            </button>
+          </div>
+        </div>
+
+        <!-- 링크 공유 폼 -->
+        <div v-if="shareType === 'link'" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">메시지 (선택사항)</label>
+            <textarea 
+              v-model="shareLinkData.message" 
+              placeholder="마스코트와 함께한 이야기를 적어보세요!"
+              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- 이미지 공유 폼 -->
+        <div v-if="shareType === 'image'" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">메시지 (선택사항)</label>
+            <textarea 
+              v-model="shareImageData.message" 
+              placeholder="마스코트와 함께한 이야기를 적어보세요!"
+              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- 공유 버튼 -->
+        <div class="flex space-x-3 mt-6">
+          <button 
+            @click="closeSharePopup"
+            class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+          >
+            취소
+          </button>
+          <button 
+            @click="handleShare"
+            :disabled="!canShare"
+            :class="[
+              'flex-1 py-3 px-4 rounded-lg font-medium transition-colors',
+              canShare 
+                ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            ]"
+          >
+            공유하기
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 알림 토스트 -->
     <div 
       v-if="showToast" 
@@ -185,7 +287,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { mascotTypes, levelExperience, realItems } from '../data/mockData';
-import { getMascot, handleApiError } from '../api/index';
+import { getMascot, handleApiError, auth, createShareLink, createShareImage, ShareType, ImageType, type ShareLinkCreateRequest, type ShareImageCreateRequest } from '../api/index';
 import type { Mascot, Item } from '../types/api';
 
 const router = useRouter();
@@ -198,6 +300,25 @@ const userLikes = ref(151);
 // 토스트 알림
 const showToast = ref(false);
 const toastMessage = ref('');
+
+// 공유 팝업 관련 데이터
+const showShare = ref(false);
+const shareType = ref<'link' | 'image'>('link');
+const shareLinkData = ref({
+  message: ''
+});
+const shareImageData = ref({
+  message: ''
+});
+
+// 공유 가능 여부 계산
+const canShare = computed(() => {
+  if (shareType.value === 'link') {
+    return true; // 링크 공유는 항상 가능
+  } else {
+    return true; // 이미지 공유도 항상 가능 (템플릿 선택은 선택사항)
+  }
+});
 
 // 유틸리티 함수들
 function getMascotImageUrl(type: string): string {
@@ -283,6 +404,297 @@ function showToastMessage(message: string) {
   setTimeout(() => {
     showToast.value = false;
   }, 3000);
+}
+
+// 공유 팝업 표시
+function showSharePopup() {
+  // 토큰 상태 확인
+  if (!auth.isAuthenticated()) {
+    showToastMessage('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
+    setTimeout(() => {
+      router.push('/');
+    }, 2000);
+    return;
+  }
+  
+  showShare.value = true;
+  shareType.value = 'link'; // 기본값 설정
+  shareLinkData.value = { message: '' };
+  shareImageData.value = { message: '' };
+  
+  // 백엔드 연결 상태 확인
+  checkBackendStatus();
+}
+
+// 백엔드 연결 상태 확인
+async function checkBackendStatus() {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/share/templates`, {
+      headers: {
+        'Authorization': `Bearer ${auth.getToken()}`
+      }
+    });
+    console.log('백엔드 연결 상태:', response.status, response.ok);
+    
+    // 토큰 만료 체크
+    if (response.status === 401) {
+      console.log('토큰이 만료되었습니다. 로그인 페이지로 이동합니다.');
+      showToastMessage('로그인이 만료되었습니다. 로그인 페이지로 이동합니다.');
+      setTimeout(() => {
+        auth.clearAuth();
+        router.push('/');
+      }, 2000);
+    }
+  } catch (error) {
+    console.error('백엔드 연결 실패:', error);
+  }
+}
+
+// 공유 팝업 닫기
+function closeSharePopup() {
+  showShare.value = false;
+}
+
+// 공유 처리
+async function handleShare() {
+  try {
+    console.log('공유 시작:', { shareType: shareType.value, currentMascot: currentMascot.value });
+    
+    if (shareType.value === 'link') {
+      const message = shareLinkData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
+      
+      const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
+      const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+      const mascotName = currentMascot.value?.name || '마스코트';
+      const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
+      
+      console.log('링크 공유 시도:', { shareTitle, message, shareUrl });
+      
+      try {
+        // 백엔드 API로 공유 링크 생성 (새로운 ShareLinkCreateRequest 구조)
+        // 백엔드 validation 조건에 맞춰 데이터 준비
+        const thumbnailUrl = currentMascot.value 
+          ? `${window.location.origin}${getMascotImageUrl(currentMascot.value.type)}`
+          : undefined;
+        
+        // validation 조건: title max 100자, description max 500자
+        const validTitle = shareTitle.length > 100 ? shareTitle.substring(0, 100) : shareTitle;
+        const validDescription = message.length > 500 ? message.substring(0, 500) : message;
+        
+        const shareLinkRequest: ShareLinkCreateRequest = {
+          title: validTitle,
+          description: validDescription || undefined,  // 빈 문자열이면 undefined로
+          targetUrl: shareUrl,
+          shareType: ShareType.GENERAL,  // 마스코트 공유는 GENERAL 타입 사용
+          thumbnailUrl: thumbnailUrl
+        };
+        
+        console.log('백엔드로 전송할 데이터:', shareLinkRequest);
+        
+        const response = await createShareLink(shareLinkRequest);
+        
+        if (response.success) {
+          // 생성된 공유 링크로 공유
+          const shareUrl = response.data?.shareUrl || `${window.location.origin}/mascot/${currentMascot.value?.id}`;
+          await navigator.share({
+            title: shareTitle,
+            text: message,
+            url: shareUrl
+          });
+          showToastMessage('마스코트 링크가 생성되어 공유되었습니다!');
+        } else {
+          showToastMessage('링크 생성에 실패했습니다. 기본 링크로 공유합니다.');
+          await navigator.share({
+            title: shareTitle,
+            text: message,
+            url: shareUrl
+          });
+          showToastMessage('마스코트 링크를 공유했습니다!');
+        }
+      } catch (error) {
+        console.error('링크 생성 실패:', error);
+        
+        // 토큰 만료 체크
+        if (error instanceof Error && 
+            (error.message.includes('401') || error.message.includes('토큰이 만료되었습니다'))) {
+          showToastMessage('로그인이 만료되었습니다. 로그인 페이지로 이동합니다.');
+          // 토큰 만료 시 로그인 페이지로 이동
+          setTimeout(() => {
+            auth.clearAuth();
+            router.push('/');
+          }, 2000);
+          return;
+        }
+        
+        showToastMessage('링크 생성에 실패했습니다. 기본 링크로 공유합니다.');
+        
+        // 에러 발생 시 기본 링크 공유로 fallback
+        await navigator.share({
+          title: shareTitle,
+          text: message,
+          url: shareUrl
+        });
+        showToastMessage('마스코트 링크를 공유했습니다!');
+      }
+    } else {
+      const message = shareImageData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
+      
+      console.log('이미지 공유 시도:', { message });
+      
+      try {
+        // 마스코트 이미지 URL 준비 (절대 URL로 변환)
+        const mascotImageUrl = currentMascot.value 
+          ? `${window.location.origin}${getMascotImageUrl(currentMascot.value.type)}`
+          : `${window.location.origin}/mascot/soll.png`;
+        
+        console.log('백엔드 API 호출 시작:', {
+          imageUrl: mascotImageUrl,
+          imageType: ImageType.MASCOT_SHARE,
+          isPublic: true
+        });
+        
+        // 백엔드 API로 공유 이미지 생성 (새로운 ShareImageCreateRequest 구조)
+        const shareImageRequest: ShareImageCreateRequest = {
+          imageUrl: mascotImageUrl,
+          imageType: ImageType.MASCOT_SHARE,
+          originalFilename: `mascot_${currentMascot.value?.name || 'unknown'}_share.png`,
+          isPublic: true,
+          width: 320,  // 마스코트 이미지 기본 크기
+          height: 320
+        };
+        
+        const response = await createShareImage(shareImageRequest);
+        
+        console.log('백엔드 API 응답:', response);
+        
+        if (response.success) {
+          // 생성된 이미지 URL 가져오기
+          const generatedImageUrl = response.data?.imageUrl;
+          const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+          const mascotName = currentMascot.value?.name || '마스코트';
+          const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
+          
+          try {
+            // 1. fetch와 Blob을 사용해서 원격 URL에서 File 객체 생성
+            console.log('이미지 파일 다운로드 시작:', generatedImageUrl);
+            const imageResponse = await fetch(generatedImageUrl);
+            const imageBlob = await imageResponse.blob();
+            
+            // 이미지 파일 객체 생성
+            const imageFile = new File([imageBlob], `${mascotName}_share.png`, {
+              type: imageBlob.type
+            });
+            
+            console.log('이미지 파일 생성 완료:', imageFile);
+            
+            // 2. navigator.canShare()로 파일 공유 지원 여부 확인
+            if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
+              // 3. 파일 공유 지원: title, text, url, files 모두 포함해서 공유
+              console.log('파일 공유 지원됨 - 이미지와 텍스트를 함께 공유');
+              await navigator.share({
+                title: shareTitle,
+                text: message,
+                url: `${window.location.origin}/mascot/${currentMascot.value?.id}`,
+                files: [imageFile]
+              });
+              showToastMessage('마스코트 이미지와 메시지가 함께 공유되었습니다!');
+            } else {
+              // 4. 파일 공유 미지원: title, text, url만 공유 (url은 이미지 볼 수 있는 페이지 링크)
+              console.log('파일 공유 미지원 - 텍스트와 링크로 공유');
+              const imagePageUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
+              await navigator.share({
+                title: shareTitle,
+                text: `${message}\n이미지: ${generatedImageUrl}`,
+                url: imagePageUrl
+              });
+              showToastMessage('마스코트 이미지 링크를 공유했습니다!');
+            }
+          } catch (fileError) {
+            console.error('이미지 파일 처리 실패:', fileError);
+            // 파일 처리 실패 시 기본 링크 공유로 fallback
+            const fallbackUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
+            await navigator.share({
+              title: shareTitle,
+              text: `${message}\n이미지: ${generatedImageUrl}`,
+              url: fallbackUrl
+            });
+            showToastMessage('마스코트 링크를 공유했습니다!');
+          }
+        } else {
+          showToastMessage('이미지 생성에 실패했습니다. 링크로 공유합니다.');
+          // 이미지 생성 실패 시 링크 공유로 fallback
+          const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
+          const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+          const mascotName = currentMascot.value?.name || '마스코트';
+          const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
+          
+          await navigator.share({
+            title: shareTitle,
+            text: message,
+            url: shareUrl
+          });
+          showToastMessage('마스코트 링크를 공유했습니다!');
+        }
+      } catch (error) {
+        console.error('이미지 생성 실패:', error);
+        
+        // 더 구체적인 에러 정보 로깅
+        if (error instanceof Error) {
+          console.error('에러 타입:', error.name);
+          console.error('에러 메시지:', error.message);
+          console.error('에러 스택:', error.stack);
+        }
+        
+        // 에러 종류에 따른 메시지 표시
+        let errorMessage = '이미지 생성에 실패했습니다.';
+        if (error instanceof Error) {
+          if (error.message.includes('Failed to fetch')) {
+            errorMessage = '백엔드 서버에 연결할 수 없습니다.';
+          } else if (error.message.includes('401') || error.message.includes('토큰이 만료되었습니다')) {
+            errorMessage = '로그인이 만료되었습니다.';
+            // 토큰 만료 시 로그인 페이지로 이동
+            setTimeout(() => {
+              auth.clearAuth();
+              router.push('/');
+            }, 2000);
+          } else if (error.message.includes('404')) {
+            errorMessage = '이미지 생성 API를 찾을 수 없습니다.';
+          }
+        }
+        
+        showToastMessage(errorMessage + ' 링크로 공유합니다.');
+        
+        // 에러 발생 시 링크 공유로 fallback
+        const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
+        const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+        const mascotName = currentMascot.value?.name || '마스코트';
+        const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
+        
+        await navigator.share({
+          title: shareTitle,
+          text: message,
+          url: shareUrl
+        });
+        showToastMessage('마스코트 링크를 공유했습니다!');
+      }
+    }
+    closeSharePopup();
+  } catch (error) {
+    console.error('공유 실패:', error);
+    
+    // 더 구체적인 에러 메시지 표시
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        showToastMessage('공유가 취소되었습니다.');
+      } else if (error.name === 'NotAllowedError') {
+        showToastMessage('공유 권한이 거부되었습니다.');
+      } else {
+        showToastMessage(`공유 실패: ${error.message}`);
+      }
+    } else {
+      showToastMessage('공유에 실패했습니다.');
+    }
+  }
 }
 
 // 마스코트 데이터 로드
