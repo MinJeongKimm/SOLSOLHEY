@@ -83,15 +83,15 @@
             전체
           </button>
           <button 
-            @click="selectedCategory = 'STUDY'"
+            @click="selectedCategory = 'ACADEMIC'"
             :class="[
               'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-              selectedCategory === 'STUDY' 
+              selectedCategory === 'ACADEMIC' 
                 ? 'bg-blue-500 text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             ]"
           >
-            학습
+            학사
           </button>
           <button 
             @click="selectedCategory = 'FINANCE'"
@@ -105,26 +105,26 @@
             금융
           </button>
           <button 
-            @click="selectedCategory = 'LIFESTYLE'"
+            @click="selectedCategory = 'SOCIAL'"
             :class="[
               'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-              selectedCategory === 'LIFESTYLE' 
+              selectedCategory === 'SOCIAL' 
                 ? 'bg-blue-500 text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             ]"
           >
-            라이프스타일
+            소셜
           </button>
           <button 
-            @click="selectedCategory = 'OTHER'"
+            @click="selectedCategory = 'EVENT'"
             :class="[
               'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-              selectedCategory === 'OTHER' 
+              selectedCategory === 'EVENT' 
                 ? 'bg-blue-500 text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             ]"
           >
-            기타
+            이벤트
           </button>
         </div>
       </div>
@@ -296,7 +296,7 @@ const loading = ref(false);
 const error = ref('');
 const userPoints = ref(0);
 const selectedRewardType = ref<'all' | 'points' | 'exp'>('all');
-const selectedCategory = ref<'all' | 'STUDY' | 'FINANCE' | 'LIFESTYLE' | 'OTHER'>('all');
+const selectedCategory = ref<'all' | 'ACADEMIC' | 'FINANCE' | 'SOCIAL' | 'EVENT'>('all');
 
 // 필터링된 챌린지 목록
 const filteredChallenges = computed(() => {
@@ -360,32 +360,32 @@ function selectChallenge(challenge: Challenge) {
   selectedChallenge.value = challenge;
 }
 
-// 챌린지 타입별 보상 결정
+// 챌린지 타입별 보상 결정 (백엔드 타입에 맞춤)
 function getRewardType(challenge: Challenge): 'points' | 'exp' {
   // 챌린지 타입에 따라 보상 결정
   switch (challenge.challengeType) {
-    case '일일':
-    case '주간':
+    case 'DAILY':
+    case 'WEEKLY':
       return 'points'; // 일일/주간 챌린지는 포인트 보상
-    case '월간':
-    case '특별':
+    case 'MONTHLY':
+    case 'SPECIAL':
       return 'exp';    // 월간/특별 챌린지는 경험치 보상
     default:
       return 'points'; // 기본값은 포인트
   }
 }
 
-// 카테고리별 색상 결정
+// 카테고리별 색상 결정 (백엔드 카테고리에 맞춤)
 function getCategoryColor(categoryName: string): string {
   switch (categoryName) {
     case 'FINANCE':
       return 'bg-green-500'; // 금융 - 초록색
-    case 'STUDY':
-      return 'bg-purple-500'; // 학습 - 보라색
-    case 'LIFESTYLE':
-      return 'bg-pink-500';   // 라이프스타일 - 분홍색
-    case 'OTHER':
-      return 'bg-gray-500';   // 기타 - 회색
+    case 'ACADEMIC':
+      return 'bg-purple-500'; // 학사 - 보라색
+    case 'SOCIAL':
+      return 'bg-pink-500';   // 소셜 - 분홍색
+    case 'EVENT':
+      return 'bg-orange-500'; // 이벤트 - 주황색
     default:
       return 'bg-gray-500';   // 기본 - 회색
   }
