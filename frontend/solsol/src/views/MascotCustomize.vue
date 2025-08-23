@@ -36,55 +36,34 @@
           />
           
           <!-- 마스코트 + 장착된 아이템들 -->
-          <div class="absolute inset-0 flex items-center justify-center">
+          <div 
+            ref="mascotCanvas"
+            class="absolute inset-0 flex items-center justify-center"
+            @click="handleCanvasClick"
+          >
+            <!-- 마스코트 이미지 (중앙 고정) -->
             <div class="relative">
-              <!-- 마스코트 이미지 -->
               <img 
                 :src="currentMascot ? getMascotImageUrl(currentMascot.type) : '/mascot/soll.png'" 
                 :alt="currentMascot?.name || '마스코트'" 
                 class="w-32 h-32 object-contain"
                 @error="handleMascotImageError"
               />
-              
-              <!-- 장착된 아이템들 (실제 이미지로 오버레이) -->
-              <div class="absolute inset-0">
-                <!-- 머리 아이템 -->
-                <img 
-                  v-if="getEquippedItemImage('head')" 
-                  :src="getEquippedItemImage('head')" 
-                  :alt="getEquippedItemName('head')"
-                  class="absolute w-32 h-32 object-contain pointer-events-none"
-                  style="top: -20px; left: 0; z-index: 10;"
-                />
-                
-                <!-- 의상 아이템 -->
-                <img 
-                  v-if="getEquippedItemImage('clothing')" 
-                  :src="getEquippedItemImage('clothing')" 
-                  :alt="getEquippedItemName('clothing')"
-                  class="absolute w-32 h-32 object-contain pointer-events-none"
-                  style="top: 0; left: 0; z-index: 5;"
-                />
-                
-                <!-- 액세서리 아이템 -->
-                <img 
-                  v-if="getEquippedItemImage('accessory')" 
-                  :src="getEquippedItemImage('accessory')" 
-                  :alt="getEquippedItemName('accessory')"
-                  class="absolute w-32 h-32 object-contain pointer-events-none"
-                  style="top: 10px; left: 0; z-index: 15;"
-                />
-                
-                <!-- 배경 아이템 (마스코트 뒤에 배치) -->
-                <img 
-                  v-if="getEquippedItemImage('background')" 
-                  :src="getEquippedItemImage('background')" 
-                  :alt="getEquippedItemName('background')"
-                  class="absolute w-32 h-32 object-contain pointer-events-none"
-                  style="top: 0; left: 0; z-index: 1;"
-                />
-              </div>
             </div>
+            
+            <!-- 드래그 가능한 장착된 아이템들 -->
+            <DraggableItem
+              v-for="equippedItem in equippedItems"
+              :key="equippedItem.item.id"
+              :item="equippedItem.item"
+              :position="equippedItem.position"
+              :scale="equippedItem.scale"
+              :is-selected="selectedItemId === equippedItem.item.id"
+              :container-bounds="canvasBounds"
+              @update:position="updateItemPosition(equippedItem.item.id, $event)"
+              @update:scale="updateItemScale(equippedItem.item.id, $event)"
+              @select="selectItem(equippedItem.item.id)"
+            />
           </div>
           
           <!-- 마스코트 이름 -->
@@ -197,11 +176,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { realItems, mascotTypes } from '../data/mockData';
 import { getMascot, equipItems, handleApiError } from '../api/index';
 import type { Mascot, Item } from '../types/api';
+import DraggableItem from '../components/DraggableItem.vue';
+
+// 아이템 상태 인터페이스
+interface EquippedItemState {
+  item: Item;
+  position: { x: number; y: number };
+  scale: number;
+}
 
 const router = useRouter();
 
@@ -210,6 +197,12 @@ const currentMascot = ref<Mascot | null>(null);
 const items = ref<Item[]>(realItems);
 const userCoins = ref(15000);
 const selectedCategory = ref<'head' | 'clothing' | 'accessory' | 'background'>('head');
+
+// 드래그 관련 상태
+const mascotCanvas = ref<HTMLElement>();
+const canvasBounds = ref<DOMRect | null>(null);
+const selectedItemId = ref<number | null>(null);
+const equippedItemStates = ref<Map<number, EquippedItemState>>(new Map());
 
 // 토스트 알림
 const showToast = ref(false);
@@ -230,6 +223,37 @@ const filteredItems = computed(() => {
   );
 });
 
+// 장착된 아이템들의 상태 목록
+const equippedItems = computed(() => {
+  if (!currentMascot.value?.equippedItem) return [];
+  
+  const equipped: EquippedItemState[] = [];
+  
+  // 각 카테고리별로 장착된 아이템 찾기
+  ['head', 'clothing', 'accessory', 'background'].forEach(type => {
+    const item = items.value.find(item => 
+      item.type === type && 
+      currentMascot.value!.equippedItem!.includes(item.name)
+    );
+    
+    if (item) {
+      // 저장된 상태가 있으면 사용, 없으면 기본값 설정
+      let state = equippedItemStates.value.get(item.id);
+      if (!state) {
+        state = {
+          item,
+          position: getDefaultPosition(item.type),
+          scale: 1,
+        };
+        equippedItemStates.value.set(item.id, state);
+      }
+      equipped.push(state);
+    }
+  });
+  
+  return equipped;
+});
+
 // 유틸리티 함수들
 function getMascotImageUrl(type: string): string {
   console.log('꾸미기 화면에서 getMascotImageUrl 호출됨:', { type });
@@ -247,6 +271,54 @@ function getCategoryName(category: 'head' | 'clothing' | 'accessory' | 'backgrou
     background: '배경'
   };
   return categoryMap[category] || category;
+}
+
+// 아이템 타입별 기본 위치 설정
+function getDefaultPosition(itemType: string): { x: number; y: number } {
+  const canvasCenter = { x: 120, y: 120 }; // 캔버스 중앙 기준
+  
+  const defaultPositions: Record<string, { x: number; y: number }> = {
+    head: { x: canvasCenter.x - 60, y: canvasCenter.y - 80 },
+    clothing: { x: canvasCenter.x - 60, y: canvasCenter.y - 40 },
+    accessory: { x: canvasCenter.x - 60, y: canvasCenter.y - 20 },
+    background: { x: canvasCenter.x - 60, y: canvasCenter.y - 60 },
+  };
+  
+  return defaultPositions[itemType] || { x: canvasCenter.x - 60, y: canvasCenter.y - 60 };
+}
+
+// 드래그 관련 메소드들
+function updateCanvasBounds() {
+  if (mascotCanvas.value) {
+    canvasBounds.value = mascotCanvas.value.getBoundingClientRect();
+  }
+}
+
+function updateItemPosition(itemId: number, position: { x: number; y: number }) {
+  const state = equippedItemStates.value.get(itemId);
+  if (state) {
+    state.position = position;
+    equippedItemStates.value.set(itemId, state);
+  }
+}
+
+function updateItemScale(itemId: number, scale: number) {
+  const state = equippedItemStates.value.get(itemId);
+  if (state) {
+    state.scale = scale;
+    equippedItemStates.value.set(itemId, state);
+  }
+}
+
+function selectItem(itemId: number) {
+  selectedItemId.value = itemId;
+}
+
+function handleCanvasClick(e: Event) {
+  // 캔버스 빈 공간 클릭 시 선택 해제
+  if (e.target === mascotCanvas.value) {
+    selectedItemId.value = null;
+  }
 }
 
 // 장착된 아이템의 이미지 URL 가져오기
@@ -372,10 +444,23 @@ async function loadMascotData() {
 }
 
 // 컴포넌트 마운트
-onMounted(() => {
+onMounted(async () => {
   console.log('마스코트 꾸미기 페이지 로드됨');
-  loadMascotData();
+  await loadMascotData();
+  
+  // 캔버스 바운드 업데이트
+  await nextTick();
+  updateCanvasBounds();
+  
+  // 윈도우 리사이즈 이벤트 리스너 추가
+  window.addEventListener('resize', updateCanvasBounds);
+  
   console.log('사용 가능한 아이템들:', items.value);
+});
+
+// 컴포넌트 언마운트 시 이벤트 리스너 제거
+onUnmounted(() => {
+  window.removeEventListener('resize', updateCanvasBounds);
 });
 </script>
 
