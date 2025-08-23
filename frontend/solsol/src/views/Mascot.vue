@@ -156,15 +156,17 @@
             <span class="text-xs font-medium text-gray-700">꾸미기</span>
           </button>
           
-          <!-- 밥주기 -->
+          <!-- 챌린지 -->
           <button 
-            @click="showToastMessage('밥주기 기능은 준비중입니다! 🚧')"
+            @click="goToChallenge"
             class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105"
           >
             <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <img src="/action/action_feed.png" alt="밥주기" class="w-6 h-6" />
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-            <span class="text-xs font-medium text-gray-700">밥주기</span>
+            <span class="text-xs font-medium text-gray-700">챌린지</span>
           </button>
           
           <!-- 쇼핑하기 -->
@@ -389,6 +391,11 @@ function getEquippedItemName(itemType: 'head' | 'clothing' | 'accessory' | 'back
 // 꾸미기 화면으로 이동
 function goToCustomize() {
   router.push('/mascot/customize');
+}
+
+// 챌린지 화면으로 이동
+function goToChallenge() {
+  router.push('/challenge');
 }
 
 // 마스코트 생성 화면으로 이동
