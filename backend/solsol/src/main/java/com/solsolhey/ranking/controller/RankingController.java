@@ -21,9 +21,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * 랭킹 API 컨트롤러
  */
@@ -52,10 +49,8 @@ public class RankingController {
         try {
             // 요청 검증
             if (size > 100) {
-                Map<String, String> errors = new HashMap<>();
-                errors.put("size", "1~100 범위를 벗어났습니다.");
                 return ResponseEntity.badRequest()
-                        .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "잘못된 요청 파라미터입니다.", errors));
+                        .body(ApiResponse.<RankingResponse>badRequest("페이지 크기는 1~100 범위여야 합니다."));
             }
 
             CampusRankingRequest request = new CampusRankingRequest(campusId, sort, period, page, size);
@@ -66,14 +61,12 @@ public class RankingController {
 
         } catch (IllegalArgumentException e) {
             log.warn("교내 랭킹 조회 - 잘못된 파라미터: {}", e.getMessage());
-            Map<String, String> errors = new HashMap<>();
-            errors.put("parameter", e.getMessage());
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "잘못된 요청 파라미터입니다.", errors));
+                    .body(ApiResponse.<RankingResponse>badRequest(e.getMessage()));
         } catch (Exception e) {
             log.error("교내 랭킹 조회 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."));
+                    .body(ApiResponse.<RankingResponse>internalServerError("서버 오류가 발생했습니다."));
         }
     }
 
@@ -94,10 +87,8 @@ public class RankingController {
         try {
             // 요청 검증
             if (size > 100) {
-                Map<String, String> errors = new HashMap<>();
-                errors.put("size", "1~100 범위를 벗어났습니다.");
                 return ResponseEntity.badRequest()
-                        .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "잘못된 요청 파라미터입니다.", errors));
+                        .body(ApiResponse.<RankingResponse>badRequest("페이지 크기는 1~100 범위여야 합니다."));
             }
 
             NationalRankingRequest request = new NationalRankingRequest(sort, period, region, schoolId, page, size);
@@ -107,14 +98,12 @@ public class RankingController {
 
         } catch (IllegalArgumentException e) {
             log.warn("전국 랭킹 조회 - 잘못된 파라미터: {}", e.getMessage());
-            Map<String, String> errors = new HashMap<>();
-            errors.put("parameter", e.getMessage());
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "잘못된 요청 파라미터입니다.", errors));
+                    .body(ApiResponse.<RankingResponse>badRequest(e.getMessage()));
         } catch (Exception e) {
             log.error("전국 랭킹 조회 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."));
+                    .body(ApiResponse.<RankingResponse>internalServerError("서버 오류가 발생했습니다."));
         }
     }
 
@@ -130,11 +119,12 @@ public class RankingController {
             BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            bindingResult.getFieldErrors().forEach(error -> 
-                errors.put(error.getField(), error.getDefaultMessage()));
+            String errorMessage = bindingResult.getFieldErrors().stream()
+                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("잘못된 요청 데이터입니다.");
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "잘못된 요청 데이터입니다.", errors));
+                    .body(ApiResponse.<VoteResponse>badRequest(errorMessage));
         }
 
         try {
@@ -149,23 +139,23 @@ public class RankingController {
                 // 비즈니스 로직 실패 (중복 투표, 권한 부족 등)
                 if (response.getMessage().contains("중복 요청")) {
                     return ResponseEntity.status(HttpStatus.CONFLICT)
-                            .body(ApiResponse.error(HttpStatus.CONFLICT, response.getMessage()));
+                            .body(ApiResponse.<VoteResponse>error(HttpStatus.CONFLICT, response.getMessage()));
                 } else if (response.getMessage().contains("권한이 없습니다")) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                            .body(ApiResponse.error(HttpStatus.FORBIDDEN, response.getMessage()));
+                            .body(ApiResponse.<VoteResponse>forbidden(response.getMessage()));
                 } else if (response.getMessage().contains("한도를 초과")) {
                     return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                            .body(ApiResponse.error(HttpStatus.TOO_MANY_REQUESTS, response.getMessage()));
+                            .body(ApiResponse.<VoteResponse>error(HttpStatus.TOO_MANY_REQUESTS, response.getMessage()));
                 } else {
                     return ResponseEntity.badRequest()
-                            .body(ApiResponse.error(HttpStatus.BAD_REQUEST, response.getMessage()));
+                            .body(ApiResponse.<VoteResponse>badRequest(response.getMessage()));
                 }
             }
 
         } catch (Exception e) {
             log.error("교내 투표 처리 실패 - entryId: {}", entryId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."));
+                    .body(ApiResponse.<VoteResponse>internalServerError("서버 오류가 발생했습니다."));
         }
     }
 
@@ -181,11 +171,12 @@ public class RankingController {
             BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
-            Map<String, String> errors = new HashMap<>();
-            bindingResult.getFieldErrors().forEach(error -> 
-                errors.put(error.getField(), error.getDefaultMessage()));
+            String errorMessage = bindingResult.getFieldErrors().stream()
+                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                    .reduce((a, b) -> a + ", " + b)
+                    .orElse("잘못된 요청 데이터입니다.");
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(HttpStatus.BAD_REQUEST, "잘못된 요청 데이터입니다.", errors));
+                    .body(ApiResponse.<VoteResponse>badRequest(errorMessage));
         }
 
         try {
@@ -198,20 +189,20 @@ public class RankingController {
                 // 비즈니스 로직 실패 처리
                 if (response.getMessage().contains("중복 요청")) {
                     return ResponseEntity.status(HttpStatus.CONFLICT)
-                            .body(ApiResponse.error(HttpStatus.CONFLICT, response.getMessage()));
+                            .body(ApiResponse.<VoteResponse>error(HttpStatus.CONFLICT, response.getMessage()));
                 } else if (response.getMessage().contains("한도를 초과")) {
                     return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                            .body(ApiResponse.error(HttpStatus.TOO_MANY_REQUESTS, response.getMessage()));
+                            .body(ApiResponse.<VoteResponse>error(HttpStatus.TOO_MANY_REQUESTS, response.getMessage()));
                 } else {
                     return ResponseEntity.badRequest()
-                            .body(ApiResponse.error(HttpStatus.BAD_REQUEST, response.getMessage()));
+                            .body(ApiResponse.<VoteResponse>badRequest(response.getMessage()));
                 }
             }
 
         } catch (Exception e) {
             log.error("전국 투표 처리 실패 - entryId: {}", entryId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."));
+                    .body(ApiResponse.<VoteResponse>internalServerError("서버 오류가 발생했습니다."));
         }
     }
 
