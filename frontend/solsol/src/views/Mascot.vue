@@ -485,13 +485,24 @@ async function handleShare() {
       
       try {
         // 백엔드 API로 공유 링크 생성 (새로운 ShareLinkCreateRequest 구조)
+        // 백엔드 validation 조건에 맞춰 데이터 준비
+        const thumbnailUrl = currentMascot.value 
+          ? `${window.location.origin}${getMascotImageUrl(currentMascot.value.type)}`
+          : undefined;
+        
+        // validation 조건: title max 100자, description max 500자
+        const validTitle = shareTitle.length > 100 ? shareTitle.substring(0, 100) : shareTitle;
+        const validDescription = message.length > 500 ? message.substring(0, 500) : message;
+        
         const shareLinkRequest: ShareLinkCreateRequest = {
-          title: shareTitle,
-          description: message,
+          title: validTitle,
+          description: validDescription || undefined,  // 빈 문자열이면 undefined로
           targetUrl: shareUrl,
           shareType: ShareType.GENERAL,  // 마스코트 공유는 GENERAL 타입 사용
-          thumbnailUrl: currentMascot.value ? getMascotImageUrl(currentMascot.value.type) : undefined
+          thumbnailUrl: thumbnailUrl
         };
+        
+        console.log('백엔드로 전송할 데이터:', shareLinkRequest);
         
         const response = await createShareLink(shareLinkRequest);
         
