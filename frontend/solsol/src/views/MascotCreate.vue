@@ -203,9 +203,9 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { createMascot as createMascotApi, handleApiError, mascot } from '../api/index';
+import { createMascot as createMascotApi, handleApiError } from '../api/index';
 import { mascotTypes } from '../data/mockData';
-import type { Mascot, CreateMascotRequest } from '../types/api';
+import type { CreateMascotRequest } from '../types/api';
 
 const router = useRouter();
 
@@ -278,25 +278,19 @@ function handleImageLoad(event: Event) {
 // 마스코트 생성
 async function createMascot() {
   try {
-    // Mock 데이터로 시뮬레이션
-    const newMascotData: Mascot = {
-      id: Date.now(),
-      name: newMascot.value.name,
-      type: newMascot.value.type,
-      level: 1,
-      experiencePoint: 0,
-      evolutionStage: 0,
-      equippedItems: {},
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    // localStorage에 마스코트 데이터 저장
-    console.log('생성할 마스코트 데이터:', newMascotData); // 디버깅용
-    mascot.setMascot(newMascotData);
-    console.log('localStorage에 저장 완료'); // 디버깅용
-    
+    // 로딩 상태 표시
     showToast.value = true;
+    toastMessage.value = '마스코트를 생성하고 있습니다... 🚀';
+    
+    // 백엔드 API 호출
+    const newMascotData = await createMascotApi({
+      name: newMascot.value.name,
+      type: newMascot.value.type
+    });
+    
+    console.log('백엔드에서 생성된 마스코트:', newMascotData);
+    
+    // 성공 메시지 표시
     toastMessage.value = `${newMascotData.name}이(가) 태어났습니다! 🎉`;
     
     setTimeout(() => {
@@ -307,12 +301,14 @@ async function createMascot() {
     
   } catch (error) {
     console.error('마스코트 생성 실패:', error);
-    showToast.value = true;
-    toastMessage.value = '마스코트 생성에 실패했습니다. 다시 시도해주세요.';
+    
+    // 에러 메시지 표시
+    const errorMessage = handleApiError(error);
+    toastMessage.value = `마스코트 생성에 실패했습니다: ${errorMessage}`;
     
     setTimeout(() => {
       showToast.value = false;
-    }, 2000);
+    }, 3000);
   }
 }
 
