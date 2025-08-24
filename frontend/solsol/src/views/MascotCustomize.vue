@@ -79,7 +79,7 @@
               :scale="equippedItem.scale"
               :rotation="equippedItem.rotation"
               :is-selected="selectedItemId === equippedItem.id"
-              :container-bounds="canvasBounds"
+              :container-bounds="mascotRect"
               @update:position="updateItemPosition(equippedItem.id, $event)"
               @update:scale="updateItemScale(equippedItem.id, $event)"
               @update:rotation="updateItemRotation(equippedItem.id, $event)"
@@ -401,16 +401,12 @@ import { mascotTypes, realItems } from '../data/mockData';
 import type { Item, Mascot } from '../types/api';
 import {
   getContainerSize,
-  getDefaultRelativePosition,
+  getDefaultMascotRelativePosition,
+  toAbsoluteFromMascot,
   toAbsolutePosition,
   toRelativePosition,
-  toAbsoluteFromMascot,
   toRelativeToMascot,
-  getDefaultMascotRelativePosition,
-  constrainMascotRelativePosition,
-  type RelativePosition,
-  type AbsolutePosition,
-  type ContainerSize
+  type RelativePosition
 } from '../utils/coordinates';
 
 // 아이템 상태 인터페이스 (다중 아이템 지원)
