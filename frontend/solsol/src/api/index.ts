@@ -30,6 +30,8 @@ import type {
   UserItem
 } from '../types/api';
 import { ApiError } from '../types/api';
+import { getCurrentUserId } from '../utils/jwt';
+import router from '../router';
 
 // API 기본 설정
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
@@ -49,6 +51,15 @@ export async function apiRequest<T>(
   const token = localStorage.getItem('token');
   if (token) {
     defaultHeaders.Authorization = `Bearer ${token}`;
+    
+    // JWT 토큰에서 userID를 추출하여 헤더에 추가
+    const userId = getCurrentUserId();
+    if (userId !== null) {
+      defaultHeaders['X-User-ID'] = userId.toString();
+    } else {
+      // userID 추출 실패 시 토큰이 유효하지 않을 수 있음
+      console.warn('JWT 토큰에서 userID를 추출할 수 없습니다. 토큰을 확인해주세요.');
+    }
   }
 
   const config: RequestInit = {
@@ -64,6 +75,19 @@ export async function apiRequest<T>(
     const data = await response.json();
 
     if (!response.ok) {
+      // 401 에러 (토큰 만료 또는 인증 실패) 시 자동 로그인 페이지 이동
+      if (response.status === 401) {
+        console.log('토큰이 만료되었습니다. 로그인 페이지로 이동합니다.');
+        
+        // 인증 정보 정리
+        auth.clearAuth();
+        
+        // 현재 페이지가 로그인 페이지가 아닌 경우에만 이동
+        if (router.currentRoute.value.path !== '/login') {
+          router.push('/login');
+        }
+      }
+      
       throw new ApiError(response.status, data as ErrorResponse);
     }
 
@@ -127,12 +151,12 @@ export const auth = {
   },
 
   // 사용자 정보 저장
-  setUser(user: { username: string; userId: number; nickname?: string }) {
+  setUser(user: { username: string; userId: string; nickname?: string; campus?: string }) {
     localStorage.setItem('user', JSON.stringify(user));
   },
 
   // 사용자 정보 가져오기
-  getUser(): { username: string; userId: number; nickname?: string } | null {
+  getUser(): { username: string; userId: string; nickname?: string; campus?: string } | null {
     const userData = localStorage.getItem('user');
     return userData ? JSON.parse(userData) : null;
   },
