@@ -38,12 +38,23 @@
       <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6">
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-3">
-            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
-              <span class="text-white text-xl font-bold">🔥</span>
+            <div class="relative">
+              <!-- 말풍선 (출석체크 안했을 때만 표시) -->
+              <div v-if="!todayAttended" class="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-white border-2 border-purple-200 rounded-lg px-3 py-2 shadow-lg animate-float whitespace-nowrap">
+                <div class="text-center text-sm text-purple-700 font-medium">
+                  오늘도 출석해요! ✨
+                </div>
+                <!-- 말풍선 꼬리 -->
+                <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white"></div>
+              </div>
+              
+              <div :class="todayAttended ? 'w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center' : 'w-12 h-12 bg-purple-300 rounded-full flex items-center justify-center'">
+                <span class="text-white text-xl font-bold">{{ todayAttended ? '🔥' : '💤' }}</span>
+              </div>
             </div>
             <div>
               <h2 class="text-lg font-bold text-gray-800">연속 출석</h2>
-              <p class="text-2xl font-bold text-blue-600">{{ consecutiveDays }}일</p>
+              <p :class="todayAttended ? 'text-2xl font-bold text-blue-600' : 'text-2xl font-bold text-purple-500'">{{ consecutiveDays }}일</p>
             </div>
           </div>
           
@@ -333,5 +344,22 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* 추가 스타일이 필요한 경우 여기에 작성 */
+/* float 애니메이션 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) translateX(-50%);
+  }
+  50% {
+    transform: translateY(-8px) translateX(-50%);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 말풍선 호버 효과 */
+.animate-float:hover {
+  animation-play-state: paused;
+}
 </style>
