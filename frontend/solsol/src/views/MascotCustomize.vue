@@ -401,11 +401,16 @@ import { mascotTypes, realItems } from '../data/mockData';
 import type { Item, Mascot } from '../types/api';
 import {
   getContainerSize,
-  getDefaultMascotRelativePosition,
-  toAbsoluteFromMascot,
+  getDefaultRelativePosition,
+  toAbsolutePosition,
   toRelativePosition,
+  toAbsoluteFromMascot,
   toRelativeToMascot,
-  type RelativePosition
+  getDefaultMascotRelativePosition,
+  constrainMascotRelativePosition,
+  type RelativePosition,
+  type AbsolutePosition,
+  type ContainerSize
 } from '../utils/coordinates';
 
 // 아이템 상태 인터페이스 (다중 아이템 지원)
@@ -910,14 +915,30 @@ function loadItemPositions() {
             const state = equippedItemStates.value.get(itemId);
             if (state && data && data.scale !== undefined) {
               // 데이터 형식에 따른 처리
-              if ((dataSource === 'mascot-based-v5' || dataSource === 'fixed-mascot-v4' || dataSource === 'composition-v3' || dataSource === 'relative-v2') && data.relativePosition) {
-                // 상대 좌표 데이터 (마스코트 기반 또는 캔버스 기반)
+              if (dataSource === 'mascot-based-v5' && data.relativePosition) {
+                // 이미 마스코트 기준 상대 좌표 - 직접 적용
                 state.relativePosition = data.relativePosition;
-              } else if ((dataSource === 'absolute-multi' || dataSource === 'absolute-single') && data.position && mascotCanvas.value) {
-                // 기존 절대 좌표 데이터를 상대 좌표로 마이그레이션
+              } else if ((dataSource === 'fixed-mascot-v4') && data.relativePosition) {
+                // 마스코트 고정 시스템 데이터 - 직접 적용 (마스코트 기준과 호환)
+                state.relativePosition = data.relativePosition;
+              } else if ((dataSource === 'composition-v3' || dataSource === 'relative-v2') && data.relativePosition && mascotCanvas.value && mascotRect.value) {
+                // 기존 캔버스 기준 상대 좌표를 마스코트 기준으로 2단계 변환
+                // 1단계: 캔버스 기준 상대 → 절대 좌표
                 const containerSize = getContainerSize(mascotCanvas.value);
-                state.relativePosition = toRelativePosition(data.position, containerSize);
-                console.log(`마이그레이션 (${dataSource}): ${itemId}`, data.position, '→', state.relativePosition);
+                const absolutePos = toAbsolutePosition(data.relativePosition, containerSize);
+                
+                // 2단계: 절대 좌표 → 마스코트 기준 상대 좌표
+                state.relativePosition = toRelativeToMascot(absolutePos, mascotRect.value);
+                
+                console.log(`캔버스→마스코트 마이그레이션 (${dataSource}): ${itemId}`, {
+                  oldCanvasRelative: data.relativePosition,
+                  absolutePosition: absolutePos,
+                  newMascotRelative: state.relativePosition
+                });
+              } else if ((dataSource === 'absolute-multi' || dataSource === 'absolute-single') && data.position && mascotRect.value) {
+                // 기존 절대 좌표 데이터를 마스코트 기준 상대 좌표로 직접 변환
+                state.relativePosition = toRelativeToMascot(data.position, mascotRect.value);
+                console.log(`절대→마스코트 마이그레이션 (${dataSource}): ${itemId}`, data.position, '→', state.relativePosition);
               }
               
               state.scale = data.scale;
