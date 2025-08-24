@@ -1,26 +1,29 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
-      <div class="flex items-center justify-between mb-6">
-        <div class="flex items-center space-x-4">
-          <router-link 
-            to="/mascot" 
-            class="p-2 text-blue-500 hover:text-blue-700 transition-colors rounded-full hover:bg-blue-50"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
-          </router-link>
-          <h2 class="text-3xl font-bold text-blue-600">친구 목록</h2>
-        </div>
+      <!-- 상단 헤더 -->
+      <div class="relative mb-6">
+        <!-- 뒤로가기 버튼 (절대 위치) -->
+        <router-link 
+          to="/mascot" 
+          class="absolute left-0 top-1/2 transform -translate-y-1/2 p-2 rounded-lg hover:bg-gray-100 transition-colors z-10"
+        >
+          <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </router-link>
+        
+        <!-- 중앙: 친구 목록 타이틀 (전체 화면 중앙) -->
+        <h1 class="text-xl font-bold text-gray-800 text-center w-full">친구 목록</h1>
+        
+        <!-- 친구 추가 버튼 (오른쪽 절대 위치) -->
         <router-link 
           to="/friend/add" 
-          class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold inline-flex items-center"
+          class="absolute right-0 top-1/2 transform -translate-y-1/2 p-2 rounded-lg hover:bg-blue-600 transition-colors z-10 bg-blue-500"
         >
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
           </svg>
-          친구 추가
         </router-link>
       </div>
 

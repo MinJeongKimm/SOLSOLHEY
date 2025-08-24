@@ -1,18 +1,20 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
-      <div class="flex items-center justify-between mb-6">
-        <div class="flex items-center space-x-4">
-          <router-link 
-            to="/friend" 
-            class="p-2 text-blue-500 hover:text-blue-700 transition-colors rounded-full hover:bg-blue-50"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
-          </router-link>
-          <h2 class="text-3xl font-bold text-blue-600">친구 추가</h2>
-        </div>
+      <!-- 상단 헤더 -->
+      <div class="relative mb-6">
+        <!-- 뒤로가기 버튼 (절대 위치) -->
+        <router-link 
+          to="/friend" 
+          class="absolute left-0 top-1/2 transform -translate-y-1/2 p-2 rounded-lg hover:bg-gray-100 transition-colors z-10"
+        >
+          <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </router-link>
+        
+        <!-- 중앙: 친구 추가 타이틀 (전체 화면 중앙) -->
+        <h1 class="text-xl font-bold text-gray-800 text-center w-full">친구 추가</h1>
       </div>
 
       <!-- 사용자 검색 -->
@@ -112,9 +114,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { searchUsers, sendFriendRequest, type User } from '../api/friend';
-
-
+import { searchUsers as searchUsersApi, sendFriendRequest, type User } from '../api/friend';
 
 const router = useRouter();
 const searchQuery = ref('');
@@ -123,7 +123,7 @@ const isSearching = ref(false);
 const isAdding = ref(false);
 
 // 사용자 검색 (디바운싱 적용)
-let searchTimeout: NodeJS.Timeout;
+let searchTimeout: ReturnType<typeof setTimeout>;
 const searchUsers = () => {
   clearTimeout(searchTimeout);
   
@@ -143,8 +143,8 @@ const performSearch = async () => {
   
   isSearching.value = true;
   try {
-    const users = await searchUsers(searchQuery.value);
-    searchResults.value = users.map((user: any) => ({
+    const users = await searchUsersApi(searchQuery.value);
+    searchResults.value = users.map((user: User) => ({
       ...user,
       isFriend: false, // TODO: 친구 여부 확인 API 연동 필요
       isRequested: false // TODO: 친구 요청 여부 확인 API 연동 필요

@@ -14,6 +14,8 @@ export interface User {
   nickname?: string;
   campus?: string;
   totalPoints?: number;
+  isFriend?: boolean;
+  isRequested?: boolean;
 }
 
 export interface FriendRequest {
