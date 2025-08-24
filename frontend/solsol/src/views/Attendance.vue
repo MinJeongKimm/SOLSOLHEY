@@ -224,7 +224,25 @@ function nextMonth() {
 // 출석체크
 async function checkAttendance() {
   try {
-    // TODO: 실제 API 호출
+    // 실제 API 호출
+    const response = await fetch('http://localhost:8080/api/attendance', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({
+        attendanceDate: new Date().toISOString().split('T')[0]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('출석체크 API 호출 실패');
+    }
+
+    const result = await response.json();
+    
+    // API 호출 성공 시에만 상태 변경
     todayAttended.value = true;
     consecutiveDays.value++;
     monthlyAttendanceRate.value = Math.min(100, monthlyAttendanceRate.value + 3);
@@ -241,8 +259,26 @@ async function checkAttendance() {
 }
 
 // 컴포넌트 마운트 시 오늘 출석 여부 확인
-onMounted(() => {
-  todayAttended.value = false;
+onMounted(async () => {
+  try {
+    // 오늘 출석 상태 확인 API 호출
+    const response = await fetch('http://localhost:8080/api/attendance/today', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      todayAttended.value = result.attended || false;
+    } else {
+      todayAttended.value = false;
+    }
+  } catch (error) {
+    console.error('오늘 출석 상태 확인 오류:', error);
+    todayAttended.value = false;
+  }
 });
 </script>
 
