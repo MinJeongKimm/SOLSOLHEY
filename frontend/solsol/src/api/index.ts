@@ -8,69 +8,109 @@ import type {
   LogoutResponse,
   ErrorResponse,
   CreateMascotRequest,
-  CreateMascotResponse,
-  EquipItemsRequest,
-  EquipItemsResponse,
   UpdateMascotRequest,
-  UpdateMascotResponse,
-  GetMascotResponse,
+  EquipItemsRequest,
   GetItemsResponse,
-  MascotCreateRequest,
-  MascotApiResponse
 } from '../types/api';
 import { ApiError } from '../types/api';
 
-// API 기본 설정
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
-// API 요청 헬퍼 함수
+// 쿠키 관련 유틸리티 함수들 (안전한 URL 디코딩)
+function getCookie(name: string): string | undefined {
+  const raw = document.cookie
+    .split('; ')
+    .find((row) => row.startsWith(name + '='))
+    ?.split('=')[1];
+  if (!raw) return undefined;
+  try { return decodeURIComponent(raw); } catch { return raw; }
+}
+
+function withCsrf(headers: HeadersInit = {}): HeadersInit {
+  const xsrf = getCookie('XSRF-TOKEN');
+  if (!xsrf) return headers;
+  if (headers instanceof Headers) {
+    headers.set('X-XSRF-TOKEN', xsrf);
+    return headers;
+  }
+  return { ...headers, 'X-XSRF-TOKEN': xsrf };
+}
+
+function needsCsrf(method?: string) {
+  return !!method && !/^(GET|HEAD|OPTIONS|TRACE)$/i.test(method);
+}
+
+// API 요청 헬퍼 함수 (쿠키 기반)
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const base = new Headers(options.headers as any);
+  // body가 있을 때만 Content-Type 설정하되, 브라우저가 정해야 하는 타입(FormData 등)은 건드리지 않음
+  const shouldSetJson =
+    options.body != null &&
+    !base.has('content-type') &&
+    !(options.body instanceof FormData) &&
+    !(options.body instanceof Blob) &&
+    !(options.body instanceof ArrayBuffer) &&
+    !(options.body instanceof URLSearchParams);
+  if (shouldSetJson) {
+    base.set('content-type', 'application/json');
+  }
+  const headers: HeadersInit = needsCsrf(options.method as string)
+    ? withCsrf(base)
+    : base;
   
-  const defaultHeaders: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-
-  // Authorization 헤더 추가 (토큰이 있는 경우)
-  const token = localStorage.getItem('token');
-  if (token) {
-    defaultHeaders.Authorization = `Bearer ${token}`;
-  }
-
-  const config: RequestInit = {
+  const config: RequestInit & { _retried?: boolean } = {
     ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers,
-    },
+    headers,
+    credentials: 'include', // 쿠키 자동 전송
   };
 
-  try {
-    const response = await fetch(url, config);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new ApiError(response.status, data as ErrorResponse);
+  const res = await fetch(url, config);
+  
+  // 401 에러 시 리프레시 토큰으로 재시도
+  if (res.status === 401 && !config._retried) {
+    const refreshed = await dedupedRefresh();
+    if (refreshed) {
+      return apiRequest<T>(endpoint, { ...options, _retried: true } as any);
     }
-
-    return data;
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    
-    // 네트워크 오류 등
-    throw new ApiError(0, {
-      success: false,
-      message: '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
-    });
   }
+
+  const text = await res.text();
+  const data = text ? JSON.parse(text) : null;
+  
+  if (!res.ok) {
+    throw new ApiError(res.status, (data ?? { success: false, message: '요청 실패' }) as ErrorResponse);
+  }
+  
+  return data as T;
 }
 
-// 회원가입 API
+// 리프레시 토큰 시도 (중복 방지)
+let _refreshing: Promise<boolean> | null = null;
+async function dedupedRefresh(): Promise<boolean> {
+  if (_refreshing) return _refreshing;
+  _refreshing = (async () => {
+    try {
+      const r = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: withCsrf({ 'Content-Type': 'application/json' }),
+      });
+      return r.ok;
+    } catch {
+      return false;
+    } finally {
+      // 약간의 지연 후 해제(동시 401 폭주 방지)
+      setTimeout(() => { _refreshing = null; }, 50);
+    }
+  })();
+  return _refreshing;
+}
+
+// 인증 관련 API 함수들 (쿠키 기반)
 export async function signup(userData: SignupRequest): Promise<SignupResponse> {
   return apiRequest<SignupResponse>('/auth/signup', {
     method: 'POST',
@@ -78,7 +118,6 @@ export async function signup(userData: SignupRequest): Promise<SignupResponse> {
   });
 }
 
-// 로그인 API  
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   return apiRequest<LoginResponse>('/auth/login', {
     method: 'POST',
@@ -86,127 +125,76 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   });
 }
 
-// 로그아웃 API
+// 서버 로그아웃 호출 (재귀 방지용 별도 함수)
+export async function requestServerLogout(): Promise<LogoutResponse> {
+  return apiRequest<LogoutResponse>('/auth/logout', { method: 'POST' });
+}
+// 기존 이름 유지 (호환성)
 export async function logout(): Promise<LogoutResponse> {
-  return apiRequest<LogoutResponse>('/auth/logout', {
-    method: 'DELETE',
-  });
+  return requestServerLogout();
 }
 
-// 토큰 관련 유틸리티 함수들
-export const auth = {
-  // 토큰 저장
-  setToken(token: string) {
-    localStorage.setItem('token', token);
-  },
-
-  // 토큰 가져오기
-  getToken(): string | null {
-    return localStorage.getItem('token');
-  },
-
-  // 토큰 삭제
-  removeToken() {
-    localStorage.removeItem('token');
-  },
-
-  // 로그인 상태 확인
-  isAuthenticated(): boolean {
-    return !!this.getToken();
-  },
-
-  // 사용자 정보 저장
-  setUser(user: { username: string; userId: string; nickname?: string }) {
-    localStorage.setItem('user', JSON.stringify(user));
-  },
-
-  // 사용자 정보 가져오기
-  getUser(): { username: string; userId: string; nickname?: string } | null {
-    const userData = localStorage.getItem('user');
-    return userData ? JSON.parse(userData) : null;
-  },
-
-  // 사용자 정보 삭제
-  removeUser() {
-    localStorage.removeItem('user');
-  },
-
-  // 완전 로그아웃 (토큰 + 사용자 정보 모두 삭제)
-  clearAuth() {
-    this.removeToken();
-    this.removeUser();
-  }
+// 마스코트 관련 API 함수들
+type Mascot = {
+  id: string;
+  name: string;
+  type: string;
+  level: number;
+  exp: number;
+  equippedItem?: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
 
-// 마스코트 관련 API 함수들
-
-// 마스코트 생성
 export async function createMascot(data: CreateMascotRequest): Promise<Mascot> {
-  const response = await apiRequest<any>('/mascot', {
+  const res = await apiRequest<any>('/mascot', {
     method: 'POST',
     body: JSON.stringify(data),
   });
   
-  // 백엔드 응답을 프론트엔드 타입으로 변환
-  const mascotData = mascot.transformBackendResponse(response);
-  if (!mascotData) {
-    throw new Error('마스코트 생성에 실패했습니다.');
-  }
+  const m = mascot.transformBackendResponse(res);
+  if (!m) throw new Error('마스코트 생성에 실패했습니다.');
   
-  return mascotData;
+  return m;
 }
 
-// 마스코트 조회
 export async function getMascot(): Promise<Mascot | null> {
   try {
-    const response = await apiRequest<any>('/mascot', {
+    const res = await apiRequest<any>('/mascot', {
       method: 'GET',
     });
     
-    // 백엔드 응답을 프론트엔드 타입으로 변환
-    return mascot.transformBackendResponse(response);
-  } catch (error) {
-    // 404 에러는 마스코트가 없는 것으로 처리
-    if (error instanceof ApiError && error.status === 404) {
-      return null;
-    }
-    throw error;
+    return mascot.transformBackendResponse(res);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
   }
 }
 
-// 마스코트 아이템 장착/꾸미기
 export async function equipItems(data: EquipItemsRequest): Promise<Mascot> {
-  const response = await apiRequest<any>('/mascot/equip', {
+  const res = await apiRequest<any>('/mascot/equip', {
     method: 'POST',
     body: JSON.stringify(data),
   });
   
-  // 백엔드 응답을 프론트엔드 타입으로 변환
-  const mascotData = mascot.transformBackendResponse(response);
-  if (!mascotData) {
-    throw new Error('아이템 장착에 실패했습니다.');
-  }
+  const m = mascot.transformBackendResponse(res);
+  if (!m) throw new Error('아이템 장착에 실패했습니다.');
   
-  return mascotData;
+  return m;
 }
 
-// 마스코트 정보 수정
 export async function updateMascot(data: UpdateMascotRequest): Promise<Mascot> {
-  const response = await apiRequest<any>('/mascot', {
+  const res = await apiRequest<any>('/mascot', {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
   
-  // 백엔드 응답을 프론트엔드 타입으로 변환
-  const mascotData = mascot.transformBackendResponse(response);
-  if (!mascotData) {
-    throw new Error('마스코트 수정에 실패했습니다.');
-  }
+  const m = mascot.transformBackendResponse(res);
+  if (!m) throw new Error('마스코트 수정에 실패했습니다.');
   
-  return mascotData;
+  return m;
 }
 
-// 아이템 목록 조회
 export async function getItems(): Promise<GetItemsResponse> {
   return apiRequest<GetItemsResponse>('/items', {
     method: 'GET',
@@ -215,42 +203,30 @@ export async function getItems(): Promise<GetItemsResponse> {
 
 // 마스코트 관련 유틸리티 함수들
 export const mascot = {
-  // 백엔드 응답을 프론트엔드 타입으로 변환
   transformBackendResponse(backendResponse: any): Mascot | null {
     if (!backendResponse || !backendResponse.data) return null;
     
-    const data = backendResponse.data;
+    const d = backendResponse.data;
     return {
-      id: data.id,
-      name: data.name,
-      type: data.type,
-      level: data.level,
-      exp: data.exp,
-      equippedItem: data.equippedItem,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt
+      id: d.id,
+      name: d.name,
+      type: d.type,
+      level: d.level,
+      exp: d.exp,
+      equippedItem: d.equippedItem ?? null,
+      createdAt: d.createdAt,
+      updatedAt: d.updatedAt,
     };
   },
 
-  // 프론트엔드 타입을 백엔드 요청 형태로 변환
-  transformToBackendRequest(mascotData: Mascot): CreateMascotRequest {
-    return {
-      name: mascotData.name,
-      type: mascotData.type,
-      equippedItem: mascotData.equippedItem
-    };
-  },
-
-  // evolutionStage 계산 (level 기반)
   calculateEvolutionStage(level: number): number {
     return Math.floor(level / 10);
   },
 
-  // 다음 레벨까지 필요한 경험치 계산
   calculateExpToNextLevel(currentExp: number, currentLevel: number): number {
-    const nextLevelExp = (currentLevel + 1) * 100;
-    return Math.max(0, nextLevelExp - currentExp);
-  }
+    const next = (currentLevel + 1) * 100;
+    return Math.max(0, next - currentExp);
+  },
 };
 
 // 친구 관련 API 함수들
@@ -259,15 +235,67 @@ export * from './friend';
 // API 에러 핸들링 헬퍼
 export function handleApiError(error: unknown): string {
   if (error instanceof ApiError) {
-    // 필드별 에러가 있는 경우 첫 번째 에러 메시지 반환
-    if (error.response.errors) {
-      const firstError = Object.values(error.response.errors)[0];
-      return firstError || error.response.message;
+    const errs = (error.response as any)?.errors;
+    if (errs) {
+      const first = Object.values(errs)[0];
+      return (first as string) || (error.response as any).message;
     }
-    return error.response.message;
+    return (error.response as any).message ?? '요청 실패';
   }
   
   return '알 수 없는 오류가 발생했습니다.';
+}
+
+// 쿠키 기반 인증 상태 확인 (호환성: 동기 + 정확성: 비동기)
+let _authKnown = false; // 마지막으로 확인된 로그인 상태(동기용)
+let _userCache: any | null = null; // 마지막으로 가져온 유저(동기 반환용)
+export const auth = {
+  // 기존 시그니처 유지: 동기(boolean)
+  isAuthenticated(): boolean {
+    return _authKnown; // 새로고침 직후엔 false일 수 있으나 로그인/부트스트랩 후 갱신
+  },
+  // 정확한 판별: 서버 핑
+  async isAuthenticatedAsync(): Promise<boolean> {
+    const u = await this.fetchUser();
+    return !!u;
+  },
+
+  // 하위호환: 동기 getUser (캐시 기반)
+  getUser<T = { username: string }>(): T | null {
+    return _userCache as T | null;
+  },
+  // 정확한 정보: 서버에서 가져오고 캐시 갱신
+  async fetchUser<T = { username: string }>(): Promise<T | null> {
+    try {
+      const u = await apiRequest<T>('/auth/me', { method: 'GET' });
+      _userCache = u;
+      _authKnown = true;
+      return u;
+    } catch {
+      _userCache = null;
+      _authKnown = false;
+      return null;
+    }
+  },
+
+  // 로그아웃 (쿠키는 서버에서 삭제)
+  async logout() {
+    await requestServerLogout();
+    _userCache = null;
+    _authKnown = false;
+  },
+};
+
+// 앱 부팅 시 한 번 정확 상태 동기화(선택/권장: 라우터 가드 진입 전 호출)
+export async function bootstrapAuth(): Promise<void> {
+  await auth.fetchUser();
+}
+
+// 로그인 후 즉시 캐시 반영 헬퍼 (UX 향상)
+export async function loginAndBootstrap(credentials: LoginRequest): Promise<LoginResponse> {
+  const res = await login(credentials);
+  await bootstrapAuth();
+  return res;
 }
 
 

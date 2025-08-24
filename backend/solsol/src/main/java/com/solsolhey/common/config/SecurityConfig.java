@@ -54,7 +54,8 @@ public class SecurityConfig {
                     "/api/v1/auth/login",
                     "/api/v1/auth/refresh",
                     "/api/v1/auth/logout",
-                    "/api/v1/auth/signup"
+                    "/api/v1/auth/signup",
+                    "/api/v1/mascot/**"
                 )
             )
             
@@ -68,7 +69,12 @@ public class SecurityConfig {
             // 요청별 권한 설정
             .authorizeHttpRequests(authz -> {
                 // 공개 API (인증 불필요)
-                authz.requestMatchers("/api/v1/auth/**").permitAll()  // 인증 관련 API
+                authz.requestMatchers(
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/signup",
+                        "/api/v1/auth/refresh",
+                        "/api/v1/auth/logout"
+                    ).permitAll()
                     .requestMatchers("/public/**").permitAll()
                     .requestMatchers("/health").permitAll()
                     .requestMatchers("/api/v1/shop/**").permitAll()  // Shop API 허용
@@ -129,11 +135,17 @@ public class SecurityConfig {
 
     /**
      * CSRF 토큰 저장소
+     * JWT 기반 인증과 호환되도록 설정
      */
     @Bean
     public CookieCsrfTokenRepository csrfRepo() {
-        return CookieCsrfTokenRepository.withHttpOnlyFalse();
+        // HttpOnly 쿠키로 CSRF 토큰 저장 (XSS 방지)
+        CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        repository.setCookiePath("/");
+        return repository;
     }
+
+
 
     /**
      * 비밀번호 인코더

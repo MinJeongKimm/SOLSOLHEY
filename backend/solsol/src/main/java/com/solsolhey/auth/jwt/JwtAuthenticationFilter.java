@@ -37,8 +37,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper;
     private final Environment environment;
 
-    private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
     private static final String ACCESS_TOKEN_COOKIE = "ACCESS_TOKEN";
 
     @Override
@@ -86,10 +84,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * 요청에서 JWT 토큰 추출 (쿠키 우선, 헤더 fallback)
+     * 요청에서 JWT 토큰 추출
+     * - 운영: 쿠키만
+     * - 개발: 쿠키 우선 + Authorization 헤더 fallback 허용
      */
     private String extractTokenFromRequest(HttpServletRequest request) {
-        // 1. 쿠키에서 ACCESS_TOKEN 확인 (우선순위)
+        // 쿠키에서 ACCESS_TOKEN 확인
         jakarta.servlet.http.Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (jakarta.servlet.http.Cookie cookie : cookies) {
@@ -99,10 +99,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
         
-        // 2. Authorization 헤더에서 Bearer 토큰 확인 (fallback)
-        String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-            return bearerToken.substring(BEARER_PREFIX.length());
+        // 개발환경에서만 Authorization 헤더 fallback 허용
+        if (isDevelopmentEnvironment()) {
+            String bearer = request.getHeader("Authorization");
+            if (org.springframework.util.StringUtils.hasText(bearer) && bearer.startsWith("Bearer ")) {
+                return bearer.substring(7);
+            }
         }
         
         return null;
@@ -133,10 +135,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      */
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
-        String p = request.getRequestURI();
-        if (p.startsWith("/api/v1/auth/") || p.equals("/health") || p.startsWith("/public/")) return true;
-        if (isDevelopmentEnvironment() &&
-            (p.startsWith("/h2-console") || p.startsWith("/swagger-ui") || p.startsWith("/v3/api-docs"))) return true;
+        String path = request.getRequestURI();
+        if (path.equals("/health") ||
+            path.equals("/api/v1/auth/login") ||
+            path.equals("/api/v1/auth/signup") ||
+            path.equals("/api/v1/auth/refresh") ||
+            path.equals("/api/v1/auth/logout") ||
+            path.startsWith("/public/")) {
+            return true;
+        }
+        if (isDevelopmentEnvironment()) {
+            return path.startsWith("/h2-console") ||
+                   path.startsWith("/swagger-ui") ||
+                   path.startsWith("/v3/api-docs");
+        }
         return false;
     }
 

@@ -18,10 +18,12 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.core.Authentication;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Duration;
+import java.util.Map;
 
 /**
  * 인증/인가 관련 컨트롤러
@@ -87,7 +89,7 @@ public class AuthController {
 
             ResponseCookie refreshC = ResponseCookie.from("REFRESH_TOKEN", refresh)
                 .httpOnly(true).secure(false)           // TODO: prod=true
-                .sameSite("Strict").path("/api/v1/auth")
+                .sameSite("Lax").path("/api/v1/auth")
                 .maxAge(Duration.ofDays(14))
                 .build();
 
@@ -118,7 +120,7 @@ public class AuthController {
             ResponseCookie clearAccess = ResponseCookie.from("ACCESS_TOKEN", "")
                 .httpOnly(true).secure(false).sameSite("Lax").path("/").maxAge(0).build();
             ResponseCookie clearRefresh = ResponseCookie.from("REFRESH_TOKEN", "")
-                .httpOnly(true).secure(false).sameSite("Strict").path("/api/v1/auth").maxAge(0).build();
+                .httpOnly(true).secure(false).sameSite("Lax").path("/api/v1/auth").maxAge(0).build();
             ResponseCookie clearX = ResponseCookie.from("XSRF-TOKEN", "")
                 .httpOnly(false).secure(false).sameSite("Lax").path("/").maxAge(0).build();
 
@@ -157,7 +159,7 @@ public class AuthController {
             .maxAge(Duration.ofMinutes(15)).build();
 
         ResponseCookie refreshC = ResponseCookie.from("REFRESH_TOKEN", newRefresh)
-            .httpOnly(true).secure(false).sameSite("Strict").path("/api/v1/auth")
+            .httpOnly(true).secure(false).sameSite("Lax").path("/api/v1/auth")
             .maxAge(Duration.ofDays(14)).build();
 
         // Re-issue CSRF (optional but recommended on rotation)
@@ -170,5 +172,20 @@ public class AuthController {
             .build();
     }
 
-
+    /**
+     * 세션 확인
+     */
+    @GetMapping("/me")
+    @Operation(summary = "세션 확인", description = "현재 로그인한 사용자 정보를 반환합니다(인증 필요).")
+    public ResponseEntity<ApiResponse<Map<String,Object>>> me(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error(HttpStatus.UNAUTHORIZED, "인증되지 않았습니다."));
+        }
+        String principal = String.valueOf(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.success("OK", Map.of(
+            "username", principal
+            // 필요 시 userId/nickname은 실제 값으로 채우거나 생략
+        )));
+    }
 }
