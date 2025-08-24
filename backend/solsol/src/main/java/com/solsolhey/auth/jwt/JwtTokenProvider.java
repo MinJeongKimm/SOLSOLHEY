@@ -41,13 +41,12 @@ public class JwtTokenProvider {
     /**
      * Access Token 생성
      */
-    public String createAccessToken(Long userId, String username) {
+    public String createAccessToken(Long userId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenValidityInMilliseconds);
 
         return Jwts.builder()
                 .claim("userId", userId)
-                .claim("username", username)
                 .claim("tokenType", "access")
                 .issuedAt(now)
                 .expiration(expiryDate)

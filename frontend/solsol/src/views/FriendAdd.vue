@@ -21,7 +21,7 @@
           <div class="relative">
             <input
               v-model="searchQuery"
-              @input="searchUsers"
+              @input="handleSearch"
               type="text"
               placeholder="닉네임이나 사용자명으로 검색하세요"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
@@ -126,7 +126,7 @@ const isAdding = ref(false);
 
 // 사용자 검색 (디바운싱 적용)
 let searchTimeout: NodeJS.Timeout;
-const searchUsers = () => {
+const handleSearch = () => {
   clearTimeout(searchTimeout);
   
   if (!searchQuery.value.trim()) {
@@ -145,12 +145,17 @@ const performSearch = async () => {
   
   isSearching.value = true;
   try {
-    const users = await searchUsers(searchQuery.value);
-    searchResults.value = users.map((user: any) => ({
-      ...user,
-      isFriend: false, // TODO: 친구 여부 확인 API 연동 필요
-      isRequested: false // TODO: 친구 요청 여부 확인 API 연동 필요
-    }));
+    const response = await searchUsers(searchQuery.value);
+    if (response && Array.isArray(response)) {
+      searchResults.value = response.map((user: User) => ({
+        ...user,
+        isFriend: false, // TODO: 친구 여부 확인 API 연동 필요
+        isRequested: false // TODO: 친구 요청 여부 확인 API 연동 필요
+      }));
+    } else {
+      searchResults.value = [];
+      console.warn('검색 결과가 예상과 다른 형식입니다:', response);
+    }
   } catch (error) {
     console.error('사용자 검색 실패:', error);
     searchResults.value = [];

@@ -7,6 +7,12 @@ documents/
 file:/Users/minjeong/.gradle
 .cursor/
 
+### cookies ###
+cookies.txt
+
+### local storage ###
+.localdb/
+
 # env
 .env
 .env.local

@@ -3,11 +3,14 @@ finance:
   api:
     base-url: ${FINANCE_API_BASE_URL:https://finopenapi.ssafy.io/ssafy/api/v1/edu}
     timeout: ${FINANCE_API_TIMEOUT:10}
-    key: ${FINANCE_API_KEY:}
+    key: ${FINANCE_API_KEY}
 
 # JWT 인증 설정
 jwt:
-  secret-key: ${JWT_SECRET_KEY:mySecretKey12345678901234567890123456789012345678901234567890}
+  secret: ${JWT_SECRET_KEY:YOUR_BASE64_SECRET}        # 256+ bit key, Base64 encoded
+  access-minutes: ${JWT_ACCESS_MINUTES:15}
+  refresh-days: ${JWT_REFRESH_DAYS:14}
+  secret-key: ${JWT_SECRET_KEY}                       # 기존 호환성 유지
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
 
@@ -20,6 +23,7 @@ spring:
   config:
     import: 
       - "optional:file:../.env[.properties]"
+      - "optional:file:../.env"
     
 # 로컬 개발 환경 (H2)
 ---
@@ -28,7 +32,7 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:h2:mem:testdb
+    url: jdbc:h2:file:./.localdb/solsol;MODE=MySQL;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password: 
@@ -105,18 +109,25 @@ rate-limit:
   general:
     requests-per-minute: ${RATE_LIMIT_GENERAL_REQUESTS_PER_MINUTE:100}
   login:
-    attempts-per-15min: ${RATE_LIMIT_LOGIN_ATTEMPTS_PER_15MIN:5}
+    attempts-per-15min: ${RATE_LIMIT_LOGIN_ATTEMPTS_PER_15MIN:10}
   cleanup:
     interval-hours: ${RATE_LIMIT_CLEANUP_INTERVAL_HOURS:1}
 
 # 로깅 설정
 logging:
   level:
-    com.solsolhey: ${LOGGING_LEVEL_COM_SOLSOLHEY:DEBUG}
+    com.solsolhey: DEBUG
     com.solsolhey.common.security: DEBUG
-    org.springframework.web.reactive.function.client: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_REACTIVE_FUNCTION_CLIENT:DEBUG}
+    com.solsolhey.auth.jwt: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.web: DEBUG
+    org.springframework.security.web.csrf: DEBUG
+    org.springframework.security.web.authentication: DEBUG
+    org.springframework.security.web.filter: DEBUG
+    org.springframework.web.filter: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
   pattern:
-    console: ${LOGGING_PATTERN_CONSOLE:"%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"}
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 # Tomcat 서버 설정
 server:

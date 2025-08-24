@@ -40,20 +40,20 @@ export const getFriendList = async (): Promise<Friend[]> => {
 };
 
 // 사용자 검색
-export const searchUsers = async (query: string): Promise<User[]> => {
+export async function searchUsers(query: string): Promise<any[]> {
   try {
-    const response = await apiRequest<SearchUserResponse>(`/users/search?q=${encodeURIComponent(query)}`);
-    return response.users;
+    const response = await apiRequest<{ data: any[] }>(`/users/search?nickname=${encodeURIComponent(query)}`);
+    return response.data || [];
   } catch (error) {
     console.error('사용자 검색 실패:', error);
     throw error;
   }
-};
+}
 
 // 친구 요청 전송
-export const sendFriendRequest = async (friendUserId: number): Promise<void> => {
+export async function sendFriendRequest(friendUserId: number): Promise<void> {
   try {
-    await apiRequest<void>('/friends/request', {
+    await apiRequest<void>('/friends/requests', {
       method: 'POST',
       body: JSON.stringify({ friendUserId }),
     });
@@ -61,7 +61,7 @@ export const sendFriendRequest = async (friendUserId: number): Promise<void> => 
     console.error('친구 요청 실패:', error);
     throw error;
   }
-};
+}
 
 // 친구 요청 수락
 export const acceptFriendRequest = async (friendUserId: number): Promise<void> => {
