@@ -1,98 +1,63 @@
 package com.solsolhey.finance.service;
 
-import com.solsolhey.finance.dto.ExchangeEstimateRequest;
-import com.solsolhey.finance.dto.ExchangeEstimateResponse;
-import com.solsolhey.finance.dto.ExchangeRateResponse;
-import com.solsolhey.finance.dto.TransactionHistoryRequest;
-import com.solsolhey.finance.dto.TransactionHistoryResponse;
+import com.solsolhey.finance.client.FinanceApiClient;
+import com.solsolhey.finance.dto.response.ExchangeRateResponse;
+import com.solsolhey.finance.dto.response.ExternalExchangeRateResponse;
+import com.solsolhey.finance.exception.ExternalApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Finance 서비스 구현체
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class FinanceServiceImpl implements FinanceService {
     
     private final FinanceApiClient financeApiClient;
     
     @Override
-    public Mono<ExchangeRateResponse> getAllExchangeRates(String base) {
-        log.info("환율 전체 조회 서비스 호출 - base: {}", base);
+    public Mono<ExchangeRateResponse> getAllExchangeRates() {
+        log.info("환율 전체 조회 시작");
         
-        return financeApiClient.getAllExchangeRates(base)
-                .doOnSuccess(response -> {
-                    if ("success".equals(response.getCode())) {
-                        log.info("환율 전체 조회 성공 - 조회된 환율 개수: {}", 
-                                response.getPayload() != null ? response.getPayload().size() : 0);
-                    } else {
-                        log.warn("환율 전체 조회 응답 코드: {}, 메시지: {}", response.getCode(), response.getMessage());
+        return financeApiClient.getExchangeRates()
+                .map(this::convertToExchangeRateResponse)
+                .doOnSuccess(response -> log.info("환율 전체 조회 완료: {} 개 통화", 
+                        response.getPayload() != null ? response.getPayload().size() : 0))
+                .doOnError(error -> log.error("환율 전체 조회 중 오류 발생", error))
+                .onErrorResume(error -> {
+                    log.error("환율 전체 조회 실패", error);
+                    if (error instanceof ExternalApiException) {
+                        return Mono.error(error);
                     }
-                })
-                .doOnError(error -> log.error("환율 전체 조회 서비스 오류", error));
+                    return Mono.error(new ExternalApiException("환율 정보를 조회할 수 없습니다. 잠시 후 다시 시도해 주세요."));
+                });
     }
     
-    @Override
-    public Mono<ExchangeRateResponse> getExchangeRate(String base) {
-        log.info("환율 단건 조회 서비스 호출 - base: {}", base);
-        
-        if (base == null || base.trim().isEmpty()) {
-            log.error("환율 단건 조회 - 기준 통화가 필요합니다");
-            return Mono.error(new IllegalArgumentException("기준 통화는 필수입니다"));
+    private ExchangeRateResponse convertToExchangeRateResponse(ExternalExchangeRateResponse externalResponse) {
+        if (externalResponse == null || externalResponse.getRec() == null) {
+            return ExchangeRateResponse.builder()
+                    .code("error")
+                    .message("환율 정보를 가져올 수 없습니다.")
+                    .build();
         }
         
-        return financeApiClient.getExchangeRate(base)
-                .doOnSuccess(response -> {
-                    if ("success".equals(response.getCode())) {
-                        log.info("환율 단건 조회 성공 - 통화: {}", base);
-                    } else {
-                        log.warn("환율 단건 조회 응답 코드: {}, 메시지: {}", response.getCode(), response.getMessage());
-                    }
-                })
-                .doOnError(error -> log.error("환율 단건 조회 서비스 오류", error));
-    }
-    
-    @Override
-    public Mono<ExchangeEstimateResponse> getExchangeEstimate(ExchangeEstimateRequest request) {
-        log.info("환전 예상 금액 조회 서비스 호출 - {} {} -> {}", 
-                request.getAmount(), request.getBaseCurrency(), request.getTargetCurrency());
+        List<com.solsolhey.finance.dto.response.ExchangeRateItem> exchangeRates = externalResponse.getRec().stream()
+                .map(com.solsolhey.finance.dto.response.ExchangeRateItem::fromExternal)
+                .collect(Collectors.toList());
         
-        return financeApiClient.getExchangeEstimate(
-                        request.getBaseCurrency(),
-                        request.getTargetCurrency(),
-                        request.getAmount().toString())
-                .doOnSuccess(response -> {
-                    if ("success".equals(response.getCode())) {
-                        log.info("환전 예상 금액 조회 성공");
-                    } else {
-                        log.warn("환전 예상 금액 조회 응답 코드: {}, 메시지: {}", response.getCode(), response.getMessage());
-                    }
-                })
-                .doOnError(error -> log.error("환전 예상 금액 조회 서비스 오류", error));
-    }
-    
-    @Override
-    public Mono<TransactionHistoryResponse> getTransactionHistory(TransactionHistoryRequest request) {
-        log.info("계좌 거래내역 조회 서비스 호출 - 계좌: {}, 기간: {} ~ {}, 개수: {}", 
-                request.getAccountNumber(), request.getStartDate(), request.getEndDate(), request.getSize());
-        
-        return financeApiClient.getTransactionHistory(
-                        request.getAccountNumber(),
-                        request.getStartDate(),
-                        request.getEndDate(),
-                        request.getSize())
-                .doOnSuccess(response -> {
-                    if ("success".equals(response.getCode())) {
-                        int transactionCount = 0;
-                        if (response.getPayload() != null && response.getPayload().getTransactions() != null) {
-                            transactionCount = response.getPayload().getTransactions().size();
-                        }
-                        log.info("계좌 거래내역 조회 성공 - 조회된 거래 개수: {}", transactionCount);
-                    } else {
-                        log.warn("계좌 거래내역 조회 응답 코드: {}, 메시지: {}", response.getCode(), response.getMessage());
-                    }
-                })
-                .doOnError(error -> log.error("계좌 거래내역 조회 서비스 오류", error));
+        return ExchangeRateResponse.builder()
+                .code("success")
+                .payload(exchangeRates)
+                .message("환율 조회가 완료되었습니다.")
+                .build();
     }
 }
