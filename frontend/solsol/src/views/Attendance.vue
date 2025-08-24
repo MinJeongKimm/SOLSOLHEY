@@ -158,7 +158,6 @@ const userCoins = ref(1000);
 const userExp = ref(250);
 
 // 출석 정보
-const consecutiveDays = ref(5);
 
 // 달력 관련
 const currentYear = ref(new Date().getFullYear());
@@ -173,6 +172,32 @@ const monthlyAttendanceRate = computed(() => {
   if (currentMonthDays.length === 0) return 0;
   
   return Math.round((attendedDays.length / currentMonthDays.length) * 100);
+});
+
+// 연속 출석 일수 계산 (computed로 실시간 계산)
+const consecutiveDays = computed(() => {
+  let count = 0;
+  const today = new Date();
+  
+  // 오늘 출석 여부에 따라 시작점 결정
+  let startOffset = todayAttended.value ? 0 : 1;
+  
+  // 시작점부터 역순으로 연속 출석 확인
+  for (let i = startOffset; i < 365; i++) { // 최대 1년치 확인
+    const checkDate = new Date(today);
+    checkDate.setDate(today.getDate() - i);
+    
+    // 해당 날짜가 출석했는지 확인
+    const isAttended = isAttendedDay(checkDate);
+    
+    if (isAttended) {
+      count++;
+    } else {
+      break; // 출석하지 않은 날을 만나면 중단
+    }
+  }
+  
+  return count;
 });
 
 // 달력 데이터 생성
@@ -271,7 +296,6 @@ async function checkAttendance() {
     
     // API 호출 성공 시에만 상태 변경
     todayAttended.value = true;
-    consecutiveDays.value++;
     
     // 포인트와 경험치 증가
     userCoins.value += 10;
