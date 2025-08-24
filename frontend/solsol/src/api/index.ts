@@ -348,7 +348,8 @@ export function handleApiError(error: unknown): string {
 
 // 챌린지 관련 API 함수들
 export async function getChallenges(category?: string): Promise<Challenge[]> {
-  const endpoint = category ? `/challenges?category=${category}` : '/challenges';
+  // 백엔드 API 호출로 실제 데이터 가져오기
+  const endpoint = category && category !== 'all' ? `/challenges?category=${category}` : '/challenges';
   return apiRequest<Challenge[]>(endpoint, {
     method: 'GET',
   });

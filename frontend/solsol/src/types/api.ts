@@ -181,7 +181,7 @@ export interface GetItemsResponse {
   errors?: Record<string, string>;
 }
 
-// 챌린지 관련 타입 정의
+// 챌린지 관련 타입 정의 (백엔드 ChallengeListResponseDto에 맞춤)
 export interface Challenge {
   challengeId: number;
   challengeName: string;
