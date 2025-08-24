@@ -81,7 +81,7 @@
         </div>
 
         <!-- 달력 그리드 -->
-        <div class="grid grid-cols-7 gap-1">
+        <div class="grid grid-cols-7 gap-0">
           <div 
             v-for="day in calendarDays" 
             :key="day.key"
@@ -89,20 +89,22 @@
           >
             <div 
               v-if="day.isCurrentMonth"
-              class="w-full h-full flex flex-col items-center justify-center relative"
+              class="w-full h-full flex items-center justify-center relative"
             >
-              <span class="text-sm font-medium text-gray-700 mb-2">{{ day.dayOfMonth }}</span>
-              
-              <!-- 출석 표시 또는 오늘 표시 -->
-              <div class="w-6 h-6 flex items-center justify-center">
-                <!-- 출석한 날: 파란색 동그라미 (채워진) -->
-                <div v-if="day.isAttended" class="w-6 h-6 bg-blue-500 rounded-full"></div>
-                
-                <!-- 오늘 (출석 안함): 파란색 동그라미 테두리만 -->
-                <div v-else-if="day.isToday" class="w-6 h-6 border-2 border-blue-500 rounded-full"></div>
-                
-                <!-- 출석 안한 날: 아무 표시 없음 -->
+              <!-- 출석한 날: 타입에 따른 스타일 적용 -->
+              <div v-if="day.isAttended" 
+                   class="w-full aspect-square bg-blue-500 flex items-center justify-center border border-blue-500"
+                   :style="getAttendanceBorderRadius(day.attendanceType)">
+                <span class="text-sm font-medium text-white">{{ day.dayOfMonth }}</span>
               </div>
+              
+              <!-- 오늘 (출석 안함): 파란색 테두리 동그라미 안에 파란색 숫자 -->
+              <div v-else-if="day.isToday" class="w-full aspect-square border-2 border-blue-500 rounded-full flex items-center justify-center">
+                <span class="text-sm font-medium text-blue-500">{{ day.dayOfMonth }}</span>
+              </div>
+              
+              <!-- 출석 안한 날: 숫자만 표시 -->
+              <span v-else class="text-sm font-medium text-gray-700">{{ day.dayOfMonth }}</span>
             </div>
           </div>
         </div>
@@ -160,6 +162,7 @@ const calendarDays = computed(() => {
     const isCurrentMonth = date.getMonth() === currentMonth.value - 1;
     const isToday = isSameDay(date, new Date());
     const isAttended = isAttendedDay(date);
+    const attendanceType = getAttendanceType(date);
     
     days.push({
       key: i,
@@ -167,7 +170,8 @@ const calendarDays = computed(() => {
       dayOfMonth: date.getDate(),
       isCurrentMonth,
       isToday,
-      isAttended
+      isAttended,
+      attendanceType
     });
   }
   
@@ -190,6 +194,58 @@ function isAttendedDay(date: Date): boolean {
   
   // 임시로 최근 5일간 출석했다고 가정 (과거 날짜만)
   return diffDays >= 1 && diffDays <= 5;
+}
+
+// 연속 출석 타입 구분
+type AttendanceType = 'START' | 'MIDDLE' | 'END' | 'SINGLE' | 'NONE';
+
+function getAttendanceType(date: Date): AttendanceType {
+  if (!isAttendedDay(date)) return 'NONE';
+  
+  const today = new Date();
+  const diffTime = today.getTime() - date.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  // 임시 로직: 최근 5일간 연속 출석으로 가정
+  if (diffDays >= 1 && diffDays <= 5) {
+    if (diffDays === 5) return 'START';      // 가장 오래된 날
+    if (diffDays === 1) return 'END';        // 가장 최근 날
+    return 'MIDDLE';                          // 중간 날짜들
+  }
+  
+  return 'SINGLE'; // 연속되지 않은 단일 출석
+}
+
+// 출석 타입에 따른 CSS 스타일 반환
+function getAttendanceStyle(attendanceType: AttendanceType): string {
+  switch (attendanceType) {
+    case 'START':
+      return 'rounded-l-full'; // 왼쪽 둥근 모서리
+    case 'MIDDLE':
+      return ''; // 둥근 모서리 없음 (직사각형)
+    case 'END':
+      return 'rounded-r-full'; // 오른쪽 둥근 모서리
+    case 'SINGLE':
+      return 'rounded-full'; // 완전한 원
+    default:
+      return '';
+  }
+}
+
+// 출석 타입에 따른 커스텀 border-radius 스타일 반환
+function getAttendanceBorderRadius(attendanceType: AttendanceType): string {
+  switch (attendanceType) {
+    case 'START':
+      return 'border-radius: 50px 0 0 50px; border-right: none;'; // 왼쪽 모서리만 둥글게, 오른쪽 border 제거
+    case 'MIDDLE':
+      return 'border-radius: 0; border-left: none; border-right: none;'; // 모서리 없이 사각형, 좌우 border 제거
+    case 'END':
+      return 'border-radius: 0 50px 50px 0; border-left: none;'; // 오른쪽 모서리만 둥글게, 왼쪽 border 제거
+    case 'SINGLE':
+      return 'border-radius: 50%;'; // 완벽한 원
+    default:
+      return '';
+  }
 }
 
 
