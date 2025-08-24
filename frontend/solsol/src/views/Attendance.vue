@@ -89,21 +89,19 @@
           >
             <div 
               v-if="day.isCurrentMonth"
-              class="w-full h-full rounded-lg border border-gray-200 flex flex-col items-center justify-center relative"
-              :class="getDayClasses(day)"
+              class="w-full h-full flex flex-col items-center justify-center relative"
             >
-              <span class="text-sm font-medium">{{ day.dayOfMonth }}</span>
+              <span class="text-sm font-medium text-gray-700 mb-2">{{ day.dayOfMonth }}</span>
               
-              <!-- 출석 표시 -->
-              <div v-if="day.isAttended" class="absolute top-1 right-1">
-                <div class="w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
-                  <span class="text-white text-xs">✓</span>
-                </div>
-              </div>
-              
-              <!-- 오늘 표시 -->
-              <div v-if="day.isToday" class="absolute bottom-1 left-1">
-                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <!-- 출석 표시 또는 오늘 표시 -->
+              <div class="w-6 h-6 flex items-center justify-center">
+                <!-- 출석한 날: 파란색 동그라미 (채워진) -->
+                <div v-if="day.isAttended" class="w-6 h-6 bg-blue-500 rounded-full"></div>
+                
+                <!-- 오늘 (출석 안함): 파란색 동그라미 테두리만 -->
+                <div v-else-if="day.isToday" class="w-6 h-6 border-2 border-blue-500 rounded-full"></div>
+                
+                <!-- 출석 안한 날: 아무 표시 없음 -->
               </div>
             </div>
           </div>
@@ -187,25 +185,14 @@ function isSameDay(date1: Date, date2: Date): boolean {
 function isAttendedDay(date: Date): boolean {
   // 실제로는 API에서 출석 데이터를 가져와야 함
   const today = new Date();
-  const diffTime = Math.abs(today.getTime() - date.getTime());
+  const diffTime = today.getTime() - date.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   
-  // 임시로 최근 5일간 출석했다고 가정
-  return diffDays <= 5 && diffDays > 0;
+  // 임시로 최근 5일간 출석했다고 가정 (과거 날짜만)
+  return diffDays >= 1 && diffDays <= 5;
 }
 
-// 날짜 스타일 클래스
-function getDayClasses(day: any): string {
-  let classes = 'hover:bg-gray-50 transition-colors';
-  
-  if (day.isToday) {
-    classes += ' bg-blue-50 border-blue-300';
-  } else if (day.isAttended) {
-    classes += ' bg-green-50 border-green-300';
-  }
-  
-  return classes;
-}
+
 
 // 이전 월
 function previousMonth() {
