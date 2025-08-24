@@ -56,13 +56,30 @@
             class="absolute inset-0 flex items-center justify-center"
             @click="handleCanvasClick"
           >
-            <!-- 마스코트 이미지 (중앙 고정) -->
-            <div class="relative">
+            <!-- 드래그 가능한 마스코트 이미지 -->
+            <div 
+              ref="mascotElement"
+              :class="[
+                'absolute w-32 h-32 cursor-move transition-all duration-200',
+                selectedMascot ? 'filter brightness-110 ring-2 ring-blue-400 ring-opacity-70 rounded-lg' : '',
+                isDraggingMascot ? 'scale-105 rotate-1' : 'scale-100'
+              ]"
+              :style="mascotStyle"
+              @mousedown="handleMascotMouseDown"
+              @touchstart="handleMascotTouchStart"
+              @click.stop="selectMascot"
+            >
               <img 
                 :src="currentMascot ? getMascotImageUrl(currentMascot.type) : '/mascot/soll.png'" 
                 :alt="currentMascot?.name || '마스코트'" 
-                class="w-32 h-32 object-contain"
+                class="w-full h-full object-contain drop-shadow-lg pointer-events-none"
                 @error="handleMascotImageError"
+              />
+              
+              <!-- 선택 표시 -->
+              <div 
+                v-if="selectedMascot"
+                class="absolute -inset-1 border-2 border-dashed border-blue-400 rounded-lg pointer-events-none animate-pulse"
               />
             </div>
             
@@ -445,6 +462,12 @@ const maxEquippedItems = 10; // 최대 장착 가능 아이템 수
 const mascotPosition = ref<RelativePosition>({ x: 0.5, y: 0.5 }); // 마스코트 기본 위치 (중앙)
 const selectedMascot = ref<boolean>(false); // 마스코트 선택 상태
 
+// 마스코트 드래그 관련 상태
+const mascotElement = ref<HTMLElement>();
+const isDraggingMascot = ref<boolean>(false);
+const mascotDragStartPos = ref<{ x: number; y: number } | null>(null);
+const mascotStartPosition = ref<{ x: number; y: number } | null>(null);
+
 // 토스트 알림
 const showToast = ref(false);
 const toastMessage = ref('');
@@ -486,6 +509,19 @@ const equippedItems = computed(() => {
 // 더 많은 아이템을 장착할 수 있는지 확인
 const canEquipMoreItems = computed(() => {
   return equippedItemsList.value.length < maxEquippedItems;
+});
+
+// 마스코트 스타일 계산
+const mascotStyle = computed(() => {
+  const absolutePos = getMascotAbsolutePosition();
+  
+  return {
+    left: `${absolutePos.x - 64}px`, // 마스코트 크기의 절반만큼 오프셋 (32px * 2 = 64px)
+    top: `${absolutePos.y - 64}px`,
+    zIndex: selectedMascot.value ? 1001 : 5, // 선택된 경우 최상위, 기본적으로는 아이템들보다 낮게
+    transform: isDraggingMascot.value ? 'scale(1.05) rotate(1deg)' : 'scale(1)',
+    transition: isDraggingMascot.value ? 'none' : 'transform 0.2s ease',
+  };
 });
 
 // 기존 마스코트 데이터에서 아이템 로드 (호환성을 위함)
@@ -651,6 +687,105 @@ function selectMascot() {
 
 function deselectMascot() {
   selectedMascot.value = false;
+}
+
+// 마스코트 드래그 이벤트 핸들러들
+function handleMascotMouseDown(e: MouseEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  selectedMascot.value = true;
+  selectedItemId.value = null;
+  
+  isDraggingMascot.value = true;
+  mascotDragStartPos.value = { x: e.clientX, y: e.clientY };
+  mascotStartPosition.value = getMascotAbsolutePosition();
+  
+  document.addEventListener('mousemove', handleMascotMouseMove);
+  document.addEventListener('mouseup', handleMascotMouseUp);
+}
+
+function handleMascotMouseMove(e: MouseEvent) {
+  if (!isDraggingMascot.value || !mascotDragStartPos.value || !mascotStartPosition.value || !mascotCanvas.value) return;
+  
+  const deltaX = e.clientX - mascotDragStartPos.value.x;
+  const deltaY = e.clientY - mascotDragStartPos.value.y;
+  
+  const newPosition = {
+    x: mascotStartPosition.value.x + deltaX,
+    y: mascotStartPosition.value.y + deltaY,
+  };
+  
+  // 마스코트가 캔버스를 벗어나지 않도록 제약
+  const containerSize = getContainerSize(mascotCanvas.value);
+  const constrainedPosition = {
+    x: Math.max(64, Math.min(containerSize.width - 64, newPosition.x)),
+    y: Math.max(64, Math.min(containerSize.height - 64, newPosition.y)),
+  };
+  
+  updateMascotPosition(constrainedPosition);
+}
+
+function handleMascotMouseUp() {
+  isDraggingMascot.value = false;
+  mascotDragStartPos.value = null;
+  mascotStartPosition.value = null;
+  
+  document.removeEventListener('mousemove', handleMascotMouseMove);
+  document.removeEventListener('mouseup', handleMascotMouseUp);
+}
+
+// 마스코트 터치 이벤트 (모바일)
+function handleMascotTouchStart(e: TouchEvent) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  if (e.touches.length !== 1) return; // 단일 터치만 허용
+  
+  const touch = e.touches[0];
+  selectedMascot.value = true;
+  selectedItemId.value = null;
+  
+  isDraggingMascot.value = true;
+  mascotDragStartPos.value = { x: touch.clientX, y: touch.clientY };
+  mascotStartPosition.value = getMascotAbsolutePosition();
+  
+  document.addEventListener('touchmove', handleMascotTouchMove, { passive: false });
+  document.addEventListener('touchend', handleMascotTouchEnd);
+}
+
+function handleMascotTouchMove(e: TouchEvent) {
+  e.preventDefault();
+  
+  if (!isDraggingMascot.value || !mascotDragStartPos.value || !mascotStartPosition.value || !mascotCanvas.value) return;
+  if (e.touches.length !== 1) return;
+  
+  const touch = e.touches[0];
+  const deltaX = touch.clientX - mascotDragStartPos.value.x;
+  const deltaY = touch.clientY - mascotDragStartPos.value.y;
+  
+  const newPosition = {
+    x: mascotStartPosition.value.x + deltaX,
+    y: mascotStartPosition.value.y + deltaY,
+  };
+  
+  // 마스코트가 캔버스를 벗어나지 않도록 제약
+  const containerSize = getContainerSize(mascotCanvas.value);
+  const constrainedPosition = {
+    x: Math.max(64, Math.min(containerSize.width - 64, newPosition.x)),
+    y: Math.max(64, Math.min(containerSize.height - 64, newPosition.y)),
+  };
+  
+  updateMascotPosition(constrainedPosition);
+}
+
+function handleMascotTouchEnd() {
+  isDraggingMascot.value = false;
+  mascotDragStartPos.value = null;
+  mascotStartPosition.value = null;
+  
+  document.removeEventListener('touchmove', handleMascotTouchMove);
+  document.removeEventListener('touchend', handleMascotTouchEnd);
 }
 
 // 드래그 관련 메소드들
