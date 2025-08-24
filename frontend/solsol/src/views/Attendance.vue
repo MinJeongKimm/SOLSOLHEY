@@ -3,9 +3,19 @@
     <!-- 메인 카드 -->
     <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-8">
       <!-- 상단 헤더 -->
-      <div class="flex justify-between items-start mb-6">
-        <!-- 좌측: 출석체크 타이틀 -->
-        <h1 class="text-xl font-bold text-gray-800">출석체크</h1>
+      <div class="flex items-center mb-6">
+        <!-- 뒤로가기 버튼 -->
+        <button 
+          @click="goBack"
+          class="p-2 rounded-lg hover:bg-gray-100 transition-colors mr-4"
+        >
+          <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        
+        <!-- 중앙: 출석체크 타이틀 -->
+        <h1 class="text-xl font-bold text-gray-800 flex-1 text-center">출석체크</h1>
         
         <!-- 우측: 포인트 & 경험치 -->
         <div class="flex flex-col space-y-1">
@@ -133,7 +143,15 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { auth } from '../api/index';
+
+const router = useRouter();
+
+// 뒤로가기 함수
+function goBack() {
+  router.push('/mascot');
+}
 
 // 사용자 정보
 const userCoins = ref(1000);
@@ -141,12 +159,21 @@ const userExp = ref(250);
 
 // 출석 정보
 const consecutiveDays = ref(5);
-const monthlyAttendanceRate = ref(85);
 
 // 달력 관련
 const currentYear = ref(new Date().getFullYear());
 const currentMonth = ref(new Date().getMonth() + 1);
 const todayAttended = ref(false);
+
+// 출석률 계산 (computed로 실시간 계산)
+const monthlyAttendanceRate = computed(() => {
+  const currentMonthDays = calendarDays.value.filter(day => day.isCurrentMonth);
+  const attendedDays = currentMonthDays.filter(day => day.isAttended);
+  
+  if (currentMonthDays.length === 0) return 0;
+  
+  return Math.round((attendedDays.length / currentMonthDays.length) * 100);
+});
 
 // 달력 데이터 생성
 const calendarDays = computed(() => {
@@ -245,7 +272,6 @@ async function checkAttendance() {
     // API 호출 성공 시에만 상태 변경
     todayAttended.value = true;
     consecutiveDays.value++;
-    monthlyAttendanceRate.value = Math.min(100, monthlyAttendanceRate.value + 3);
     
     // 포인트와 경험치 증가
     userCoins.value += 10;
