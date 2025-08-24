@@ -23,6 +23,7 @@ spring:
   config:
     import: 
       - "optional:file:../.env[.properties]"
+      - "optional:file:../.env"
     
 # 로컬 개발 환경 (H2)
 ---
@@ -31,7 +32,7 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:h2:mem:testdb
+    url: jdbc:h2:file:./.localdb/solsol;MODE=MySQL;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password: 
@@ -110,11 +111,18 @@ rate-limit:
 # 로깅 설정
 logging:
   level:
-    com.solsolhey: ${LOGGING_LEVEL_COM_SOLSOLHEY:DEBUG}
+    com.solsolhey: DEBUG
     com.solsolhey.common.security: DEBUG
-    org.springframework.web.reactive.function.client: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB_REACTIVE_FUNCTION_CLIENT:DEBUG}
+    com.solsolhey.auth.jwt: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.web: DEBUG
+    org.springframework.security.web.csrf: DEBUG
+    org.springframework.security.web.authentication: DEBUG
+    org.springframework.security.web.filter: DEBUG
+    org.springframework.web.filter: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
   pattern:
-    console: ${LOGGING_PATTERN_CONSOLE:"%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"}
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 # Tomcat 서버 설정
 server:

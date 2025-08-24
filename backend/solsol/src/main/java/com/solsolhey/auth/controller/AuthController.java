@@ -16,8 +16,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.HttpHeaders;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.core.Authentication;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -36,7 +34,6 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
-    private final CookieCsrfTokenRepository csrfRepo;
     private final com.solsolhey.auth.jwt.JwtTokenProvider jwtTokenProvider;
 
     /**
@@ -94,8 +91,9 @@ public class AuthController {
                 .build();
 
             // 2) CSRF (XSRF-TOKEN as readable cookie)
-            CsrfToken csrf = csrfRepo.generateToken(request);
-            csrfRepo.saveToken(csrf, request, response);
+            // Spring Security의 자동 CSRF 토큰 생성에 의존
+            // csrfRepo.generateToken(request);
+            // csrfRepo.saveToken(csrf, request, response);
 
             return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessC.toString())
@@ -163,8 +161,9 @@ public class AuthController {
             .maxAge(Duration.ofDays(14)).build();
 
         // Re-issue CSRF (optional but recommended on rotation)
-        CsrfToken csrf = csrfRepo.generateToken(request);
-        csrfRepo.saveToken(csrf, request, response);
+        // Spring Security의 자동 CSRF 토큰 생성에 의존
+        // CsrfToken csrf = csrfRepo.generateToken(request);
+        // csrfRepo.saveToken(csrf, request, response);
 
         return ResponseEntity.noContent()
             .header(HttpHeaders.SET_COOKIE, accessC.toString())
