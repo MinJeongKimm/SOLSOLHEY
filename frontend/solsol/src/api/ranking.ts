@@ -1,5 +1,5 @@
 import { apiRequest } from './index';
-import { getCurrentUserId } from '../utils/jwt';
+import { auth } from './index';
 
 // 랭킹 관련 타입 정의
 export interface RankingEntry {
@@ -104,15 +104,15 @@ export async function voteForCampus(
   entryId: number,
   voteData: VoteRequest
 ): Promise<VoteResponse> {
-  const userId = getCurrentUserId();
-  if (!userId) {
+  const user = auth.getUser();
+  if (!user || !user.userId) {
     throw new Error('로그인이 필요합니다.');
   }
 
   // userID를 request body에 포함
   const requestData = {
     ...voteData,
-    userId: userId
+    userId: user.userId
   };
 
   return apiRequest<VoteResponse>(`/rankings/campus/${entryId}/vote`, {
@@ -126,15 +126,15 @@ export async function voteForNational(
   entryId: number,
   voteData: VoteRequest
 ): Promise<VoteResponse> {
-  const userId = getCurrentUserId();
-  if (!userId) {
+  const user = auth.getUser();
+  if (!user || !user.userId) {
     throw new Error('로그인이 필요합니다.');
   }
 
   // userID를 request body에 포함
   const requestData = {
     ...voteData,
-    userId: userId
+    userId: user.userId
   };
 
   return apiRequest<VoteResponse>(`/rankings/national/${entryId}/vote`, {
@@ -153,11 +153,11 @@ export async function getCurrentUser(): Promise<{
   totalPoints: number;
   isActive: boolean;
 }> {
-  // JWT 토큰에서 사용자 ID를 가져옴
-  const userId = getCurrentUserId();
-  if (!userId) {
+  // auth에서 사용자 정보를 가져옴
+  const user = auth.getUser();
+  if (!user || !user.userId) {
     throw new Error('로그인이 필요합니다.');
   }
 
-  return apiRequest<any>(`/users/${userId}`);
+  return apiRequest<any>(`/users/${user.userId}`);
 }

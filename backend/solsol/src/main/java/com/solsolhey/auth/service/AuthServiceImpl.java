@@ -16,6 +16,7 @@ import com.solsolhey.auth.jwt.JwtTokenProvider;
 import com.solsolhey.common.exception.AuthException;
 import com.solsolhey.common.exception.BusinessException;
 import com.solsolhey.common.response.ApiResponse;
+import com.solsolhey.solsol.common.util.UsernameGenerator;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.user.repository.UserRepository;
 
@@ -35,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final UsernameGenerator usernameGenerator;
 
     /**
      * 회원가입
@@ -49,8 +51,8 @@ public class AuthServiceImpl implements AuthService {
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
 
-        // 간단한 username 생성 (이메일의 @ 앞부분 사용)
-        String autoUsername = requestDto.getUserId().split("@")[0];
+        // UsernameGenerator를 사용하여 username 생성
+        String autoUsername = usernameGenerator.generateUsername(requestDto.getUserId());
 
         // 사용자 생성
         User user = User.builder()
@@ -76,8 +78,9 @@ public class AuthServiceImpl implements AuthService {
         log.info("로그인 시도: userId={}", requestDto.userId());
 
         try {
-            // 사용자 조회 (userId는 이메일 형식)
-            User user = findUserByEmail(requestDto.userId());
+            // 사용자 조회 (userId는 이메일 형식) - 읽기 전용 작업
+            User user = userRepository.findByEmailAndIsActiveTrue(requestDto.userId())
+                    .orElseThrow(() -> new AuthException.UserNotFoundException());
             
             // 인증 수행
             authenticationManager.authenticate(
@@ -88,11 +91,11 @@ public class AuthServiceImpl implements AuthService {
             );
 
             // Access Token 생성
-            String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getUsername());
+            String accessToken = jwtTokenProvider.createAccessToken(user.getUserId());
             
             log.info("로그인 완료: userId={}, username={}", user.getUserId(), user.getUsername());
             
-            LoginSuccessDto loginData = new LoginSuccessDto(accessToken, user.getUsername());
+            LoginSuccessDto loginData = new LoginSuccessDto(accessToken, user.getUserId());
             return ApiResponse.success("로그인 되었습니다.", loginData);
 
         } catch (AuthException.UserNotFoundException e) {
@@ -148,8 +151,7 @@ public class AuthServiceImpl implements AuthService {
             // 사용자 정보 추출 (로그 용도)
             try {
                 Long userId = jwtTokenProvider.getUserIdFromToken(accessToken);
-                String username = jwtTokenProvider.getUsernameFromToken(accessToken);
-                log.info("로그아웃 사용자: userId={}, username={}", userId, username);
+                log.info("로그아웃 사용자: userId={}", userId);
             } catch (Exception e) {
                 log.debug("토큰에서 사용자 정보 추출 실패 (만료된 토큰일 수 있음): {}", e.getMessage());
             }
@@ -192,19 +194,13 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    /**
-     * 이메일로 사용자 조회
-     */
-    private User findUserByEmail(String email) {
-        return userRepository.findByEmailAndIsActiveTrue(email)
-                .orElseThrow(() -> new AuthException.UserNotFoundException());
-    }
+
 
     /**
      * 토큰 생성
      */
     private TokenResponseDto generateTokens(User user) {
-        String accessToken = jwtTokenProvider.createAccessToken(user.getUserId(), user.getUsername());
+        String accessToken = jwtTokenProvider.createAccessToken(user.getUserId());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getUserId());
         long expiresIn = jwtTokenProvider.getRemainingTimeFromToken(accessToken) / 1000; // 초 단위
 
