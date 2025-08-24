@@ -23,7 +23,7 @@
           <div class="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
             <span class="text-white font-bold text-sm">$</span>
           </div>
-          <span class="font-bold text-gray-800">{{ userPoints }}P</span>
+          <span class="font-bold text-gray-800">{{ validUserPoints }}P</span>
         </div>
       </div>
     </div>
@@ -57,18 +57,26 @@
       </div>
 
       <!-- 탭별 컨텐츠 -->
-      <div v-if="activeTab === 'items'">
-        <ItemShop :user-points="userPoints" @points-updated="loadUserPoints" />
+      <!-- 로딩 상태일 때 -->
+      <div v-if="isLoading" class="flex justify-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
-      <div v-else-if="activeTab === 'gifticons'">
-        <GifticonShop :user-points="userPoints" @points-updated="loadUserPoints" />
+      
+      <!-- 로딩 완료 후 탭 컨텐츠 표시 -->
+      <div v-else>
+        <div v-if="activeTab === 'items'">
+          <ItemShop :user-points="validUserPoints" @points-updated="loadUserPoints" />
+        </div>
+        <div v-else-if="activeTab === 'gifticons'">
+          <GifticonShop :user-points="validUserPoints" @points-updated="loadUserPoints" />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { getUserInfo, auth } from '../api/index';
 import ItemShop from '../components/shop/ItemShop.vue';
@@ -78,7 +86,13 @@ const router = useRouter();
 
 // 반응형 데이터
 const activeTab = ref<'items' | 'gifticons'>('items');
-const userPoints = ref(0);
+const userPoints = ref<number | null>(null); // null로 초기화하여 로딩 상태 표시
+const isLoading = ref(true); // 로딩 상태 추가
+
+// userPoints가 유효한지 확인하는 computed 속성
+const validUserPoints = computed(() => {
+  return userPoints.value !== null && userPoints.value !== undefined ? userPoints.value : 0;
+});
 
 // 라우터 함수
 function goBack() {
@@ -88,15 +102,21 @@ function goBack() {
 // 사용자 포인트 로드
 async function loadUserPoints() {
   try {
+    isLoading.value = true;
     const user = auth.getUser();
     if (user && user.userId) {
-      const userInfo = await getUserInfo(Number(user.userId));
-      userPoints.value = userInfo.totalPoints;
+      const userInfo = await getUserInfo(user.userId);
+      userPoints.value = userInfo.totalPoints || 0;
+    } else {
+      // 사용자 정보가 없으면 기본값 설정
+      userPoints.value = 0;
     }
   } catch (err) {
     console.error('사용자 포인트 로드 실패:', err);
-    // 기본값 설정
-    userPoints.value = 15000;
+    // 에러 발생 시 기본값 설정
+    userPoints.value = 0;
+  } finally {
+    isLoading.value = false;
   }
 }
 

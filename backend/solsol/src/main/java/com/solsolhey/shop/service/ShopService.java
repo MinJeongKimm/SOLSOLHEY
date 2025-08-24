@@ -17,6 +17,14 @@ public interface ShopService {
     List<ItemResponse> getItems(String type);
     
     /**
+     * 사용자별 보유 여부를 포함한 상품 목록 조회
+     * @param userId 사용자 ID
+     * @param type 상품 타입 (EQUIP, BACKGROUND) - null이면 전체 조회
+     * @return 보유 여부가 포함된 상품 목록
+     */
+    List<ItemResponse> getItemsWithOwnership(Long userId, String type);
+    
+    /**
      * 주문 처리 (상품 구매 또는 기프티콘 구매)
      * @param userId 사용자 ID
      * @param request 주문 요청

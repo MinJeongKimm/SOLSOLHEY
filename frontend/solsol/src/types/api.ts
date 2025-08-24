@@ -53,7 +53,7 @@ export interface ErrorResponse {
 // 사용자 정보 타입
 export interface User {
   username: string;
-  userId: string;
+  userId: number;
   nickname: string;
 }
 

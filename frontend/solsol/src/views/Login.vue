@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { login, auth, handleApiError, getMascot } from '../api/index';
+import { login, auth, handleApiError, getMascot, getUserInfo, parseJwtPayload } from '../api/index';
 import type { LoginRequest } from '../types/api';
 
 const userId = ref('');
@@ -121,10 +121,24 @@ async function onSubmit() {
       auth.setToken(response.data.token);
       
       // 사용자 정보 저장
-      auth.setUser({
-        username: response.data.username,
-        userId: userId.value,
-      });
+      try {
+        // JWT 토큰에서 userId 추출
+        const token = response.data.token;
+        const payload = parseJwtPayload(token);
+        const actualUserId = payload ? payload.userId : 1;
+        
+        auth.setUser({
+          username: response.data.username,
+          userId: actualUserId
+        });
+      } catch (error) {
+        console.error('JWT 토큰 파싱 실패:', error);
+        // JWT 파싱 실패 시 기본값 사용
+        auth.setUser({
+          username: response.data.username,
+          userId: 1
+        });
+      }
       
       // 마스코트 존재 여부 확인
       try {

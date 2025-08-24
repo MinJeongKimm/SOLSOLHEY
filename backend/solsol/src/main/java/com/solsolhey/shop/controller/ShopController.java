@@ -1,5 +1,6 @@
 package com.solsolhey.shop.controller;
 
+import com.solsolhey.auth.dto.response.CustomUserDetails;
 import com.solsolhey.shop.dto.GifticonResponse;
 import com.solsolhey.shop.dto.ItemResponse;
 import com.solsolhey.shop.dto.OrderRequest;
@@ -39,13 +40,16 @@ public class ShopController {
     })
     @GetMapping("/items")
     public ResponseEntity<Map<String, Object>> getItems(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Parameter(description = "상품 타입 (EQUIP, BACKGROUND)", example = "EQUIP")
             @RequestParam(required = false) String type) {
         
         try {
-            log.info("상품 목록 조회 API 호출 - type: {}", type);
+            Long userId = userDetails.getUserId();
+            log.info("상품 목록 조회 API 호출 - 사용자 ID: {}, type: {}", userId, type);
             
-            List<ItemResponse> items = shopService.getItems(type);
+            // 기존 로직을 새로운 메서드로 교체
+            List<ItemResponse> items = shopService.getItemsWithOwnership(userId, type);
             
             Map<String, Object> result = new HashMap<>();
             result.put("result", "SUCCESS");

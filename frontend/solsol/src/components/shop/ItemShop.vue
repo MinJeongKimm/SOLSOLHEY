@@ -146,7 +146,7 @@
       v-if="selectedItem"
       :is-open="showPurchaseDialog"
       :item="selectedItem"
-      :user-points="props.userPoints"
+      :user-points="currentUserPoints"
       :is-gifticon="false"
       @close="closePurchaseDialog"
       @purchase="handlePurchase"
@@ -162,10 +162,13 @@ import PurchaseDialog from './PurchaseDialog.vue';
 
 // Props
 interface Props {
-  userPoints: number;
+  userPoints?: number;
 }
 
 const props = defineProps<Props>();
+
+// userPoints의 기본값 설정
+const currentUserPoints = computed(() => props.userPoints ?? 15000);
 
 // Emits
 const emit = defineEmits<{

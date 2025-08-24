@@ -32,6 +32,9 @@ public class ItemResponse {
     @Schema(description = "이미지 URL", example = "https://example.com/hat.png")
     private String imageUrl;
     
+    @Schema(description = "보유 여부", example = "true")
+    private Boolean owned;
+    
     public static ItemResponse from(Item item) {
         return ItemResponse.builder()
                 .id(item.getId())
@@ -40,7 +43,17 @@ public class ItemResponse {
                 .price(item.getPrice())
                 .type(item.getType().name())
                 .imageUrl(item.getImageUrl())
+                .owned(false) // 기본값: 보유하지 않음
                 .build();
+    }
+    
+    /**
+     * 보유 여부를 포함한 ItemResponse 생성
+     */
+    public static ItemResponse fromWithOwnership(Item item, Boolean owned) {
+        ItemResponse response = from(item);
+        response.setOwned(owned);
+        return response;
     }
 }
 

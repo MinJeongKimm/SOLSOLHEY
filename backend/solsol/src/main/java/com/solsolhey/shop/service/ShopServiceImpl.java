@@ -53,6 +53,33 @@ public class ShopServiceImpl implements ShopService {
     }
     
     @Override
+    public List<ItemResponse> getItemsWithOwnership(Long userId, String type) {
+        List<Item> items;
+        
+        if (type == null || type.trim().isEmpty()) {
+            items = itemRepository.findByIsActiveTrue();
+            log.info("사용자 {} 전체 활성 상품 조회 (보유 여부 포함): {} 개", userId, items.size());
+        } else {
+            try {
+                Item.ItemType itemType = Item.ItemType.valueOf(type.toUpperCase());
+                items = itemRepository.findByTypeAndIsActiveTrue(itemType);
+                log.info("사용자 {} 타입 {} 활성 상품 조회 (보유 여부 포함): {} 개", userId, type, items.size());
+            } catch (IllegalArgumentException e) {
+                log.warn("잘못된 상품 타입: {}", type);
+                throw new IllegalArgumentException("유효하지 않은 상품 타입입니다: " + type);
+            }
+        }
+        
+        return items.stream()
+                .map(item -> {
+                    Boolean owned = userItemRepository.existsByUserIdAndItemId(userId, item.getId());
+                    log.debug("아이템 {} 사용자 {} 보유 여부: {}", item.getId(), userId, owned);
+                    return ItemResponse.fromWithOwnership(item, owned);
+                })
+                .collect(Collectors.toList());
+    }
+    
+    @Override
     @Transactional
     public OrderResponse createOrder(Long userId, OrderRequest request) {
         log.info("주문 처리 시작 - 사용자: {}, 타입: {}", userId, request.getType());
