@@ -299,6 +299,9 @@ const currentMascot = ref<Mascot | null>(null);
 const userCoins = ref(15000);
 const userLikes = ref(151);
 
+// 로컬 저장소에서 장착된 아이템 목록
+const localEquippedItems = ref<any[]>([]);
+
 // 토스트 알림
 const showToast = ref(false);
 const toastMessage = ref('');
@@ -362,30 +365,82 @@ function getExpPercentage(): number {
   return Math.min(100, (currentExp / totalExp) * 100);
 }
 
-// 장착된 아이템의 이미지 URL 가져오기
+// 장착된 아이템의 이미지 URL 가져오기 (로컬 저장소 포함)
 function getEquippedItemImage(itemType: 'head' | 'clothing' | 'accessory' | 'background'): string | undefined {
-  if (!currentMascot.value?.equippedItem) return undefined;
+  // 1. 먼저 현재 마스코트의 equippedItem에서 찾기
+  if (currentMascot.value?.equippedItem) {
+    const equippedItem = realItems.find(item => 
+      item.type === itemType && 
+      currentMascot.value!.equippedItem!.includes(item.name)
+    );
+    
+    if (equippedItem) {
+      return equippedItem.imageUrl;
+    }
+  }
   
-  // equippedItem 문자열에서 해당 타입의 아이템 찾기
-  const equippedItem = realItems.find(item => 
-    item.type === itemType && 
-    currentMascot.value!.equippedItem!.includes(item.name)
+  // 2. 로컬 저장소에서 해당 타입의 첫 번째 아이템 찾기
+  const localEquippedItem = localEquippedItems.value.find(equipped => 
+    equipped.item && equipped.item.type === itemType
   );
   
-  return equippedItem?.imageUrl;
+  if (localEquippedItem && localEquippedItem.item) {
+    console.log(`로컬에서 ${itemType} 아이템 발견:`, localEquippedItem.item.name);
+    return localEquippedItem.item.imageUrl;
+  }
+  
+  return undefined;
 }
 
-// 장착된 아이템의 이름 가져오기
+// 장착된 아이템의 이름 가져오기 (로컬 저장소 포함)
 function getEquippedItemName(itemType: 'head' | 'clothing' | 'accessory' | 'background'): string | undefined {
-  if (!currentMascot.value?.equippedItem) return undefined;
+  // 1. 먼저 현재 마스코트의 equippedItem에서 찾기
+  if (currentMascot.value?.equippedItem) {
+    const equippedItem = realItems.find(item => 
+      item.type === itemType && 
+      currentMascot.value!.equippedItem!.includes(item.name)
+    );
+    
+    if (equippedItem) {
+      return equippedItem.name;
+    }
+  }
   
-  // equippedItem 문자열에서 해당 타입의 아이템 찾기
-  const equippedItem = realItems.find(item => 
-    item.type === itemType && 
-    currentMascot.value!.equippedItem!.includes(item.name)
+  // 2. 로컬 저장소에서 해당 타입의 첫 번째 아이템 찾기
+  const localEquippedItem = localEquippedItems.value.find(equipped => 
+    equipped.item && equipped.item.type === itemType
   );
   
-  return equippedItem?.name;
+  if (localEquippedItem && localEquippedItem.item) {
+    return localEquippedItem.item.name;
+  }
+  
+  return undefined;
+}
+
+// localStorage에서 장착된 아이템 목록 불러오기
+function loadLocalEquippedItems() {
+  try {
+    // 최신 마스코트 기반 좌표계 데이터 시도
+    let savedData = localStorage.getItem('mascot-items-based-v5');
+    
+    if (!savedData) {
+      // 이전 버전들도 시도
+      savedData = localStorage.getItem('mascot-items-fixed-v4') ||
+                 localStorage.getItem('mascot-composition-v3') ||
+                 localStorage.getItem('mascot-multiple-items-v2');
+    }
+    
+    if (savedData) {
+      const positionsData = JSON.parse(savedData);
+      if (positionsData.equippedItems && Array.isArray(positionsData.equippedItems)) {
+        localEquippedItems.value = positionsData.equippedItems;
+        console.log('로컬 장착 아이템 불러옴:', localEquippedItems.value);
+      }
+    }
+  } catch (error) {
+    console.error('로컬 장착 아이템 불러오기 실패:', error);
+  }
 }
 
 // 꾸미기 화면으로 이동
@@ -749,10 +804,16 @@ watch(currentMascot, (newValue, oldValue) => {
   });
 }, { deep: true });
 
+// localEquippedItems 변경 감지
+watch(localEquippedItems, (newValue) => {
+  console.log('로컬 장착 아이템 변경됨:', newValue);
+}, { deep: true });
+
 // 컴포넌트 마운트
 onMounted(() => {
   console.log('Mascot 컴포넌트 마운트됨');
   loadMascotData();
+  loadLocalEquippedItems(); // 로컬 장착 아이템도 함께 불러오기
 });
 </script>
 

@@ -493,6 +493,8 @@ const canEquipMoreItems = computed(() => {
 function loadEquippedItemsFromMascot() {
   if (!currentMascot.value?.equippedItem) return;
   
+  console.log('마스코트에서 장착 아이템 로드:', currentMascot.value.equippedItem);
+  
   // 기존 단일 아이템 시스템과의 호환성
   ['head', 'clothing', 'accessory', 'background'].forEach(type => {
     const item = items.value.find(item => 
@@ -507,7 +509,21 @@ function loadEquippedItemsFromMascot() {
       );
       
       if (!existingItem) {
-        addEquippedItem(item);
+        // addEquippedItem 대신 직접 추가하여 무한 루프 방지
+        const id = generateItemId(item);
+        const newEquippedItem: EquippedItemState = {
+          id,
+          item,
+          relativePosition: getDefaultPosition(item.type),
+          scale: 1,
+          rotation: 0,
+          equippedAt: Date.now(),
+        };
+        
+        equippedItemsList.value.push(newEquippedItem);
+        equippedItemStates.value.set(id, newEquippedItem);
+        
+        console.log(`마스코트에서 아이템 로드: ${item.name}`);
       }
     }
   });
@@ -579,6 +595,9 @@ function addEquippedItem(item: Item): boolean {
   equippedItemsList.value.push(newEquippedItem);
   equippedItemStates.value.set(id, newEquippedItem);
   
+  // currentMascot.equippedItem 필드 동기화
+  updateMascotEquippedItems();
+  
   showToastMessage(`${item.name}을(를) 장착했습니다!`);
   return true;
 }
@@ -596,6 +615,9 @@ function removeEquippedItem(itemId: string): boolean {
     selectedItemId.value = null;
   }
   
+  // currentMascot.equippedItem 필드 동기화
+  updateMascotEquippedItems();
+  
   showToastMessage(`${removedItem.item.name}을(를) 해제했습니다!`);
   return true;
 }
@@ -606,6 +628,24 @@ function isItemEquipped(item: Item): boolean {
 
 function getEquippedCount(item: Item): number {
   return equippedItemsList.value.filter(equipped => equipped.item.id === item.id).length;
+}
+
+// currentMascot.equippedItem 필드를 현재 장착된 아이템들과 동기화
+function updateMascotEquippedItems() {
+  if (!currentMascot.value) return;
+  
+  // 장착된 아이템들의 이름을 수집 (중복 제거)
+  const equippedItemNames = [...new Set(
+    equippedItemsList.value.map(equipped => equipped.item.name)
+  )];
+  
+  // 문자열로 연결 (기존 방식과 호환)
+  currentMascot.value.equippedItem = equippedItemNames.join(',');
+  
+  console.log('마스코트 장착 아이템 동기화:', {
+    equippedItems: equippedItemsList.value.map(e => e.item.name),
+    equippedItemString: currentMascot.value.equippedItem
+  });
 }
 
 // 마스코트 기준 상대 좌표를 절대 좌표로 변환하여 반환
@@ -814,6 +854,9 @@ function resetAllItems() {
     equippedItemStates.value.clear();
     equippedItemsList.value = []; // 다중 아이템 목록도 초기화
     selectedItemId.value = null;
+    
+    // currentMascot.equippedItem 필드 동기화
+    updateMascotEquippedItems();
     
     // 다음 프레임에서 다시 기본값으로 설정되도록 함
     setTimeout(() => {
