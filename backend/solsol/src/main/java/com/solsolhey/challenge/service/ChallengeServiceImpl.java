@@ -7,6 +7,7 @@ import com.solsolhey.challenge.dto.request.*;
 import com.solsolhey.challenge.entity.*;
 import com.solsolhey.challenge.repository.*;
 import com.solsolhey.user.entity.User;
+import com.solsolhey.point.service.PointService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class ChallengeServiceImpl implements ChallengeService {
     private final ChallengeRepository challengeRepository;
     private final UserChallengeRepository userChallengeRepository;
     private final ChallengeCategoryRepository categoryRepository;
-    // private final PointService pointService; // TODO: PointService 구현 후 활성화
+    private final PointService pointService;
 
     /**
      * 챌린지 목록 조회
@@ -185,8 +186,7 @@ public class ChallengeServiceImpl implements ChallengeService {
         // 챌린지가 새로 완료된 경우 보상 지급
         if (!wasCompleted && savedUserChallenge.isCompleted()) {
             try {
-                // TODO: PointService 구현 후 활성화
-                // pointService.awardChallengeReward(user, challenge.getRewardPoints(), challenge.getChallengeId());
+                pointService.awardChallengeReward(user, challenge.getRewardPoints(), challenge.getChallengeId());
                 log.info("챌린지 완료 보상 지급: userId={}, challengeId={}, points={}", 
                         user.getUserId(), challengeId, challenge.getRewardPoints());
             } catch (Exception e) {

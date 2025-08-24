@@ -39,6 +39,9 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+  sql:
+    init:
+      mode: never
     properties:
       hibernate:
         format_sql: true
@@ -64,6 +67,8 @@ spring:
   sql:
     init:
       mode: ${SPRING_SQL_INIT_MODE:always}
+      schema-locations: classpath:db/init-postgresql.sql
+      data-locations: classpath:db/init-postgresql.sql
 
 # 운영 환경 (PostgreSQL)
 ---

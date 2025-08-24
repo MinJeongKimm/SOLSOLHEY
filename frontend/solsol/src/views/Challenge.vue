@@ -127,6 +127,17 @@
             이벤트
           </button>
         </div>
+        
+        <!-- 챌린지 상태 필터 - 우측에 작은 드롭다운 -->
+        <div class="flex justify-end">
+          <div class="w-32">
+            <Dropdown
+              v-model="selectedStatus"
+              :options="statusOptions"
+              placeholder="상태 선택"
+            />
+          </div>
+        </div>
       </div>
 
       <!-- 로딩 상태 -->
@@ -151,33 +162,56 @@
           v-for="challenge in filteredChallenges" 
           :key="challenge.challengeId"
           @click="selectChallenge(challenge)"
-          class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
+          :class="[
+            'rounded-xl p-4 shadow-sm border transition-all cursor-pointer',
+            challenge.isJoined && challenge.userStatus === 'COMPLETED'
+              ? 'bg-gray-100 border-gray-200 opacity-60' // 완료된 챌린지: 회색, 투명도 낮춤
+              : 'bg-white border-gray-100 hover:shadow-md' // 진행 중인 챌린지: 흰색, 호버 효과
+          ]"
         >
           <div class="flex items-center space-x-4">
             <!-- 챌린지 아이콘 -->
-            <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" 
+            <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 relative" 
                  :class="getRewardType(challenge) === 'points' ? 'bg-blue-500' : 'bg-green-500'">
               <span class="text-white font-bold text-lg">$</span>
+              
+              <!-- 완료 상태 표시 -->
+              <div v-if="challenge.isJoined && challenge.userStatus === 'COMPLETED'" 
+                   class="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                <span class="text-white text-xs">✓</span>
+              </div>
             </div>
 
-                         <!-- 챌린지 정보 -->
-             <div class="flex-1 min-w-0">
-               <h3 class="font-medium text-gray-800 text-base mb-1">
-                 {{ challenge.challengeName }}
-               </h3>
-               <p class="text-sm text-gray-500">
-                 <span v-if="getRewardType(challenge) === 'points'" class="text-blue-600">
-                   {{ challenge.rewardPoints }}P
-                 </span>
-                 <span v-else class="text-green-600">
-                   {{ challenge.rewardExp }}XP
-                 </span>
-               </p>
-             </div>
+            <!-- 챌린지 정보 -->
+            <div class="flex-1 min-w-0">
+              <h3 class="font-medium text-base mb-1"
+                  :class="challenge.isJoined && challenge.userStatus === 'COMPLETED' ? 'text-gray-500' : 'text-gray-800'">
+                {{ challenge.challengeName }}
+              </h3>
+              <p class="text-sm"
+                 :class="challenge.isJoined && challenge.userStatus === 'COMPLETED' ? 'text-gray-400' : 'text-gray-500'">
+                <span v-if="getRewardType(challenge) === 'points'" 
+                      :class="challenge.isJoined && challenge.userStatus === 'COMPLETED' ? 'text-gray-400' : 'text-blue-600'">
+                  {{ challenge.rewardPoints }}P
+                </span>
+                <span v-else 
+                      :class="challenge.isJoined && challenge.userStatus === 'COMPLETED' ? 'text-gray-400' : 'text-green-600'">
+                  {{ challenge.rewardExp }}XP
+                </span>
+                
+                <!-- 완료 상태 텍스트 -->
+                <span v-if="challenge.isJoined && challenge.userStatus === 'COMPLETED'" 
+                      class="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                  완료됨
+                </span>
+              </p>
+            </div>
 
             <!-- 화살표 아이콘 -->
             <div class="flex-shrink-0">
-              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5" 
+                   :class="challenge.isJoined && challenge.userStatus === 'COMPLETED' ? 'text-gray-300' : 'text-gray-400'"
+                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
               </svg>
             </div>
@@ -246,11 +280,70 @@
              </div>
              
              <!-- 달성 방법 -->
-             <div class="bg-gray-50 p-3 rounded-lg">
+             <div class="mb-6">
                <h5 class="text-sm font-medium text-gray-800 mb-2">🎯 달성 방법</h5>
                <p class="text-sm text-gray-600 leading-relaxed">
                  {{ getAchievementGuide(selectedChallenge) }}
                </p>
+             </div>
+
+             <!-- 진행도 표시 섹션 -->
+             <div v-if="selectedChallenge.isJoined" class="mb-6">
+               <h5 class="text-sm font-medium text-gray-800 mb-3">📊 진행도</h5>
+               
+               <!-- 현재 진행도 표시 -->
+               <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                 <div class="flex justify-between items-center mb-2">
+                   <span class="text-sm font-medium text-gray-700">현재 진행도</span>
+                   <span class="text-sm text-gray-600">{{ currentProgress }}/{{ selectedChallenge.targetCount }}</span>
+                 </div>
+                 
+                 <!-- 프로그레스 바 -->
+                 <div class="w-full bg-gray-200 rounded-full h-2.5">
+                   <div 
+                     class="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                     :style="{ width: `${(currentProgress / selectedChallenge.targetCount) * 100}%` }"
+                   ></div>
+                 </div>
+                 
+                 <!-- 완료 상태 표시 -->
+                 <div v-if="isCompleted" class="mt-2 text-center">
+                   <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                     🎉 챌린지 완료!
+                   </span>
+                   <div v-if="rewardPoints > 0" class="mt-2 text-sm text-green-600">
+                     +{{ rewardPoints }}P 획득!
+                   </div>
+                 </div>
+               </div>
+
+                <!-- 진행도 업데이트 폼 -->
+                <div v-if="!isCompleted" class="bg-blue-50 rounded-lg p-4">
+                  <h6 class="text-sm font-medium text-blue-800 mb-3">진행 완료</h6>
+                  
+                  <div class="text-center">
+                    <button
+                      @click="completeChallenge"
+                      :disabled="updatingProgress"
+                      :class="[
+                        'px-6 py-3 rounded-lg text-sm font-medium transition-colors',
+                        updatingProgress
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-green-500 text-white hover:bg-green-600'
+                      ]"
+                    >
+                      <span v-if="updatingProgress" class="flex items-center justify-center">
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        완료 처리 중...
+                      </span>
+                      <span v-else>🎯 챌린지 완료하기</span>
+                    </button>
+                  </div>
+                  
+                  <p class="text-xs text-blue-600 mt-2 text-center">
+                    챌린지 목표를 달성했다면 이 버튼을 눌러주세요!
+                  </p>
+                </div>
              </div>
            </div>          
         </div>
@@ -269,6 +362,14 @@
            >
              {{ selectedChallenge.isJoined ? '이미 참여중' : '챌린지 참여' }}
            </button>
+           
+           <!-- 완료된 챌린지인 경우 완료 상태 표시 -->
+           <div v-if="selectedChallenge.isJoined && selectedChallenge.userStatus === 'COMPLETED'" 
+                class="flex-1 py-3 px-4 bg-green-100 text-green-700 rounded-lg font-medium flex items-center justify-center">
+             <span class="mr-2">🎉</span>
+             챌린지 완료!
+           </div>
+           
            <button 
              @click="selectedChallenge = null"
              class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
@@ -284,19 +385,39 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getChallenges, joinChallenge, getUserInfo, auth } from '../api/index';
+import { getChallenges, joinChallenge, updateChallengeProgress } from '../api/index';
+import { usePointStore } from '../stores/point';
 import type { Challenge } from '../types/api';
+import Dropdown from '../components/Dropdown.vue';
 
 const router = useRouter();
+const pointStore = usePointStore();
 
 // 반응형 데이터
 const challenges = ref<Challenge[]>([]);
 const selectedChallenge = ref<Challenge | null>(null);
 const loading = ref(false);
 const error = ref('');
-const userPoints = ref(0);
 const selectedRewardType = ref<'all' | 'points' | 'exp'>('all');
 const selectedCategory = ref<'all' | 'ACADEMIC' | 'FINANCE' | 'SOCIAL' | 'EVENT'>('all');
+const selectedStatus = ref<'all' | 'available' | 'completed'>('all');
+
+// 챌린지 상태 드롭다운 옵션 데이터
+const statusOptions = [
+  { value: 'all', label: '전체 상태' },
+  { value: 'available', label: '진행 가능' },
+  { value: 'completed', label: '완료됨' }
+];
+
+// 진행도 관련 반응형 데이터
+const currentProgress = ref(0);
+const isCompleted = ref(false);
+const rewardPoints = ref(0);
+const progressStep = ref<number | null>(null);
+const updatingProgress = ref(false);
+
+// 포인트 상태는 Store에서 관리
+const userPoints = computed(() => pointStore.userPoints);
 
 // 필터링된 챌린지 목록
 const filteredChallenges = computed(() => {
@@ -312,6 +433,21 @@ const filteredChallenges = computed(() => {
     if (selectedCategory.value !== 'all') {
       if (challenge.categoryName !== selectedCategory.value) {
         return false;
+      }
+    }
+    
+    // 챌린지 상태 필터링
+    if (selectedStatus.value !== 'all') {
+      if (selectedStatus.value === 'available') {
+        // 진행 가능한 챌린지: 참여하지 않았거나 진행 중인 상태
+        if (challenge.isJoined && challenge.userStatus === 'COMPLETED') {
+          return false;
+        }
+      } else if (selectedStatus.value === 'completed') {
+        // 완료된 챌린지: 참여했고 완료된 상태
+        if (!challenge.isJoined || challenge.userStatus !== 'COMPLETED') {
+          return false;
+        }
       }
     }
     
@@ -340,24 +476,61 @@ async function loadChallenges() {
   }
 }
 
-// 사용자 포인트 로드
-async function loadUserPoints() {
-  try {
-    const user = auth.getUser();
-    if (user && user.userId) {
-      const userInfo = await getUserInfo(Number(user.userId));
-      userPoints.value = userInfo.totalPoints;
-    }
-  } catch (err) {
-    console.error('사용자 포인트 로드 실패:', err);
-    // 기본값 설정
-    userPoints.value = 15000;
-  }
-}
-
 // 챌린지 선택
 function selectChallenge(challenge: Challenge) {
   selectedChallenge.value = challenge;
+  
+  // 진행도 초기화
+  if (challenge.isJoined) {
+    // 참여 중인 챌린지인 경우 진행도 로드
+    loadChallengeProgress(challenge.challengeId);
+    
+    // 완료된 챌린지인 경우 알림
+    if (challenge.userStatus === 'COMPLETED') {
+      console.log('완료된 챌린지 선택됨:', challenge.challengeName);
+    }
+  } else {
+    // 참여하지 않은 챌린지인 경우 진행도 초기화
+    currentProgress.value = 0;
+    isCompleted.value = false;
+    rewardPoints.value = 0;
+    progressStep.value = null;
+  }
+}
+
+// 챌린지 진행도 로드
+async function loadChallengeProgress(challengeId: number) {
+  try {
+    // 현재는 진행도 조회 API가 없으므로 기본값으로 설정
+    // 실제로는 백엔드에서 진행도 조회 API를 구현해야 함
+    
+    // 챌린지 상태에 따른 진행도 설정
+    const userChallenge = challenges.value.find(c => c.challengeId === challengeId);
+    if (userChallenge && userChallenge.isJoined) {
+      // 참여 중인 챌린지인 경우 상태 확인
+      if (userChallenge.userStatus === 'COMPLETED') {
+        currentProgress.value = userChallenge.targetCount || 0;
+        isCompleted.value = true;
+        rewardPoints.value = userChallenge.rewardPoints || 0;
+      } else {
+        currentProgress.value = 0;
+        isCompleted.value = false;
+        rewardPoints.value = 0;
+      }
+    } else {
+      currentProgress.value = 0;
+      isCompleted.value = false;
+      rewardPoints.value = 0;
+    }
+    progressStep.value = null;
+  } catch (err) {
+    console.error('진행도 로드 실패:', err);
+    // 에러 발생 시 기본값 설정
+    currentProgress.value = 0;
+    isCompleted.value = false;
+    rewardPoints.value = 0;
+    progressStep.value = null;
+  }
 }
 
 // 챌린지 타입별 보상 결정 (백엔드 타입에 맞춤)
@@ -429,6 +602,9 @@ async function joinSelectedChallenge() {
     // 참여 상태 업데이트
     selectedChallenge.value.isJoined = true;
     
+    // 진행도 초기화 및 로드
+    await loadChallengeProgress(selectedChallenge.value.challengeId);
+    
     // 모달 닫기
     selectedChallenge.value = null;
     
@@ -441,11 +617,94 @@ async function joinSelectedChallenge() {
   }
 }
 
+// 진행도 업데이트
+async function updateProgress() {
+  if (!selectedChallenge.value || !progressStep.value || progressStep.value < 1 || progressStep.value > selectedChallenge.value.targetCount) {
+    alert('유효한 진행도를 입력해주세요.');
+    return;
+  }
+
+  updatingProgress.value = true;
+  try {
+    const response = await updateChallengeProgress(selectedChallenge.value.challengeId, {
+      step: progressStep.value,
+      payload: `진행도 업데이트: ${progressStep.value}`
+    });
+    
+    if (response.success && response.userChallenge) {
+      // 진행도 업데이트 - 백엔드 응답 구조에 맞게 수정
+      currentProgress.value = response.userChallenge.progressCount;
+      isCompleted.value = response.isCompleted || false;
+      
+      // 보상 지급 확인 - 백엔드 응답 구조에 맞게 수정
+      if (response.rewardPoints && response.rewardPoints > 0) {
+        rewardPoints.value = response.rewardPoints;
+        // 사용자 포인트 실시간 업데이트
+        pointStore.updatePoints(response.rewardPoints);
+        // 백엔드 응답에 이미 포인트 정보가 있으므로 별도 API 호출 불필요
+        alert(`진행도가 업데이트되었습니다! +${rewardPoints.value}P 획득!`);
+      } else {
+        alert('진행도가 업데이트되었습니다!');
+      }
+      
+      // 진행도 입력 필드 초기화
+      progressStep.value = null;
+    } else {
+      alert(response.message || '진행도 업데이트에 실패했습니다.');
+    }
+  } catch (err: any) {
+    console.error('진행도 업데이트 실패:', err);
+    alert('진행도 업데이트에 실패했습니다.');
+  } finally {
+    updatingProgress.value = false;
+  }
+}
+
+// 챌린지 완료 처리 (임시)
+async function completeChallenge() {
+  if (!selectedChallenge.value) return;
+  
+  updatingProgress.value = true;
+  try {
+    // 목표 진행도로 바로 완료 처리
+    const response = await updateChallengeProgress(selectedChallenge.value.challengeId, {
+      step: selectedChallenge.value.targetCount,
+      payload: '챌린지 완료'
+    });
+    
+    if (response.success && response.userChallenge) {
+      // 진행도 업데이트 - 백엔드 응답 구조에 맞게 수정
+      currentProgress.value = response.userChallenge.progressCount;
+      isCompleted.value = response.isCompleted || false;
+      
+      // 보상 지급 확인 - 백엔드 응답 구조에 맞게 수정
+      if (response.rewardPoints && response.rewardPoints > 0) {
+        rewardPoints.value = response.rewardPoints;
+        
+        // 사용자 포인트 실시간 업데이트
+        pointStore.updatePoints(response.rewardPoints);
+        
+        // 백엔드 응답에 이미 포인트 정보가 있으므로 별도 API 호출 불필요
+        alert(`🎉 챌린지 완료! +${rewardPoints.value}P 획득!`);
+      } else {
+        alert('🎉 챌린지가 완료되었습니다!');
+      }
+    } else {
+      alert(response.message || '챌린지 완료 처리에 실패했습니다.');
+    }
+  } catch (err: any) {
+    console.error('챌린지 완료 처리 실패:', err);
+    alert('챌린지 완료 처리에 실패했습니다.');
+  } finally {
+    updatingProgress.value = false;
+  }
+}
+
 // 컴포넌트 마운트
 onMounted(async () => {
   await Promise.all([
     loadChallenges(),
-    loadUserPoints()
+    pointStore.loadPoints() // Store에서 포인트 로드
   ]);
 });
 </script>
@@ -453,5 +712,3 @@ onMounted(async () => {
 <style scoped>
 /* 추가 스타일이 필요한 경우 여기에 작성 */
 </style>
-
-
