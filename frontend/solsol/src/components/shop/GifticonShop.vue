@@ -1,62 +1,64 @@
 <template>
   <div class="space-y-6">
     <!-- 카테고리 필터 -->
-    <div class="flex flex-wrap gap-2">
-      <button 
-        @click="selectedCategory = 'all'"
-        :class="[
-          'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-          selectedCategory === 'all' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        ]"
-      >
-        전체
-      </button>
-      <button 
-        @click="selectedCategory = 'cafe'"
-        :class="[
-          'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-          selectedCategory === 'cafe' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        ]"
-      >
-        카페
-      </button>
-      <button 
-        @click="selectedCategory = 'makeup'"
-        :class="[
-          'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-          selectedCategory === 'makeup' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        ]"
-      >
-        메이크업
-      </button>
-      <button 
-        @click="selectedCategory = 'living'"
-        :class="[
-          'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-          selectedCategory === 'living' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        ]"
-      >
-        리빙
-      </button>
-      <button 
-        @click="selectedCategory = 'food'"
-        :class="[
-          'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-          selectedCategory === 'food' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        ]"
-      >
-        푸드
-      </button>
+    <div class="overflow-x-auto">
+      <div class="flex gap-2 pb-2 min-w-max">
+        <button 
+          @click="selectedCategory = 'all'"
+          :class="[
+            'px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            selectedCategory === 'all' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          전체
+        </button>
+        <button 
+          @click="selectedCategory = 'cafe'"
+          :class="[
+            'px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            selectedCategory === 'cafe' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          카페
+        </button>
+        <button 
+          @click="selectedCategory = 'makeup'"
+          :class="[
+            'px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            selectedCategory === 'makeup' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          메이크업
+        </button>
+        <button 
+          @click="selectedCategory = 'living'"
+          :class="[
+            'px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            selectedCategory === 'living' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          리빙
+        </button>
+        <button 
+          @click="selectedCategory = 'food'"
+          :class="[
+            'px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            selectedCategory === 'food' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          푸드
+        </button>
+      </div>
     </div>
 
     <!-- 정렬 옵션 -->
@@ -64,8 +66,7 @@
       <h3 class="text-lg font-bold text-gray-800">
         {{ getCategoryDisplayName(selectedCategory) }}
       </h3>
-      <div class="flex items-center space-x-2">
-        <span class="text-sm text-gray-600">정렬:</span>
+      <div class="flex items-center">
         <select 
           v-model="sortOrder" 
           class="text-sm border border-gray-300 rounded-md px-2 py-1"
@@ -180,7 +181,12 @@ const selectedGifticon = ref<Gifticon | null>(null);
 
 // 카테고리별 기프티콘 필터링
 const filteredGifticons = computed(() => {
-  let filtered = gifticons.value;
+  // gifticons.value가 배열인지 확인하고, 아니면 빈 배열 반환
+  if (!Array.isArray(gifticons.value)) {
+    return [];
+  }
+  
+  let filtered = [...gifticons.value];  // 배열 복사
   
   // 카테고리 필터링 (임시로 SKU 기반으로 필터링)
   if (selectedCategory.value !== 'all') {
@@ -203,9 +209,9 @@ const filteredGifticons = computed(() => {
   
   // 정렬
   if (sortOrder.value === 'price-low') {
-    filtered = [...filtered].sort((a, b) => a.price - b.price);
+    filtered = filtered.sort((a, b) => a.price - b.price);
   } else if (sortOrder.value === 'price-high') {
-    filtered = [...filtered].sort((a, b) => b.price - a.price);
+    filtered = filtered.sort((a, b) => b.price - a.price);
   }
   
   return filtered;

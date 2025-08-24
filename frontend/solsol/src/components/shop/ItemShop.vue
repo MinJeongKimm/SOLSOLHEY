@@ -1,62 +1,64 @@
 <template>
   <div class="space-y-6">
     <!-- 카테고리 필터 -->
-    <div class="flex flex-wrap gap-2">
-      <button 
-        @click="selectedCategory = 'all'"
-        :class="[
-          'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-          selectedCategory === 'all' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        ]"
-      >
-        전체
-      </button>
-      <button 
-        @click="selectedCategory = 'head'"
-        :class="[
-          'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-          selectedCategory === 'head' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        ]"
-      >
-        Head
-      </button>
-      <button 
-        @click="selectedCategory = 'clothing'"
-        :class="[
-          'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-          selectedCategory === 'clothing' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        ]"
-      >
-        Clothing
-      </button>
-      <button 
-        @click="selectedCategory = 'accessory'"
-        :class="[
-          'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-          selectedCategory === 'accessory' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        ]"
-      >
-        Accessory
-      </button>
-      <button 
-        @click="selectedCategory = 'background'"
-        :class="[
-          'px-3 py-2 rounded-full text-sm font-medium transition-colors',
-          selectedCategory === 'background' 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        ]"
-      >
-        Background
-      </button>
+    <div class="overflow-x-auto">
+      <div class="flex gap-2 pb-2 min-w-max">
+        <button 
+          @click="selectedCategory = 'all'"
+          :class="[
+            'px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            selectedCategory === 'all' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          전체
+        </button>
+        <button 
+          @click="selectedCategory = 'head'"
+          :class="[
+            'px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            selectedCategory === 'head' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          Head
+        </button>
+        <button 
+          @click="selectedCategory = 'clothing'"
+          :class="[
+            'px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            selectedCategory === 'clothing' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          Clothing
+        </button>
+        <button 
+          @click="selectedCategory = 'accessory'"
+          :class="[
+            'px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            selectedCategory === 'accessory' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          Accessory
+        </button>
+        <button 
+          @click="selectedCategory = 'background'"
+          :class="[
+            'px-3 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+            selectedCategory === 'background' 
+              ? 'bg-blue-500 text-white' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          ]"
+        >
+          Background
+        </button>
+      </div>
     </div>
 
     <!-- 정렬 옵션 -->
@@ -64,8 +66,7 @@
       <h3 class="text-lg font-bold text-gray-800">
         {{ getCategoryDisplayName(selectedCategory) }}
       </h3>
-      <div class="flex items-center space-x-2">
-        <span class="text-sm text-gray-600">정렬:</span>
+      <div class="flex items-center">
         <select 
           v-model="sortOrder" 
           class="text-sm border border-gray-300 rounded-md px-2 py-1"
@@ -192,7 +193,12 @@ const itemTypeMapping: Record<string, string> = {
 
 // 카테고리별 아이템 필터링
 const filteredItems = computed(() => {
-  let filtered = items.value;
+  // items.value가 배열인지 확인하고, 아니면 빈 배열 반환
+  if (!Array.isArray(items.value)) {
+    return [];
+  }
+  
+  let filtered = [...items.value];  // 배열 복사
   
   // 카테고리 필터링
   if (selectedCategory.value !== 'all') {
@@ -202,9 +208,9 @@ const filteredItems = computed(() => {
   
   // 정렬
   if (sortOrder.value === 'price-low') {
-    filtered = [...filtered].sort((a, b) => a.price - b.price);
+    filtered = filtered.sort((a, b) => a.price - b.price);
   } else if (sortOrder.value === 'price-high') {
-    filtered = [...filtered].sort((a, b) => b.price - a.price);
+    filtered = filtered.sort((a, b) => b.price - a.price);
   }
   
   return filtered;

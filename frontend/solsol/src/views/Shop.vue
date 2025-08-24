@@ -41,7 +41,7 @@
               : 'text-gray-600 hover:text-gray-900'
           ]"
         >
-          🎨 꾸미기 아이템
+          꾸미기 아이템
         </button>
         <button 
           @click="activeTab = 'gifticons'"
@@ -52,7 +52,7 @@
               : 'text-gray-600 hover:text-gray-900'
           ]"
         >
-          🎁 기프티콘
+          기프티콘
         </button>
       </div>
 
