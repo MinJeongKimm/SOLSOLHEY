@@ -460,14 +460,14 @@ const itemCategories = [
   { id: 'background', name: 'Background', icon: '🖼️' }
 ];
 
-// 퀵 포지션 옵션
+// 퀵 포지션 옵션 (마스코트 기준 상대 좌표 0~1)
 const quickPositions = [
-  { name: '좌상', icon: '↖', position: { x: 20, y: 20 } },
-  { name: '상단', icon: '↑', position: { x: 120, y: 20 } },
-  { name: '우상', icon: '↗', position: { x: 200, y: 20 } },
-  { name: '좌측', icon: '←', position: { x: 20, y: 120 } },
-  { name: '중앙', icon: '⊙', position: { x: 120, y: 120 } },
-  { name: '우측', icon: '→', position: { x: 200, y: 120 } },
+  { name: '좌상', icon: '↖', position: { x: 0.2, y: 0.2 } },    // 마스코트 좌상단
+  { name: '상단', icon: '↑', position: { x: 0.5, y: 0.2 } },    // 마스코트 상단 중앙
+  { name: '우상', icon: '↗', position: { x: 0.8, y: 0.2 } },    // 마스코트 우상단
+  { name: '좌측', icon: '←', position: { x: 0.2, y: 0.5 } },    // 마스코트 좌측 중앙
+  { name: '중앙', icon: '⊙', position: { x: 0.5, y: 0.5 } },    // 마스코트 정중앙
+  { name: '우측', icon: '→', position: { x: 0.8, y: 0.5 } },    // 마스코트 우측 중앙
 ];
 
 // 퀵 회전 옵션
@@ -678,11 +678,21 @@ function updateCanvasBounds() {
 
 function updateItemPosition(itemId: string, position: { x: number; y: number }) {
   const state = equippedItemStates.value.get(itemId);
-  if (state && mascotCanvas.value) {
-    // 절대 좌표를 상대 좌표로 변환
-    const containerSize = getContainerSize(mascotCanvas.value);
-    state.relativePosition = toRelativePosition(position, containerSize);
+  if (state && mascotRect.value) {
+    // 절대 좌표를 마스코트 기준 상대 좌표로 변환
+    state.relativePosition = toRelativeToMascot(position, mascotRect.value);
     equippedItemStates.value.set(itemId, state);
+    
+    console.log(`아이템 ${itemId} 위치 업데이트:`, {
+      absolutePosition: position,
+      relativeToMascot: state.relativePosition,
+      mascotRect: {
+        left: mascotRect.value.left,
+        top: mascotRect.value.top,
+        width: mascotRect.value.width,
+        height: mascotRect.value.height
+      }
+    });
   }
 }
 
@@ -738,10 +748,13 @@ function resetItemPosition(itemId: string) {
 
 function setItemQuickPosition(itemId: string, quickPosition: { name: string; icon: string; position: { x: number; y: number } }) {
   const state = equippedItemStates.value.get(itemId);
-  if (state && mascotCanvas.value) {
-    // 절대 좌표를 상대 좌표로 변환
-    const containerSize = getContainerSize(mascotCanvas.value);
-    state.relativePosition = toRelativePosition(quickPosition.position, containerSize);
+  if (state) {
+    // 퀵 포지션은 이미 마스코트 기준 상대 좌표로 설정
+    // quickPosition.position의 값들을 직접 사용 (0~1 범위)
+    state.relativePosition = {
+      x: quickPosition.position.x,
+      y: quickPosition.position.y
+    };
     equippedItemStates.value.set(itemId, state);
     
     showToastMessage(`${state.item.name} → ${quickPosition.name}`);
