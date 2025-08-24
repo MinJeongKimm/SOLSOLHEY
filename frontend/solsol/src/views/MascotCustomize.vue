@@ -66,6 +66,7 @@
                 :src="currentMascot ? getMascotImageUrl(currentMascot.type) : '/mascot/soll.png'" 
                 :alt="currentMascot?.name || '마스코트'" 
                 class="w-full h-full object-contain drop-shadow-lg"
+                @load="handleMascotImageLoad"
                 @error="handleMascotImageError"
               />
             </div>
@@ -404,7 +405,6 @@ import {
   getDefaultMascotRelativePosition,
   toAbsoluteFromMascot,
   toAbsolutePosition,
-  toRelativePosition,
   toRelativeToMascot,
   type RelativePosition
 } from '../utils/coordinates';
@@ -1061,6 +1061,16 @@ async function toggleEquipItem(item: Item) {
     const errorMessage = handleApiError(error);
     showToastMessage(`아이템 변경 실패: ${errorMessage}`);
   }
+}
+
+// 마스코트 이미지 로드 완료 처리
+function handleMascotImageLoad(event: Event) {
+  console.log('마스코트 이미지 로드 완료');
+  // 이미지 로드 후 마스코트 bounding box 업데이트
+  nextTick(() => {
+    updateMascotRect();
+    console.log('마스코트 이미지 로드 후 bounding box 업데이트 완료');
+  });
 }
 
 // 마스코트 이미지 에러 처리
