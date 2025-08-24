@@ -65,10 +65,10 @@
       <!-- 로딩 완료 후 탭 컨텐츠 표시 -->
       <div v-else>
         <div v-if="activeTab === 'items'">
-          <ItemShop :user-points="validUserPoints" @points-updated="loadUserPoints" />
+          <ItemShop :user-points="validUserPoints" @points-updated="handlePointsUpdated" />
         </div>
         <div v-else-if="activeTab === 'gifticons'">
-          <GifticonShop :user-points="validUserPoints" @points-updated="loadUserPoints" />
+          <GifticonShop :user-points="validUserPoints" @points-updated="handlePointsUpdated" />
         </div>
       </div>
     </div>
@@ -78,20 +78,20 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getUserInfo, auth } from '../api/index';
+import { usePointStore } from '../stores/point';
 import ItemShop from '../components/shop/ItemShop.vue';
 import GifticonShop from '../components/shop/GifticonShop.vue';
 
 const router = useRouter();
+const pointStore = usePointStore();
 
 // 반응형 데이터
 const activeTab = ref<'items' | 'gifticons'>('items');
-const userPoints = ref<number | null>(null); // null로 초기화하여 로딩 상태 표시
-const isLoading = ref(true); // 로딩 상태 추가
+const isLoading = ref(true); // 로딩 상태
 
-// userPoints가 유효한지 확인하는 computed 속성
+// 포인트 스토어에서 포인트를 가져오는 computed 속성
 const validUserPoints = computed(() => {
-  return userPoints.value !== null && userPoints.value !== undefined ? userPoints.value : 0;
+  return pointStore.userPoints;
 });
 
 // 라우터 함수
@@ -99,30 +99,22 @@ function goBack() {
   router.back();
 }
 
-// 사용자 포인트 로드
-async function loadUserPoints() {
-  try {
-    isLoading.value = true;
-    const user = auth.getUser();
-    if (user && user.userId) {
-      const userInfo = await getUserInfo(user.userId);
-      userPoints.value = userInfo.totalPoints || 0;
-    } else {
-      // 사용자 정보가 없으면 기본값 설정
-      userPoints.value = 0;
-    }
-  } catch (err) {
-    console.error('사용자 포인트 로드 실패:', err);
-    // 에러 발생 시 기본값 설정
-    userPoints.value = 0;
-  } finally {
-    isLoading.value = false;
-  }
+// 포인트 업데이트 이벤트 처리 - 포인트 스토어에서 포인트를 다시 로드
+async function handlePointsUpdated() {
+  await pointStore.loadPoints();
 }
 
 // 컴포넌트 마운트
 onMounted(async () => {
-  await loadUserPoints();
+  try {
+    isLoading.value = true;
+    // 포인트 스토어에서 포인트 로드
+    await pointStore.loadPoints();
+  } catch (err) {
+    console.error('포인트 로드 실패:', err);
+  } finally {
+    isLoading.value = false;
+  }
 });
 </script>
 
