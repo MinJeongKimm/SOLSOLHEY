@@ -10,6 +10,11 @@ import com.solsolhey.shop.dto.OrderResponse;
 import com.solsolhey.shop.repository.ItemRepository;
 import com.solsolhey.shop.repository.OrderRepository;
 import com.solsolhey.shop.repository.UserItemRepository;
+import com.solsolhey.point.service.PointService;
+import com.solsolhey.point.dto.request.PointSpendRequest;
+import com.solsolhey.point.entity.PointTransaction.ReferenceType;
+import com.solsolhey.user.entity.User;
+import com.solsolhey.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +33,8 @@ public class ShopServiceImpl implements ShopService {
     private final ItemRepository itemRepository;
     private final OrderRepository orderRepository;
     private final UserItemRepository userItemRepository;
+    private final PointService pointService;
+    private final UserRepository userRepository;
     
     @Override
     public List<ItemResponse> getItems(String type) {
@@ -132,7 +139,23 @@ public class ShopServiceImpl implements ShopService {
         // 총 가격 계산
         int totalPrice = item.getPrice() * quantity;
         
-        // TODO: 사용자 포인트 차감 로직 추가 (현재는 생략)
+        // 사용자 조회 및 포인트 차감
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        
+        try {
+            PointSpendRequest spendRequest = new PointSpendRequest(
+                totalPrice, 
+                "상품 구매: " + item.getName(), 
+                null, // 주문 ID는 주문 생성 후 설정
+                ReferenceType.PURCHASE
+            );
+            pointService.spendPoints(user, spendRequest);
+            log.info("포인트 차감 완료: userId={}, amount={}, item={}", userId, totalPrice, item.getName());
+        } catch (Exception e) {
+            log.error("포인트 차감 실패: userId={}, amount={}, item={}", userId, totalPrice, item.getName(), e);
+            throw new IllegalStateException("포인트 차감에 실패했습니다: " + e.getMessage());
+        }
         
         // 사용자 아이템에 추가 또는 수량 증가
         Optional<UserItem> existingUserItem = userItemRepository.findByUserIdAndItemId(userId, item.getId());
@@ -171,7 +194,23 @@ public class ShopServiceImpl implements ShopService {
         // Mock 기프티콘 가격 (실제로는 외부 API에서 가격 조회)
         int gifticonPrice = getGifticonPrice(request.getSku());
         
-        // TODO: 사용자 포인트 차감 로직 추가 (현재는 생략)
+        // 사용자 조회 및 포인트 차감
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+        
+        try {
+            PointSpendRequest spendRequest = new PointSpendRequest(
+                gifticonPrice, 
+                "기프티콘 구매: " + request.getSku(), 
+                null, // 주문 ID는 주문 생성 후 설정
+                ReferenceType.PURCHASE
+            );
+            pointService.spendPoints(user, spendRequest);
+            log.info("포인트 차감 완료: userId={}, amount={}, sku={}", userId, gifticonPrice, request.getSku());
+        } catch (Exception e) {
+            log.error("포인트 차감 실패: userId={}, amount={}, sku={}", userId, gifticonPrice, request.getSku(), e);
+            throw new IllegalStateException("포인트 차감에 실패했습니다: " + e.getMessage());
+        }
         
         // 주문 생성
         return Order.builder()

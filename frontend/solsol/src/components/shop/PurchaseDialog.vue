@@ -82,7 +82,7 @@
           
           <!-- 포인트 부족 경고 -->
           <div v-if="isInsufficientPoints" class="mt-2 text-red-600 text-sm font-medium">
-            ⚠️ 포인트가 부족합니다!
+            ⚠️ 포인트가 부족합니다! (필요: {{ totalPrice }}P, 보유: {{ userPoints }}P)
           </div>
           
           <!-- 구매 후 잔액 -->
