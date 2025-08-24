@@ -291,4 +291,28 @@ public class PointServiceImpl implements PointService {
         Integer todayEarned = getTodayEarnedPoints(user);
         return todayEarned + amount <= DAILY_POINT_LIMIT;
     }
+
+    @Override
+    public PointTransactionResponse awardChallengeReward(User user, Integer rewardPoints, Long challengeId) {
+        log.debug("챌린지 완료 보상 지급: userId={}, challengeId={}, points={}", 
+                  user.getUserId(), challengeId, rewardPoints);
+        
+        // 포인트 적립
+        user.addPoints(rewardPoints);
+        userRepository.save(user);
+        
+        // 거래 내역 생성
+        PointTransaction transaction = PointTransaction.builder()
+                .user(user)
+                .pointAmount(rewardPoints)
+                .transactionType(TransactionType.EARN)
+                .description("챌린지 완료 보상")
+                .referenceId(challengeId)
+                .referenceType(ReferenceType.CHALLENGE)
+                .balanceAfter(user.getTotalPoints())
+                .build();
+        
+        PointTransaction savedTransaction = pointTransactionRepository.save(transaction);
+        return PointTransactionResponse.from(savedTransaction);
+    }
 }

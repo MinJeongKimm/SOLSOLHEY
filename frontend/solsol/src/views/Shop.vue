@@ -23,7 +23,7 @@
           <div class="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
             <span class="text-white font-bold text-sm">$</span>
           </div>
-          <span class="font-bold text-gray-800">{{ userPoints }}P</span>
+          <span class="font-bold text-gray-800">{{ validUserPoints }}P</span>
         </div>
       </div>
     </div>
@@ -57,52 +57,64 @@
       </div>
 
       <!-- 탭별 컨텐츠 -->
-      <div v-if="activeTab === 'items'">
-        <ItemShop :user-points="userPoints" @points-updated="loadUserPoints" />
+      <!-- 로딩 상태일 때 -->
+      <div v-if="isLoading" class="flex justify-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
-      <div v-else-if="activeTab === 'gifticons'">
-        <GifticonShop :user-points="userPoints" @points-updated="loadUserPoints" />
+      
+      <!-- 로딩 완료 후 탭 컨텐츠 표시 -->
+      <div v-else>
+        <div v-if="activeTab === 'items'">
+          <ItemShop :user-points="validUserPoints" @points-updated="handlePointsUpdated" />
+        </div>
+        <div v-else-if="activeTab === 'gifticons'">
+          <GifticonShop :user-points="validUserPoints" @points-updated="handlePointsUpdated" />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getUserInfo, auth } from '../api/index';
+import { usePointStore } from '../stores/point';
 import ItemShop from '../components/shop/ItemShop.vue';
 import GifticonShop from '../components/shop/GifticonShop.vue';
 
 const router = useRouter();
+const pointStore = usePointStore();
 
 // 반응형 데이터
 const activeTab = ref<'items' | 'gifticons'>('items');
-const userPoints = ref(0);
+const isLoading = ref(true); // 로딩 상태
+
+// 포인트 스토어에서 포인트를 가져오는 computed 속성
+const validUserPoints = computed(() => {
+  return pointStore.userPoints;
+});
 
 // 라우터 함수
 function goBack() {
   router.back();
 }
 
-// 사용자 포인트 로드
-async function loadUserPoints() {
-  try {
-    const user = auth.getUser();
-    if (user && user.userId) {
-      const userInfo = await getUserInfo(Number(user.userId));
-      userPoints.value = userInfo.totalPoints;
-    }
-  } catch (err) {
-    console.error('사용자 포인트 로드 실패:', err);
-    // 기본값 설정
-    userPoints.value = 15000;
-  }
+// 포인트 업데이트 이벤트 처리 - 포인트 스토어에서 포인트를 다시 로드
+async function handlePointsUpdated() {
+  await pointStore.loadPoints();
 }
 
 // 컴포넌트 마운트
 onMounted(async () => {
-  await loadUserPoints();
+  try {
+    isLoading.value = true;
+    // 포인트 스토어에서 포인트 로드
+    await pointStore.loadPoints();
+  } catch (err) {
+    console.error('포인트 로드 실패:', err);
+  } finally {
+    isLoading.value = false;
+  }
 });
 </script>
 

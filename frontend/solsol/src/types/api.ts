@@ -53,7 +53,7 @@ export interface ErrorResponse {
 // 사용자 정보 타입
 export interface User {
   username: string;
-  userId: string;
+  userId: number;
   nickname: string;
 }
 
@@ -234,19 +234,26 @@ export interface ChallengeJoinResponse {
 
 export interface ChallengeProgressRequest {
   step: number;
-  description?: string;
+  payload?: string;
 }
 
 export interface ChallengeProgressResponse {
   success: boolean;
   message: string;
-  data?: {
-    challengeId: number;
-    userId: number;
-    currentStep: number;
-    isCompleted: boolean;
-    rewardPoints?: number;
+  userChallenge?: {
+    userChallengeId: number;
+    status: string;
+    statusDisplayName: string;
+    progressCount: number;
+    targetCount: number;
+    progressRate: number;
+    startedAt: string;
+    completedAt?: string;
+    progressData?: string;
   };
+  isCompleted?: boolean;
+  rewardPoints?: number;
+  rewardExp?: number;
   errors?: Record<string, string>;
 }
 
