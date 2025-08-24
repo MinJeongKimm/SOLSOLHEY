@@ -390,8 +390,8 @@ export async function getMyChallenges(status?: string): Promise<Challenge[]> {
 }
 
 // 사용자 정보 조회 (포인트 포함)
-export async function getUserInfo(userId: number): Promise<UserResponse> {
-  return apiRequest<UserResponse>(`/users/${userId}`, {
+export async function getUserInfo(userId: number): Promise<ApiResponse<UserResponse>> {
+  return apiRequest<ApiResponse<UserResponse>>(`/users/${userId}`, {
     method: 'GET',
   });
 }

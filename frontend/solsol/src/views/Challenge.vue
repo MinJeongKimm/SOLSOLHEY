@@ -680,8 +680,10 @@ async function completeChallenge() {
       // 보상 지급 확인 - 백엔드 응답 구조에 맞게 수정
       if (response.rewardPoints && response.rewardPoints > 0) {
         rewardPoints.value = response.rewardPoints;
+        
         // 사용자 포인트 실시간 업데이트
         pointStore.updatePoints(response.rewardPoints);
+        
         // 백엔드 응답에 이미 포인트 정보가 있으므로 별도 API 호출 불필요
         alert(`🎉 챌린지 완료! +${rewardPoints.value}P 획득!`);
       } else {

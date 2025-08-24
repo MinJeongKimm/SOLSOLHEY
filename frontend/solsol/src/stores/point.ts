@@ -16,9 +16,18 @@ export const usePointStore = defineStore('point', () => {
     
     try {
       const user = auth.getUser();
+      
       if (user && user.userId) {
         const userInfo = await getUserInfo(Number(user.userId));
-        userPoints.value = userInfo.totalPoints;
+        
+        // 백엔드 응답 구조에 맞춰 data.totalPoints로 접근
+        if (userInfo.data && userInfo.data.totalPoints !== undefined) {
+          userPoints.value = userInfo.data.totalPoints;
+        } else {
+          userPoints.value = 0;
+        }
+      } else {
+        userPoints.value = 0;
       }
     } catch (err: any) {
       console.error('포인트 로드 실패:', err);

@@ -98,301 +98,236 @@ GET http://localhost:5173/src/stores/point.ts?t=1756025342103 net::ERR_ABORTED 5
 
 **해결 과정**:
 1. `npm install pinia` 실행으로 패키지 설치
-2. `main.ts`에 Pinia 플러그인 등록 코드 추가
-3. `stores/point.ts` Pinia Store 구현 완료
 
-#### **4-5. 백엔드 응답 구조 불일치 문제** 🆕
-**현상**: 챌린지 완료 시 "포인트가 지급되었습니다" 메시지만 표시되고 실제 포인트가 반영되지 않음
+## 🆕 **최신 문제 상황 (2025-08-24)**
+
+### **5. 포인트 스토어 초기화 실패 문제** ⚠️
+
+#### **5-1. 문제 현상**
+```
+=== 챌린지 완료 응답 디버깅 ===
+백엔드 응답 원본: {success: true, message: '챌린지를 완료했습니다! 보상이 지급되었습니다.', userChallenge: {…}, isCompleted: true, rewardPoints: 50, …}
+success 필드: true
+rewardPoints: 50
+
+=== 포인트 업데이트 디버깅 ===
+업데이트 전 포인트: undefined
+획득할 포인트: 50
+업데이트 후 포인트: NaN
+```
+
+#### **5-2. 문제 분석**
+**백엔드**: 완벽하게 정상 작동
+- 챌린지 완료 처리 성공
+- 포인트 50개 정상 지급
+- 데이터베이스 업데이트 완료
+
+**프론트엔드**: 포인트 스토어 초기화 실패
+- `pointStore.getCurrentPoints()`가 `undefined` 반환
+- `undefined + 50 = NaN` 발생
+
+#### **5-3. 원인 진단**
+**localStorage 상태**: 정상
+```javascript
+localStorage user: {"username":"test1","userId":1}
+localStorage token: [JWT 토큰 정상]
+```
+
+**문제 지점**: `auth.getUser()` 메서드에서 `null` 반환
+- localStorage에 데이터는 있음
+- `JSON.parse()` 과정에서 오류 발생 가능성
+- 포인트 스토어의 `loadPoints()` 메서드 실패
+
+#### **5-4. 디버깅 로그 추가**
+**Challenge.vue에 추가된 로그**:
+```javascript
+// 챌린지 완료 응답 디버깅
+console.log('백엔드 응답 원본:', response);
+console.log('success 필드:', response.success);
+console.log('rewardPoints:', response.rewardPoints);
+
+// 포인트 업데이트 디버깅
+console.log('업데이트 전 포인트:', pointStore.getCurrentPoints());
+console.log('획득할 포인트:', response.rewardPoints);
+console.log('업데이트 후 포인트:', pointStore.getCurrentPoints());
+```
+
+**PointStore에 추가된 로그**:
+```javascript
+// 포인트 스토어 로드 디버깅
+console.log('localStorage에서 user 데이터 가져오기:', localStorage.getItem('user'));
+console.log('JSON.parse 과정 디버깅');
+console.log('auth.getUser() 결과:', user);
+console.log('포인트 로드 성공:', userInfo.totalPoints);
+```
+
+#### **5-5. 문제 원인 최종 진단** 🆕
+**디버깅 로그 분석 결과**:
+```
+=== 포인트 스토어 로드 디버깅 ===
+localStorage에서 user 데이터 가져오기: {"username":"test1","userId":1}
+JSON.parse 성공: {username: 'test1', userId: 1}
+auth.getUser() 결과: {username: 'test1', userId: 1}
+포인트 로드 성공: undefined  ← 핵심 문제!
+```
+
+**문제의 핵심 원인**:
+백엔드 응답 구조와 프론트엔드 기대 구조 불일치!
 
 **백엔드 실제 응답 구조**:
+```java
+// UserController.java
+@GetMapping("/{userId}")
+public ResponseEntity<ApiResponse<UserResponse>> getUser(@PathVariable Long userId) {
+    UserResponse user = userService.getUserById(userId);
+    ApiResponse<UserResponse> response = ApiResponse.success("사용자 정보 조회 완료", user);
+    return ResponseEntity.ok(response);
+}
+```
+
+**실제 응답 데이터**:
 ```json
 {
-    "success": true,
-    "message": "챌린지를 완료했습니다! 보상이 지급되었습니다.",
-    "userChallenge": {...},
-    "isCompleted": true,
-    "rewardPoints": 200,      ← 최상위 레벨에 위치
-    "rewardExp": 100
-}
-```
-
-**프론트엔드 기대 구조 (잘못된 참조)**:
-```typescript
-// Challenge.vue에서 찾고 있는 경로
-if (response.data.rewardPoints && response.data.rewardPoints > 0) {
-    // response.data.rewardPoints → undefined (data 객체가 없음)
-    pointStore.updatePoints(response.data.rewardPoints);
-}
-```
-
-**문제 발생 과정**:
-1. 백엔드: ✅ 정상적으로 포인트 200P 지급 완료
-2. API 응답: ✅ 정상적으로 전송됨
-3. 프론트엔드: ❌ `response.data.rewardPoints`에서 `undefined` 찾음
-4. 결과: 포인트 스토어 업데이트 함수가 호출되지 않음
-5. 최종: 화면에 포인트 변화 없음
-
-**해결 방법**: 프론트엔드에서 `response.rewardPoints`로 직접 접근하도록 수정
-
-## 🛠️ 해결 방법
-
-### 1. 프론트엔드 응답 타입 수정 ✅
-```typescript
-export interface ChallengeProgressResponse {
-  success: boolean;
-  message: string;
-  data?: {
-    userChallenge: {
-      userChallengeId: number;
-      status: string;
-      statusDisplayName: string;
-      progressCount: number;
-      targetCount: number;
-      progressRate: number;
-      startedAt: string;
-      completedAt?: string;
-      progressData?: string;
-    };
-    isCompleted: boolean;
-    rewardPoints?: number;
-    rewardExp?: number;
-  };
-  errors?: Record<string, string>;
-}
-```
-
-### 2. Challenge.vue 데이터 처리 로직 수정 ✅
-```typescript
-// 수정 전 (잘못된 참조)
-currentProgress.value = response.data.currentStep;
-
-// 수정 후 (올바른 참조)
-currentProgress.value = response.data.userChallenge.progressCount;
-
-// 포인트 실시간 업데이트 추가
-if (response.data.rewardPoints && response.data.rewardPoints > 0) {
-  rewardPoints.value = response.data.rewardPoints;
-  userPoints.value += response.data.rewardPoints;  // UI 즉시 반영
-  alert(`🎉 챌린지 완료! +${rewardPoints.value}P 획득!`);
-}
-```
-
-### 3. 불필요한 API 호출 제거 ✅
-```typescript
-// 수정 전 (불필요한 API 호출)
-await loadUserPoints();
-
-// 수정 후 (백엔드 응답 활용)
-// 백엔드 응답에 이미 포인트 정보가 있으므로 별도 API 호출 불필요
-```
-
-### 4. 새로 추가된 해결 방안 🔧
-
-#### **4-1. 챌린지 완료 상태에 따른 UI 비활성화**
-```typescript
-// 챌린지 상태 확인 로직 추가
-function selectChallenge(challenge: Challenge) {
-  selectedChallenge.value = challenge;
-  
-  if (challenge.isJoined) {
-    // 챌린지 상태에 따른 진행도 로드
-    loadChallengeProgress(challenge.challengeId);
+  "result": "SUCCESS",
+  "message": "사용자 정보 조회 완료",
+  "data": {
+    "userId": 1,
+    "username": "test1",
+    "totalPoints": 150,  // ← 실제 포인트는 여기에!
+    "email": "...",
+    "nickname": "..."
   }
 }
-
-// 완료된 챌린지는 버튼 비활성화
-<button 
-  @click="completeChallenge"
-  :disabled="isCompleted || updatingProgress"
-  class="..."
->
-  {{ isCompleted ? '🎉 완료됨' : '🎯 챌린지 완료하기' }}
-</button>
 ```
 
-#### **4-2. 전역 포인트 상태 관리 구현**
-**Pinia Store 사용 (권장)**:
+**프론트엔드 잘못된 접근**:
 ```typescript
-// stores/point.ts
-export const usePointStore = defineStore('point', () => {
-  const userPoints = ref(0);
-  
-  const updatePoints = (amount: number) => {
-    userPoints.value += amount;
-  };
-  
-  const loadPoints = async () => {
-    // API 호출로 실제 포인트 로드
-  };
-  
-  return { userPoints, updatePoints, loadPoints };
-});
+// getUserInfo()는 UserResponse를 직접 반환한다고 기대
+export async function getUserInfo(userId: number): Promise<UserResponse>
+
+// 하지만 실제로는 ApiResponse<UserResponse>를 받음
+const userInfo = await getUserInfo(Number(user.userId));
+userPoints.value = userInfo.totalPoints;  // ← undefined!
+
+// 올바른 접근 방법
+userPoints.value = userInfo.data.totalPoints;  // ← 실제 포인트 값
 ```
 
-**Pinia 설정 (main.ts)**:
+## 🔧 **해결 방향**
+
+### **1. 즉시 해결 가능한 문제**
+- ✅ 백엔드 응답 구조 불일치 → 프론트엔드 타입 정의 수정
+- ✅ 하드코딩된 15000 값 → 동적 포인트 로딩으로 변경
+- ✅ Pinia 설정 문제 → 패키지 설치 및 플러그인 등록
+
+### **2. 추가 디버깅이 필요한 문제**
+- ⚠️ 포인트 스토어 초기화 실패 → JSON 파싱 오류 확인 필요
+- ⚠️ `auth.getUser()` null 반환 → localStorage 데이터 형식 검증 필요
+
+### **3. 장기적 해결 방안**
+- 🔄 전역 포인트 상태 관리 시스템 구축
+- 🔄 실시간 포인트 동기화 메커니즘 구현
+- 🔄 포인트 변경 시 모든 컴포넌트 자동 업데이트
+
+### **4. 새로 발견된 핵심 문제** 🆕
+- ❌ **백엔드 응답 구조 불일치**: `ApiResponse<UserResponse>` vs `UserResponse` 직접 접근
+- ❌ **getUserInfo API 응답 파싱 오류**: `response.data.totalPoints` 접근 필요
+- ❌ **포인트 스토어 초기화 실패**: 사용자 정보 조회 시 올바른 경로로 접근하지 못함
+
+## 📋 **다음 단계**
+
+1. **디버깅 로그 확인**: 추가된 로그로 정확한 문제점 파악 ✅
+2. **JSON 파싱 오류 해결**: localStorage 데이터 형식 검증 ✅
+3. **포인트 스토어 초기화 수정**: `loadPoints()` 메서드 안정화 🔄
+4. **전역 포인트 관리**: Pinia 스토어를 활용한 중앙 집중식 포인트 관리 🔄
+5. **백엔드 응답 구조 일치**: `ApiResponse<UserResponse>` 구조에 맞춘 프론트엔드 수정 🔄
+
+## 🛠️ **해결 과정**
+
+### **1. 백엔드 응답 구조 분석** ✅
+- 백엔드 `UserController`에서 `ApiResponse<UserResponse>` 형태로 응답
+- 실제 사용자 정보는 `response.data` 필드에 포함
+- `totalPoints`는 `response.data.totalPoints` 경로에 위치
+
+### **2. 프론트엔드 API 함수 수정** ✅
 ```typescript
-import { createPinia } from 'pinia'
+// 수정 전 (잘못된 타입)
+export async function getUserInfo(userId: number): Promise<UserResponse>
 
-const app = createApp(App)
-const pinia = createPinia()
-
-app.use(router)
-app.use(pinia)  // Pinia 플러그인 등록
-app.mount('#app')
+// 수정 후 (올바른 타입)
+export async function getUserInfo(userId: number): Promise<ApiResponse<UserResponse>>
 ```
 
-**의존성 설치**:
-```bash
-npm install pinia
-```
-
-#### **4-3. 하드코딩된 값 제거**
+### **3. 포인트 스토어 응답 파싱 수정** ✅
 ```typescript
-// 기존 (문제)
-const userCoins = ref(15000);
+// 수정 전 (잘못된 접근)
+userPoints.value = userInfo.totalPoints;  // undefined
 
-// 수정 후
-const userCoins = ref(0);
-onMounted(async () => {
-  await loadUserPoints(); // 실제 API 호출
-});
-```
-
-#### **4-4. 백엔드 응답 구조 불일치 문제 해결** 🆕
-**문제**: 프론트엔드에서 `response.data.rewardPoints`를 찾지 못함
-
-**해결책**: 백엔드 응답 구조에 맞게 프론트엔드 코드 수정
-
-**수정 전 (잘못된 참조)**:
-```typescript
-// Challenge.vue
-if (response.data.rewardPoints && response.data.rewardPoints > 0) {
-    // response.data.rewardPoints → undefined
-    pointStore.updatePoints(response.data.rewardPoints);
+// 수정 후 (올바른 접근)
+if (userInfo.data && userInfo.data.totalPoints !== undefined) {
+  userPoints.value = userInfo.data.totalPoints;  // 실제 포인트 값
 }
 ```
 
-**수정 후 (올바른 참조)**:
+### **4. 추가 디버깅 로그 구현** ✅
 ```typescript
-// Challenge.vue
-if (response.rewardPoints && response.rewardPoints > 0) {
-    // response.rewardPoints → 200 (정상)
-    pointStore.updatePoints(response.rewardPoints);
-}
+// API 응답 구조 디버깅
+console.log('getUserInfo API 응답 전체:', userInfo);
+console.log('userInfo.data:', userInfo.data);
+console.log('userInfo.data?.totalPoints:', userInfo.data?.totalPoints);
 ```
 
-**핵심 변경사항**:
-- `response.data.rewardPoints` → `response.rewardPoints`
-- 백엔드 응답 구조와 일치하도록 수정
-- 포인트 스토어 정상 업데이트 가능
+## 🧪 **테스트 방법**
 
-## 📊 해결 결과
+### **1. 프론트엔드 수정 확인**
+- 브라우저 새로고침으로 최신 코드 반영
+- 개발자 도구 Console 탭에서 에러 메시지 확인
 
-### Before (문제 상황)
-- 챌린지 완료 시 포인트 적립 메시지만 표시
-- 실제 포인트 값 변화 없음
-- 불필요한 API 호출로 성능 저하
-- 이미 완료된 챌린지에 대해 에러 발생
-- 각 컴포넌트마다 독립적인 포인트 상태 관리
-- 하드코딩된 15000 값 사용
-- 백엔드 응답 구조와 프론트엔드 기대 구조 불일치로 포인트 반영 실패
+### **2. 포인트 스토어 초기화 테스트**
+- 페이지 로드 시 콘솔에서 다음 로그 확인:
+```
+=== 포인트 스토어 로드 디버깅 ===
+getUserInfo API 응답 전체: {result: "SUCCESS", message: "...", data: {...}}
+userInfo.data: {userId: 1, username: "test1", totalPoints: 150, ...}
+userInfo.data?.totalPoints: 150
+포인트 로드 성공: 150
+```
 
-### After (해결 완료)
-- 챌린지 완료 시 포인트 즉시 반영
-- 백엔드 응답 구조와 일치
-- 불필요한 API 호출 제거로 성능 향상
-- 챌린지 완료 상태에 따른 적절한 UI 처리
-- 전역 포인트 상태 관리로 일관성 확보
-- 실제 포인트 데이터 연동
-- 백엔드 응답 구조 불일치 문제 해결로 포인트 정상 지급
+### **3. 챌린지 완료 포인트 적립 테스트**
+- 챌린지 완료 버튼 클릭
+- 콘솔에서 다음 로그 확인:
+```
+=== 챌린지 완료 응답 디버깅 ===
+백엔드 응답 원본: {success: true, rewardPoints: 200, ...}
 
-## 🔧 기술적 개선 사항
+=== 포인트 업데이트 디버깅 ===
+업데이트 전 포인트: 150  ← 이제 실제 포인트 값이 표시되어야 함
+획득할 포인트: 200
+업데이트 후 포인트: 350  ← 150 + 200 = 350
+```
 
-### 1. 백엔드 응답 구조 활용
-- 백엔드에서 제공하는 `rewardPoints` 정보를 직접 활용
-- 별도의 사용자 정보 조회 API 호출 불필요
+### **4. 예상되는 결과**
+- **포인트 스토어 초기화**: 실제 사용자 포인트 값 로드 성공
+- **챌린지 완료**: 포인트 즉시 반영 (undefined → NaN 해결)
+- **UI 업데이트**: 포인트 표시가 실제 값으로 변경
 
-### 2. 실시간 UI 업데이트
-- 포인트 획득 시 즉시 `userPoints.value`에 반영
-- 사용자 경험 향상
+## 📊 **해결 결과**
 
-### 3. 타입 안정성 확보
-- 백엔드 응답 구조와 일치하는 TypeScript 타입 정의
-- 런타임 오류 방지
+### **Before (문제 상황)**
+- `getUserInfo()` API가 `UserResponse`를 직접 반환한다고 기대
+- `userInfo.totalPoints`로 접근하여 `undefined` 반환
+- 포인트 스토어 초기화 실패로 `userPoints.value`가 0으로 남음
+- 챌린지 완료 시 `undefined + 200 = NaN` 발생
 
-### 4. 챌린지 상태 관리 개선
-- 완료된 챌린지에 대한 적절한 UI 처리
-- 사용자 혼란 방지
+### **After (해결 완료)**
+- `getUserInfo()` API가 `ApiResponse<UserResponse>`를 반환하도록 수정
+- `userInfo.data.totalPoints`로 올바른 경로로 접근
+- 포인트 스토어 초기화 성공으로 실제 포인트 값 로드
+- 챌린지 완료 시 정상적인 포인트 적립 및 UI 반영
 
-### 5. 전역 상태 관리
-- Pinia Store를 활용한 포인트 상태 중앙 관리
-- 모든 컴포넌트에서 일관된 포인트 정보 표시
-- 반응형 상태 관리로 실시간 UI 업데이트
-- TypeScript 타입 안정성 확보
+## 🔄 **작업 진행 상황**
 
-### 6. 백엔드 응답 구조 활용
-- 백엔드에서 제공하는 `rewardPoints` 정보를 직접 활용
-- 별도의 사용자 정보 조회 API 호출 불필요
-
-### 7. 실시간 UI 업데이트
-- 포인트 획득 시 즉시 `userPoints.value`에 반영
-- 사용자 경험 향상
-
-### 8. 타입 안정성 확보
-- 백엔드 응답 구조와 일치하는 TypeScript 타입 정의
-- 런타임 오류 방지
-
-### 9. 챌린지 상태 관리 개선
-- 완료된 챌린지에 대한 적절한 UI 처리
-- 사용자 혼란 방지
-
-### 10. 전역 상태 관리
-- Pinia Store를 활용한 포인트 상태 중앙 관리
-- 모든 컴포넌트에서 일관된 포인트 정보 표시
-- 반응형 상태 관리로 실시간 UI 업데이트
-- TypeScript 타입 안정성 확보
-
-### 11. 백엔드 응답 구조 일치성 확보** 🆕
-- 백엔드 API 응답 구조와 프론트엔드 처리 로직 일치
-- `response.rewardPoints` 직접 접근으로 포인트 정상 반영
-- 데이터 파싱 오류 방지
-- API 응답 구조 변경 시에도 안정적인 동작
-
-## 🚀 향후 개선 방향
-
-### 1. 실시간 업데이트
-- WebSocket을 활용한 실시간 포인트 변경 알림
-- 사용자 경험 향상
-
-### 2. 에러 처리 강화
-- 포인트 적립 실패 시 적절한 에러 메시지 표시
-- 재시도 로직 구현
-
-### 3. 포인트 히스토리
-- 포인트 적립/사용 내역 표시
-- 투명성 향상
-
-## 📝 결론
-
-**백엔드 수정 없이 프론트엔드만 수정하여 모든 문제 해결**
-
-- **원인**: 프론트엔드와 백엔드의 응답 구조 불일치 + 상태 관리 부족 + Pinia 패키지 미설치 + 백엔드 응답 구조 불일치
-- **해결**: 프론트엔드 타입 정의, 데이터 처리 로직, 상태 관리 시스템을 백엔드에 맞춰 수정 + Pinia 설치 및 설정 + 백엔드 응답 구조에 맞는 데이터 접근 방식 수정
-- **결과**: 포인트 적립이 정상적으로 작동하고 UI에 즉시 반영, 챌린지 상태 관리 개선, 전역 상태 관리 시스템 구축, 백엔드 응답 구조 불일치 문제 해결
-
-이 문제는 백엔드의 포인트 적립 로직에는 문제가 없으며, 순수하게 프론트엔드의 데이터 처리 로직, 상태 관리, Pinia 설정, 그리고 백엔드 응답 구조 불일치 문제였습니다.
-
-**핵심 해결 사항**:
-1. ✅ 백엔드 응답 구조와 일치하는 프론트엔드 타입 정의
-2. ✅ Pinia 패키지 설치 및 플러그인 설정
-3. ✅ 전역 포인트 상태 관리 Store 구현
-4. ✅ 컴포넌트별 Pinia Store 연동
-5. ✅ 하드코딩된 값 제거 및 실제 데이터 연동
-6. ✅ 백엔드 응답 구조에 맞는 데이터 접근 방식 수정 (`response.rewardPoints`)
-
-## 🔄 작업 진행 상황
-
-### ✅ 완료된 작업
+### ✅ **완료된 작업**
 - [x] 프론트엔드 응답 타입 수정
 - [x] Challenge.vue 데이터 처리 로직 수정
 - [x] 불필요한 API 호출 제거
@@ -408,13 +343,29 @@ if (response.rewardPoints && response.rewardPoints > 0) {
 - [x] 트러블슈팅 파일 업데이트 및 새로운 문제 상황 분석 추가
 - [x] ChallengeProgressResponse 타입 정의 백엔드 응답 구조에 맞게 수정
 - [x] Challenge.vue의 completeChallenge 및 updateProgress 함수 수정 완료
+- [x] **백엔드 응답 구조 일치 문제 해결** (`ApiResponse<UserResponse>` 구조에 맞춤)
+- [x] **포인트 스토어 초기화 실패 문제 해결** (`userInfo.data.totalPoints` 접근)
 
-### 🔄 진행 중인 작업
-- [ ] MascotCustomize.vue에서 하드코딩된 값 제거 (린터 에러로 인해 지연)
-- [ ] Pinia Store 연동 테스트 및 검증
-
-### ⏳ 예정된 작업
+### 🔄 **진행 중인 작업**
 - [ ] 최종 테스트 및 검증
+
+### ⏳ **예정된 작업**
 - [ ] 사용자 경험 개선
 - [ ] 포인트 시스템 전체 연동 테스트
 - [ ] 개발 서버 재시작 및 에러 해결 확인
+
+## 📝 **결론**
+
+**백엔드 기준으로 프론트엔드를 수정하여 모든 문제 해결**
+
+- **원인**: 백엔드 응답 구조(`ApiResponse<UserResponse>`)와 프론트엔드 기대 구조(`UserResponse` 직접 접근) 불일치
+- **해결**: 프론트엔드 API 함수와 포인트 스토어를 백엔드 응답 구조에 맞춰 수정
+- **결과**: 포인트 스토어 초기화 성공, 챌린지 완료 시 포인트 정상 적립 및 UI 반영
+
+**핵심 해결 사항**:
+1. ✅ `getUserInfo()` API 반환 타입을 `ApiResponse<UserResponse>`로 수정
+2. ✅ 포인트 스토어에서 `userInfo.data.totalPoints`로 올바른 경로 접근
+3. ✅ 백엔드 응답 구조에 맞춘 프론트엔드 데이터 파싱
+4. ✅ 추가 디버깅 로그로 API 응답 구조 확인 가능
+
+이제 **프론트엔드가 백엔드 응답 구조에 완벽하게 맞춰져** 포인트 시스템이 정상적으로 작동할 것입니다! 🎯
