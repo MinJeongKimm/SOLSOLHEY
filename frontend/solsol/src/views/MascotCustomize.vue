@@ -58,7 +58,10 @@
             @click="handleCanvasClick"
           >
             <!-- 중앙 고정 마스코트 이미지 -->
-            <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32">
+            <div 
+              ref="mascotRef"
+              class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32"
+            >
               <img 
                 :src="currentMascot ? getMascotImageUrl(currentMascot.type) : '/mascot/soll.png'" 
                 :alt="currentMascot?.name || '마스코트'" 
@@ -436,6 +439,8 @@ const equippedItemsList = ref<EquippedItemState[]>([]); // 장착된 아이템 �
 const maxEquippedItems = 10; // 최대 장착 가능 아이템 수
 
 // 마스코트는 중앙에 고정 (드래그 불가)
+const mascotRef = ref<HTMLElement>();
+const mascotRect = ref<DOMRect | null>(null);
 
 // 토스트 알림
 const showToast = ref(false);
@@ -624,6 +629,14 @@ function getMascotCenterPosition(): { x: number; y: number } {
   };
 }
 
+// 마스코트 bounding box 업데이트
+function updateMascotRect() {
+  if (mascotRef.value) {
+    mascotRect.value = mascotRef.value.getBoundingClientRect();
+    console.log('마스코트 bounding box 업데이트됨:', mascotRect.value);
+  }
+}
+
 // 마스코트 드래그 관련 함수들 제거됨 (마스코트는 고정)
 
 // 드래그 관련 메소드들
@@ -638,6 +651,9 @@ function updateCanvasBounds() {
       Math.abs(oldBounds.height - newBounds.height) > 1;
     
     canvasBounds.value = newBounds;
+    
+    // 마스코트 bounding box도 함께 업데이트
+    updateMascotRect();
     
     // 크기 변경 시 상대 좌표 기반으로 아이템 위치 재계산
     if (sizeChanged && oldBounds) {
@@ -1072,9 +1088,10 @@ onMounted(async () => {
   console.log('마스코트 꾸미기 페이지 로드됨');
   await loadMascotData();
   
-  // 캔버스 바운드 업데이트
+  // 캔버스 바운드 및 마스코트 bounding box 업데이트
   await nextTick();
   updateCanvasBounds();
+  updateMascotRect();
   
   // 저장된 아이템 위치 불러오기
   await nextTick();
