@@ -22,7 +22,12 @@ import type {
   ChallengeProgressRequest,
   ChallengeProgressResponse,
   UserResponse,
-  Mascot
+  Mascot,
+  ShopItem,
+  Gifticon,
+  OrderRequest,
+  OrderResponse,
+  UserItem
 } from '../types/api';
 import { ApiError } from '../types/api';
 
@@ -387,6 +392,33 @@ export async function getMyChallenges(status?: string): Promise<Challenge[]> {
 // 사용자 정보 조회 (포인트 포함)
 export async function getUserInfo(userId: number): Promise<UserResponse> {
   return apiRequest<UserResponse>(`/users/${userId}`, {
+    method: 'GET',
+  });
+}
+
+// 상점 관련 API 함수들
+export async function getShopItems(type?: string): Promise<ShopItem[]> {
+  const endpoint = type ? `/shop/items?type=${type}` : '/shop/items';
+  return apiRequest<ShopItem[]>(endpoint, {
+    method: 'GET',
+  });
+}
+
+export async function getGifticons(): Promise<Gifticon[]> {
+  return apiRequest<Gifticon[]>('/shop/gifticons', {
+    method: 'GET',
+  });
+}
+
+export async function createOrder(orderData: OrderRequest): Promise<OrderResponse> {
+  return apiRequest<OrderResponse>('/shop/orders', {
+    method: 'POST',
+    body: JSON.stringify(orderData),
+  });
+}
+
+export async function getUserItems(): Promise<UserItem[]> {
+  return apiRequest<UserItem[]>('/shop/user-items', {
     method: 'GET',
   });
 }
