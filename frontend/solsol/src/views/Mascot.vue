@@ -761,10 +761,12 @@ onMounted(async () => {
     await pointStore.loadPoints();
     
     // 마스코트 정보 로드
-    const user = auth.getUser();
-    if (user && user.userId) {
-      const mascot = await getMascot(Number(user.userId));
-      currentMascot.value = mascot;
+    const mascotData = await getMascot();
+    if (mascotData) {
+      currentMascot.value = mascotData;
+    } else {
+      // 마스코트가 없으면 생성 페이지로 이동
+      router.push('/mascot/create');
     }
   } catch (err) {
     console.error('마스코트 정보 로드 실패:', err);
