@@ -22,7 +22,12 @@ import type {
   ChallengeProgressRequest,
   ChallengeProgressResponse,
   UserResponse,
-  Mascot
+  Mascot,
+  ShopItem,
+  Gifticon,
+  OrderRequest,
+  OrderResponse,
+  UserItem
 } from '../types/api';
 import { ApiError } from '../types/api';
 
@@ -348,7 +353,8 @@ export function handleApiError(error: unknown): string {
 
 // 챌린지 관련 API 함수들
 export async function getChallenges(category?: string): Promise<Challenge[]> {
-  const endpoint = category ? `/challenges?category=${category}` : '/challenges';
+  // 백엔드 API 호출로 실제 데이터 가져오기
+  const endpoint = category && category !== 'all' ? `/challenges?category=${category}` : '/challenges';
   return apiRequest<Challenge[]>(endpoint, {
     method: 'GET',
   });
@@ -386,6 +392,33 @@ export async function getMyChallenges(status?: string): Promise<Challenge[]> {
 // 사용자 정보 조회 (포인트 포함)
 export async function getUserInfo(userId: number): Promise<UserResponse> {
   return apiRequest<UserResponse>(`/users/${userId}`, {
+    method: 'GET',
+  });
+}
+
+// 상점 관련 API 함수들
+export async function getShopItems(type?: string): Promise<ShopItem[]> {
+  const endpoint = type ? `/shop/items?type=${type}` : '/shop/items';
+  return apiRequest<ShopItem[]>(endpoint, {
+    method: 'GET',
+  });
+}
+
+export async function getGifticons(): Promise<Gifticon[]> {
+  return apiRequest<Gifticon[]>('/shop/gifticons', {
+    method: 'GET',
+  });
+}
+
+export async function createOrder(orderData: OrderRequest): Promise<OrderResponse> {
+  return apiRequest<OrderResponse>('/shop/orders', {
+    method: 'POST',
+    body: JSON.stringify(orderData),
+  });
+}
+
+export async function getUserItems(): Promise<UserItem[]> {
+  return apiRequest<UserItem[]>('/shop/user-items', {
     method: 'GET',
   });
 }

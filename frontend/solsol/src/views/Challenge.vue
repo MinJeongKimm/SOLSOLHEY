@@ -29,7 +29,106 @@
     </div>
 
     <!-- 챌린지 목록 -->
-    <div class="p-4 space-y-3">
+    <div class="p-4 space-y-4">
+      <!-- 카테고리 필터 탭 -->
+      <div class="space-y-3">
+        <!-- 보상 타입 탭 -->
+        <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+          <button 
+            @click="selectedRewardType = 'all'"
+            :class="[
+              'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors',
+              selectedRewardType === 'all' 
+                ? 'bg-white text-gray-900 shadow-sm' 
+                : 'text-gray-600 hover:text-gray-900'
+            ]"
+          >
+            전체
+          </button>
+          <button 
+            @click="selectedRewardType = 'points'"
+            :class="[
+              'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors',
+              selectedRewardType === 'points' 
+                ? 'bg-white text-gray-900 shadow-sm' 
+                : 'text-gray-600 hover:text-gray-900'
+            ]"
+          >
+            포인트
+          </button>
+          <button 
+            @click="selectedRewardType = 'exp'"
+            :class="[
+              'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors',
+              selectedRewardType === 'exp' 
+                ? 'bg-white text-gray-900 shadow-sm' 
+                : 'text-gray-600 hover:text-gray-900'
+            ]"
+          >
+            경험치
+          </button>
+        </div>
+
+        <!-- 카테고리 탭 -->
+        <div class="flex flex-wrap gap-2">
+          <button 
+            @click="selectedCategory = 'all'"
+            :class="[
+              'px-3 py-2 rounded-full text-sm font-medium transition-colors',
+              selectedCategory === 'all' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            ]"
+          >
+            전체
+          </button>
+          <button 
+            @click="selectedCategory = 'ACADEMIC'"
+            :class="[
+              'px-3 py-2 rounded-full text-sm font-medium transition-colors',
+              selectedCategory === 'ACADEMIC' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            ]"
+          >
+            학사
+          </button>
+          <button 
+            @click="selectedCategory = 'FINANCE'"
+            :class="[
+              'px-3 py-2 rounded-full text-sm font-medium transition-colors',
+              selectedCategory === 'FINANCE' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            ]"
+          >
+            금융
+          </button>
+          <button 
+            @click="selectedCategory = 'SOCIAL'"
+            :class="[
+              'px-3 py-2 rounded-full text-sm font-medium transition-colors',
+              selectedCategory === 'SOCIAL' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            ]"
+          >
+            소셜
+          </button>
+          <button 
+            @click="selectedCategory = 'EVENT'"
+            :class="[
+              'px-3 py-2 rounded-full text-sm font-medium transition-colors',
+              selectedCategory === 'EVENT' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            ]"
+          >
+            이벤트
+          </button>
+        </div>
+      </div>
+
       <!-- 로딩 상태 -->
       <div v-if="loading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -47,16 +146,17 @@
       </div>
 
       <!-- 챌린지 목록 -->
-      <div v-else-if="challenges.length > 0" class="space-y-3">
+      <div v-else-if="filteredChallenges.length > 0" class="space-y-3">
         <div 
-          v-for="challenge in challenges" 
+          v-for="challenge in filteredChallenges" 
           :key="challenge.challengeId"
           @click="selectChallenge(challenge)"
           class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer"
         >
           <div class="flex items-center space-x-4">
             <!-- 챌린지 아이콘 -->
-            <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0" 
+                 :class="getRewardType(challenge) === 'points' ? 'bg-blue-500' : 'bg-green-500'">
               <span class="text-white font-bold text-lg">$</span>
             </div>
 
@@ -86,10 +186,17 @@
       </div>
 
       <!-- 빈 상태 -->
-      <div v-else class="text-center py-8">
+      <div v-else-if="challenges.length === 0" class="text-center py-8">
         <div class="text-6xl mb-4">🎯</div>
         <p class="text-gray-500 mb-2">현재 진행 가능한 챌린지가 없습니다</p>
         <p class="text-sm text-gray-400">새로운 챌린지가 추가될 때까지 기다려주세요!</p>
+      </div>
+
+      <!-- 필터링 결과 없음 -->
+      <div v-else class="text-center py-8">
+        <div class="text-6xl mb-4">🔍</div>
+        <p class="text-gray-500 mb-2">선택한 필터에 맞는 챌린지가 없습니다</p>
+        <p class="text-sm text-gray-400">다른 필터를 선택해보세요!</p>
       </div>
     </div>
 
@@ -175,7 +282,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { getChallenges, joinChallenge, getUserInfo, auth } from '../api/index';
 import type { Challenge } from '../types/api';
@@ -188,6 +295,29 @@ const selectedChallenge = ref<Challenge | null>(null);
 const loading = ref(false);
 const error = ref('');
 const userPoints = ref(0);
+const selectedRewardType = ref<'all' | 'points' | 'exp'>('all');
+const selectedCategory = ref<'all' | 'ACADEMIC' | 'FINANCE' | 'SOCIAL' | 'EVENT'>('all');
+
+// 필터링된 챌린지 목록
+const filteredChallenges = computed(() => {
+  return challenges.value.filter(challenge => {
+    // 보상 타입 필터링
+    if (selectedRewardType.value !== 'all') {
+      if (getRewardType(challenge) !== selectedRewardType.value) {
+        return false;
+      }
+    }
+    
+    // 카테고리 필터링
+    if (selectedCategory.value !== 'all') {
+      if (challenge.categoryName !== selectedCategory.value) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+});
 
 // 라우터 함수
 function goBack() {
@@ -230,34 +360,32 @@ function selectChallenge(challenge: Challenge) {
   selectedChallenge.value = challenge;
 }
 
-// 챌린지 타입별 보상 결정
+// 챌린지 타입별 보상 결정 (백엔드 타입에 맞춤)
 function getRewardType(challenge: Challenge): 'points' | 'exp' {
   // 챌린지 타입에 따라 보상 결정
   switch (challenge.challengeType) {
-    case '일일':
-    case '주간':
+    case 'DAILY':
+    case 'WEEKLY':
       return 'points'; // 일일/주간 챌린지는 포인트 보상
-    case '월간':
-    case '특별':
+    case 'MONTHLY':
+    case 'SPECIAL':
       return 'exp';    // 월간/특별 챌린지는 경험치 보상
     default:
       return 'points'; // 기본값은 포인트
   }
 }
 
-// 카테고리별 색상 결정
+// 카테고리별 색상 결정 (백엔드 카테고리에 맞춤)
 function getCategoryColor(categoryName: string): string {
   switch (categoryName) {
     case 'FINANCE':
       return 'bg-green-500'; // 금융 - 초록색
-    case 'HEALTH':
-      return 'bg-blue-500';  // 건강 - 파란색
-    case 'STUDY':
-      return 'bg-purple-500'; // 학습 - 보라색
+    case 'ACADEMIC':
+      return 'bg-purple-500'; // 학사 - 보라색
     case 'SOCIAL':
-      return 'bg-orange-500'; // 소셜 - 주황색
-    case 'LIFESTYLE':
-      return 'bg-pink-500';   // 라이프스타일 - 분홍색
+      return 'bg-pink-500';   // 소셜 - 분홍색
+    case 'EVENT':
+      return 'bg-orange-500'; // 이벤트 - 주황색
     default:
       return 'bg-gray-500';   // 기본 - 회색
   }
