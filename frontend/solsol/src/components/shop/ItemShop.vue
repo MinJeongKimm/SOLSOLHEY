@@ -168,7 +168,7 @@ interface Props {
 const props = defineProps<Props>();
 
 // userPoints의 기본값 설정
-const currentUserPoints = computed(() => props.userPoints ?? 15000);
+const currentUserPoints = computed(() => props.userPoints ?? 0);
 
 // Emits
 const emit = defineEmits<{

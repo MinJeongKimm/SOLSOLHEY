@@ -343,17 +343,18 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getChallenges, joinChallenge, getUserInfo, auth, updateChallengeProgress } from '../api/index';
+import { getChallenges, joinChallenge, updateChallengeProgress } from '../api/index';
+import { usePointStore } from '../stores/point';
 import type { Challenge } from '../types/api';
 
 const router = useRouter();
+const pointStore = usePointStore();
 
 // 반응형 데이터
 const challenges = ref<Challenge[]>([]);
 const selectedChallenge = ref<Challenge | null>(null);
 const loading = ref(false);
 const error = ref('');
-const userPoints = ref(0);
 const selectedRewardType = ref<'all' | 'points' | 'exp'>('all');
 const selectedCategory = ref<'all' | 'ACADEMIC' | 'FINANCE' | 'SOCIAL' | 'EVENT'>('all');
 
@@ -363,6 +364,9 @@ const isCompleted = ref(false);
 const rewardPoints = ref(0);
 const progressStep = ref<number | null>(null);
 const updatingProgress = ref(false);
+
+// 포인트 상태는 Store에서 관리
+const userPoints = computed(() => pointStore.userPoints);
 
 // 필터링된 챌린지 목록
 const filteredChallenges = computed(() => {
@@ -406,21 +410,6 @@ async function loadChallenges() {
   }
 }
 
-// 사용자 포인트 로드
-async function loadUserPoints() {
-  try {
-    const user = auth.getUser();
-    if (user && user.userId) {
-      const userInfo = await getUserInfo(Number(user.userId));
-      userPoints.value = userInfo.totalPoints;
-    }
-  } catch (err) {
-    console.error('사용자 포인트 로드 실패:', err);
-    // 기본값 설정
-    userPoints.value = 15000;
-  }
-}
-
 // 챌린지 선택
 function selectChallenge(challenge: Challenge) {
   selectedChallenge.value = challenge;
@@ -443,9 +432,25 @@ async function loadChallengeProgress(challengeId: number) {
   try {
     // 현재는 진행도 조회 API가 없으므로 기본값으로 설정
     // 실제로는 백엔드에서 진행도 조회 API를 구현해야 함
-    currentProgress.value = 0; // 기본값
-    isCompleted.value = false;
-    rewardPoints.value = 0;
+    
+    // 챌린지 상태에 따른 진행도 설정
+    const userChallenge = challenges.value.find(c => c.challengeId === challengeId);
+    if (userChallenge && userChallenge.isJoined) {
+      // 참여 중인 챌린지인 경우 상태 확인
+      if (userChallenge.userStatus === 'COMPLETED') {
+        currentProgress.value = userChallenge.targetCount || 0;
+        isCompleted.value = true;
+        rewardPoints.value = userChallenge.rewardPoints || 0;
+      } else {
+        currentProgress.value = 0;
+        isCompleted.value = false;
+        rewardPoints.value = 0;
+      }
+    } else {
+      currentProgress.value = 0;
+      isCompleted.value = false;
+      rewardPoints.value = 0;
+    }
     progressStep.value = null;
   } catch (err) {
     console.error('진행도 로드 실패:', err);
@@ -557,14 +562,15 @@ async function updateProgress() {
     
     if (response.success && response.data) {
       // 진행도 업데이트
-      currentProgress.value = response.data.currentStep;
+      currentProgress.value = response.data.userChallenge.progressCount;
       isCompleted.value = response.data.isCompleted;
       
       // 보상 지급 확인
       if (response.data.rewardPoints && response.data.rewardPoints > 0) {
         rewardPoints.value = response.data.rewardPoints;
-        // 사용자 포인트 새로고침
-        await loadUserPoints();
+        // 사용자 포인트 실시간 업데이트
+        pointStore.updatePoints(response.data.rewardPoints);
+        // 백엔드 응답에 이미 포인트 정보가 있으므로 별도 API 호출 불필요
         alert(`진행도가 업데이트되었습니다! +${rewardPoints.value}P 획득!`);
       } else {
         alert('진행도가 업데이트되었습니다!');
@@ -597,14 +603,15 @@ async function completeChallenge() {
     
     if (response.success && response.data) {
       // 진행도 업데이트
-      currentProgress.value = response.data.currentStep;
+      currentProgress.value = response.data.userChallenge.progressCount;
       isCompleted.value = response.data.isCompleted;
       
       // 보상 지급 확인
       if (response.data.rewardPoints && response.data.rewardPoints > 0) {
         rewardPoints.value = response.data.rewardPoints;
-        // 사용자 포인트 새로고침
-        await loadUserPoints();
+        // 사용자 포인트 실시간 업데이트
+        pointStore.updatePoints(response.data.rewardPoints);
+        // 백엔드 응답에 이미 포인트 정보가 있으므로 별도 API 호출 불필요
         alert(`🎉 챌린지 완료! +${rewardPoints.value}P 획득!`);
       } else {
         alert('🎉 챌린지가 완료되었습니다!');
@@ -624,7 +631,7 @@ async function completeChallenge() {
 onMounted(async () => {
   await Promise.all([
     loadChallenges(),
-    loadUserPoints()
+    pointStore.loadPoints() // Store에서 포인트 로드
   ]);
 });
 </script>
@@ -632,5 +639,3 @@ onMounted(async () => {
 <style scoped>
 /* 추가 스타일이 필요한 경우 여기에 작성 */
 </style>
-
-
