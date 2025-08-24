@@ -11,6 +11,19 @@ import type {
   UpdateMascotRequest,
   EquipItemsRequest,
   GetItemsResponse,
+  MascotCreateRequest,
+  MascotApiResponse,
+  Challenge,
+  ChallengeJoinResponse,
+  ChallengeProgressRequest,
+  ChallengeProgressResponse,
+  UserResponse,
+  Mascot,
+  ShopItem,
+  Gifticon,
+  OrderRequest,
+  OrderResponse,
+  UserItem
 } from '../types/api';
 import { ApiError } from '../types/api';
 
@@ -135,16 +148,6 @@ export async function logout(): Promise<LogoutResponse> {
 }
 
 // 마스코트 관련 API 함수들
-type Mascot = {
-  id: string;
-  name: string;
-  type: string;
-  level: number;
-  exp: number;
-  equippedItem?: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
 
 export async function createMascot(data: CreateMascotRequest): Promise<Mascot> {
   const res = await apiRequest<any>('/mascot', {
@@ -232,6 +235,76 @@ export const mascot = {
 // 친구 관련 API 함수들
 export * from './friend';
 
+// 공유 관련 API 함수들
+
+// ShareType enum (백엔드와 동일)
+export enum ShareType {
+  CHALLENGE_INVITE = 'CHALLENGE_INVITE',  // 챌린지 초대
+  FRIEND_INVITE = 'FRIEND_INVITE',        // 친구 초대
+  ACHIEVEMENT = 'ACHIEVEMENT',            // 업적 공유
+  GENERAL = 'GENERAL'                     // 일반 공유 (마스코트 공유 포함)
+}
+
+// ImageType enum (백엔드와 동일)
+export enum ImageType {
+  CHALLENGE_CARD = 'CHALLENGE_CARD',      // 챌린지 카드
+  ACHIEVEMENT_BADGE = 'ACHIEVEMENT_BADGE', // 업적 배지
+  MASCOT_SHARE = 'MASCOT_SHARE',          // 마스코트 공유
+  CUSTOM = 'CUSTOM'                       // 커스텀 이미지
+}
+
+// 공유 링크 생성 요청 타입 (백엔드 ShareLinkCreateRequest와 동일)
+export interface ShareLinkCreateRequest {
+  title: string;          // 필수
+  description?: string;   // 선택
+  thumbnailUrl?: string;  // 선택
+  targetUrl?: string;     // 선택
+  shareType: ShareType;   // 필수
+  expiresAt?: string;     // 선택 (ISO 날짜 문자열)
+}
+
+// 공유 이미지 생성 요청 타입 (백엔드 ShareImageCreateRequest와 동일)
+export interface ShareImageCreateRequest {
+  templateId?: number;        // 선택
+  imageUrl: string;          // 필수
+  originalFilename?: string; // 선택
+  fileSize?: number;         // 선택
+  width?: number;            // 선택
+  height?: number;           // 선택
+  imageType: ImageType;      // 필수
+  isPublic?: boolean;        // 선택 (기본값 true)
+}
+
+// 공유 링크 생성
+export async function createShareLink(data: ShareLinkCreateRequest): Promise<any> {
+  return apiRequest<any>('/shares/links', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// 공유 이미지 생성
+export async function createShareImage(data: ShareImageCreateRequest): Promise<any> {
+  return apiRequest<any>('/shares/images', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// 사용 가능한 템플릿 목록 조회
+export async function getAvailableTemplates(): Promise<any> {
+  return apiRequest<any>('/shares/templates', {
+    method: 'GET',
+  });
+}
+
+// 타입별 템플릿 조회
+export async function getTemplatesByType(templateType: string): Promise<any> {
+  return apiRequest<any>(`/shares/templates/${templateType}`, {
+    method: 'GET',
+  });
+}
+
 // API 에러 핸들링 헬퍼
 export function handleApiError(error: unknown): string {
   if (error instanceof ApiError) {
@@ -296,6 +369,78 @@ export async function loginAndBootstrap(credentials: LoginRequest): Promise<Logi
   const res = await login(credentials);
   await bootstrapAuth();
   return res;
+}
+
+// 챌린지 관련 API 함수들
+export async function getChallenges(category?: string): Promise<Challenge[]> {
+  // 백엔드 API 호출로 실제 데이터 가져오기
+  const endpoint = category && category !== 'all' ? `/challenges?category=${category}` : '/challenges';
+  return apiRequest<Challenge[]>(endpoint, {
+    method: 'GET',
+  });
+}
+
+export async function getChallengeDetail(challengeId: number): Promise<Challenge> {
+  return apiRequest<Challenge>(`/challenges/${challengeId}`, {
+    method: 'GET',
+  });
+}
+
+export async function joinChallenge(challengeId: number): Promise<ChallengeJoinResponse> {
+  return apiRequest<ChallengeJoinResponse>(`/challenges/${challengeId}/join`, {
+    method: 'POST',
+  });
+}
+
+export async function updateChallengeProgress(
+  challengeId: number, 
+  request: ChallengeProgressRequest
+): Promise<ChallengeProgressResponse> {
+  return apiRequest<ChallengeProgressResponse>(`/challenges/${challengeId}/progress`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+export async function getMyChallenges(status?: string): Promise<Challenge[]> {
+  const endpoint = status ? `/challenges/my?status=${status}` : '/challenges/my';
+  return apiRequest<Challenge[]>(endpoint, {
+    method: 'GET',
+  });
+}
+
+// 사용자 정보 조회 (포인트 포함)
+export async function getUserInfo(userId: number): Promise<UserResponse> {
+  return apiRequest<UserResponse>(`/users/${userId}`, {
+    method: 'GET',
+  });
+}
+
+// 상점 관련 API 함수들
+export async function getShopItems(type?: string): Promise<ShopItem[]> {
+  const endpoint = type ? `/shop/items?type=${type}` : '/shop/items';
+  return apiRequest<ShopItem[]>(endpoint, {
+    method: 'GET',
+  });
+}
+
+export async function getGifticons(): Promise<Gifticon[]> {
+  return apiRequest<Gifticon[]>('/shop/gifticons', {
+    method: 'GET',
+  });
+}
+
+export async function createOrder(orderData: OrderRequest): Promise<OrderResponse> {
+  return apiRequest<OrderResponse>('/shop/orders', {
+    method: 'POST',
+    body: JSON.stringify(orderData),
+  });
+}
+
+export async function getUserItems(): Promise<UserItem[]> {
+  return apiRequest<UserItem[]>('/shop/user-items', {
+    method: 'GET',
+  });
 }
 
 

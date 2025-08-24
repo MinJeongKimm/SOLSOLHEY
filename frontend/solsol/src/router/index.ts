@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
-import Dashboard from '../views/Dashboard.vue'
 import Signup from '../views/Signup.vue'
 import Challenge from '../views/Challenge.vue'
 import Mascot from '../views/Mascot.vue'
@@ -8,6 +7,7 @@ import MascotCreate from '../views/MascotCreate.vue'
 import MascotCustomize from '../views/MascotCustomize.vue'
 import FriendList from '../views/FriendList.vue'
 import FriendAdd from '../views/FriendAdd.vue'
+import Shop from '../views/Shop.vue'
 import { auth } from '../api/index'
 
 const routes = [
@@ -26,11 +26,7 @@ const routes = [
     component: Signup,
     meta: { requiresGuest: true }
   },
-  { 
-    path: '/dashboard', 
-    component: Dashboard,
-    meta: { requiresAuth: true }
-  },
+  
   { 
     path: '/challenge', 
     component: Challenge,
@@ -56,9 +52,14 @@ const routes = [
     component: FriendList,
     meta: { requiresAuth: true }
   },
-  { 
+    { 
     path: '/friend/add', 
-    component: FriendAdd,
+    component: FriendAdd, 
+    meta: { requiresAuth: true }
+  },
+  { 
+    path: '/shop', 
+    component: Shop, 
     meta: { requiresAuth: true }
   }
 ]

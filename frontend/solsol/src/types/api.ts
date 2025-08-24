@@ -11,6 +11,7 @@ export interface SignupRequest {
   userId: string;
   password: string;
   nickname: string;
+  campus: string;
 }
 
 export interface SignupResponse {
@@ -178,6 +179,132 @@ export interface GetItemsResponse {
   message: string;
   items?: Item[];
   errors?: Record<string, string>;
+}
+
+// 챌린지 관련 타입 정의 (백엔드 ChallengeListResponseDto에 맞춤)
+export interface Challenge {
+  challengeId: number;
+  challengeName: string;
+  description: string;
+  rewardPoints: number;
+  rewardExp: number;
+  challengeType: string;
+  difficulty: string;
+  categoryName: string;
+  categoryDisplayName: string;
+  startDate?: string;
+  endDate?: string;
+  targetCount: number;
+  isActive: boolean;
+  isAvailable: boolean;
+  participantCount?: number;
+  completedCount?: number;
+  isJoined: boolean;
+  userStatus: string;
+}
+
+export interface ChallengeListResponse {
+  success: boolean;
+  message: string;
+  data?: Challenge[];
+  errors?: Record<string, string>;
+}
+
+export interface ChallengeDetailResponse {
+  success: boolean;
+  message: string;
+  data?: Challenge;
+  errors?: Record<string, string>;
+}
+
+export interface ChallengeJoinRequest {
+  challengeId: number;
+}
+
+export interface ChallengeJoinResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    challengeId: number;
+    userId: number;
+    status: string;
+  };
+  errors?: Record<string, string>;
+}
+
+export interface ChallengeProgressRequest {
+  step: number;
+  description?: string;
+}
+
+export interface ChallengeProgressResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    challengeId: number;
+    userId: number;
+    currentStep: number;
+    isCompleted: boolean;
+    rewardPoints?: number;
+  };
+  errors?: Record<string, string>;
+}
+
+// 사용자 관련 타입 정의
+export interface UserResponse {
+  userId: number;
+  username: string;
+  email: string;
+  nickname: string;
+  campus?: string;
+  totalPoints: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// 상점 관련 타입 정의
+export interface ShopItem {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  type: string;
+  imageUrl: string;
+  isActive: boolean;
+}
+
+export interface Gifticon {
+  id: number;
+  name: string;
+  imageUrl: string;
+  price: number;
+  description: string;
+  sku: string;
+}
+
+export interface OrderRequest {
+  type: 'ITEM' | 'GIFTICON';
+  itemId?: number;
+  quantity?: number;
+  sku?: string;
+}
+
+export interface OrderResponse {
+  id: number;
+  userId: number;
+  type: string;
+  totalPrice: number;
+  status: string;
+  message: string;
+}
+
+export interface UserItem {
+  id: number;
+  userId: number;
+  itemId: number;
+  quantity: number;
+  item: ShopItem;
 }
 
 

@@ -46,31 +46,7 @@
           <span>홈</span>
         </router-link>
 
-        <!-- 챌린지 -->
-        <router-link 
-          to="/challenge" 
-          @click="closeMenu"
-          class="flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-          :class="{ 'bg-blue-50 text-blue-600': $route.path === '/challenge' }"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>챌린지</span>
-        </router-link>
 
-        <!-- 마스코트 -->
-        <router-link 
-          to="/mascot" 
-          @click="closeMenu"
-          class="flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-          :class="{ 'bg-blue-50 text-blue-600': $route.path === '/mascot' }"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-          <span>마스코트</span>
-        </router-link>
 
         <!-- 출석체크 -->
         <router-link 
@@ -93,7 +69,7 @@
           :class="{ 'bg-blue-50 text-blue-600': $route.path === '/friend' }"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
           <span>친구</span>
         </router-link>
