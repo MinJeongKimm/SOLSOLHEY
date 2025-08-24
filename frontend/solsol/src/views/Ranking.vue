@@ -77,18 +77,7 @@
               </select>
             </div>
 
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">페이지 크기</label>
-              <select
-                v-model="campusFilters.size"
-                @change="loadCampusRankings"
-                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
-              >
-                <option value="10">10개</option>
-                <option value="20">20개</option>
-                <option value="50">50개</option>
-              </select>
-            </div>
+
           </div>
         </div>
 
@@ -247,7 +236,7 @@ const currentUser = ref<any>(null);
 const campusFilters = ref({
   sort: 'votes_desc',
   period: 'weekly',
-  size: 20,
+  size: 10, // 페이지 크기를 10개로 고정
   page: 0
 });
 
