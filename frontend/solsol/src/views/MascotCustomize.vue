@@ -414,6 +414,14 @@ interface EquippedItemState {
   equippedAt: number; // 장착 시간 (타임스탬프)
 }
 
+// 마스코트 컴포지션 인터페이스 (마스코트 + 아이템들을 하나의 그룹으로 관리)
+interface MascotComposition {
+  mascotPosition: RelativePosition; // 마스코트의 상대 위치
+  equippedItems: EquippedItemState[]; // 장착된 아이템들
+  createdAt: number; // 생성 시간
+  updatedAt: number; // 최종 수정 시간
+}
+
 const router = useRouter();
 
 // 반응형 데이터
@@ -432,6 +440,10 @@ const isMobileDevice = ref(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera M
 // 다중 아이템 관리
 const equippedItemsList = ref<EquippedItemState[]>([]); // 장착된 아이템 목록
 const maxEquippedItems = 10; // 최대 장착 가능 아이템 수
+
+// 마스코트 컴포지션 관리
+const mascotPosition = ref<RelativePosition>({ x: 0.5, y: 0.5 }); // 마스코트 기본 위치 (중앙)
+const selectedMascot = ref<boolean>(false); // 마스코트 선택 상태
 
 // 토스트 알림
 const showToast = ref(false);
@@ -603,6 +615,44 @@ function getAbsolutePosition(equippedItem: EquippedItemState): { x: number; y: n
   return toAbsolutePosition(equippedItem.relativePosition, containerSize);
 }
 
+// 마스코트의 절대 좌표 반환
+function getMascotAbsolutePosition(): { x: number; y: number } {
+  if (!mascotCanvas.value) {
+    return { x: 0, y: 0 };
+  }
+  
+  const containerSize = getContainerSize(mascotCanvas.value);
+  return toAbsolutePosition(mascotPosition.value, containerSize);
+}
+
+// 마스코트 위치 업데이트
+function updateMascotPosition(position: { x: number; y: number }) {
+  if (!mascotCanvas.value) return;
+  
+  const containerSize = getContainerSize(mascotCanvas.value);
+  mascotPosition.value = toRelativePosition(position, containerSize);
+}
+
+// 현재 컴포지션 반환
+function getCurrentComposition(): MascotComposition {
+  return {
+    mascotPosition: mascotPosition.value,
+    equippedItems: equippedItemsList.value,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+// 마스코트 선택/해제
+function selectMascot() {
+  selectedMascot.value = true;
+  selectedItemId.value = null; // 아이템 선택 해제
+}
+
+function deselectMascot() {
+  selectedMascot.value = false;
+}
+
 // 드래그 관련 메소드들
 function updateCanvasBounds() {
   if (mascotCanvas.value) {
@@ -658,12 +708,14 @@ function updateItemRotation(itemId: string, rotation: number) {
 
 function selectItem(itemId: string) {
   selectedItemId.value = itemId;
+  selectedMascot.value = false; // 아이템 선택 시 마스코트 선택 해제
 }
 
 function handleCanvasClick(e: Event) {
-  // 캔버스 빈 공간 클릭 시 선택 해제
+  // 캔버스 빈 공간 클릭 시 모든 선택 해제
   if (e.target === mascotCanvas.value) {
     selectedItemId.value = null;
+    selectedMascot.value = false;
   }
 }
 
