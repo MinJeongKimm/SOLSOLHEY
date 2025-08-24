@@ -485,19 +485,16 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { equipItems, getMascot, handleApiError } from '../api/index';
+import { getMascot, handleApiError } from '../api/index';
 import DraggableItem from '../components/DraggableItem.vue';
 import { mascotTypes, realItems } from '../data/mockData';
 import type { Item, Mascot } from '../types/api';
-import { 
-  toRelativePosition, 
-  toAbsolutePosition, 
-  getContainerSize, 
+import {
+  getContainerSize,
   getDefaultRelativePosition,
-  isAbsolutePosition,
-  type RelativePosition,
-  type AbsolutePosition,
-  type ContainerSize
+  toAbsolutePosition,
+  toRelativePosition,
+  type RelativePosition
 } from '../utils/coordinates';
 
 // 아이템 상태 인터페이스 (다중 아이템 지원)
@@ -1077,26 +1074,30 @@ function saveItemPositions() {
   // 실제 저장 로직은 백엔드 연동이 필요하지만, 
   // 현재는 localStorage에 저장하는 것으로 시뮬레이션
   try {
-    const positionsData = {
-      version: 'relative', // 상대 좌표 버전임을 표시
-      equippedItems: equippedItemsList.value,
-      itemStates: {}
+    const composition = getCurrentComposition();
+    const compositionData = {
+      version: 'composition-v3', // 마스코트 컴포지션 버전
+      mascotPosition: composition.mascotPosition,
+      equippedItems: composition.equippedItems,
+      itemStates: {},
+      createdAt: composition.createdAt,
+      updatedAt: composition.updatedAt,
     };
     
     equippedItemStates.value.forEach((state, itemId) => {
-      positionsData.itemStates[itemId] = {
+      compositionData.itemStates[itemId] = {
         relativePosition: state.relativePosition,
         scale: state.scale,
         rotation: state.rotation,
       };
     });
     
-    localStorage.setItem('mascot-multiple-items-v2', JSON.stringify(positionsData));
-    showToastMessage('아이템 위치가 저장되었습니다! 💾');
+    localStorage.setItem('mascot-composition-v3', JSON.stringify(compositionData));
+    showToastMessage('마스코트 컴포지션이 저장되었습니다! 🎭💾');
     
-    console.log('저장된 다중 아이템 데이터 (상대 좌표):', positionsData);
+    console.log('저장된 마스코트 컴포지션:', compositionData);
   } catch (error) {
-    console.error('위치 저장 실패:', error);
+    console.error('컴포지션 저장 실패:', error);
     showToastMessage('저장에 실패했습니다. 다시 시도해주세요.');
   }
 }
@@ -1104,29 +1105,39 @@ function saveItemPositions() {
 // 저장된 위치 불러오기 (완전한 마이그레이션 포함)
 function loadItemPositions() {
   try {
-    // 1. 새로운 상대 좌표 데이터 먼저 시도
-    let savedData = localStorage.getItem('mascot-multiple-items-v2');
-    let isRelativeData = true;
-    let dataSource = 'relative-v2';
+    // 1. 새로운 마스코트 컴포지션 데이터 먼저 시도
+    let savedData = localStorage.getItem('mascot-composition-v3');
+    let dataSource = 'composition-v3';
     
-    // 2. 새 데이터가 없으면 기존 다중 아이템 절대 좌표 데이터 시도
+    // 2. 이전 상대 좌표 데이터 시도
+    if (!savedData) {
+      savedData = localStorage.getItem('mascot-multiple-items-v2');
+      dataSource = 'relative-v2';
+    }
+    
+    // 3. 기존 다중 아이템 절대 좌표 데이터 시도
     if (!savedData) {
       savedData = localStorage.getItem('mascot-multiple-items');
-      isRelativeData = false;
       dataSource = 'absolute-multi';
     }
     
-    // 3. 그것도 없으면 기존 단일 아이템 데이터 시도
+    // 4. 기존 단일 아이템 데이터 시도
     if (!savedData) {
       savedData = localStorage.getItem('mascot-item-positions');
-      isRelativeData = false;
       dataSource = 'absolute-single';
     }
     
     if (savedData) {
       const positionsData = JSON.parse(savedData);
       
-      // 새로운 다중 아이템 형식 처리
+      // 새로운 컴포지션 형식 처리
+      if (dataSource === 'composition-v3' && positionsData.mascotPosition) {
+        // 마스코트 위치 로드
+        mascotPosition.value = positionsData.mascotPosition;
+        console.log('마스코트 위치 로드됨:', positionsData.mascotPosition);
+      }
+      
+      // 아이템 데이터 처리
       if (positionsData.equippedItems) {
         // 아이템 목록 로드
         equippedItemsList.value = positionsData.equippedItems;
@@ -1142,11 +1153,11 @@ function loadItemPositions() {
           Object.entries(positionsData.itemStates).forEach(([itemId, data]: [string, any]) => {
             const state = equippedItemStates.value.get(itemId);
             if (state && data && data.scale !== undefined) {
-              // 상대 좌표 데이터인지 절대 좌표 데이터인지 확인
-              if (isRelativeData && data.relativePosition) {
+              // 데이터 형식에 따른 처리
+              if ((dataSource === 'composition-v3' || dataSource === 'relative-v2') && data.relativePosition) {
                 // 새로운 상대 좌표 데이터
                 state.relativePosition = data.relativePosition;
-              } else if (!isRelativeData && data.position && mascotCanvas.value) {
+              } else if ((dataSource === 'absolute-multi' || dataSource === 'absolute-single') && data.position && mascotCanvas.value) {
                 // 기존 절대 좌표 데이터를 상대 좌표로 마이그레이션
                 const containerSize = getContainerSize(mascotCanvas.value);
                 state.relativePosition = toRelativePosition(data.position, containerSize);
@@ -1197,9 +1208,20 @@ function loadItemPositions() {
       console.log(`저장된 데이터 불러옴 (${dataSource}):`, positionsData);
       
       // 마이그레이션된 경우 새 형식으로 저장
-      if (!isRelativeData || dataSource !== 'relative-v2') {
+      if (dataSource !== 'composition-v3') {
+        // 마스코트 위치가 없는 기존 데이터의 경우 중앙으로 설정
+        if (!positionsData.mascotPosition) {
+          mascotPosition.value = { x: 0.5, y: 0.5 };
+          console.log('마스코트 위치가 없어서 중앙(0.5, 0.5)으로 설정됨');
+        }
+        
         saveItemPositions();
-        showToastMessage('기존 데이터를 새 형식으로 마이그레이션했습니다! 📱💻');
+        
+        if (dataSource === 'absolute-single' || dataSource === 'absolute-multi') {
+          showToastMessage('기존 데이터를 새로운 컴포지션 형식으로 마이그레이션했습니다! 🎭📱💻');
+        } else {
+          showToastMessage('마스코트 위치가 추가된 새로운 컴포지션으로 업그레이드되었습니다! 🎭');
+        }
       }
     }
   } catch (error) {
@@ -1366,6 +1388,12 @@ onMounted(async () => {
 // 컴포넌트 언마운트 시 이벤트 리스너 제거
 onUnmounted(() => {
   window.removeEventListener('resize', updateCanvasBounds);
+  
+  // 마스코트 드래그 이벤트 리스너 정리
+  document.removeEventListener('mousemove', handleMascotMouseMove);
+  document.removeEventListener('mouseup', handleMascotMouseUp);
+  document.removeEventListener('touchmove', handleMascotTouchMove);
+  document.removeEventListener('touchend', handleMascotTouchEnd);
   
   // ResizeObserver 정리
   if (resizeObserver) {
