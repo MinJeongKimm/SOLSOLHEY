@@ -945,10 +945,9 @@ function loadItemPositions() {
         }
       } 
       // 기존 단일 아이템 형식 처리 (position 데이터가 직접 저장된 경우)
-      else if (dataSource === 'absolute-single' && mascotCanvas.value) {
+      else if (dataSource === 'absolute-single' && mascotRect.value) {
         console.log('기존 단일 아이템 데이터 마이그레이션 시작:', positionsData);
         
-        const containerSize = getContainerSize(mascotCanvas.value);
         Object.entries(positionsData).forEach(([itemIdStr, data]: [string, any]) => {
           if (data && data.position && data.scale !== undefined) {
             // 기존 아이템 ID로 아이템 찾기
@@ -958,7 +957,7 @@ function loadItemPositions() {
             if (item) {
               // 새로운 다중 아이템 형식으로 변환
               const newId = generateItemId(item);
-              const relativePosition = toRelativePosition(data.position, containerSize);
+              const relativePosition = mascotRect.value ? toRelativeToMascot(data.position, mascotRect.value) : getDefaultMascotRelativePosition(item.type);
               
               const newEquippedItem: EquippedItemState = {
                 id: newId,
