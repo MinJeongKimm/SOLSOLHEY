@@ -2,23 +2,24 @@
   <div class="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100 p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-6xl mx-auto p-8">
       <!-- 헤더 -->
-      <div class="flex items-center mb-8">
-        <div class="flex items-center space-x-4">
-          <router-link 
-            to="/mascot" 
-            class="p-2 text-purple-500 hover:text-purple-700 transition-colors rounded-full hover:bg-purple-50"
-          >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
-          </router-link>
-          <h1 class="text-xl font-bold text-gray-800">🏆 랭킹</h1>
-        </div>
+      <div class="flex items-center mb-8 relative">
+        <!-- 뒤로가기 버튼 (왼쪽) -->
+        <router-link 
+          to="/mascot" 
+          class="p-2 text-purple-500 hover:text-purple-700 transition-colors rounded-full hover:bg-purple-50 absolute left-0"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </router-link>
+        
+        <!-- 제목 (가운데) -->
+        <h1 class="text-2xl font-bold text-gray-800 text-center w-full">Ranking</h1>
       </div>
 
       <!-- 탭 네비게이션 -->
       <div class="border-b border-gray-200 mb-8">
-        <nav class="-mb-px flex space-x-8">
+        <nav class="-mb-px flex space-x-8 justify-center">
           <button
             @click="activeTab = 'campus'"
             :class="[
@@ -28,7 +29,7 @@
               'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
             ]"
           >
-            🏫 교내 랭킹
+            교내 랭킹
           </button>
           <button
             @click="activeTab = 'national'"
@@ -39,7 +40,7 @@
               'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
             ]"
           >
-            🌍 전국 랭킹
+            전국 랭킹
           </button>
         </nav>
       </div>
