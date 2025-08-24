@@ -31,10 +31,11 @@
             <span class="font-medium">터치 조작법</span>
           </div>
           <div class="text-xs space-y-1">
-            <div>• 한 손가락으로 드래그하여 이동</div>
+            <div>• <strong>아이템:</strong> 한 손가락으로 드래그하여 이동</div>
             <div>• 두 손가락으로 핀치하여 크기 조절</div>
             <div>• 두 손가락으로 비틀어서 회전</div>
-            <div>• 짧게 탭하여 아이템 선택</div>
+            <div>• <strong>마스코트:</strong> 드래그하여 위치 변경</div>
+            <div>• 짧게 탭하여 선택/해제</div>
             <div>• 같은 아이템 중복 장착 가능 (최대 10개)</div>
           </div>
         </div>
@@ -107,17 +108,83 @@
             </div>
           </div>
           
-          <!-- 선택된 아이템 정보 (모바일) -->
+          <!-- 선택된 요소 정보 (모바일) -->
           <div 
-            v-if="isMobileDevice && selectedItemId && selectedItemInfo"
+            v-if="isMobileDevice && (selectedItemInfo || selectedMascotInfo)"
             class="absolute top-2 right-2 bg-white bg-opacity-95 p-2 rounded-lg shadow-lg text-xs max-w-32"
           >
-            <div class="font-medium text-gray-800 mb-1">{{ selectedItemInfo.name }}</div>
-            <div class="text-gray-600 space-y-1">
-              <div>위치: {{ Math.round(selectedItemInfo.relativePosition.x * 100) }}%, {{ Math.round(selectedItemInfo.relativePosition.y * 100) }}%</div>
-              <div>크기: {{ Math.round(selectedItemInfo.scale * 100) }}%</div>
-              <div>회전: {{ Math.round(selectedItemInfo.rotation) }}°</div>
+            <!-- 아이템 정보 -->
+            <div v-if="selectedItemInfo">
+              <div class="font-medium text-gray-800 mb-1">{{ selectedItemInfo.name }}</div>
+              <div class="text-gray-600 space-y-1">
+                <div>위치: {{ Math.round(selectedItemInfo.relativePosition.x * 100) }}%, {{ Math.round(selectedItemInfo.relativePosition.y * 100) }}%</div>
+                <div>크기: {{ Math.round(selectedItemInfo.scale * 100) }}%</div>
+                <div>회전: {{ Math.round(selectedItemInfo.rotation) }}°</div>
+              </div>
             </div>
+            
+            <!-- 마스코트 정보 -->
+            <div v-if="selectedMascotInfo">
+              <div class="font-medium text-blue-600 mb-1">🎭 {{ selectedMascotInfo.name }}</div>
+              <div class="text-gray-600 space-y-1">
+                <div>위치: {{ Math.round(selectedMascotInfo.relativePosition.x * 100) }}%, {{ Math.round(selectedMascotInfo.relativePosition.y * 100) }}%</div>
+                <div class="text-blue-500 text-xs">드래그하여 이동</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 선택된 마스코트 조작 패널 -->
+      <div v-if="selectedMascot" class="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="text-blue-600 font-medium">🎭 {{ selectedMascotInfo?.name }}</span>
+            <span class="text-xs text-blue-500">(마스코트)</span>
+          </div>
+          <div class="flex space-x-2">
+            <button 
+              @click="resetMascotPosition()"
+              class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition-colors"
+            >
+              중앙으로
+            </button>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 gap-3">
+          <!-- 위치 정보 -->
+          <div class="space-y-2">
+            <div class="text-xs text-gray-600 font-medium">위치</div>
+            <div class="text-xs text-gray-500 bg-gray-100 rounded px-2 py-1">
+              X: {{ Math.round((selectedMascotInfo?.relativePosition.x || 0) * 100) }}%, 
+              Y: {{ Math.round((selectedMascotInfo?.relativePosition.y || 0) * 100) }}%
+            </div>
+            <div class="text-xs text-gray-500">
+              💡 드래그하여 마스코트 위치를 변경하세요
+            </div>
+          </div>
+          
+          <!-- 퀵 위치 버튼들 -->
+          <div class="grid grid-cols-3 gap-1">
+            <button 
+              @click="setMascotQuickPosition({ x: 0.5, y: 0.3 })"
+              class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-2 rounded transition-colors"
+            >
+              상단
+            </button>
+            <button 
+              @click="setMascotQuickPosition({ x: 0.5, y: 0.5 })"
+              class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-2 rounded transition-colors"
+            >
+              중앙
+            </button>
+            <button 
+              @click="setMascotQuickPosition({ x: 0.5, y: 0.7 })"
+              class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-2 rounded transition-colors"
+            >
+              하단
+            </button>
           </div>
         </div>
       </div>
@@ -375,20 +442,32 @@
       </div>
       
       <!-- 전체 조작 버튼들 -->
-      <div class="flex space-x-3 mt-6">
-        <button 
-          @click="resetAllItems"
-          class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
-        >
-          <span>🔄</span>
-          <span>전체 초기화</span>
-        </button>
+      <div class="space-y-3 mt-6">
+        <!-- 첫 번째 줄: 리셋 버튼들 -->
+        <div class="flex space-x-3">
+          <button 
+            @click="resetAllItems"
+            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+          >
+            <span>🔄</span>
+            <span>아이템 초기화</span>
+          </button>
+          <button 
+            @click="resetEntireComposition"
+            class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
+          >
+            <span>🎭</span>
+            <span>전체 리셋</span>
+          </button>
+        </div>
+        
+        <!-- 두 번째 줄: 저장 버튼 -->
         <button 
           @click="saveItemPositions"
-          class="flex-1 bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+          class="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
         >
           <span>💾</span>
-          <span>저장하기</span>
+          <span>컴포지션 저장하기</span>
         </button>
       </div>
     </div>
@@ -560,6 +639,16 @@ const selectedItemInfo = computed(() => {
     relativePosition: state.relativePosition,
     scale: state.scale,
     rotation: state.rotation,
+  };
+});
+
+// 선택된 마스코트 정보
+const selectedMascotInfo = computed(() => {
+  if (!selectedMascot.value) return null;
+  
+  return {
+    name: currentMascot.value?.name || '마스코트',
+    relativePosition: mascotPosition.value,
   };
 });
 
@@ -918,6 +1007,20 @@ function removeSelectedItem() {
   }
 }
 
+// 마스코트 위치 조작 메소드들
+function resetMascotPosition() {
+  mascotPosition.value = { x: 0.5, y: 0.5 }; // 중앙으로 리셋
+  showToastMessage('마스코트가 중앙으로 이동했습니다');
+}
+
+function setMascotQuickPosition(position: RelativePosition) {
+  mascotPosition.value = position;
+  const positionName = 
+    position.y <= 0.3 ? '상단' : 
+    position.y >= 0.7 ? '하단' : '중앙';
+  showToastMessage(`마스코트 → ${positionName}`);
+}
+
 // 아이템 클릭 처리 (제한 체크 포함)
 function handleItemClick(item: Item) {
   const isCurrentlyEquipped = isItemEquipped(item);
@@ -949,6 +1052,24 @@ function resetAllItems() {
     setTimeout(() => {
       showToastMessage('모든 아이템이 초기화되었습니다');
     }, 100);
+  }
+}
+
+// 전체 컴포지션 리셋 (마스코트 + 아이템)
+function resetEntireComposition() {
+  if (confirm('마스코트와 모든 아이템을 초기 상태로 리셋하시겠습니까?')) {
+    // 마스코트 위치 리셋
+    mascotPosition.value = { x: 0.5, y: 0.5 };
+    
+    // 모든 아이템 제거
+    equippedItemStates.value.clear();
+    equippedItemsList.value = [];
+    
+    // 선택 상태 초기화
+    selectedItemId.value = null;
+    selectedMascot.value = false;
+    
+    showToastMessage('전체 컴포지션이 초기화되었습니다! 🎭');
   }
 }
 
