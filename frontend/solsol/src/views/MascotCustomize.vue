@@ -1120,6 +1120,7 @@ async function loadMascotData() {
 
 // 화면 크기 변경 감지를 위한 ResizeObserver
 let resizeObserver: ResizeObserver | null = null;
+let mascotResizeObserver: ResizeObserver | null = null;
 
 // 컴포넌트 마운트
 onMounted(async () => {
@@ -1150,6 +1151,19 @@ onMounted(async () => {
     console.log('ResizeObserver가 마스코트 캔버스를 감시하기 시작했습니다.');
   }
   
+  // 마스코트 요소 자체의 크기 변경을 감지하기 위한 ResizeObserver
+  if (mascotRef.value && 'ResizeObserver' in window) {
+    mascotResizeObserver = new ResizeObserver(() => {
+      // 다음 프레임에서 실행 (DOM 업데이트 완료 후)
+      nextTick(() => {
+        updateMascotRect();
+        console.log('마스코트 크기 변경 감지 - bounding box 업데이트됨');
+      });
+    });
+    mascotResizeObserver.observe(mascotRef.value);
+    console.log('마스코트 ResizeObserver가 마스코트 요소를 감시하기 시작했습니다.');
+  }
+  
   console.log('사용 가능한 아이템들:', items.value);
 });
 
@@ -1157,11 +1171,18 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('resize', updateCanvasBounds);
   
-  // ResizeObserver 정리
+  // Canvas ResizeObserver 정리
   if (resizeObserver) {
     resizeObserver.disconnect();
     resizeObserver = null;
-    console.log('ResizeObserver 정리 완료');
+    console.log('Canvas ResizeObserver 정리 완료');
+  }
+  
+  // Mascot ResizeObserver 정리
+  if (mascotResizeObserver) {
+    mascotResizeObserver.disconnect();
+    mascotResizeObserver = null;
+    console.log('Mascot ResizeObserver 정리 완료');
   }
 });
 </script>
