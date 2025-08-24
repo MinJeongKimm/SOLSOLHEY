@@ -3,33 +3,19 @@
     <!-- 메인 카드 -->
     <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-8">
       <!-- 상단 헤더 -->
-      <div class="flex items-center mb-6">
-        <!-- 뒤로가기 버튼 -->
+      <div class="relative mb-6">
+        <!-- 뒤로가기 버튼 (절대 위치) -->
         <button 
           @click="goBack"
-          class="p-2 rounded-lg hover:bg-gray-100 transition-colors mr-4"
+          class="absolute left-0 top-1/2 transform -translate-y-1/2 p-2 rounded-lg hover:bg-gray-100 transition-colors z-10"
         >
           <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
         
-        <!-- 중앙: 출석체크 타이틀 -->
-        <h1 class="text-xl font-bold text-gray-800 flex-1 text-center">출석체크</h1>
-        
-        <!-- 우측: 포인트 & 경험치 -->
-        <div class="flex flex-col space-y-1">
-          <!-- 포인트 -->
-          <div class="flex items-center justify-end">
-            <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5 mr-2" />
-            <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userCoins }}P</span>
-          </div>
-          <!-- 경험치 -->
-          <div class="flex items-center justify-end">
-            <span class="text-sm text-gray-500 mr-2">XP</span>
-            <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userExp }}</span>
-          </div>
-        </div>
+        <!-- 중앙: 출석체크 타이틀 (전체 화면 중앙) -->
+        <h1 class="text-xl font-bold text-gray-800 text-center w-full">출석체크</h1>
       </div>
 
 
@@ -350,7 +336,7 @@ onMounted(async () => {
     transform: translateY(0px) translateX(-50%);
   }
   50% {
-    transform: translateY(-8px) translateX(-50%);
+    transform: translateY(-4px) translateX(-50%);
   }
 }
 
