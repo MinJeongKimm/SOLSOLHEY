@@ -1,13 +1,15 @@
 package com.solsolhey.common.config;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -27,8 +29,15 @@ import com.solsolhey.auth.jwt.JwtAuthenticationFilter;
 import com.solsolhey.auth.service.CustomUserDetailsService;
 import com.solsolhey.common.security.RateLimitingFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.CsrfFilter;
+import com.solsolhey.common.security.CsrfCookieSeedFilter;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.solsolhey.auth.jwt.JwtTokenProvider;
 
 /**
  * Spring Security 설정
@@ -37,72 +46,46 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitingFilter rateLimitingFilter;
     private final Environment environment;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+        log.debug("=== SecurityConfig building filter chain ===");
+
+        // Optional SPA-friendly handler; prevents relying on request attribute name.
+        var csrfAttrHandler = new CsrfTokenRequestAttributeHandler();
+        csrfAttrHandler.setCsrfRequestAttributeName(null);
+
         http
-            // CSRF 활성화 (쿠키 기반 인증)
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf
-                .csrfTokenRepository(csrfRepo())
+                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRequestHandler(csrfAttrHandler)
+                // ★ Make absolutely sure auth endpoints bypass CSRF
                 .ignoringRequestMatchers(
-                    "/api/v1/auth/login",
-                    "/api/v1/auth/refresh",
-                    "/api/v1/auth/logout",
-                    "/api/v1/auth/signup",
-                    "/api/v1/mascot/**"
+                    new AntPathRequestMatcher("/api/v1/auth/**")
                 )
             )
-            
-            // CORS 설정
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            
-            // 세션 비활성화 (JWT 사용으로 인해)
-            .sessionManagement(session -> 
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
-            // 요청별 권한 설정
-            .authorizeHttpRequests(authz -> {
-                // 공개 API (인증 불필요)
-                authz.requestMatchers(
-                        "/api/v1/auth/login",
-                        "/api/v1/auth/signup",
-                        "/api/v1/auth/refresh",
-                        "/api/v1/auth/logout"
-                    ).permitAll()
-                    .requestMatchers("/public/**").permitAll()
-                    .requestMatchers("/health").permitAll()
-                    .requestMatchers("/api/v1/shop/**").permitAll()  // Shop API 허용
-                    .requestMatchers("/api/v1/test/**").permitAll();  // 테스트 API 허용
-                
-                // 개발환경에서만 허용되는 엔드포인트
-                if (isDevelopmentEnvironment()) {
-                    authz.requestMatchers("/h2-console/**").permitAll()  // H2 Console
-                         .requestMatchers("/swagger-ui/**").permitAll()   // Swagger UI
-                         .requestMatchers("/v3/api-docs/**").permitAll(); // Swagger API Docs
-                }
-                
-                // 기타 모든 요청은 인증 필요
-                authz.anyRequest().authenticated();
-            })
-            
-            // Rate Limiting 필터 추가 (가장 먼저 실행)
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/health", "/actuator/**", "/api/v1/auth/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/mascot").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/friends/requests").authenticated()
+                .anyRequest().permitAll()
+            )
+            // Run your custom rate limit filter early (kept as before)
             .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
-            
-            // JWT 인증 필터 추가 (Rate Limiting 이후)
+            // JWT before UsernamePasswordAuthenticationFilter
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            
-            // 인증 제공자 설정
+            // ★ Ensure XSRF-TOKEN cookie is always issued/maintained
+            .addFilterAfter(new CsrfCookieSeedFilter(), CsrfFilter.class)
             .authenticationProvider(authenticationProvider())
-            
-            // H2 Console을 위한 Frame Options 설정
-            .headers(headers -> headers
-                .frameOptions(frameOptions -> frameOptions.sameOrigin()));
+            .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();
     }
@@ -114,35 +97,17 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 직접 환경변수에서 CORS 설정 읽어오기
-        String allowedOrigins = environment.getProperty("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173");
-        String allowedMethods = environment.getProperty("CORS_ALLOWED_METHODS", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-        String allowedHeaders = environment.getProperty("CORS_ALLOWED_HEADERS", "*");
-        boolean allowCredentials = Boolean.parseBoolean(environment.getProperty("CORS_ALLOW_CREDENTIALS", "true"));
-        long maxAge = Long.parseLong(environment.getProperty("CORS_MAX_AGE", "3600"));
-        
-        configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        configuration.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
-        configuration.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
-        configuration.setAllowCredentials(allowCredentials);
-        configuration.setMaxAge(maxAge);
+        // SPA용 CORS 설정
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:5173"));
+        configuration.setAllowCredentials(true);
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN", "Authorization", "Accept"));
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         
         return source;
-    }
-
-    /**
-     * CSRF 토큰 저장소
-     * JWT 기반 인증과 호환되도록 설정
-     */
-    @Bean
-    public CookieCsrfTokenRepository csrfRepo() {
-        // HttpOnly 쿠키로 CSRF 토큰 저장 (XSS 방지)
-        CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        repository.setCookiePath("/");
-        return repository;
     }
 
 
@@ -173,6 +138,18 @@ public class SecurityConfig {
         registration.setFilter(filter);
         registration.setEnabled(false);
         return registration;
+    }
+
+    /**
+     * JWT 인증 필터 빈 등록
+     */
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(
+            JwtTokenProvider jwtTokenProvider,
+            CustomUserDetailsService userDetailsService,
+            ObjectMapper objectMapper,
+            Environment environment) {
+        return new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService, objectMapper, environment);
     }
 
     /**
