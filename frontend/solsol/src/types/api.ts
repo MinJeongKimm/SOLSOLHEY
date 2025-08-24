@@ -234,7 +234,7 @@ export interface ChallengeJoinResponse {
 
 export interface ChallengeProgressRequest {
   step: number;
-  description?: string;
+  payload?: string;
 }
 
 export interface ChallengeProgressResponse {
