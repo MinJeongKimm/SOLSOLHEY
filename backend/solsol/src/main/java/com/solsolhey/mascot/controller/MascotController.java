@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.solsolhey.auth.dto.response.CustomUserDetails;
 import com.solsolhey.mascot.dto.ApplyBackgroundRequest;
 import com.solsolhey.mascot.dto.ApplyBackgroundResponse;
+import com.solsolhey.mascot.dto.AvailableItemResponse;
 import com.solsolhey.mascot.dto.BackgroundResponse;
 import com.solsolhey.mascot.dto.MascotCreateRequest;
 import com.solsolhey.mascot.dto.MascotEquipRequest;
@@ -306,6 +307,32 @@ public class MascotController {
         }
     }
 
+    /**
+     * 사용자가 보유한 아이템 목록 조회 (꾸미기용)
+     */
+    @GetMapping("/available-items")
+    public ResponseEntity<Map<String, Object>> getAvailableItems(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        
+        try {
+            Long userId = userDetails.getUserId();
+            log.info("사용 가능한 아이템 조회 API 호출 - 사용자 ID: {}", userId);
+            
+            List<AvailableItemResponse> items = mascotService.getAvailableItems(userId);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("result", "SUCCESS");
+            result.put("message", "사용 가능한 아이템 조회가 완료되었습니다.");
+            result.put("data", items);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("사용 가능한 아이템 조회 중 오류 발생", e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "사용 가능한 아이템 조회에 실패했습니다.");
+        }
+    }
+    
     /**
      * 에러 응답 생성
      */

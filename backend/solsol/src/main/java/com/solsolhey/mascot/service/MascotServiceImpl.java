@@ -1,6 +1,7 @@
 package com.solsolhey.mascot.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +11,7 @@ import com.solsolhey.mascot.domain.Mascot;
 import com.solsolhey.mascot.domain.UserBackground;
 import com.solsolhey.mascot.dto.ApplyBackgroundRequest;
 import com.solsolhey.mascot.dto.ApplyBackgroundResponse;
+import com.solsolhey.mascot.dto.AvailableItemResponse;
 import com.solsolhey.mascot.dto.BackgroundResponse;
 import com.solsolhey.mascot.dto.MascotCreateRequest;
 import com.solsolhey.mascot.dto.MascotEquipRequest;
@@ -21,6 +23,10 @@ import com.solsolhey.mascot.exception.MascotNotFoundException;
 import com.solsolhey.mascot.repository.BackgroundRepository;
 import com.solsolhey.mascot.repository.MascotRepository;
 import com.solsolhey.mascot.repository.UserBackgroundRepository;
+import com.solsolhey.shop.domain.Item;
+import com.solsolhey.shop.domain.UserItem;
+import com.solsolhey.shop.repository.ItemRepository;
+import com.solsolhey.shop.repository.UserItemRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +40,8 @@ public class MascotServiceImpl implements MascotService {
     private final MascotRepository mascotRepository;
     private final BackgroundRepository backgroundRepository;
     private final UserBackgroundRepository userBackgroundRepository;
+    private final ItemRepository itemRepository;
+    private final UserItemRepository userItemRepository;
     
     @Override
     @Transactional
@@ -235,5 +243,51 @@ public class MascotServiceImpl implements MascotService {
                 updatedMascot.getBackgroundId(), 
                 updatedMascot.getUpdatedAt()
         );
+    }
+    
+    @Override
+    public List<AvailableItemResponse> getAvailableItems(Long userId) {
+        log.info("사용자 보유 아이템 목록 조회 요청 - userId: {}", userId);
+        
+        List<UserItem> userItems = userItemRepository.findByUserId(userId);
+        log.info("사용자 {} 보유 아이템 수: {}", userId, userItems.size());
+        
+        return userItems.stream()
+                .map(userItem -> {
+                    Item item = itemRepository.findById(userItem.getItemId())
+                            .orElse(null);
+                    if (item == null) {
+                        log.warn("아이템 ID {}가 존재하지 않습니다.", userItem.getItemId());
+                        return null;
+                    }
+                    
+                    // 장착 상태 확인 (현재는 단순히 false로 설정, 추후 로직 구현 필요)
+                    Boolean isEquipped = checkIfEquipped(userId, item.getId());
+                    
+                    AvailableItemResponse response = AvailableItemResponse.builder()
+                            .itemId(item.getId())
+                            .itemName(item.getName())
+                            .itemType(item.getType().name())
+                            .imageUrl(item.getImageUrl())
+                            .quantity(userItem.getQuantity())
+                            .isEquipped(isEquipped)
+                            .purchasedAt(userItem.getPurchasedAt())
+                            .build();
+                    
+                    log.debug("아이템 {} 응답 생성 완료: {}", item.getId(), response);
+                    return response;
+                })
+                .filter(response -> response != null)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 아이템 장착 상태 확인 (임시 구현)
+     * TODO: 실제 장착 상태 확인 로직 구현 필요
+     */
+    private Boolean checkIfEquipped(Long userId, Long itemId) {
+        // 현재는 단순히 false 반환
+        // 추후 마스코트의 equippedItem 필드와 비교하는 로직 구현 필요
+        return false;
     }
 }

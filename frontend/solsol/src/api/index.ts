@@ -23,9 +23,11 @@ import type {
   Gifticon,
   OrderRequest,
   OrderResponse,
-  UserItem
+  UserItem,
+  ApiResponse
 } from '../types/api';
 import { ApiError } from '../types/api';
+import router from '../router';
 
 const API_BASE = 'http://localhost:8080/api/v1';
 
@@ -309,11 +311,11 @@ export const auth = {
   },
 
   // 하위호환: 동기 getUser (캐시 기반)
-  getUser<T = { username: string }>(): T | null {
+  getUser<T = { username: string; userId?: number }>(): T | null {
     return _userCache as T | null;
   },
   // 정확한 정보: 서버에서 가져오고 캐시 갱신
-  async fetchUser<T = { username: string }>(): Promise<T | null> {
+  async fetchUser<T = { username: string; userId?: number }>(): Promise<T | null> {
     try {
       const u = await apiRequest<T>('/auth/me', { method: 'GET' });
       _userCache = u;
@@ -396,8 +398,8 @@ export async function getMyChallenges(status?: string): Promise<Challenge[]> {
 }
 
 // 사용자 정보 조회 (포인트 포함)
-export async function getUserInfo(userId: number): Promise<UserResponse> {
-  return apiRequest<UserResponse>(`/users/${userId}`, {
+export async function getUserInfo(userId: number): Promise<ApiResponse<UserResponse>> {
+  return apiRequest<ApiResponse<UserResponse>>(`/users/${userId}`, {
     method: 'GET',
   });
 }
@@ -427,6 +429,21 @@ export async function getUserItems(): Promise<UserItem[]> {
   return apiRequest<UserItem[]>('/shop/user-items', {
     method: 'GET',
   });
+}
+
+// JWT 토큰에서 payload 추출하는 유틸리티 함수
+export function parseJwtPayload(token: string): any {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('JWT 파싱 실패:', error);
+    return null;
+  }
 }
 
 

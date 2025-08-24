@@ -142,7 +142,7 @@
       v-if="selectedGifticon"
       :is-open="showPurchaseDialog"
       :item="selectedGifticon"
-      :user-points="props.userPoints"
+      :user-points="safeUserPoints"
       :is-gifticon="true"
       @close="closePurchaseDialog"
       @purchase="handlePurchase"
@@ -153,7 +153,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { getGifticons, createOrder } from '../../api/index';
-import type { Gifticon } from '../../types/api';
+import type { Gifticon, ShopItem } from '../../types/api';
 import PurchaseDialog from './PurchaseDialog.vue';
 
 // Props
@@ -162,6 +162,11 @@ interface Props {
 }
 
 const props = defineProps<Props>();
+
+// userPoints의 안전한 값 계산
+const safeUserPoints = computed(() => {
+  return props.userPoints !== null && props.userPoints !== undefined ? props.userPoints : 0;
+});
 
 // Emits
 const emit = defineEmits<{
@@ -242,11 +247,17 @@ function closePurchaseDialog() {
 }
 
 // 구매 처리
-async function handlePurchase(gifticon: Gifticon, quantity: number) {
+async function handlePurchase(item: Gifticon | ShopItem, quantity: number) {
+  // Gifticon 타입인지 확인
+  if (!('sku' in item)) {
+    console.error('잘못된 아이템 타입입니다.');
+    return;
+  }
+  
   try {
     const orderData = {
       type: 'GIFTICON' as const,
-      sku: gifticon.sku,
+      sku: item.sku,
       quantity: quantity
     };
     

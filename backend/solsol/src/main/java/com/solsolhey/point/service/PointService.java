@@ -87,4 +87,9 @@ public interface PointService {
      * 일일 포인트 한도 확인
      */
     boolean canEarnMorePointsToday(User user, Integer amount);
+
+    /**
+     * 챌린지 완료 보상 포인트 지급
+     */
+    PointTransactionResponse awardChallengeReward(User user, Integer rewardPoints, Long challengeId);
 }
