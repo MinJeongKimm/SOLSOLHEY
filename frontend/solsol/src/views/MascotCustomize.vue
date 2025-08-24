@@ -404,7 +404,13 @@ import {
   getDefaultRelativePosition,
   toAbsolutePosition,
   toRelativePosition,
-  type RelativePosition
+  toAbsoluteFromMascot,
+  toRelativeToMascot,
+  getDefaultMascotRelativePosition,
+  constrainMascotRelativePosition,
+  type RelativePosition,
+  type AbsolutePosition,
+  type ContainerSize
 } from '../utils/coordinates';
 
 // 아이템 상태 인터페이스 (다중 아이템 지원)
@@ -549,7 +555,7 @@ function getCategoryName(category: 'head' | 'clothing' | 'accessory' | 'backgrou
 
 // 아이템 타입별 기본 상대 위치 설정
 function getDefaultPosition(itemType: string): RelativePosition {
-  return getDefaultRelativePosition(itemType);
+  return getDefaultMascotRelativePosition(itemType);
 }
 
 // 다중 아이템 관리 함수들
@@ -606,14 +612,15 @@ function getEquippedCount(item: Item): number {
   return equippedItemsList.value.filter(equipped => equipped.item.id === item.id).length;
 }
 
-// 상대 좌표를 절대 좌표로 변환하여 반환
+// 마스코트 기준 상대 좌표를 절대 좌표로 변환하여 반환
 function getAbsolutePosition(equippedItem: EquippedItemState): { x: number; y: number } {
-  if (!mascotCanvas.value) {
+  if (!mascotRect.value) {
+    console.warn('마스코트 bounding box가 없어서 기본 위치로 설정됨');
     return { x: 0, y: 0 };
   }
   
-  const containerSize = getContainerSize(mascotCanvas.value);
-  return toAbsolutePosition(equippedItem.relativePosition, containerSize);
+  // 마스코트를 기준으로 한 절대 좌표 계산
+  return toAbsoluteFromMascot(equippedItem.relativePosition, mascotRect.value);
 }
 
 // 마스코트는 항상 캔버스 중앙에 고정
