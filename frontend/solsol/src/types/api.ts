@@ -240,22 +240,20 @@ export interface ChallengeProgressRequest {
 export interface ChallengeProgressResponse {
   success: boolean;
   message: string;
-  data?: {
-    userChallenge: {
-      userChallengeId: number;
-      status: string;
-      statusDisplayName: string;
-      progressCount: number;
-      targetCount: number;
-      progressRate: number;
-      startedAt: string;
-      completedAt?: string;
-      progressData?: string;
-    };
-    isCompleted: boolean;
-    rewardPoints?: number;
-    rewardExp?: number;
+  userChallenge?: {
+    userChallengeId: number;
+    status: string;
+    statusDisplayName: string;
+    progressCount: number;
+    targetCount: number;
+    progressRate: number;
+    startedAt: string;
+    completedAt?: string;
+    progressData?: string;
   };
+  isCompleted?: boolean;
+  rewardPoints?: number;
+  rewardExp?: number;
   errors?: Record<string, string>;
 }
 

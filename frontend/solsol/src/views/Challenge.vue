@@ -631,16 +631,16 @@ async function updateProgress() {
       payload: `진행도 업데이트: ${progressStep.value}`
     });
     
-    if (response.success && response.data) {
-      // 진행도 업데이트
-      currentProgress.value = response.data.userChallenge.progressCount;
-      isCompleted.value = response.data.isCompleted;
+    if (response.success && response.userChallenge) {
+      // 진행도 업데이트 - 백엔드 응답 구조에 맞게 수정
+      currentProgress.value = response.userChallenge.progressCount;
+      isCompleted.value = response.isCompleted || false;
       
-      // 보상 지급 확인
-      if (response.data.rewardPoints && response.data.rewardPoints > 0) {
-        rewardPoints.value = response.data.rewardPoints;
+      // 보상 지급 확인 - 백엔드 응답 구조에 맞게 수정
+      if (response.rewardPoints && response.rewardPoints > 0) {
+        rewardPoints.value = response.rewardPoints;
         // 사용자 포인트 실시간 업데이트
-        pointStore.updatePoints(response.data.rewardPoints);
+        pointStore.updatePoints(response.rewardPoints);
         // 백엔드 응답에 이미 포인트 정보가 있으므로 별도 API 호출 불필요
         alert(`진행도가 업데이트되었습니다! +${rewardPoints.value}P 획득!`);
       } else {
@@ -672,16 +672,16 @@ async function completeChallenge() {
       payload: '챌린지 완료'
     });
     
-    if (response.success && response.data) {
-      // 진행도 업데이트
-      currentProgress.value = response.data.userChallenge.progressCount;
-      isCompleted.value = response.data.isCompleted;
+    if (response.success && response.userChallenge) {
+      // 진행도 업데이트 - 백엔드 응답 구조에 맞게 수정
+      currentProgress.value = response.userChallenge.progressCount;
+      isCompleted.value = response.isCompleted || false;
       
-      // 보상 지급 확인
-      if (response.data.rewardPoints && response.data.rewardPoints > 0) {
-        rewardPoints.value = response.data.rewardPoints;
+      // 보상 지급 확인 - 백엔드 응답 구조에 맞게 수정
+      if (response.rewardPoints && response.rewardPoints > 0) {
+        rewardPoints.value = response.rewardPoints;
         // 사용자 포인트 실시간 업데이트
-        pointStore.updatePoints(response.data.rewardPoints);
+        pointStore.updatePoints(response.rewardPoints);
         // 백엔드 응답에 이미 포인트 정보가 있으므로 별도 API 호출 불필요
         alert(`🎉 챌린지 완료! +${rewardPoints.value}P 획득!`);
       } else {

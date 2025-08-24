@@ -41,9 +41,7 @@ spring:
     show-sql: true
   sql:
     init:
-      mode: always
-      schema-locations: classpath:db/init.sql
-      data-locations: classpath:db/init.sql
+      mode: never
     properties:
       hibernate:
         format_sql: true
