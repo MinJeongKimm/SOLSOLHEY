@@ -30,6 +30,7 @@ import type {
   UserItem
 } from '../types/api';
 import { ApiError } from '../types/api';
+import { getCurrentUserId } from '../utils/jwt';
 
 // API 기본 설정
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
@@ -49,6 +50,15 @@ export async function apiRequest<T>(
   const token = localStorage.getItem('token');
   if (token) {
     defaultHeaders.Authorization = `Bearer ${token}`;
+    
+    // JWT 토큰에서 userID를 추출하여 헤더에 추가
+    const userId = getCurrentUserId();
+    if (userId !== null) {
+      defaultHeaders['X-User-ID'] = userId.toString();
+    } else {
+      // userID 추출 실패 시 토큰이 유효하지 않을 수 있음
+      console.warn('JWT 토큰에서 userID를 추출할 수 없습니다. 토큰을 확인해주세요.');
+    }
   }
 
   const config: RequestInit = {
