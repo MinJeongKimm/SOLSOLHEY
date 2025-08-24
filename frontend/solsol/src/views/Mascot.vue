@@ -171,7 +171,7 @@
           
           <!-- 쇼핑하기 -->
           <button 
-            @click="showToastMessage('쇼핑하기 기능은 준비중입니다! 🚧')"
+            @click="goToShop"
             class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105"
           >
             <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -401,6 +401,11 @@ function goToChallenge() {
 // 마스코트 생성 화면으로 이동
 function goToCreate() {
   router.push('/mascot/create');
+}
+
+// 상점 화면으로 이동
+function goToShop() {
+  router.push('/shop');
 }
 
 // 토스트 메시지 표시
