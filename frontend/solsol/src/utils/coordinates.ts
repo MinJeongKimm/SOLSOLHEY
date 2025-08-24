@@ -158,3 +158,90 @@ export function constrainRelativePosition(
     y: Math.max(halfHeightRatio, Math.min(1 - halfHeightRatio, relative.y)),
   };
 }
+
+// ===========================================
+// 마스코트 기반 좌표 변환 함수들
+// ===========================================
+
+/**
+ * 마스코트 기준 상대 좌표(0~1)를 절대 픽셀 좌표로 변환합니다.
+ * 이 함수는 마스코트의 실제 DOM bounding box를 기준으로 계산합니다.
+ * @param relativePos 마스코트 기준 상대 좌표 (0~1)
+ * @param mascotRect 마스코트의 실제 DOM bounding box
+ * @returns 절대 픽셀 좌표
+ */
+export function toAbsoluteFromMascot(relativePos: RelativePosition, mascotRect: DOMRect): AbsolutePosition {
+  if (!mascotRect) {
+    console.warn('Mascot rect is null, cannot convert to absolute position from mascot.');
+    return { x: 0, y: 0 };
+  }
+  
+  return {
+    x: mascotRect.left + (relativePos.x * mascotRect.width),
+    y: mascotRect.top + (relativePos.y * mascotRect.height),
+  };
+}
+
+/**
+ * 절대 픽셀 좌표를 마스코트 기준 상대 좌표(0~1)로 변환합니다.
+ * 이 함수는 마스코트의 실제 DOM bounding box를 기준으로 계산합니다.
+ * @param absolutePos 절대 픽셀 좌표
+ * @param mascotRect 마스코트의 실제 DOM bounding box
+ * @returns 마스코트 기준 상대 좌표 (0~1)
+ */
+export function toRelativeToMascot(absolutePos: AbsolutePosition, mascotRect: DOMRect): RelativePosition {
+  if (!mascotRect || mascotRect.width === 0 || mascotRect.height === 0) {
+    console.warn('Mascot rect is invalid, cannot convert to relative position to mascot.');
+    return { x: 0, y: 0 };
+  }
+  
+  return {
+    x: (absolutePos.x - mascotRect.left) / mascotRect.width,
+    y: (absolutePos.y - mascotRect.top) / mascotRect.height,
+  };
+}
+
+/**
+ * 마스코트 기준 기본 상대 위치를 반환합니다.
+ * 기존 getDefaultRelativePosition과 달리 마스코트를 기준으로 한 위치입니다.
+ * @param itemType 아이템 타입
+ * @returns 마스코트 기준 기본 상대 위치 (0~1)
+ */
+export function getDefaultMascotRelativePosition(itemType: string): RelativePosition {
+  // 마스코트 자체를 기준으로 한 상대 위치 (마스코트의 어느 부분에 아이템이 위치할지)
+  const defaultMascotPositions: Record<string, RelativePosition> = {
+    head: { x: 0.5, y: 0.2 },        // 마스코트 머리 부분 (상단 중앙)
+    clothing: { x: 0.5, y: 0.6 },    // 마스코트 몸통 부분 (중앙)
+    accessory: { x: 0.7, y: 0.3 },   // 마스코트 얼굴 옆 (액세서리)
+    background: { x: 0.5, y: 0.5 },  // 마스코트 중앙 (배경)
+  };
+  
+  return defaultMascotPositions[itemType] || { x: 0.5, y: 0.5 };
+}
+
+/**
+ * 마스코트 기준으로 드래그 제약을 적용합니다.
+ * 아이템이 마스코트 영역을 벗어나지 않도록 제한합니다.
+ * @param relative 마스코트 기준 상대 위치
+ * @param itemSize 아이템 크기 (픽셀)
+ * @param mascotRect 마스코트의 bounding box
+ * @returns 제약된 마스코트 기준 상대 위치
+ */
+export function constrainMascotRelativePosition(
+  relative: RelativePosition,
+  itemSize: { width: number; height: number },
+  mascotRect: DOMRect
+): RelativePosition {
+  if (!mascotRect || mascotRect.width === 0 || mascotRect.height === 0) {
+    return relative;
+  }
+  
+  // 아이템이 마스코트 영역을 벗어나지 않도록 제약
+  const halfWidthRatio = (itemSize.width / 2) / mascotRect.width;
+  const halfHeightRatio = (itemSize.height / 2) / mascotRect.height;
+  
+  return {
+    x: Math.max(halfWidthRatio, Math.min(1 - halfWidthRatio, relative.x)),
+    y: Math.max(halfHeightRatio, Math.min(1 - halfHeightRatio, relative.y)),
+  };
+}
