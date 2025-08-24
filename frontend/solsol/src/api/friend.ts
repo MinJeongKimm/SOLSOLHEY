@@ -20,12 +20,26 @@ export interface FriendRequest {
   friendUserId: number;
 }
 
+export interface PendingFriendRequest {
+  requestId: number;
+  userId: number;
+  username: string;
+  nickname?: string;
+  campus?: string;
+  totalPoints?: number;
+  createdAt: string;
+}
+
 export interface SearchUserResponse {
   users: User[];
 }
 
 export interface FriendListResponse {
   friends: Friend[];
+}
+
+export interface FriendRequestListResponse {
+  requests: PendingFriendRequest[];
 }
 
 // 친구 목록 조회
@@ -35,6 +49,17 @@ export const getFriendList = async (): Promise<Friend[]> => {
     return response.friends;
   } catch (error) {
     console.error('친구 목록 조회 실패:', error);
+    throw error;
+  }
+};
+
+// 친구 요청 목록 조회
+export const getFriendRequests = async (): Promise<PendingFriendRequest[]> => {
+  try {
+    const response = await apiRequest<FriendRequestListResponse>('/friends/requests');
+    return response.requests;
+  } catch (error) {
+    console.error('친구 요청 목록 조회 실패:', error);
     throw error;
   }
 };

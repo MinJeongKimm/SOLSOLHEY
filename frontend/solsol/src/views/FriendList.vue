@@ -24,24 +24,77 @@
         </router-link>
       </div>
 
-      <!-- 친구가 있는 경우 -->
-      <div v-if="friends.length > 0" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- 새로운 친구 요청 섹션 (요청이 있을 때만 표시) -->
+      <div v-if="friendRequests.length > 0" class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-semibold text-gray-800">새로운 친구 요청 {{ friendRequests.length }}</h3>
+        </div>
+        
+        <div class="space-y-3">
+          <div 
+            v-for="request in friendRequests" 
+            :key="request.requestId"
+            class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl p-4 border border-yellow-200"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <!-- 사용자 아바타 -->
+                <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                  <span class="text-white font-bold text-lg">{{ request.nickname?.charAt(0) || request.username?.charAt(0) || '?' }}</span>
+                </div>
+                
+                <!-- 사용자 정보 -->
+                <div>
+                  <h4 class="font-semibold text-gray-800">{{ request.nickname || request.username }}</h4>
+                  <p class="text-sm text-gray-600">{{ request.campus || '캠퍼스 정보 없음' }}</p>
+                  <p class="text-xs text-gray-500">@{{ request.username }}</p>
+                </div>
+              </div>
+              
+              <!-- 수락/거절 버튼 -->
+              <div class="flex space-x-2">
+                <button
+                  @click="acceptFriendRequest(request.userId)"
+                  :disabled="isProcessing"
+                  class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
+                >
+                  수락
+                </button>
+                <button
+                  @click="rejectFriendRequest(request.userId)"
+                  :disabled="isProcessing"
+                  class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
+                >
+                  거절
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 내 친구 섹션 (친구가 있을 때만 표시) -->
+      <div v-if="friends.length > 0">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-semibold text-gray-800">내 친구 {{ friends.length }}</h3>
+        </div>
+        
+        <div class="space-y-3">
           <div 
             v-for="friend in friends" 
             :key="friend.friendId"
             @click="viewFriendDetail(friend)"
-            class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 cursor-pointer hover:shadow-lg transition-all duration-200 border border-blue-100 hover:border-blue-300"
+            class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200 border border-blue-100 hover:border-blue-300"
           >
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-3">
               <!-- 캐릭터 이미지 (기본 이미지 사용) -->
-              <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
-                <span class="text-white text-2xl font-bold">{{ friend.nickname?.charAt(0) || '?' }}</span>
+              <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
+                <span class="text-white text-lg font-bold">{{ friend.nickname?.charAt(0) || friend.username?.charAt(0) || '?' }}</span>
               </div>
               
               <!-- 친구 정보 -->
               <div class="flex-1">
-                <h3 class="text-lg font-semibold text-gray-800">{{ friend.nickname || '닉네임 없음' }}</h3>
+                <h4 class="font-semibold text-gray-800">{{ friend.nickname || friend.username }}</h4>
                 <p class="text-sm text-gray-600">{{ friend.campus || '캠퍼스 정보 없음' }}</p>
                 <p class="text-xs text-blue-500">{{ friend.totalPoints || 0 }} 포인트</p>
               </div>
@@ -58,8 +111,8 @@
         </div>
       </div>
 
-      <!-- 친구가 없는 경우 -->
-      <div v-else class="text-center py-16">
+      <!-- 친구가 없고 요청도 없는 경우 -->
+      <div v-if="friends.length === 0 && friendRequests.length === 0" class="text-center py-16">
         <div class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
           <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
@@ -75,16 +128,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getFriendList, type Friend } from '../api/friend';
-
-
+import { getFriendList, getFriendRequests, acceptFriendRequest as acceptRequest, rejectFriendRequest as rejectRequest, type Friend, type PendingFriendRequest } from '../api/friend';
 
 const router = useRouter();
 const friends = ref<Friend[]>([]);
+const friendRequests = ref<PendingFriendRequest[]>([]);
+const isProcessing = ref(false);
 
-// 친구 목록 조회
+// 친구 목록과 요청 목록 조회
 onMounted(() => {
   fetchFriends();
+  fetchFriendRequests();
 });
 
 // 친구 상세 화면으로 이동
@@ -101,7 +155,49 @@ const fetchFriends = async () => {
     friends.value = friendsList;
   } catch (error) {
     console.error('친구 목록 조회 실패:', error);
-    // 에러 처리 (사용자에게 알림 등)
+  }
+};
+
+// 친구 요청 목록 조회 함수
+const fetchFriendRequests = async () => {
+  try {
+    const requests = await getFriendRequests();
+    friendRequests.value = requests;
+  } catch (error) {
+    console.error('친구 요청 목록 조회 실패:', error);
+  }
+};
+
+// 친구 요청 수락
+const acceptFriendRequest = async (userId: number) => {
+  isProcessing.value = true;
+  try {
+    await acceptRequest(userId);
+    // 요청 목록에서 제거하고 친구 목록 새로고침
+    friendRequests.value = friendRequests.value.filter(req => req.userId !== userId);
+    await fetchFriends();
+    alert('친구 요청을 수락했습니다!');
+  } catch (error) {
+    console.error('친구 요청 수락 실패:', error);
+    alert('친구 요청 수락에 실패했습니다. 다시 시도해주세요.');
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+// 친구 요청 거절
+const rejectFriendRequest = async (userId: number) => {
+  isProcessing.value = true;
+  try {
+    await rejectRequest(userId);
+    // 요청 목록에서 제거
+    friendRequests.value = friendRequests.value.filter(req => req.userId !== userId);
+    alert('친구 요청을 거절했습니다.');
+  } catch (error) {
+    console.error('친구 요청 거절 실패:', error);
+    alert('친구 요청 거절에 실패했습니다. 다시 시도해주세요.');
+  } finally {
+    isProcessing.value = false;
   }
 };
 </script>
