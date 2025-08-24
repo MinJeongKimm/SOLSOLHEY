@@ -47,37 +47,29 @@
 
       <!-- 교내 랭킹 -->
       <div v-if="activeTab === 'campus'" class="space-y-6">
-        <!-- 필터 및 정렬 -->
-        <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-100">
-          <div class="flex flex-wrap items-center gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">정렬 기준</label>
-              <select
-                v-model="campusFilters.sort"
-                @change="loadCampusRankings"
-                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
-              >
-                <option value="votes_desc">득표순</option>
-                <option value="trending">트렌딩순</option>
-                <option value="newest">최신순</option>
-              </select>
-            </div>
+        <!-- 교내 랭킹 필터 -->
+        <div class="flex justify-end">
+          <div class="flex items-center space-x-4">
+            <select
+              v-model="campusFilters.sort"
+              @change="loadCampusRankings"
+              class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
+            >
+              <option value="votes_desc">득표순</option>
+              <option value="trending">트렌딩순</option>
+              <option value="newest">최신순</option>
+            </select>
             
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">집계 기간</label>
-              <select
-                v-model="campusFilters.period"
-                @change="loadCampusRankings"
-                class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm"
-              >
-                <option value="daily">일간</option>
-                <option value="weekly">주간</option>
-                <option value="monthly">월간</option>
-                <option value="all">전체</option>
-              </select>
-            </div>
-
-
+            <select
+              v-model="campusFilters.period"
+              @change="loadCampusRankings"
+              class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
+            >
+              <option value="daily">일간</option>
+              <option value="weekly">주간</option>
+              <option value="monthly">월간</option>
+              <option value="all">전체</option>
+            </select>
           </div>
         </div>
 
@@ -205,10 +197,39 @@
         </div>
       </div>
 
-      <!-- 전국 랭킹 (아직 구현되지 않음) -->
-      <div v-else class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-12 text-center border border-purple-100">
-        <div class="text-gray-600 text-lg">전국 랭킹은 준비 중입니다</div>
-        <div class="text-gray-500 text-sm mt-2">곧 업데이트될 예정입니다</div>
+      <!-- 전국 랭킹 -->
+      <div v-else class="space-y-6">
+        <!-- 전국 랭킹 필터 -->
+        <div class="flex justify-end">
+          <div class="flex items-center space-x-4">
+            <select
+              v-model="nationalFilters.sort"
+              @change="loadNationalRankings"
+              class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
+            >
+              <option value="votes_desc">득표순</option>
+              <option value="trending">트렌딩순</option>
+              <option value="newest">최신순</option>
+            </select>
+            
+            <select
+              v-model="nationalFilters.period"
+              @change="loadNationalRankings"
+              class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
+            >
+              <option value="daily">일간</option>
+              <option value="weekly">주간</option>
+              <option value="monthly">월간</option>
+              <option value="all">전체</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- 전국 랭킹 내용 -->
+        <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-12 text-center border border-purple-100">
+          <div class="text-gray-600 text-lg">전국 랭킹은 준비 중입니다</div>
+          <div class="text-gray-500 text-sm mt-2">곧 업데이트될 예정입니다</div>
+        </div>
       </div>
     </div>
   </div>
@@ -218,6 +239,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { 
   getCampusRankings, 
+  getNationalRankings,
   getCurrentUser, 
   voteForCampus,
   type RankingResponse,
@@ -237,6 +259,13 @@ const campusFilters = ref({
   sort: 'votes_desc',
   period: 'weekly',
   size: 10, // 페이지 크기를 10개로 고정
+  page: 0
+});
+
+const nationalFilters = ref({
+  sort: 'votes_desc',
+  period: 'weekly',
+  size: 10,
   page: 0
 });
 
@@ -263,6 +292,31 @@ const loadCampusRankings = async () => {
   } catch (err: any) {
     console.error('교내 랭킹 로드 실패:', err);
     error.value = err.message || '랭킹을 불러오는데 실패했습니다.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 전국 랭킹 로드
+const loadNationalRankings = async () => {
+  try {
+    loading.value = true;
+    error.value = null;
+    
+    const response = await getNationalRankings(
+      nationalFilters.value.sort,
+      nationalFilters.value.period,
+      undefined, // region 제거
+      undefined, // schoolId는 선택사항
+      nationalFilters.value.page,
+      nationalFilters.value.size
+    );
+    
+    // 전국 랭킹 데이터 처리 (아직 구현되지 않음)
+    console.log('전국 랭킹 데이터:', response);
+  } catch (err: any) {
+    console.error('전국 랭킹 로드 실패:', err);
+    error.value = err.message || '전국 랭킹을 불러오는데 실패했습니다.';
   } finally {
     loading.value = false;
   }
