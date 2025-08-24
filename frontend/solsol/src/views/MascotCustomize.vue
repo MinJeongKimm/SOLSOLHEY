@@ -31,11 +31,11 @@
             <span class="font-medium">터치 조작법</span>
           </div>
           <div class="text-xs space-y-1">
-            <div>• <strong>아이템:</strong> 한 손가락으로 드래그하여 이동</div>
+            <div>• 한 손가락으로 드래그하여 아이템 이동</div>
             <div>• 두 손가락으로 핀치하여 크기 조절</div>
             <div>• 두 손가락으로 비틀어서 회전</div>
-            <div>• <strong>마스코트:</strong> 드래그하여 위치 변경</div>
-            <div>• 짧게 탭하여 선택/해제</div>
+            <div>• 짧게 탭하여 아이템 선택/해제</div>
+            <div>• 마스코트는 항상 중앙에 고정됨</div>
             <div>• 같은 아이템 중복 장착 가능 (최대 10개)</div>
           </div>
         </div>
@@ -361,32 +361,20 @@
       </div>
       
       <!-- 전체 조작 버튼들 -->
-      <div class="space-y-3 mt-6">
-        <!-- 첫 번째 줄: 리셋 버튼들 -->
-        <div class="flex space-x-3">
-          <button 
-            @click="resetAllItems"
-            class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-          >
-            <span>🔄</span>
-            <span>아이템 초기화</span>
-          </button>
-          <button 
-            @click="resetEntireComposition"
-            class="flex-1 bg-red-100 hover:bg-red-200 text-red-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center space-x-2"
-          >
-            <span>🎭</span>
-            <span>전체 리셋</span>
-          </button>
-        </div>
-        
-        <!-- 두 번째 줄: 저장 버튼 -->
+      <div class="flex space-x-3 mt-6">
+        <button 
+          @click="resetAllItems"
+          class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+        >
+          <span>🔄</span>
+          <span>전체 초기화</span>
+        </button>
         <button 
           @click="saveItemPositions"
-          class="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+          class="flex-1 bg-purple-500 hover:bg-purple-600 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
         >
           <span>💾</span>
-          <span>컴포지션 저장하기</span>
+          <span>저장하기</span>
         </button>
       </div>
     </div>
@@ -797,22 +785,8 @@ function resetAllItems() {
     
     // 다음 프레임에서 다시 기본값으로 설정되도록 함
     setTimeout(() => {
-      showToastMessage('모든 아이템이 초기화되었습니다');
+      showToastMessage('모든 아이템이 초기화되었습니다! 🔄');
     }, 100);
-  }
-}
-
-// 전체 아이템 리셋 (마스코트는 항상 중앙에 고정)
-function resetEntireComposition() {
-  if (confirm('모든 아이템을 초기 상태로 리셋하시겠습니까?')) {
-    // 모든 아이템 제거
-    equippedItemStates.value.clear();
-    equippedItemsList.value = [];
-    
-    // 선택 상태 초기화
-    selectedItemId.value = null;
-    
-    showToastMessage('모든 아이템이 초기화되었습니다! 🔄');
   }
 }
 
