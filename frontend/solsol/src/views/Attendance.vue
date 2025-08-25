@@ -236,11 +236,19 @@ function isSameDay(date1: Date, date2: Date): boolean {
          date1.getDate() === date2.getDate();
 }
 
+// 로컬 시간 기준으로 YYYY-MM-DD 형식의 날짜 문자열 생성
+function getLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // 출석 여부 확인 (실제 출석 기록에서 확인)
 function isAttendedDay(date: Date): boolean {
-  const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+  const dateString = getLocalDateString(date);
   const today = new Date();
-  const todayString = today.toISOString().split('T')[0];
+  const todayString = getLocalDateString(today);
   
   // 오늘 날짜이고 오늘 출석했다면 true 반환
   if (dateString === todayString && todayAttended.value) {
@@ -312,9 +320,9 @@ async function checkAttendance() {
       userCoins.value += pointReward || 10;
       userExp.value += expReward || 5;
       
-      // 출석 기록에 오늘 날짜 추가
+      // 출석 기록에 오늘 날짜 추가 (로컬 시간 기준)
       const today = new Date();
-      const todayString = today.toISOString().split('T')[0];
+      const todayString = getLocalDateString(today);
       attendanceRecords.value.add(todayString);
       
       alert(`출석체크 완료! +${pointReward || 10}P, +${expReward || 5}XP 획득! (연속 ${newConsecutiveDays}일)`);
@@ -350,10 +358,10 @@ onMounted(async () => {
     if (res && res.success && res.data) {
       todayAttended.value = !!res.data.attended;
       
-      // 오늘 출석했다면 출석 기록에 추가
+      // 오늘 출석했다면 출석 기록에 추가 (로컬 시간 기준)
       if (todayAttended.value) {
         const today = new Date();
-        const todayString = today.toISOString().split('T')[0];
+        const todayString = getLocalDateString(today);
         attendanceRecords.value.add(todayString);
       }
     } else {
