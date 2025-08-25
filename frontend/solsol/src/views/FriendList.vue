@@ -102,13 +102,17 @@
                 <p class="text-xs text-blue-500">{{ friend.totalPoints || 0 }} 포인트</p>
               </div>
               
-              <!-- 상세 보기 아이콘 -->
-              <div class="text-blue-400">
+              <!-- 친구 삭제 버튼 -->
+              <button
+                @click="showDeleteConfirm(friend)"
+                :disabled="isProcessing"
+                class="text-red-500 hover:text-red-700 disabled:text-red-300 transition-colors p-1 rounded-lg hover:bg-red-50"
+                title="친구 삭제"
+              >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                 </svg>
-              </div>
+              </button>
             </div>
           </div>
         </div>
@@ -125,18 +129,48 @@
         <p class="text-gray-500 mb-6">새로운 친구를 추가하고 함께 쏠쏠Hey를 즐겨보세요!</p>
       </div>
     </div>
+
+    <!-- 삭제 확인 팝업 -->
+    <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 shadow-xl max-w-md w-full">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">친구 삭제</h3>
+        <p class="text-gray-600 mb-6">
+          {{ friendToDelete?.nickname || friendToDelete?.username }} 친구를 정말로 삭제하시겠습니까?
+          이 작업은 되돌릴 수 없습니다.
+        </p>
+        <div class="flex justify-end space-x-2">
+          <button
+            @click="closeDeleteModal"
+            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors text-sm"
+          >
+            취소
+          </button>
+          <button
+            @click="deleteFriend"
+            :disabled="isProcessing"
+            class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
+          >
+            삭제
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getFriendList, getFriendRequests, acceptFriendRequest as acceptRequest, rejectFriendRequest as rejectRequest, type Friend, type PendingFriendRequest } from '../api/friend';
+import { getFriendList, getFriendRequests, acceptFriendRequest as acceptRequest, rejectFriendRequest as rejectRequest, deleteFriend as deleteFriendRequest, type Friend, type PendingFriendRequest } from '../api/friend';
 
 const router = useRouter();
 const friends = ref<Friend[]>([]);
 const friendRequests = ref<PendingFriendRequest[]>([]);
 const isProcessing = ref(false);
+
+// 삭제 확인 팝업 관련 상태
+const showDeleteModal = ref(false);
+const friendToDelete = ref<Friend | null>(null);
 
 const fetchFriends = async () => {
   try {
@@ -190,6 +224,37 @@ watch(
 const viewFriendDetail = (friend: Friend) => {
   console.log('친구 상세 화면으로 이동:', friend);
   // 상세 페이지 라우팅 로직 추가 가능
+};
+
+// 삭제 확인 팝업 표시
+const showDeleteConfirm = (friend: Friend) => {
+  friendToDelete.value = friend;
+  showDeleteModal.value = true;
+};
+
+// 친구 삭제 실행
+const deleteFriend = async () => {
+  if (!friendToDelete.value) return;
+  
+  isProcessing.value = true;
+  try {
+    await deleteFriendRequest(friendToDelete.value.friendId);
+    alert('친구를 삭제했습니다.');
+    await loadData(); // 삭제 후 목록 새로고침
+  } catch (error) {
+    console.error('친구 삭제 실패:', error);
+    alert('친구 삭제에 실패했습니다. 다시 시도해주세요.');
+  } finally {
+    isProcessing.value = false;
+    showDeleteModal.value = false;
+    friendToDelete.value = null;
+  }
+};
+
+// 삭제 확인 팝업 닫기
+const closeDeleteModal = () => {
+  showDeleteModal.value = false;
+  friendToDelete.value = null;
 };
 
 const acceptFriendRequest = async (userId: number) => {
