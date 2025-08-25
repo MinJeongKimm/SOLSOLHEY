@@ -156,6 +156,7 @@ const userCoins = ref(1000);
 const userExp = ref(250);
 
 // 출석 정보
+const attendanceRecords = ref<Set<string>>(new Set()); // 출석 기록 (YYYY-MM-DD 형식)
 
 // 달력 관련
 const currentYear = ref(new Date().getFullYear());
@@ -234,41 +235,53 @@ function isSameDay(date1: Date, date2: Date): boolean {
          date1.getDate() === date2.getDate();
 }
 
-// 출석 여부 확인 (임시 로직)
+// 출석 여부 확인 (실제 출석 기록에서 확인)
 function isAttendedDay(date: Date): boolean {
-  // 실제로는 API에서 출석 데이터를 가져와야 함
-  const today = new Date();
-  
-  // 오늘 날짜는 제외
-  if (isSameDay(date, today)) return false;
-  
-  const diffTime = today.getTime() - date.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  
-  // 임시로 최근 5일간 출석했다고 가정 (과거 날짜만)
-  return diffDays >= 1 && diffDays <= 5;
+  const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+  return attendanceRecords.value.has(dateString);
+}
+
+// 출석 기록 조회
+async function fetchAttendanceRecords() {
+  try {
+    // 현재는 출석 기록을 조회하지 않고 빈 Set으로 유지
+    // 실제로는 백엔드에서 출석 기록을 가져와야 함
+    // const response = await apiRequest<any>('/attendance/records', {
+    //   method: 'GET',
+    //   params: { startDate: thirtyDaysAgo.toISOString().split('T')[0] }
+    // });
+    
+    // 임시 하드코딩된 로직 제거 - 실제 출석체크 시에만 기록에 추가
+    attendanceRecords.value = new Set();
+  } catch (error) {
+    console.error('출석 기록 조회 오류:', error);
+    attendanceRecords.value = new Set();
+  }
 }
 
 
-
 // 이전 월
-function previousMonth() {
+async function previousMonth() {
   if (currentMonth.value === 1) {
     currentMonth.value = 12;
     currentYear.value--;
   } else {
     currentMonth.value--;
   }
+  
+  // 월 변경 시 출석 기록 조회하지 않음 (실제 출석체크 시에만 기록에 추가됨)
 }
 
 // 다음 월
-function nextMonth() {
+async function nextMonth() {
   if (currentMonth.value === 12) {
     currentMonth.value = 1;
     currentYear.value++;
   } else {
     currentMonth.value++;
   }
+  
+  // 월 변경 시 출석 기록 조회하지 않음 (실제 출석체크 시에만 기록에 추가됨)
 }
 
 // 출석체크
@@ -277,17 +290,43 @@ async function checkAttendance() {
     // 실제 API 호출 (쿠키+CSRF는 apiRequest가 처리)
     const result = await apiRequest<any>('/attendance', { method: 'POST' });
     
-    // API 호출 성공 시에만 상태 변경
-    todayAttended.value = true;
-    
-    // 포인트와 경험치 증가
-    userCoins.value += 10;
-    userExp.value += 5;
-    
-    alert('출석체크 완료! +10P, +5XP 획득!');
+    // 백엔드 응답 구조에 맞게 처리
+    if (result && result.success && result.data) {
+      // API 호출 성공 시에만 상태 변경
+      todayAttended.value = true;
+      
+      // 백엔드에서 받은 보상 정보 사용
+      const { consecutiveDays: newConsecutiveDays, expReward, pointReward } = result.data;
+      
+      // 포인트와 경험치 증가 (백엔드에서 계산된 값 사용)
+      userCoins.value += pointReward || 10;
+      userExp.value += expReward || 5;
+      
+      // 출석 기록에 오늘 날짜 추가
+      const today = new Date();
+      const todayString = today.toISOString().split('T')[0];
+      attendanceRecords.value.add(todayString);
+      
+      alert(`출석체크 완료! +${pointReward || 10}P, +${expReward || 5}XP 획득! (연속 ${newConsecutiveDays}일)`);
+    } else {
+      throw new Error('출석체크 응답이 올바르지 않습니다.');
+    }
   } catch (error) {
     console.error('출석체크 오류:', error);
-    alert('출석체크 중 오류가 발생했습니다.');
+    
+    // 사용자에게 더 구체적인 에러 메시지 제공
+    let errorMessage = '출석체크 중 오류가 발생했습니다.';
+    if (error instanceof Error) {
+      if (error.message.includes('401')) {
+        errorMessage = '로그인이 필요합니다.';
+      } else if (error.message.includes('409')) {
+        errorMessage = '이미 오늘 출석체크를 완료했습니다.';
+      } else if (error.message.includes('500')) {
+        errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      }
+    }
+    
+    alert(errorMessage);
   }
 }
 
@@ -296,10 +335,20 @@ onMounted(async () => {
   try {
     // 오늘 출석 상태 확인 API 호출
     const res = await apiRequest<any>('/attendance/today');
-    todayAttended.value = !!res?.data?.attended;
+    
+    // 백엔드 응답 구조에 맞게 처리
+    if (res && res.success && res.data) {
+      todayAttended.value = !!res.data.attended;
+    } else {
+      todayAttended.value = false;
+    }
+    
+    // 출석 기록은 빈 Set으로 초기화 (실제 출석체크 시에만 추가됨)
+    attendanceRecords.value = new Set();
   } catch (error) {
     console.error('오늘 출석 상태 확인 오류:', error);
     todayAttended.value = false;
+    attendanceRecords.value = new Set();
   }
 });
 </script>
