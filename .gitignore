@@ -166,3 +166,6 @@ logs/
 *.log
 # Environment variables
 backend/.env
+
+# Local contributor guide (do not track)
+AGENTS.md
