@@ -1,5 +1,6 @@
 package com.solsolhey.finance.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class TransactionHistoryListRequest {
+    @JsonProperty("Header")
     private Header header;
     private String accountNo;
     private String startDate;       // YYYYMMDD
@@ -33,4 +35,3 @@ public class TransactionHistoryListRequest {
         private String userKey; // 이 API는 userKey 필요
     }
 }
-

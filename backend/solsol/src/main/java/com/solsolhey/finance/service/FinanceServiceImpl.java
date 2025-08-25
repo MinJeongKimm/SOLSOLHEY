@@ -5,7 +5,6 @@ import com.solsolhey.finance.dto.request.EstimateRequest;
 import com.solsolhey.finance.dto.request.TransactionHistoryRequest;
 import com.solsolhey.finance.dto.response.ExchangeRateResponse;
 import com.solsolhey.finance.dto.response.ExternalExchangeRateResponse;
-import com.solsolhey.finance.dto.response.ExternalExchangeRateSearchResponse;
 import com.solsolhey.finance.dto.response.ExternalTransactionHistoryResponse;
 import com.solsolhey.finance.dto.response.ExchangeEstimateResponse;
 import com.solsolhey.finance.exception.ExternalApiException;
@@ -52,8 +51,31 @@ public class FinanceServiceImpl implements FinanceService {
     @Override
     public Mono<SingleExchangeRateResponse> getExchangeRate(String currency) {
         log.info("환율 단건 조회 시작: {}", currency);
-        return financeApiClient.getExchangeRateByCurrency(currency)
-                .map(this::convertToSingleExchangeRateResponse)
+        return financeApiClient.getExchangeRates()
+                .map(external -> {
+                    if (external == null || external.getRec() == null) {
+                        return SingleExchangeRateResponse.builder()
+                                .code("error")
+                                .message("환율 정보를 가져올 수 없습니다.")
+                                .currencyCode(currency)
+                                .build();
+                    }
+                    var match = external.getRec().stream()
+                            .filter(r -> currency.equalsIgnoreCase(r.getCurrency()))
+                            .findFirst();
+                    return match.map(r -> SingleExchangeRateResponse.builder()
+                                    .code("success")
+                                    .message("환율 단건 조회 완료")
+                                    .currencyCode(r.getCurrency())
+                                    .exchangeRate(r.getExchangeRate())
+                                    .build()
+                            )
+                            .orElseGet(() -> SingleExchangeRateResponse.builder()
+                                    .code("error")
+                                    .message("요청한 통화를 찾을 수 없습니다.")
+                                    .currencyCode(currency)
+                                    .build());
+                })
                 .doOnError(error -> log.error("환율 단건 조회 중 오류 발생", error))
                 .onErrorResume(error -> Mono.just(
                         SingleExchangeRateResponse.builder()
@@ -100,7 +122,7 @@ public class FinanceServiceImpl implements FinanceService {
                 .onErrorResume(error -> Mono.just(
                         TransactionsResponse.builder()
                                 .code("error")
-                                .message("계좌거래내역 조회에 실패했습니다.")
+                                .message("계좌거래내역 조회에 실패했습니다: " + (error.getMessage() != null ? error.getMessage() : "원인 미상"))
                                 .build()
                 ));
     }
@@ -124,20 +146,7 @@ public class FinanceServiceImpl implements FinanceService {
                 .build();
     }
 
-    private SingleExchangeRateResponse convertToSingleExchangeRateResponse(ExternalExchangeRateSearchResponse external) {
-        if (external == null || external.getRec() == null) {
-            return SingleExchangeRateResponse.builder()
-                    .code("error")
-                    .message("환율 정보를 가져올 수 없습니다.")
-                    .build();
-        }
-        return SingleExchangeRateResponse.builder()
-                .code("success")
-                .message("환율 단건 조회 완료")
-                .currencyCode(external.getRec().getCurrency())
-                .exchangeRate(external.getRec().getExchangeRate())
-                .build();
-    }
+    // 단건 변환 도우미는 리스트 필터 방식으로 대체됨
 
     private TransactionsResponse convertToTransactionsResponse(ExternalTransactionHistoryResponse external) {
         if (external == null || external.getRec() == null) {

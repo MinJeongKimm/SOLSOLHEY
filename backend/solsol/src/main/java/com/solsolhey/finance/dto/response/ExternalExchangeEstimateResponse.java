@@ -1,5 +1,6 @@
 package com.solsolhey.finance.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ExternalExchangeEstimateResponse {
+    @JsonProperty("Header")
     private Header header;
+    @JsonProperty("REC")
     private Rec rec;
 
     @Data
@@ -41,4 +44,3 @@ public class ExternalExchangeEstimateResponse {
         private String currencyName;
     }
 }
-

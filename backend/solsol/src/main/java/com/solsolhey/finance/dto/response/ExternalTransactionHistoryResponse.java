@@ -1,5 +1,6 @@
 package com.solsolhey.finance.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +13,9 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ExternalTransactionHistoryResponse {
+    @JsonProperty("Header")
     private Header header;
+    @JsonProperty("REC")
     private Rec rec;
 
     @Data
@@ -45,4 +48,3 @@ public class ExternalTransactionHistoryResponse {
         private String transactionAfterBalance; // 잔액
     }
 }
-

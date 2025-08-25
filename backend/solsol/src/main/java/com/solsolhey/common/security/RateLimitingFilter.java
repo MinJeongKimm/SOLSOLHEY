@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
  * Rate Limiting 필터
  * 모든 HTTP 요청에 대해 Rate Limiting 적용
  */
-//@Component
+@Component
 @RequiredArgsConstructor
 @Slf4j
 public class RateLimitingFilter implements Filter {

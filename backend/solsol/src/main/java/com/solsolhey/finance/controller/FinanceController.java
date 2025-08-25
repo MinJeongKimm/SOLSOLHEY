@@ -27,7 +27,15 @@ public class FinanceController {
         log.info("환율 전체 조회 API 호출");
         return financeService.getAllExchangeRates()
                 .map(ResponseEntity::ok)
-                .onErrorResume(error -> Mono.just(ResponseEntity.internalServerError().build()));
+                .onErrorResume(error -> {
+                    log.error("환율 전체 조회 실패", error);
+                    ExchangeRateResponse err = ExchangeRateResponse.builder()
+                            .code("error")
+                            .message("환율 조회에 실패했습니다.")
+                            .error(error.getMessage())
+                            .build();
+                    return Mono.just(ResponseEntity.internalServerError().body(err));
+                });
     }
 
     // 환율 단건 조회
@@ -36,7 +44,15 @@ public class FinanceController {
         log.info("환율 단건 조회 API 호출: {}", currency);
         return financeService.getExchangeRate(currency)
                 .map(ResponseEntity::ok)
-                .onErrorResume(error -> Mono.just(ResponseEntity.internalServerError().build()));
+                .onErrorResume(error -> {
+                    log.error("환율 단건 조회 실패", error);
+                    SingleExchangeRateResponse err = SingleExchangeRateResponse.builder()
+                            .code("error")
+                            .message("환율 단건 조회에 실패했습니다.")
+                            .currencyCode(currency)
+                            .build();
+                    return Mono.just(ResponseEntity.internalServerError().body(err));
+                });
     }
 
     // 환전 예상 금액 조회
@@ -45,7 +61,14 @@ public class FinanceController {
         log.info("환전 예상 금액 조회 API 호출: {} -> {}", request.getCurrency(), request.getExchangeCurrency());
         return financeService.estimateExchange(request)
                 .map(ResponseEntity::ok)
-                .onErrorResume(error -> Mono.just(ResponseEntity.internalServerError().build()));
+                .onErrorResume(error -> {
+                    log.error("환전 예상 금액 조회 실패", error);
+                    ExchangeEstimateResponse err = ExchangeEstimateResponse.builder()
+                            .code("error")
+                            .message("환전 예상 금액 조회에 실패했습니다.")
+                            .build();
+                    return Mono.just(ResponseEntity.internalServerError().body(err));
+                });
     }
 
     // 계좌 거래내역 조회
@@ -54,6 +77,13 @@ public class FinanceController {
         log.info("계좌 거래내역 조회 API 호출: {}", request.getAccountNo());
         return financeService.getTransactionHistory(request)
                 .map(ResponseEntity::ok)
-                .onErrorResume(error -> Mono.just(ResponseEntity.internalServerError().build()));
+                .onErrorResume(error -> {
+                    log.error("계좌 거래내역 조회 실패", error);
+                    TransactionsResponse err = TransactionsResponse.builder()
+                            .code("error")
+                            .message("계좌 거래내역 조회에 실패했습니다.")
+                            .build();
+                    return Mono.just(ResponseEntity.internalServerError().body(err));
+                });
     }
 }

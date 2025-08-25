@@ -1,5 +1,6 @@
 package com.solsolhey.finance.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ExchangeEstimateRequest {
+    @JsonProperty("Header")
     private Header header;
     private String currency;          // 소유 통화코드 (예: USD)
     private String exchangeCurrency;  // 환전 대상 통화코드 (예: JPY)

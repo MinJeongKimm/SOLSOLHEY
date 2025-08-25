@@ -1,5 +1,6 @@
 package com.solsolhey.finance.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,8 +13,9 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ExternalExchangeRateResponse {
-    
+    @JsonProperty("Header")
     private Header header;
+    @JsonProperty("REC")
     private List<ExchangeRate> rec;
     
     @Data
