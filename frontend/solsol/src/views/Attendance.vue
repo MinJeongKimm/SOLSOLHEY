@@ -213,7 +213,8 @@ const calendarDays = computed(() => {
     
     const isCurrentMonth = date.getMonth() === currentMonth.value - 1;
     const isToday = isSameDay(date, new Date());
-    const isAttended = !isToday && isAttendedDay(date);
+    // 오늘 날짜도 출석 여부를 확인하도록 수정
+    const isAttended = isAttendedDay(date);
     
     days.push({
       key: i,
@@ -238,6 +239,15 @@ function isSameDay(date1: Date, date2: Date): boolean {
 // 출석 여부 확인 (실제 출석 기록에서 확인)
 function isAttendedDay(date: Date): boolean {
   const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+  const today = new Date();
+  const todayString = today.toISOString().split('T')[0];
+  
+  // 오늘 날짜이고 오늘 출석했다면 true 반환
+  if (dateString === todayString && todayAttended.value) {
+    return true;
+  }
+  
+  // 과거 날짜는 출석 기록에서 확인
   return attendanceRecords.value.has(dateString);
 }
 
@@ -339,12 +349,21 @@ onMounted(async () => {
     // 백엔드 응답 구조에 맞게 처리
     if (res && res.success && res.data) {
       todayAttended.value = !!res.data.attended;
+      
+      // 오늘 출석했다면 출석 기록에 추가
+      if (todayAttended.value) {
+        const today = new Date();
+        const todayString = today.toISOString().split('T')[0];
+        attendanceRecords.value.add(todayString);
+      }
     } else {
       todayAttended.value = false;
     }
     
-    // 출석 기록은 빈 Set으로 초기화 (실제 출석체크 시에만 추가됨)
-    attendanceRecords.value = new Set();
+    // 출석 기록이 비어있다면 빈 Set으로 초기화
+    if (attendanceRecords.value.size === 0) {
+      attendanceRecords.value = new Set();
+    }
   } catch (error) {
     console.error('오늘 출석 상태 확인 오류:', error);
     todayAttended.value = false;
