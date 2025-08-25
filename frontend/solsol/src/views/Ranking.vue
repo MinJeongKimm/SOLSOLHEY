@@ -45,6 +45,56 @@
         </nav>
       </div>
 
+      <!-- 내 순위 섹션 (탭 아래, 고정 위치) -->
+      <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6 border-2 border-blue-200">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+              <span class="text-white text-xl">👤</span>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-gray-800">
+                {{ activeTab === 'campus' ? '교내' : '전국' }} 내 순위
+              </h2>
+              <!-- 랭킹에 등록된 경우 -->
+              <div v-if="myRank && myRank > 0" class="flex items-center space-x-2">
+                <span class="text-2xl font-bold text-blue-600">{{ myRank }}위</span>
+                <span class="text-sm text-gray-600">• {{ myRank === 1 ? '🥇' : myRank === 2 ? '🥈' : myRank === 3 ? '🥉' : '🏅' }}</span>
+              </div>
+              <!-- 랭킹에 등록되지 않은 경우 -->
+              <div v-else class="flex items-center space-x-2">
+                <span class="text-lg text-gray-600">랭킹에 참가하지 않았습니다</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 랭킹에 등록되지 않은 경우 참가 버튼 표시 -->
+          <div v-if="!myRank || myRank === 0">
+            <button
+              @click="joinRanking"
+              class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg"
+            >
+              랭킹 참가하기
+            </button>
+          </div>
+          
+          <!-- 랭킹에 등록된 경우 참가 완료 표시 -->
+          <div v-else class="bg-green-100 text-green-700 px-4 py-2 rounded-lg font-medium">
+            참가 완료! 🎉
+          </div>
+        </div>
+        
+        <!-- 랭킹에 등록되지 않은 경우 안내 메시지 -->
+        <div v-if="!myRank || myRank === 0" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div class="flex items-center space-x-2">
+            <span class="text-blue-600">💡</span>
+            <span class="text-blue-700 text-sm">
+              {{ activeTab === 'campus' ? '교내' : '전국' }} 랭킹에서 내 순위를 확인하려면 랭킹에 참가하세요! 마스코트를 등록하고 다른 사용자들의 투표를 받아보세요.
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- 교내 랭킹 -->
       <div v-if="activeTab === 'campus'" class="space-y-6">
         <!-- 교내 랭킹 필터 -->
@@ -258,6 +308,7 @@ const error = ref<string | null>(null);
 const voting = ref(false);
 const campusRankings = ref<RankingResponse | null>(null);
 const currentUser = ref<any>(null);
+const myRank = ref<number | null>(null);
 
 // 필터 설정
 const campusFilters = ref({
@@ -273,6 +324,32 @@ const nationalFilters = ref({
   size: 10,
   page: 0
 });
+
+// 현재 사용자의 순위 찾기
+const findMyRank = () => {
+  if (!campusRankings.value || !currentUser.value) {
+    myRank.value = null;
+    return;
+  }
+  
+  // 랭킹 목록에서 현재 사용자의 엔트리를 찾기
+  const myEntry = campusRankings.value.entries.find(entry => 
+    entry.ownerNickname === currentUser.value.nickname
+  );
+  
+  if (myEntry) {
+    myRank.value = myEntry.rank;
+  } else {
+    myRank.value = 0; // 랭킹에 등록되지 않음
+  }
+};
+
+// 랭킹 참가하기 (임시 구현)
+const joinRanking = () => {
+  // TODO: 실제 랭킹 등록 API 호출
+  alert('랭킹 등록 기능은 준비 중입니다. 마스코트를 먼저 생성해주세요!');
+  // router.push('/mascot-create'); // 마스코트 생성 페이지로 이동
+};
 
 // 교내 랭킹 로드
 const loadCampusRankings = async () => {
@@ -294,6 +371,9 @@ const loadCampusRankings = async () => {
     );
     
     campusRankings.value = response;
+    
+    // 내 순위 찾기
+    findMyRank();
   } catch (err: any) {
     console.error('교내 랭킹 로드 실패:', err);
     error.value = err.message || '랭킹을 불러오는데 실패했습니다.';
