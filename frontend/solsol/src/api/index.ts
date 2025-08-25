@@ -453,22 +453,22 @@ export async function getUserInfo(userId: number): Promise<ApiResponse<UserRespo
 // 상점 관련 API 함수들
 export async function getShopItems(type?: string): Promise<ShopItem[]> {
   const endpoint = type ? `/shop/items?type=${type}` : '/shop/items';
-  return apiRequest<ShopItem[]>(endpoint, {
-    method: 'GET',
-  });
+  const res = await apiRequest<any>(endpoint, { method: 'GET' });
+  // 백엔드 래핑 응답 언래핑
+  return (res && res.data) ? (res.data as ShopItem[]) : [];
 }
 
 export async function getGifticons(): Promise<Gifticon[]> {
-  return apiRequest<Gifticon[]>('/shop/gifticons', {
-    method: 'GET',
-  });
+  const res = await apiRequest<any>('/shop/gifticons', { method: 'GET' });
+  return (res && res.data) ? (res.data as Gifticon[]) : [];
 }
 
 export async function createOrder(orderData: OrderRequest): Promise<OrderResponse> {
-  return apiRequest<OrderResponse>('/shop/orders', {
+  const res = await apiRequest<any>('/shop/orders', {
     method: 'POST',
     body: JSON.stringify(orderData),
   });
+  return (res && res.data) ? (res.data as OrderResponse) : ({} as OrderResponse);
 }
 
 export async function getUserItems(): Promise<UserItem[]> {

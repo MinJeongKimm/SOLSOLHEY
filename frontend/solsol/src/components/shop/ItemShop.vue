@@ -100,6 +100,7 @@
         v-for="item in filteredItems" 
         :key="item.id"
         class="relative border-2 border-gray-200 rounded-xl p-4 transition-all cursor-pointer hover:border-gray-300 hover:shadow-md"
+        :class="item.owned ? 'opacity-60 cursor-not-allowed' : ''"
         @click="handleItemClick(item)"
       >
         <!-- 아이템 이미지 -->
@@ -124,7 +125,10 @@
             <div class="text-lg font-bold text-blue-600 mb-2">
               {{ item.price }}P
             </div>
-            <span class="text-xs font-medium px-3 py-1 rounded-full bg-blue-500 text-white hover:bg-blue-600">
+            <span v-if="item.owned" class="text-xs font-medium px-3 py-1 rounded-full bg-gray-300 text-gray-700">
+              보유중
+            </span>
+            <span v-else class="text-xs font-medium px-3 py-1 rounded-full bg-blue-500 text-white hover:bg-blue-600">
               구매하기
             </span>
           </div>
@@ -238,6 +242,7 @@ function isOwned(item: ShopItem): boolean {
 
 // 아이템 클릭 처리
 function handleItemClick(item: ShopItem) {
+  if (item.owned) return; // 보유 아이템은 클릭/구매 불가
   selectedItem.value = item;
   showPurchaseDialog.value = true;
 }
