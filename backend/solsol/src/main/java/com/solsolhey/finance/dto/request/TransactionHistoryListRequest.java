@@ -9,24 +9,28 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ExchangeEstimateRequest {
+public class TransactionHistoryListRequest {
     private Header header;
-    private String currency;          // 소유 통화코드 (예: USD)
-    private String exchangeCurrency;  // 환전 대상 통화코드 (예: JPY)
-    private String amount;            // 환전 금액 (문자열 유지)
+    private String accountNo;
+    private String startDate;       // YYYYMMDD
+    private String endDate;         // YYYYMMDD
+    private String transactionType; // M/D/A
+    private String orderByType;     // ASC/DESC (옵션)
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
     public static class Header {
-        private String apiName; // estimate
+        private String apiName; // inquireTransactionHistoryList
         private String transmissionDate;
         private String transmissionTime;
         private String institutionCode;
         private String fintechAppNo;
-        private String apiServiceCode; // estimate
+        private String apiServiceCode; // inquireTransactionHistoryList
         private String institutionTransactionUniqueNo;
         private String apiKey;
+        private String userKey; // 이 API는 userKey 필요
     }
 }
+

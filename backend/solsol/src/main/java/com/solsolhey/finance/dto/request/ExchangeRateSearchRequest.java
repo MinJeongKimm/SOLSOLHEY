@@ -9,24 +9,23 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ExchangeEstimateRequest {
+public class ExchangeRateSearchRequest {
     private Header header;
-    private String currency;          // 소유 통화코드 (예: USD)
-    private String exchangeCurrency;  // 환전 대상 통화코드 (예: JPY)
-    private String amount;            // 환전 금액 (문자열 유지)
+    private String currency; // 조회 대상 통화코드 (예: USD)
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
     public static class Header {
-        private String apiName; // estimate
+        private String apiName; // exchangeRateSearch
         private String transmissionDate;
         private String transmissionTime;
         private String institutionCode;
         private String fintechAppNo;
-        private String apiServiceCode; // estimate
+        private String apiServiceCode; // exchangeRateSearch
         private String institutionTransactionUniqueNo;
         private String apiKey;
     }
 }
+

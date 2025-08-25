@@ -9,12 +9,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ExchangeEstimateResponse {
+public class SingleExchangeRateResponse {
     private String code; // success / error
     private String message;
 
-    // 최소 필드만 노출
-    private String sourceCurrency;   // 예: USD
-    private String targetCurrency;   // 예: JPY
-    private String estimatedAmount;  // 대상 통화로 환전 예상 금액 (문자열 그대로 유지)
+    // 최소 필드
+    private String currencyCode; // 예: USD
+    private String exchangeRate; // 문자열 그대로 유지
 }
+

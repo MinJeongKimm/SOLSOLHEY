@@ -1,9 +1,16 @@
 package com.solsolhey.finance.service;
 
 import com.solsolhey.finance.client.FinanceApiClient;
+import com.solsolhey.finance.dto.request.EstimateRequest;
+import com.solsolhey.finance.dto.request.TransactionHistoryRequest;
 import com.solsolhey.finance.dto.response.ExchangeRateResponse;
 import com.solsolhey.finance.dto.response.ExternalExchangeRateResponse;
+import com.solsolhey.finance.dto.response.ExternalExchangeRateSearchResponse;
+import com.solsolhey.finance.dto.response.ExternalTransactionHistoryResponse;
+import com.solsolhey.finance.dto.response.ExchangeEstimateResponse;
 import com.solsolhey.finance.exception.ExternalApiException;
+import com.solsolhey.finance.dto.response.SingleExchangeRateResponse;
+import com.solsolhey.finance.dto.response.TransactionsResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,6 +48,62 @@ public class FinanceServiceImpl implements FinanceService {
                     return Mono.error(new ExternalApiException("환율 정보를 조회할 수 없습니다. 잠시 후 다시 시도해 주세요."));
                 });
     }
+
+    @Override
+    public Mono<SingleExchangeRateResponse> getExchangeRate(String currency) {
+        log.info("환율 단건 조회 시작: {}", currency);
+        return financeApiClient.getExchangeRateByCurrency(currency)
+                .map(this::convertToSingleExchangeRateResponse)
+                .doOnError(error -> log.error("환율 단건 조회 중 오류 발생", error))
+                .onErrorResume(error -> Mono.just(
+                        SingleExchangeRateResponse.builder()
+                                .code("error")
+                                .message("환율 단건 조회에 실패했습니다.")
+                                .currencyCode(currency)
+                                .exchangeRate(null)
+                                .build()
+                ));
+    }
+
+    @Override
+    public Mono<ExchangeEstimateResponse> estimateExchange(EstimateRequest request) {
+        log.info("환전 예상 금액 조회 시작: {} -> {}, {}", request.getCurrency(), request.getExchangeCurrency(), request.getAmount());
+        return financeApiClient.estimateExchange(request.getCurrency(), request.getExchangeCurrency(), String.valueOf(request.getAmount()))
+                .map(external -> ExchangeEstimateResponse.builder()
+                        .code("success")
+                        .message("환전 예상 금액 조회 완료")
+                        .sourceCurrency(external.getRec().getCurrency().getCurrency())
+                        .targetCurrency(external.getRec().getExchangeCurrency().getCurrency())
+                        .estimatedAmount(external.getRec().getExchangeCurrency().getAmount())
+                        .build()
+                )
+                .onErrorResume(error -> Mono.just(
+                        ExchangeEstimateResponse.builder()
+                                .code("error")
+                                .message("환전 예상 금액 조회에 실패했습니다.")
+                                .build()
+                ));
+    }
+
+    @Override
+    public Mono<TransactionsResponse> getTransactionHistory(TransactionHistoryRequest request) {
+        log.info("계좌거래내역 조회 시작: {}", request.getAccountNo());
+        return financeApiClient.getTransactionHistory(
+                        request.getUserKey(),
+                        request.getAccountNo(),
+                        request.getStartDate(),
+                        request.getEndDate(),
+                        request.getTransactionType(),
+                        request.getOrderByType()
+                )
+                .map(this::convertToTransactionsResponse)
+                .onErrorResume(error -> Mono.just(
+                        TransactionsResponse.builder()
+                                .code("error")
+                                .message("계좌거래내역 조회에 실패했습니다.")
+                                .build()
+                ));
+    }
     
     private ExchangeRateResponse convertToExchangeRateResponse(ExternalExchangeRateResponse externalResponse) {
         if (externalResponse == null || externalResponse.getRec() == null) {
@@ -58,6 +121,44 @@ public class FinanceServiceImpl implements FinanceService {
                 .code("success")
                 .payload(exchangeRates)
                 .message("환율 조회가 완료되었습니다.")
+                .build();
+    }
+
+    private SingleExchangeRateResponse convertToSingleExchangeRateResponse(ExternalExchangeRateSearchResponse external) {
+        if (external == null || external.getRec() == null) {
+            return SingleExchangeRateResponse.builder()
+                    .code("error")
+                    .message("환율 정보를 가져올 수 없습니다.")
+                    .build();
+        }
+        return SingleExchangeRateResponse.builder()
+                .code("success")
+                .message("환율 단건 조회 완료")
+                .currencyCode(external.getRec().getCurrency())
+                .exchangeRate(external.getRec().getExchangeRate())
+                .build();
+    }
+
+    private TransactionsResponse convertToTransactionsResponse(ExternalTransactionHistoryResponse external) {
+        if (external == null || external.getRec() == null) {
+            return TransactionsResponse.builder()
+                    .code("error")
+                    .message("거래내역을 가져올 수 없습니다.")
+                    .build();
+        }
+        List<TransactionsResponse.TransactionItem> items = external.getRec().getList().stream()
+                .map(i -> TransactionsResponse.TransactionItem.builder()
+                        .date(i.getTransactionDate())
+                        .time(i.getTransactionTime())
+                        .typeName(i.getTransactionTypeName())
+                        .amount(i.getTransactionBalance())
+                        .build())
+                .collect(Collectors.toList());
+        return TransactionsResponse.builder()
+                .code("success")
+                .message("거래내역 조회 완료")
+                .totalCount(external.getRec().getTotalCount())
+                .items(items)
                 .build();
     }
 }
