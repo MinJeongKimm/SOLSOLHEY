@@ -59,7 +59,7 @@
           
           <!-- 친구 추가 버튼 -->
           <button
-            v-if="!user.isFriend && !user.isRequested"
+            v-if="!user.isAlreadyFriend && !user.hasPendingRequest"
             @click="addFriend(user)"
             :disabled="isAdding"
             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
@@ -68,14 +68,22 @@
           </button>
           
           <!-- 이미 친구인 경우 -->
-          <span v-else-if="user.isFriend" class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm">
-            이미 친구
-          </span>
+          <button
+            v-else-if="user.isAlreadyFriend"
+            disabled
+            class="px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm cursor-not-allowed"
+          >
+            친구
+          </button>
           
           <!-- 친구 요청 대기 중인 경우 -->
-          <span v-else-if="user.isRequested" class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm">
-            요청 대기 중
-          </span>
+          <button
+            v-else-if="user.hasPendingRequest"
+            disabled
+            class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm cursor-not-allowed"
+          >
+            요청 중
+          </button>
         </div>
       </div>
 
@@ -144,10 +152,11 @@ const performSearch = async () => {
   isSearching.value = true;
   try {
     const users = await searchUsersApi(searchQuery.value);
-    searchResults.value = users.map((user: User) => ({
+    // 백엔드에서 반환되는 친구 상태 정보를 올바르게 매핑
+    searchResults.value = users.map((user: any) => ({
       ...user,
-      isFriend: false, // TODO: 친구 여부 확인 API 연동 필요
-      isRequested: false // TODO: 친구 요청 여부 확인 API 연동 필요
+      isAlreadyFriend: user.isAlreadyFriend || false,
+      hasPendingRequest: user.hasPendingRequest || false
     }));
   } catch (error) {
     console.error('사용자 검색 실패:', error);
@@ -162,7 +171,7 @@ const addFriend = async (user: User) => {
   isAdding.value = true;
   try {
     await sendFriendRequest(user.userId);
-    user.isRequested = true;
+    user.hasPendingRequest = true; // 요청 성공 시, UI를 즉시 '요청 중'으로 변경
     
     // 성공 메시지 표시
     alert(`${user.nickname || user.username}님에게 친구 요청을 보냈습니다.`);

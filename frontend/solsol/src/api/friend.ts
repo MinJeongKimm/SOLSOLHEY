@@ -14,8 +14,8 @@ export interface User {
   nickname?: string;
   campus?: string;
   totalPoints?: number;
-  isFriend?: boolean;
-  isRequested?: boolean;
+  isAlreadyFriend?: boolean;
+  hasPendingRequest?: boolean;
 }
 
 export interface FriendRequest {
@@ -69,7 +69,7 @@ export const getFriendRequests = async (): Promise<PendingFriendRequest[]> => {
 // 사용자 검색
 export async function searchUsers(query: string): Promise<any[]> {
   try {
-    const response = await apiRequest<{ data: any[] }>(`/users/search?nickname=${encodeURIComponent(query)}`);
+    const response = await apiRequest<{ data: any[] }>(`/friends/search?keyword=${encodeURIComponent(query)}`);
     return response.data || [];
   } catch (error) {
     console.error('사용자 검색 실패:', error);

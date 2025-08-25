@@ -129,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { getFriendList, getFriendRequests, acceptFriendRequest as acceptRequest, rejectFriendRequest as rejectRequest, type Friend, type PendingFriendRequest } from '../api/friend';
 
@@ -138,48 +138,53 @@ const friends = ref<Friend[]>([]);
 const friendRequests = ref<PendingFriendRequest[]>([]);
 const isProcessing = ref(false);
 
-// 친구 목록과 요청 목록 조회
-onMounted(() => {
-  fetchFriends();
-  fetchFriendRequests();
-});
-
-// 친구 상세 화면으로 이동
-const viewFriendDetail = (friend: Friend) => {
-  // TODO: 친구 상세 화면으로 이동
-  console.log('친구 상세 화면으로 이동:', friend);
-  // router.push(`/friend/${friend.friendId}`);
-};
-
-// 친구 목록 조회 함수
 const fetchFriends = async () => {
   try {
-    const friendsList = await getFriendList();
-    friends.value = friendsList;
+    // api/friend.ts에서 이미 데이터를 추출해서 반환하므로, 바로 할당합니다.
+    friends.value = await getFriendList() || [];
   } catch (error) {
     console.error('친구 목록 조회 실패:', error);
+    friends.value = [];
   }
 };
 
-// 친구 요청 목록 조회 함수
 const fetchFriendRequests = async () => {
   try {
-    const requests = await getFriendRequests();
-    friendRequests.value = requests;
+    // api/friend.ts에서 이미 데이터를 추출해서 반환하므로, 바로 할당합니다.
+    friendRequests.value = await getFriendRequests() || [];
   } catch (error) {
     console.error('친구 요청 목록 조회 실패:', error);
+    friendRequests.value = [];
   }
 };
 
-// 친구 요청 수락
+const loadData = () => {
+  fetchFriends();
+  fetchFriendRequests();
+};
+
+// /friends 경로로 진입할 때마다 데이터를 새로고침합니다.
+watch(
+  () => router.currentRoute.value.path,
+  (path) => {
+    if (path === '/friends') {
+      loadData();
+    }
+  },
+  { immediate: true }
+);
+
+const viewFriendDetail = (friend: Friend) => {
+  console.log('친구 상세 화면으로 이동:', friend);
+  // 상세 페이지 라우팅 로직 추가 가능
+};
+
 const acceptFriendRequest = async (userId: number) => {
   isProcessing.value = true;
   try {
     await acceptRequest(userId);
-    // 요청 목록에서 제거하고 친구 목록 새로고침
-    friendRequests.value = friendRequests.value.filter(req => req.userId !== userId);
-    await fetchFriends();
     alert('친구 요청을 수락했습니다!');
+    await loadData(); // 수락 후 목록 전체를 새로고침
   } catch (error) {
     console.error('친구 요청 수락 실패:', error);
     alert('친구 요청 수락에 실패했습니다. 다시 시도해주세요.');
@@ -188,14 +193,13 @@ const acceptFriendRequest = async (userId: number) => {
   }
 };
 
-// 친구 요청 거절
 const rejectFriendRequest = async (userId: number) => {
   isProcessing.value = true;
   try {
     await rejectRequest(userId);
-    // 요청 목록에서 제거
-    friendRequests.value = friendRequests.value.filter(req => req.userId !== userId);
     alert('친구 요청을 거절했습니다.');
+    // 거절 후 요청 목록에서 즉시 제거
+    friendRequests.value = friendRequests.value.filter(req => req.userId !== userId);
   } catch (error) {
     console.error('친구 요청 거절 실패:', error);
     alert('친구 요청 거절에 실패했습니다. 다시 시도해주세요.');
