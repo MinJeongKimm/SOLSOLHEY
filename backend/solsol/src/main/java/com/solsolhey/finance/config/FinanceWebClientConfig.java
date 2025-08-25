@@ -1,51 +1,30 @@
 package com.solsolhey.finance.config;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-
 @Configuration
 @Slf4j
-public class FinanceApiConfig {
+@RequiredArgsConstructor
+public class FinanceWebClientConfig {
     
-    @Value("${finance.api.base-url:https://finopenapi.ssafy.io/ssafy/api/v1/edu}")
-    private String baseUrl;
-    
-    @Value("${finance.api.timeout:10}")
-    private int timeoutSeconds;
-    
-    @Value("${finance.api.key:}")
-    private String apiKey;
+    private final FinanceApiProperties properties;
     
     @Bean("financeWebClient")
     public WebClient financeWebClient() {
-        WebClient.Builder builder = WebClient.builder()
-                .baseUrl(baseUrl)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+        return WebClient.builder()
+                .baseUrl(properties.getBaseUrl())
                 .filter(loggingFilter())
                 .filter(errorHandlingFilter())
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(1024 * 1024));
-        
-        // API 키가 있으면 기본 헤더에 추가
-        if (apiKey != null && !apiKey.isEmpty()) {
-            builder.defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey);
-        }
-        
-        return builder.build();
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
+                .build();
     }
     
-    /**
-     * 로깅 필터
-     */
     private ExchangeFilterFunction loggingFilter() {
         return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
             log.info("외부 API 요청: {} {}", clientRequest.method(), clientRequest.url());
@@ -53,9 +32,6 @@ public class FinanceApiConfig {
         });
     }
     
-    /**
-     * 에러 처리 필터
-     */
     private ExchangeFilterFunction errorHandlingFilter() {
         return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
             if (clientResponse.statusCode().isError()) {
