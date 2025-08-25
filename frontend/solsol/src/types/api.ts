@@ -7,7 +7,12 @@ export interface ApiResponse<T = any> {
 }
 
 // 회원가입 관련 타입
-export interface SignupRequest {
+export type Campus = {
+  id: number;
+  name: string;
+};
+
+export type SignupRequest = {
   userId: string;
   password: string;
   nickname: string;

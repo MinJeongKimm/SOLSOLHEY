@@ -32,10 +32,13 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:h2:file:./.localdb/solsol;MODE=MySQL;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+    url: jdbc:h2:file:./.localdb/solsol;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
     driver-class-name: org.h2.Driver
     username: sa
     password: 
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
   h2:
     console:
       enabled: true
@@ -61,6 +64,9 @@ spring:
     username: ${DB_USER:solsol}
     password: ${DB_PASSWORD:solsol123}
     driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
   jpa:
     hibernate:
       ddl-auto: ${JPA_HIBERNATE_DDL_AUTO:update}
@@ -70,9 +76,7 @@ spring:
         format_sql: ${JPA_FORMAT_SQL:true}
   sql:
     init:
-      mode: ${SPRING_SQL_INIT_MODE:always}
-      schema-locations: classpath:db/init-postgresql.sql
-      data-locations: classpath:db/init-postgresql.sql
+      mode: ${SPRING_SQL_INIT_MODE:never}
 
 # 운영 환경 (PostgreSQL)
 ---

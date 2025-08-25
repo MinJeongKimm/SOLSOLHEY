@@ -101,11 +101,7 @@
             :class="{'border-red-400 ring-2 ring-red-300': campusError, 'focus:ring-blue-400': !campusError}"
           >
             <option value="" disabled>캠퍼스를 선택해주세요</option>
-            <option value="ssafy_seoul">SSAFY 서울캠퍼스</option>
-            <option value="ssafy_daejeon">SSAFY 대전캠퍼스</option>
-            <option value="ssafy_gwangju">SSAFY 광주캠퍼스</option>
-            <option value="ssafy_gumi">SSAFY 구미캠퍼스</option>
-            <option value="ssafy_busan">SSAFY 부울경캠퍼스</option>
+            <option v-for="c in campusList" :key="c.id" :value="c.name">{{ c.name }}</option>
           </select>
           <transition name="fade">
             <p v-if="campusError" id="campusError" class="text-xs text-red-500 mt-1 animate-shake">
@@ -141,16 +137,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { signup, handleApiError } from '../api/index';
-import type { SignupRequest } from '../types/api';
+import { getCampusList } from '../api/campus';
+import type { SignupRequest, Campus } from '../types/api';
 
 const userId = ref('');
 const nickname = ref('');
 const password = ref('');
 const password2 = ref('');
 const campus = ref('');
+const campusList = ref<Campus[]>([]);
 const loading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
@@ -160,6 +158,15 @@ const passwordError = ref('');
 const password2Error = ref('');
 const campusError = ref('');
 const router = useRouter();
+
+onMounted(async () => {
+  try {
+    campusList.value = await getCampusList();
+  } catch (error) {
+    errorMessage.value = '캠퍼스 목록을 불러오는데 실패했습니다.';
+    console.error('캠퍼스 목록 조회 오류:', error);
+  }
+});
 
 function validateUserId(value: string) {
   if (!value) return '이메일을 입력하세요.';
