@@ -57,7 +57,7 @@
               <!-- 수락/거절 버튼 -->
               <div class="flex space-x-2">
                 <button
-                  @click="acceptFriendRequest(request.userId)"
+                  @click="acceptFriendRequest(request.requestId)"
                   :disabled="isProcessing"
                   class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
                 >

@@ -75,7 +75,7 @@ public class FriendServiceImpl implements FriendService {
         Friend friend = friendRepository.findById(friendId)
                 .orElseThrow(() -> new EntityNotFoundException("친구 요청을 찾을 수 없습니다."));
 
-        if (!friend.getUser().getUserId().equals(user.getUserId())) {
+        if (!friend.getFriendUser().getUserId().equals(user.getUserId())) {
             throw new BusinessException("친구 요청을 수락할 권한이 없습니다.");
         }
 
@@ -94,7 +94,7 @@ public class FriendServiceImpl implements FriendService {
         Friend friend = friendRepository.findById(friendId)
                 .orElseThrow(() -> new EntityNotFoundException("친구 요청을 찾을 수 없습니다."));
 
-        if (!friend.getUser().getUserId().equals(user.getUserId())) {
+        if (!friend.getFriendUser().getUserId().equals(user.getUserId())) {
             throw new BusinessException("친구 요청을 거절할 권한이 없습니다.");
         }
 
