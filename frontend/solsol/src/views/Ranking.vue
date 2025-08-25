@@ -237,6 +237,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { 
   getCampusRankings, 
   getNationalRankings,
@@ -245,6 +246,10 @@ import {
   type RankingResponse,
   type VoteRequest
 } from '../api/ranking';
+import { bootstrapAuth, auth } from '../api/index';
+
+// Router 인스턴스
+const router = useRouter();
 
 // 상태 관리
 const activeTab = ref<'campus' | 'national'>('campus');
@@ -292,6 +297,11 @@ const loadCampusRankings = async () => {
   } catch (err: any) {
     console.error('교내 랭킹 로드 실패:', err);
     error.value = err.message || '랭킹을 불러오는데 실패했습니다.';
+    
+    // 인증 에러 시 로그인 페이지로 이동
+    if (err.message === '로그인이 필요합니다.') {
+      router.push('/login');
+    }
   } finally {
     loading.value = false;
   }
@@ -317,6 +327,11 @@ const loadNationalRankings = async () => {
   } catch (err: any) {
     console.error('전국 랭킹 로드 실패:', err);
     error.value = err.message || '전국 랭킹을 불러오는데 실패했습니다.';
+    
+    // 인증 에러 시 로그인 페이지로 이동
+    if (err.message === '로그인이 필요합니다.') {
+      router.push('/login');
+    }
   } finally {
     loading.value = false;
   }
@@ -354,9 +369,30 @@ const changePage = (newPage: number) => {
   loadCampusRankings();
 };
 
-// 컴포넌트 마운트 시 교내 랭킹 로드
-onMounted(() => {
-  loadCampusRankings();
+// 컴포넌트 마운트 시 인증 확인 후 랭킹 로드
+onMounted(async () => {
+  try {
+    // 1. 인증 상태 강제 동기화
+    await bootstrapAuth();
+    
+    // 2. 인증 상태 재확인 (더 엄격하게)
+    const isAuth = await auth.isAuthenticatedAsync();
+    if (!isAuth) {
+      console.log('인증 실패, 로그인 페이지로 이동');
+      router.push('/login');
+      return;
+    }
+    
+    console.log('인증 성공, 랭킹 데이터 로드 시작');
+    
+    // 3. 랭킹 데이터 로드
+    await loadCampusRankings();
+    
+  } catch (error) {
+    console.error('랭킹 페이지 초기화 실패:', error);
+    // 인증 실패 시 로그인 페이지로 이동
+    router.push('/login');
+  }
 });
 </script>
 
