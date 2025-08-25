@@ -461,7 +461,7 @@ const quickRotations = [0, 90, 180, 270];
 // 필터링된 아이템 목록 (보유한 아이템만)
 const filteredItems = computed(() => {
   return items.value.filter(item => 
-    item.type === selectedCategory.value && item.owned === true
+    item.category === selectedCategory.value && item.owned === true
   );
 });
 

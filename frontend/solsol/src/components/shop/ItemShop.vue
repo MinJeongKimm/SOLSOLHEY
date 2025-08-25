@@ -190,13 +190,8 @@ const sortOrder = ref<'default' | 'price-low' | 'price-high'>('default');
 const showPurchaseDialog = ref(false);
 const selectedItem = ref<ShopItem | null>(null);
 
-// 아이템 타입 매핑 (프론트엔드 → 백엔드)
-const itemTypeMapping: Record<string, string> = {
-  'head': 'EQUIP',
-  'clothing': 'EQUIP',
-  'accessory': 'EQUIP',
-  'background': 'BACKGROUND'
-};
+// 아이템 타입 매핑 제거 (더 이상 필요 없음 - category 필드 직접 사용)
+// const itemTypeMapping: Record<string, string> = { ... };
 
 // 카테고리별 아이템 필터링
 const filteredItems = computed(() => {
@@ -207,10 +202,9 @@ const filteredItems = computed(() => {
   
   let filtered = [...items.value];  // 배열 복사
   
-  // 카테고리 필터링
+  // 카테고리 필터링 (직접 category 필드 사용)
   if (selectedCategory.value !== 'all') {
-    const backendType = itemTypeMapping[selectedCategory.value];
-    filtered = filtered.filter(item => item.type === backendType);
+    filtered = filtered.filter(item => item.category === selectedCategory.value);
   }
   
   // 정렬

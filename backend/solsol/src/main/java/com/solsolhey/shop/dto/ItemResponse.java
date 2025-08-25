@@ -29,6 +29,9 @@ public class ItemResponse {
     @Schema(description = "상품 타입", example = "EQUIP")
     private String type;
     
+    @Schema(description = "상품 카테고리", example = "head")
+    private String category;
+    
     @Schema(description = "이미지 URL", example = "https://example.com/hat.png")
     private String imageUrl;
     
@@ -42,6 +45,7 @@ public class ItemResponse {
                 .description(item.getDescription())
                 .price(item.getPrice())
                 .type(item.getType().name())
+                .category(item.getCategory())
                 .imageUrl(item.getImageUrl())
                 .owned(false) // 기본값: 보유하지 않음
                 .build();

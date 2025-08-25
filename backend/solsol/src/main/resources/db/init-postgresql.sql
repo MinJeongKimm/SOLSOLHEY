@@ -60,9 +60,7 @@ ON CONFLICT (user_id) DO NOTHING;
 INSERT INTO shop_items (id, name, description, price, type, image_url, is_active, created_at, updated_at) VALUES
 (1001, '토끼 귀', '귀여운 토끼 귀 머리띠입니다.', 800, 'EQUIP', '/items/item_head_bunny_ears.png', true, NOW(), NOW()),
 (1002, '핑크 비니', '따뜻하고 스타일리시한 핑크 비니입니다.', 500, 'EQUIP', '/items/item_head_pink_beanie.png', true, NOW(), NOW()),
-(2001, '하트 안경', '사랑스러운 하트 모양 안경입니다.', 1200, 'EQUIP', '/items/item_acc_glasses_heart.png', true, NOW(), NOW()),
-(3001, '기본 배경', '기본 마스코트 배경입니다.', 0, 'BACKGROUND', '/backgrounds/base/bg_blue.png', true, NOW(), NOW()),
-(3002, '커스터마이징 배경', '마스코트 커스터마이징용 배경입니다.', 300, 'BACKGROUND', '/backgrounds/base/bg_blue.png', true, NOW(), NOW())
+(2001, '하트 안경', '사랑스러운 하트 모양 안경입니다.', 1200, 'EQUIP', '/items/item_acc_glasses_heart.png', true, NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
 -- 테스트 사용자 아이템 보유 (ON CONFLICT DO NOTHING 사용)
@@ -75,9 +73,7 @@ ON CONFLICT (id) DO NOTHING;
 -- 테스트 배경 (ON CONFLICT DO NOTHING 사용)
 INSERT INTO backgrounds (id, name, preview_url, enabled, tags) VALUES
 ('bg_base', '기본 배경', '/backgrounds/base/bg_blue.png', true, 'basic,default'),
-('bg_customize', '커스터마이징 배경', '/backgrounds/base/bg_blue.png', true, 'customize,special'),
-('bg_night', '밤하늘 배경', '/backgrounds/bg_night.png', true, 'night,sky,romantic'),
-('bg_sunset', '일몰 배경', '/backgrounds/bg_sunset.png', true, 'sunset,beach,calm')
+('bg_customize', '커스터마이징 배경', '/backgrounds/base/bg_blue.png', true, 'customize,special')
 ON CONFLICT (id) DO NOTHING;
 
 -- 테스트 사용자 배경 보유 (ON CONFLICT DO NOTHING 사용)
