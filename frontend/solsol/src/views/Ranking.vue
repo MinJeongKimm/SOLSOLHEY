@@ -72,9 +72,10 @@
           <div v-if="!myRank || myRank === 0">
             <button
               @click="joinRanking"
+              :disabled="joining"
               class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg"
             >
-              랭킹 참가하기
+              {{ joining ? '참가 중...' : '랭킹 참가하기' }}
             </button>
           </div>
           
@@ -306,6 +307,7 @@ const activeTab = ref<'campus' | 'national'>('campus');
 const loading = ref(false);
 const error = ref<string | null>(null);
 const voting = ref(false);
+const joining = ref(false);
 const campusRankings = ref<RankingResponse | null>(null);
 const currentUser = ref<any>(null);
 const myRank = ref<number | null>(null);
@@ -327,28 +329,37 @@ const nationalFilters = ref({
 
 // 현재 사용자의 순위 찾기
 const findMyRank = () => {
-  if (!campusRankings.value || !currentUser.value) {
+  if (!currentUser.value) {
     myRank.value = null;
     return;
   }
   
-  // 랭킹 목록에서 현재 사용자의 엔트리를 찾기
-  const myEntry = campusRankings.value.entries.find(entry => 
-    entry.ownerNickname === currentUser.value.nickname
-  );
-  
-  if (myEntry) {
-    myRank.value = myEntry.rank;
+  if (activeTab.value === 'campus') {
+    // 교내 랭킹에서 내 순위 찾기
+    if (campusRankings.value) {
+      const myEntry = campusRankings.value.entries.find(entry => 
+        entry.ownerNickname === currentUser.value.nickname
+      );
+      
+      if (myEntry) {
+        myRank.value = myEntry.rank;
+      } else {
+        myRank.value = 0; // 랭킹에 등록되지 않음
+      }
+    } else {
+      myRank.value = null;
+    }
   } else {
-    myRank.value = 0; // 랭킹에 등록되지 않음
+    // 전국 랭킹에서 내 순위 찾기 (아직 구현되지 않음)
+    // TODO: 전국 랭킹 데이터가 로드되면 내 순위 찾기
+    myRank.value = null;
   }
 };
 
-// 랭킹 참가하기 (임시 구현)
-const joinRanking = () => {
-  // TODO: 실제 랭킹 등록 API 호출
-  alert('랭킹 등록 기능은 준비 중입니다. 마스코트를 먼저 생성해주세요!');
-  // router.push('/mascot-create'); // 마스코트 생성 페이지로 이동
+// 랭킹 참가하기
+const joinRanking = async () => {
+  // 백엔드 API가 작동하지 않으므로 안내 메시지만 표시
+  alert('랭킹 참가 기능은 준비 중입니다. 백엔드 개발이 완료되면 사용할 수 있습니다.');
 };
 
 // 교내 랭킹 로드
@@ -371,9 +382,7 @@ const loadCampusRankings = async () => {
     );
     
     campusRankings.value = response;
-    
-    // 내 순위 찾기
-    findMyRank();
+    findMyRank(); // 랭킹 로드 후 내 순위 갱신
   } catch (err: any) {
     console.error('교내 랭킹 로드 실패:', err);
     error.value = err.message || '랭킹을 불러오는데 실패했습니다.';

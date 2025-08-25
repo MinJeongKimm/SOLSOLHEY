@@ -142,3 +142,70 @@ export async function getCurrentUser(): Promise<UserResponse> {
     throw error;
   }
 }
+
+// 랭킹 등록 (참가) 관련 타입 정의
+export interface JoinRankingRequest {
+  mascotId: number;
+  contestType: 'CAMPUS' | 'NATIONAL';
+  thumbnailUrl?: string;
+}
+
+export interface JoinRankingResponse {
+  success: boolean;
+  message: string;
+  entryId?: number;
+}
+
+// 교내 랭킹 참가
+export async function joinCampusRanking(
+  request: JoinRankingRequest
+): Promise<JoinRankingResponse> {
+  try {
+    const res = await apiRequest<ApiResponse<JoinRankingResponse>>('/rankings/campus/join', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+    
+    if (!res || (res as any).success === false) {
+      throw new Error((res as any)?.message || '랭킹 참가 실패');
+    }
+    
+    return res.data as JoinRankingResponse;
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    } else if (error?.status === 409) {
+      throw new Error('이미 참가 중입니다.');
+    } else if (error?.status === 400) {
+      throw new Error('마스코트가 존재하지 않습니다.');
+    }
+    throw error;
+  }
+}
+
+// 전국 랭킹 참가
+export async function joinNationalRanking(
+  request: JoinRankingRequest
+): Promise<JoinRankingResponse> {
+  try {
+    const res = await apiRequest<ApiResponse<JoinRankingResponse>>('/rankings/national/join', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+    
+    if (!res || (res as any).success === false) {
+      throw new Error((res as any)?.message || '랭킹 참가 실패');
+    }
+    
+    return res.data as JoinRankingResponse;
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    } else if (error?.status === 409) {
+      throw new Error('이미 참가 중입니다.');
+    } else if (error?.status === 400) {
+      throw new Error('마스코트가 존재하지 않습니다.');
+    }
+    throw error;
+  }
+}
