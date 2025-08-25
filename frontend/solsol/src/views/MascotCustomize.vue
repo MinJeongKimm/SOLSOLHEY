@@ -45,7 +45,7 @@
         >
           <!-- 커스터마이즈 배경 -->
           <img 
-            src="/backgrounds/bg_base.png" 
+            src="/backgrounds/base/bg_blue.png" 
             alt="꾸미기 배경" 
             class="absolute inset-0 w-full h-full object-cover"
           />
