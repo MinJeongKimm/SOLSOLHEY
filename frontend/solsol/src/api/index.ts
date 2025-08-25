@@ -29,7 +29,17 @@ import type {
 import { ApiError } from '../types/api';
 import router from '../router';
 
-const API_BASE = 'http://localhost:8080/api/v1';
+const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+
+function getApiOrigin(): string {
+  try {
+    const url = new URL(API_BASE);
+    return `${url.protocol}//${url.host}`;
+  } catch {
+    // fallback: assume same origin
+    return '';
+  }
+}
 
 // CSRF 토큰을 쿠키에서 읽어오는 함수
 function getCookie(name: string): string | undefined {
@@ -40,11 +50,19 @@ function getCookie(name: string): string | undefined {
 // CSRF 쿠키 시드 보장
 async function ensureCsrfCookie(): Promise<void> {
   if (!getCookie('XSRF-TOKEN')) {
-    await fetch('http://localhost:8080/health', { credentials: 'include' });
+    const origin = getApiOrigin();
+    await fetch(`${origin}/health`, { credentials: 'include' });
   }
 }
 
 // API 요청 헬퍼 함수
+class HttpError extends Error {
+  constructor(public status: number, public body?: any, message?: string) {
+    super(message || body?.message || `HTTP ${status}`);
+    this.name = 'HttpError';
+  }
+}
+
 export async function apiRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = (init.method || 'GET').toUpperCase();
   const headers = new Headers(init.headers || {});
@@ -60,20 +78,37 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     headers.set('X-XSRF-TOKEN', xsrf);
   }
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    credentials: 'include',
-    ...init,
-    headers,
-  });
+  const doFetch = async () => {
+    const res = await fetch(`${API_BASE}${path}`, {
+      credentials: 'include',
+      ...init,
+      headers,
+    });
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : undefined;
+    if (!res.ok) throw new HttpError(res.status, data);
+    return data as T;
+  };
 
-  const text = await res.text();
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${text || ''}`);
-  return text ? JSON.parse(text) as T : (undefined as unknown as T);
+  try {
+    return await doFetch();
+  } catch (e) {
+    if (e instanceof HttpError && e.status === 401) {
+      try {
+        await refreshToken();
+        return await doFetch();
+      } catch (e2) {
+        auth.clearAuth();
+        throw e2;
+      }
+    }
+    throw e;
+  }
 }
 
 // 토큰 갱신 함수
 async function refreshToken(): Promise<void> {
-  const response = await fetch('http://localhost:8080/api/v1/auth/refresh', {
+  const response = await fetch(`${API_BASE}/auth/refresh`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -299,6 +334,7 @@ export function handleApiError(error: unknown): string {
 // 쿠키 기반 인증 상태 확인 (호환성: 동기 + 정확성: 비동기)
 let _authKnown = false; // 마지막으로 확인된 로그인 상태(동기용)
 let _userCache: any | null = null; // 마지막으로 가져온 유저(동기 반환용)
+let _fetching: Promise<any | null> | null = null; // fetchUser 중복 호출 방지
 export const auth = {
   // 기존 시그니처 유지: 동기(boolean)
   isAuthenticated(): boolean {
@@ -316,16 +352,26 @@ export const auth = {
   },
   // 정확한 정보: 서버에서 가져오고 캐시 갱신
   async fetchUser<T = { username: string; userId?: number }>(): Promise<T | null> {
-    try {
-      const u = await apiRequest<T>('/auth/me', { method: 'GET' });
-      _userCache = u;
-      _authKnown = true;
-      return u;
-    } catch {
+    if (_fetching) return _fetching as Promise<T | null>;
+    _fetching = (async () => {
+      for (let i = 0; i < 2; i++) {
+        try {
+          const res = await apiRequest<{ success: boolean; data?: any; message?: string }>('/auth/me', { method: 'GET' });
+          const u = (res && (res as any).data) ? (res as any).data as T : null;
+          if (!u) throw new Error((res as any)?.message || '사용자 정보를 가져오지 못했습니다.');
+          _userCache = u;
+          _authKnown = true;
+          return u;
+        } catch {
+          await new Promise(r => setTimeout(r, 100));
+        }
+      }
       _userCache = null;
       _authKnown = false;
       return null;
-    }
+    })();
+    try { return await _fetching as T | null; }
+    finally { _fetching = null; }
   },
 
   // JWT 토큰 가져오기 (쿠키에서)
@@ -445,7 +491,5 @@ export function parseJwtPayload(token: string): any {
     return null;
   }
 }
-
-
 
 
