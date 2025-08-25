@@ -72,6 +72,10 @@ public class SecurityConfig {
                     new AntPathRequestMatcher("/api/v1/auth/**"),
                     new AntPathRequestMatcher("/h2-console/**")
                 )
+                .ignoringRequestMatchers(
+                    new AntPathRequestMatcher("/api/v1/finance/**")
+                )
+
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/health", "/actuator/**", "/api/v1/auth/**").permitAll()
