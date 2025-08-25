@@ -289,7 +289,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { mascotTypes, levelExperience, realItems } from '../data/mockData';
-import { getMascot, handleApiError, auth, createShareLink, createShareImage, ShareType, ImageType, type ShareLinkCreateRequest, type ShareImageCreateRequest } from '../api/index';
+import { getMascot, handleApiError, auth, createShareLink, createShareImage, getAvailableTemplates, ShareType, ImageType, type ShareLinkCreateRequest, type ShareImageCreateRequest } from '../api/index';
 import type { Mascot, Item } from '../types/api';
 import { usePointStore } from '../stores/point';
 
@@ -446,22 +446,9 @@ function showSharePopup() {
 // 백엔드 연결 상태 확인
 async function checkBackendStatus() {
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/share/templates`, {
-      headers: {
-        'Authorization': `Bearer ${auth.getToken()}`
-      }
-    });
-    console.log('백엔드 연결 상태:', response.status, response.ok);
-    
-    // 토큰 만료 체크
-    if (response.status === 401) {
-      console.log('토큰이 만료되었습니다. 로그인 페이지로 이동합니다.');
-      showToastMessage('로그인이 만료되었습니다. 로그인 페이지로 이동합니다.');
-      setTimeout(() => {
-        auth.clearAuth();
-        router.push('/');
-      }, 2000);
-    }
+    // 공유 템플릿 목록을 호출하여 백엔드 연결 확인
+    await getAvailableTemplates();
+    console.log('백엔드 연결 상태: OK');
   } catch (error) {
     console.error('백엔드 연결 실패:', error);
   }

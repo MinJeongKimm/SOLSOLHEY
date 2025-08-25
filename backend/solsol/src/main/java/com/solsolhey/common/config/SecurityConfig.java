@@ -76,6 +76,8 @@ public class SecurityConfig {
                 .requestMatchers("/health", "/actuator/**", "/api/v1/auth/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/mascot").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/friends/requests").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/v1/attendance").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/v1/attendance/**").authenticated()
                 .anyRequest().permitAll()
             )
             // Run your custom rate limit filter early (kept as before)
@@ -96,13 +98,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        // SPA용 CORS 설정
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:5173"));
-        configuration.setAllowCredentials(true);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Content-Type", "X-XSRF-TOKEN", "Authorization", "Accept"));
-        configuration.setMaxAge(3600L);
+
+        String origins = environment.getProperty("cors.allowed-origins", "http://localhost:5173");
+        String methods = environment.getProperty("cors.allowed-methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+        String headers = environment.getProperty("cors.allowed-headers", "*");
+        boolean allowCreds = Boolean.parseBoolean(environment.getProperty("cors.allow-credentials", "true"));
+        long maxAge = Long.parseLong(environment.getProperty("cors.max-age", "3600"));
+
+        configuration.setAllowedOriginPatterns(Arrays.stream(origins.split(",")).map(String::trim).toList());
+        configuration.setAllowedMethods(Arrays.stream(methods.split(",")).map(String::trim).toList());
+        configuration.setAllowedHeaders(Arrays.stream(headers.split(",")).map(String::trim).toList());
+        configuration.setAllowCredentials(allowCreds);
+        configuration.setMaxAge(maxAge);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
