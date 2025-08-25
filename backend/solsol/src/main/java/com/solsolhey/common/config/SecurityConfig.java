@@ -69,7 +69,8 @@ public class SecurityConfig {
                 .csrfTokenRequestHandler(csrfAttrHandler)
                 // ★ Make absolutely sure auth endpoints bypass CSRF
                 .ignoringRequestMatchers(
-                    new AntPathRequestMatcher("/api/v1/auth/**")
+                    new AntPathRequestMatcher("/api/v1/auth/**"),
+                    new AntPathRequestMatcher("/h2-console/**")
                 )
                 .ignoringRequestMatchers(
                     new AntPathRequestMatcher("/api/v1/finance/**")

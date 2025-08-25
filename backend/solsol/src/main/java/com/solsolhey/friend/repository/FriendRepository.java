@@ -44,6 +44,12 @@ public interface FriendRepository extends JpaRepository<Friend, Long> {
     Page<Friend> findByFriendUserAndStatus(@Param("user") User user, @Param("status") FriendshipStatus status, Pageable pageable);
 
     /**
+     * 사용자의 모든 수락된 친구 관계 조회 (양방향)
+     */
+    @Query("SELECT f FROM Friend f WHERE (f.user = :user OR f.friendUser = :user) AND f.status = :status")
+    Page<Friend> findAcceptedFriends(@Param("user") User user, @Param("status") FriendshipStatus status, Pageable pageable);
+
+    /**
      * 사용자의 모든 친구 수 조회
      */
     @Query("SELECT COUNT(f) FROM Friend f WHERE " +
