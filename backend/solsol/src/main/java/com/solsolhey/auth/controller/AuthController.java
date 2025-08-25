@@ -176,15 +176,25 @@ public class AuthController {
      */
     @GetMapping("/me")
     @Operation(summary = "세션 확인", description = "현재 로그인한 사용자 정보를 반환합니다(인증 필요).")
-    public ResponseEntity<ApiResponse<Map<String,Object>>> me(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
+    public ResponseEntity<ApiResponse<com.solsolhey.user.dto.response.UserResponse>> me(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.solsolhey.auth.dto.response.CustomUserDetails userDetails) {
+        if (userDetails == null || !userDetails.isEnabled()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error(HttpStatus.UNAUTHORIZED, "인증되지 않았습니다."));
         }
-        String principal = String.valueOf(authentication.getName());
-        return ResponseEntity.ok(ApiResponse.success("OK", Map.of(
-            "username", principal
-            // 필요 시 userId/nickname은 실제 값으로 채우거나 생략
-        )));
+
+        var u = userDetails.getUser();
+        var dto = new com.solsolhey.user.dto.response.UserResponse(
+                u.getUserId(),
+                u.getUsername(),
+                u.getEmail(),
+                u.getNickname(),
+                u.getCampus(),
+                u.getTotalPoints(),
+                u.getIsActive(),
+                u.getCreatedAt(),
+                u.getUpdatedAt()
+        );
+        return ResponseEntity.ok(ApiResponse.success("OK", dto));
     }
 }
