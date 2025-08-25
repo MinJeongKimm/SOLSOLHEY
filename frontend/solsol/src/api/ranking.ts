@@ -1,5 +1,6 @@
 import { apiRequest } from './index';
 import { auth } from './index';
+import type { ApiResponse, UserResponse } from '../types/api';
 
 // 랭킹 관련 타입 정의
 export interface RankingEntry {
@@ -69,7 +70,9 @@ export async function getCampusRankings(
     params.append('campusId', campusId.toString());
   }
 
-  return apiRequest<RankingResponse>(`/rankings/campus?${params}`);
+  const res = await apiRequest<ApiResponse<RankingResponse>>(`/rankings/campus?${params}`);
+  if (!res || (res as any).success === false) throw new Error((res as any)?.message || '랭킹 조회 실패');
+  return res.data as RankingResponse;
 }
 
 // 전국 랭킹 조회
@@ -96,7 +99,9 @@ export async function getNationalRankings(
     params.append('schoolId', schoolId.toString());
   }
 
-  return apiRequest<RankingResponse>(`/rankings/national?${params}`);
+  const res = await apiRequest<ApiResponse<RankingResponse>>(`/rankings/national?${params}`);
+  if (!res || (res as any).success === false) throw new Error((res as any)?.message || '랭킹 조회 실패');
+  return res.data as RankingResponse;
 }
 
 // 교내 랭킹 투표
@@ -104,20 +109,10 @@ export async function voteForCampus(
   entryId: number,
   voteData: VoteRequest
 ): Promise<VoteResponse> {
-  const user = auth.getUser();
-  if (!user || !user.userId) {
-    throw new Error('로그인이 필요합니다.');
-  }
-
-  // userID를 request body에 포함
-  const requestData = {
-    ...voteData,
-    userId: user.userId
-  };
-
+  // 백엔드가 JWT에서 사용자 식별 → userId 전달 불필요
   return apiRequest<VoteResponse>(`/rankings/campus/${entryId}/vote`, {
     method: 'POST',
-    body: JSON.stringify(requestData),
+    body: JSON.stringify(voteData),
   });
 }
 
@@ -126,38 +121,24 @@ export async function voteForNational(
   entryId: number,
   voteData: VoteRequest
 ): Promise<VoteResponse> {
-  const user = auth.getUser();
-  if (!user || !user.userId) {
-    throw new Error('로그인이 필요합니다.');
-  }
-
-  // userID를 request body에 포함
-  const requestData = {
-    ...voteData,
-    userId: user.userId
-  };
-
   return apiRequest<VoteResponse>(`/rankings/national/${entryId}/vote`, {
     method: 'POST',
-    body: JSON.stringify(requestData),
+    body: JSON.stringify(voteData),
   });
 }
 
 // 사용자 정보 조회 (campus 정보 포함)
-export async function getCurrentUser(): Promise<{
-  userId: number;
-  username: string;
-  email: string;
-  nickname: string;
-  campus: string;
-  totalPoints: number;
-  isActive: boolean;
-}> {
-  // auth에서 사용자 정보를 가져옴
-  const user = auth.getUser();
-  if (!user || !user.userId) {
-    throw new Error('로그인이 필요합니다.');
+export async function getCurrentUser(): Promise<UserResponse> {
+  try {
+    const res = await apiRequest<ApiResponse<UserResponse>>('/auth/me');
+    if (!res || (res as any).success === false || !res.data) {
+      throw new Error((res as any)?.message || '사용자 정보 조회 실패');
+    }
+    return res.data as UserResponse;
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    throw error;
   }
-
-  return apiRequest<any>(`/users/${user.userId}`);
 }
