@@ -1,27 +1,34 @@
 package com.solsolhey.ranking.service;
 
-import com.solsolhey.common.exception.BusinessException;
-import com.solsolhey.ranking.dto.request.CampusRankingRequest;
-import com.solsolhey.ranking.dto.request.NationalRankingRequest;
-import com.solsolhey.ranking.dto.request.VoteRequest;
-import com.solsolhey.ranking.dto.response.*;
-import com.solsolhey.ranking.entity.ContestEntry;
-import com.solsolhey.ranking.entity.Vote;
-import com.solsolhey.ranking.repository.ContestEntryRepository;
-import com.solsolhey.ranking.repository.VoteRepository;
-import com.solsolhey.user.entity.User;
-import com.solsolhey.user.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.IntStream;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.IntStream;
+import com.solsolhey.common.exception.BusinessException;
+import com.solsolhey.ranking.dto.request.CampusRankingRequest;
+import com.solsolhey.ranking.dto.request.NationalRankingRequest;
+import com.solsolhey.ranking.dto.request.VoteRequest;
+import com.solsolhey.ranking.dto.response.CampusInfo;
+import com.solsolhey.ranking.dto.response.FilterInfo;
+import com.solsolhey.ranking.dto.response.RankingEntryResponse;
+import com.solsolhey.ranking.dto.response.RankingResponse;
+import com.solsolhey.ranking.dto.response.VoteResponse;
+import com.solsolhey.ranking.entity.ContestEntry;
+import com.solsolhey.ranking.entity.Vote;
+import com.solsolhey.ranking.repository.ContestEntryRepository;
+import com.solsolhey.ranking.repository.ContestRepository;
+import com.solsolhey.ranking.repository.VoteRepository;
+import com.solsolhey.user.entity.User;
+import com.solsolhey.user.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 랭킹 서비스 구현체
@@ -35,6 +42,7 @@ public class RankingServiceImpl implements RankingService {
     private final ContestEntryRepository contestEntryRepository;
     private final VoteRepository voteRepository;
     private final UserRepository userRepository;
+    private final ContestRepository contestRepository;
 
     // 일일 투표 제한 (교내: 10회, 전국: 5회)
     private static final int DAILY_CAMPUS_VOTE_LIMIT = 10;
@@ -173,7 +181,7 @@ public class RankingServiceImpl implements RankingService {
     }
 
     @Override
-    public ContestEntry participateInContest(Long userId, Long mascotId, ContestEntry.ContestType contestType) {
+    public ContestEntry participateInContest(Long userId, Long mascotId, ContestEntry.ContestType contestType, String thumbnailUrl) {
         log.info("콘테스트 참가 요청 - userId: {}, mascotId: {}, contestType: {}", userId, mascotId, contestType);
 
         // 중복 참가 확인
@@ -182,10 +190,30 @@ public class RankingServiceImpl implements RankingService {
             throw new BusinessException("이미 참가한 콘테스트입니다.");
         }
 
+        // 현재 활성 콘테스트 찾기
+        Long contestId = null;
+        if (contestType == ContestEntry.ContestType.CAMPUS) {
+            contestId = contestRepository.findDefaultActiveCampusContest(LocalDateTime.now())
+                    .map(contest -> contest.getContestId())
+                    .orElse(null);
+        } else if (contestType == ContestEntry.ContestType.NATIONAL) {
+            contestId = contestRepository.findDefaultActiveNationalContest(LocalDateTime.now())
+                    .map(contest -> contest.getContestId())
+                    .orElse(null);
+        }
+
+        if (contestId == null) {
+            throw new BusinessException("현재 진행중인 콘테스트가 없습니다.");
+        }
+
+        log.info("참가할 콘테스트 ID: {}", contestId);
+
         ContestEntry entry = ContestEntry.builder()
                 .userId(userId)
                 .mascotId(mascotId)
+                .contestId(contestId)
                 .contestType(contestType)
+                .thumbnailUrl(thumbnailUrl)
                 .build();
 
         return contestEntryRepository.save(entry);

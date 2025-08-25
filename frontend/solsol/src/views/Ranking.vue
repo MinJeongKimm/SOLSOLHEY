@@ -294,10 +294,13 @@ import {
   getNationalRankings,
   getCurrentUser, 
   voteForCampus,
+  joinCampusRanking,
+  joinNationalRanking,
   type RankingResponse,
-  type VoteRequest
+  type VoteRequest,
+  type JoinRankingRequest
 } from '../api/ranking';
-import { bootstrapAuth, auth } from '../api/index';
+import { bootstrapAuth, auth, getMascot } from '../api/index';
 
 // Router 인스턴스
 const router = useRouter();
@@ -358,8 +361,46 @@ const findMyRank = () => {
 
 // 랭킹 참가하기
 const joinRanking = async () => {
-  // 백엔드 API가 작동하지 않으므로 안내 메시지만 표시
-  alert('랭킹 참가 기능은 준비 중입니다. 백엔드 개발이 완료되면 사용할 수 있습니다.');
+  try {
+    joining.value = true;
+    error.value = null;
+
+    const mascot = await getMascot();
+    if (!mascot) {
+      alert('랭킹에 참가할 마스코트가 없습니다. 먼저 마스코트를 생성해주세요.');
+      router.push('/mascot-create');
+      return;
+    }
+
+    const contestType = activeTab.value === 'campus' ? 'CAMPUS' : 'NATIONAL';
+
+    const request: JoinRankingRequest = {
+      mascotId: mascot.id,
+      contestType: contestType,
+    };
+
+    if (contestType === 'CAMPUS') {
+      await joinCampusRanking(request);
+    } else {
+      await joinNationalRanking(request);
+    }
+
+    alert('랭킹에 성공적으로 참가했습니다!');
+
+    // 랭킹 새로고침
+    if (activeTab.value === 'campus') {
+      await loadCampusRankings();
+    } else {
+      await loadNationalRankings();
+    }
+
+  } catch (err: any) {
+    console.error('랭킹 참가 실패:', err);
+    error.value = err.message || '랭킹 참가에 실패했습니다.';
+    alert(error.value);
+  } finally {
+    joining.value = false;
+  }
 };
 
 // 교내 랭킹 로드

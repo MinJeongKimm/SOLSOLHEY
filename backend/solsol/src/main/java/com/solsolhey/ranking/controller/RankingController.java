@@ -1,11 +1,14 @@
 package com.solsolhey.ranking.controller;
 
+import com.solsolhey.common.exception.BusinessException;
 import com.solsolhey.common.response.ApiResponse;
 import com.solsolhey.ranking.dto.request.CampusRankingRequest;
+import com.solsolhey.ranking.dto.request.JoinRankingRequest;
 import com.solsolhey.ranking.dto.request.NationalRankingRequest;
 import com.solsolhey.ranking.dto.request.VoteRequest;
 import com.solsolhey.ranking.dto.response.RankingResponse;
 import com.solsolhey.ranking.dto.response.VoteResponse;
+import com.solsolhey.ranking.entity.ContestEntry;
 import com.solsolhey.ranking.service.RankingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,6 +23,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 랭킹 API 컨트롤러
@@ -203,6 +209,72 @@ public class RankingController {
             log.error("전국 투표 처리 실패 - entryId: {}", entryId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.<VoteResponse>internalServerError("서버 오류가 발생했습니다."));
+        }
+    }
+
+    /**
+     * 교내 랭킹 참가
+     */
+    @PostMapping("/campus/join")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "교내 랭킹 참가", description = "마스코트를 교내 콘테스트에 참가시킵니다.")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> joinCampusRanking(
+            @Valid @RequestBody JoinRankingRequest request) {
+
+        try {
+            Long userId = getCurrentUserId();
+            log.info("교내 랭킹 참가 API 호출 - 사용자 ID: {}, 마스코트 ID: {}",
+                    userId, request.getMascotId());
+
+            ContestEntry entry = rankingService.participateInContest(userId, request.getMascotId(), ContestEntry.ContestType.CAMPUS, request.getThumbnailUrl());
+
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("entryId", entry.getEntryId());
+
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("교내 콘테스트에 성공적으로 참가했습니다.", responseData));
+
+        } catch (BusinessException e) {
+            log.warn("교내 랭킹 참가 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(HttpStatus.CONFLICT, e.getMessage()));
+        } catch (Exception e) {
+            log.error("교내 랭킹 참가 중 오류 발생", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.internalServerError("콘테스트 참가에 실패했습니다."));
+        }
+    }
+
+    /**
+     * 전국 랭킹 참가
+     */
+    @PostMapping("/national/join")
+    @PreAuthorize("isAuthenticated()") // 또는 특정 권한
+    @Operation(summary = "전국 랭킹 참가", description = "마스코트를 전국 콘테스트에 참가시킵니다.")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> joinNationalRanking(
+            @Valid @RequestBody JoinRankingRequest request) {
+
+        try {
+            Long userId = getCurrentUserId();
+            log.info("전국 랭킹 참가 API 호출 - 사용자 ID: {}, 마스코트 ID: {}",
+                    userId, request.getMascotId());
+
+            ContestEntry entry = rankingService.participateInContest(userId, request.getMascotId(), ContestEntry.ContestType.NATIONAL, request.getThumbnailUrl());
+
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("entryId", entry.getEntryId());
+
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("전국 콘테스트에 성공적으로 참가했습니다.", responseData));
+
+        } catch (BusinessException e) {
+            log.warn("전국 랭킹 참가 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(HttpStatus.CONFLICT, e.getMessage()));
+        } catch (Exception e) {
+            log.error("전국 랭킹 참가 중 오류 발생", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.internalServerError("콘테스트 참가에 실패했습니다."));
         }
     }
 

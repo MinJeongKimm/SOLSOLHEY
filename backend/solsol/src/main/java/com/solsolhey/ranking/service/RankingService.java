@@ -35,7 +35,7 @@ public interface RankingService {
     /**
      * 콘테스트 참가 (마스코트 등록)
      */
-    ContestEntry participateInContest(Long userId, Long mascotId, ContestEntry.ContestType contestType);
+    ContestEntry participateInContest(Long userId, Long mascotId, ContestEntry.ContestType contestType, String thumbnailUrl);
 
     /**
      * 투표 가능 여부 확인
