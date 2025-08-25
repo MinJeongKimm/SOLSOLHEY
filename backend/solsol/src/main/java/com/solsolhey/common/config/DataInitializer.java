@@ -1,15 +1,19 @@
 package com.solsolhey.common.config;
 
+import java.time.LocalDateTime;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+import com.solsolhey.campus.Campus;
+import com.solsolhey.campus.CampusRepository;
 import com.solsolhey.challenge.entity.Challenge;
 import com.solsolhey.challenge.entity.ChallengeCategory;
 import com.solsolhey.challenge.repository.ChallengeCategoryRepository;
 import com.solsolhey.challenge.repository.ChallengeRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
 
 /**
  * 초기 데이터 설정
@@ -21,11 +25,41 @@ public class DataInitializer implements CommandLineRunner {
 
     private final ChallengeCategoryRepository categoryRepository;
     private final ChallengeRepository challengeRepository;
+    private final CampusRepository campusRepository;
 
     @Override
     public void run(String... args) throws Exception {
+        initializeCampusesIfEmpty();
         initializeChallengeCategories();
         initializeSampleChallenges();
+    }
+
+    /**
+     * 로컬(H2) 개발 환경에서 CAMPUS 테이블이 비어있으면 기본 데이터 시드
+     */
+    private void initializeCampusesIfEmpty() {
+        try {
+            if (campusRepository.count() > 0) {
+                log.info("캠퍼스 데이터가 이미 존재함. 스킵.");
+                return;
+            }
+
+            log.info("캠퍼스 기본 데이터 초기화 시작");
+
+            String[] campuses = new String[]{
+                // SSAFY 캠퍼스
+                "SSAFY 서울캠퍼스", "SSAFY 대전캠퍼스", "SSAFY 광주캠퍼스", "SSAFY 구미캠퍼스", "SSAFY 부울경캠퍼스"
+            };
+
+            for (String name : campuses) {
+                Campus c = new Campus(name);
+                campusRepository.save(c);
+            }
+
+            log.info("캠퍼스 기본 데이터 초기화 완료 ({}건)", campuses.length);
+        } catch (Exception e) {
+            log.warn("캠퍼스 데이터 초기화 중 오류 발생 (무시 가능): {}", e.getMessage());
+        }
     }
 
     private void initializeChallengeCategories() {
