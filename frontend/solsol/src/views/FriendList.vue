@@ -129,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { getFriendList, getFriendRequests, acceptFriendRequest as acceptRequest, rejectFriendRequest as rejectRequest, type Friend, type PendingFriendRequest } from '../api/friend';
 
@@ -150,8 +150,12 @@ const fetchFriends = async () => {
 
 const fetchFriendRequests = async () => {
   try {
+    console.log('친구 요청 목록 조회 시작...');
     // api/friend.ts에서 이미 데이터를 추출해서 반환하므로, 바로 할당합니다.
-    friendRequests.value = await getFriendRequests() || [];
+    const requests = await getFriendRequests() || [];
+    console.log('받은 친구 요청 목록:', requests);
+    friendRequests.value = requests;
+    console.log('friendRequests.value에 할당됨:', friendRequests.value);
   } catch (error) {
     console.error('친구 요청 목록 조회 실패:', error);
     friendRequests.value = [];
@@ -159,15 +163,24 @@ const fetchFriendRequests = async () => {
 };
 
 const loadData = () => {
+  console.log('loadData 함수 호출됨');
   fetchFriends();
   fetchFriendRequests();
 };
 
-// /friends 경로로 진입할 때마다 데이터를 새로고침합니다.
+// 컴포넌트 마운트 시 데이터 로드
+onMounted(() => {
+  console.log('FriendList 컴포넌트 마운트됨');
+  loadData();
+});
+
+// /friend 경로로 진입할 때마다 데이터를 새로고침합니다.
 watch(
   () => router.currentRoute.value.path,
   (path) => {
-    if (path === '/friends') {
+    console.log('라우터 경로 변경 감지:', path);
+    if (path === '/friend') {
+      console.log('/friend 경로 감지됨, 데이터 로드 시작');
       loadData();
     }
   },

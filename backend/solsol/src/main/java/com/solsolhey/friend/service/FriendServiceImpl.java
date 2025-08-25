@@ -1,10 +1,22 @@
 package com.solsolhey.friend.service;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.solsolhey.common.exception.BusinessException;
 import com.solsolhey.common.exception.EntityNotFoundException;
 import com.solsolhey.friend.dto.request.FriendAddRequest;
 import com.solsolhey.friend.dto.request.FriendInteractionRequest;
-import com.solsolhey.friend.dto.response.*;
+import com.solsolhey.friend.dto.response.FriendInteractionResponse;
+import com.solsolhey.friend.dto.response.FriendResponse;
+import com.solsolhey.friend.dto.response.FriendSearchResponse;
+import com.solsolhey.friend.dto.response.FriendStatsResponse;
 import com.solsolhey.friend.entity.Friend;
 import com.solsolhey.friend.entity.Friend.FriendshipStatus;
 import com.solsolhey.friend.entity.FriendInteraction;
@@ -12,16 +24,9 @@ import com.solsolhey.friend.repository.FriendInteractionRepository;
 import com.solsolhey.friend.repository.FriendRepository;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.user.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.List;
 
 /**
  * 친구 관리 서비스 구현체
@@ -70,7 +75,7 @@ public class FriendServiceImpl implements FriendService {
         Friend friend = friendRepository.findById(friendId)
                 .orElseThrow(() -> new EntityNotFoundException("친구 요청을 찾을 수 없습니다."));
 
-        if (!friend.getFriendUser().getUserId().equals(user.getUserId())) {
+        if (!friend.getUser().getUserId().equals(user.getUserId())) {
             throw new BusinessException("친구 요청을 수락할 권한이 없습니다.");
         }
 
@@ -89,7 +94,7 @@ public class FriendServiceImpl implements FriendService {
         Friend friend = friendRepository.findById(friendId)
                 .orElseThrow(() -> new EntityNotFoundException("친구 요청을 찾을 수 없습니다."));
 
-        if (!friend.getFriendUser().getUserId().equals(user.getUserId())) {
+        if (!friend.getUser().getUserId().equals(user.getUserId())) {
             throw new BusinessException("친구 요청을 거절할 권한이 없습니다.");
         }
 
