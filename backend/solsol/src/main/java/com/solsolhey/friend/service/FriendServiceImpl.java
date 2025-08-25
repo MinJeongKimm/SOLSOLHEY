@@ -119,8 +119,11 @@ public class FriendServiceImpl implements FriendService {
     @Override
     @Transactional(readOnly = true)
     public Page<FriendResponse> getFriends(User user, Pageable pageable) {
-        Page<Friend> friends = friendRepository.findByUserAndStatus(user, FriendshipStatus.ACCEPTED, pageable);
-        return friends.map(friend -> FriendResponse.from(friend, false));
+        Page<Friend> friends = friendRepository.findAcceptedFriends(user, FriendshipStatus.ACCEPTED, pageable);
+        return friends.map(friend -> {
+            boolean isRequestReceivedByMe = friend.getFriendUser().getUserId().equals(user.getUserId());
+            return FriendResponse.from(friend, isRequestReceivedByMe);
+        });
     }
 
     @Override

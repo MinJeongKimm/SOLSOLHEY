@@ -68,8 +68,22 @@ export interface FriendRequestListResponse {
 // 친구 목록 조회
 export const getFriendList = async (): Promise<Friend[]> => {
   try {
-    const response = await apiRequest<FriendListResponse>('/friends');
-    return response.friends;
+    console.log('친구 목록 조회 API 호출 시작: /friends');
+    const response = await apiRequest<{ data: PageResponse<FriendResponse> }>('/friends');
+    console.log('친구 목록 API 응답:', response);
+    
+    // 백엔드에서 Page<FriendResponse> 형태로 반환되므로 data.content에서 추출
+    // FriendResponse를 Friend 형태로 변환
+    const result = (response.data?.content || []).map(friend => ({
+      friendId: friend.friendId,
+      nickname: friend.nickname,
+      campus: friend.campus,
+      username: friend.email, // email을 username으로 사용
+      totalPoints: 0 // 기본값 설정
+    }));
+    
+    console.log('변환된 친구 목록:', result);
+    return result;
   } catch (error) {
     console.error('친구 목록 조회 실패:', error);
     throw error;
