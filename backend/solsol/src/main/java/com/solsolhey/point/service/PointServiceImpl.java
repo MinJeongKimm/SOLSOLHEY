@@ -1,6 +1,7 @@
 package com.solsolhey.point.service;
 
 import com.solsolhey.common.exception.BusinessException;
+import com.solsolhey.common.exception.PointException;
 import com.solsolhey.common.exception.EntityNotFoundException;
 import com.solsolhey.point.dto.request.PointEarnRequest;
 import com.solsolhey.point.dto.request.PointSpendRequest;
@@ -74,7 +75,9 @@ public class PointServiceImpl implements PointService {
 
         // 잔액 확인
         if (user.getTotalPoints() < request.pointAmount()) {
-            throw new BusinessException("포인트 잔액이 부족합니다.");
+            throw new PointException.InsufficientPointsException(
+                    user.getTotalPoints(), request.pointAmount()
+            );
         }
 
         // 사용자 포인트 차감

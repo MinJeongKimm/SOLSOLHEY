@@ -2,6 +2,7 @@
   <div
     ref="itemElement"
     class="absolute cursor-move select-none"
+    style="touch-action: none;"
     :style="itemStyle"
     @mousedown="handleMouseDown"
     @touchstart="handleTouchStart"
@@ -91,7 +92,7 @@ const lastTouchAngle = ref<number | null>(null); // 핀치 회전을 위한 각�
 const touchCenter = ref<{ x: number; y: number } | null>(null);
 const isMultiTouch = ref(false);
 const touchStartTime = ref<number>(0);
-const minimumMovement = 5; // 최소 이동 거리 (픽셀)
+const minimumMovement = 2; // 최소 이동 거리 (픽셀) - 모바일에서 더 민감하게 반응
 
 // 마우스 드래그 관련 상태
 const dragStartPos = ref<{ x: number; y: number } | null>(null);
@@ -149,6 +150,7 @@ const itemStyle = computed(() => {
     transform: `${dragScale} ${rotation}`,
     transformOrigin: 'center center',
     transition: isDragging.value || isRotating.value ? 'none' : 'transform 0.2s ease',
+    willChange: 'transform, left, top',
   };
 });
 
@@ -169,6 +171,9 @@ function handleMouseDown(e: MouseEvent) {
   
   e.preventDefault();
   e.stopPropagation();
+  // 텍스트 선택 방지 및 시각적 피드백
+  try { window.getSelection()?.removeAllRanges(); } catch {}
+  document.body.style.cursor = 'grabbing';
   
   emit('select');
   isDragging.value = true;
@@ -202,6 +207,7 @@ function handleMouseUp() {
   isDragging.value = false;
   dragStartPos.value = null;
   dragStartPosition.value = null;
+  document.body.style.cursor = '';
   
   document.removeEventListener('mousemove', handleMouseMove);
   document.removeEventListener('mouseup', handleMouseUp);

@@ -31,10 +31,11 @@
             <span class="font-medium">터치 조작법</span>
           </div>
           <div class="text-xs space-y-1">
-            <div>• 한 손가락으로 드래그하여 이동</div>
+            <div>• 한 손가락으로 드래그하여 아이템 이동</div>
             <div>• 두 손가락으로 핀치하여 크기 조절</div>
             <div>• 두 손가락으로 비틀어서 회전</div>
-            <div>• 짧게 탭하여 아이템 선택</div>
+            <div>• 짧게 탭하여 아이템 선택/해제</div>
+            <div>• 마스코트는 항상 중앙에 고정됨</div>
             <div>• 같은 아이템 중복 장착 가능 (최대 10개)</div>
           </div>
         </div>
@@ -56,19 +57,23 @@
             class="absolute inset-0 flex items-center justify-center"
             @click="handleCanvasClick"
           >
-            <!-- 마스코트 이미지 (중앙 고정) -->
-            <div class="relative">
+            <!-- 중앙 고정 마스코트 이미지 -->
+            <div 
+              ref="mascotRef"
+              class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32"
+            >
               <img 
                 :src="currentMascot ? getMascotImageUrl(currentMascot.type) : '/mascot/soll.png'" 
                 :alt="currentMascot?.name || '마스코트'" 
-                class="w-32 h-32 object-contain"
+                class="w-full h-full object-contain drop-shadow-lg"
+                @load="handleMascotImageLoad"
                 @error="handleMascotImageError"
               />
             </div>
             
             <!-- 드래그 가능한 장착된 아이템들 -->
             <DraggableItem
-              v-for="equippedItem in equippedItems"
+              v-for="(equippedItem, index) in equippedItems"
               :key="equippedItem.id"
               :item="equippedItem.item"
               :position="getAbsolutePosition(equippedItem)"
@@ -92,7 +97,7 @@
           
           <!-- 선택된 아이템 정보 (모바일) -->
           <div 
-            v-if="isMobileDevice && selectedItemId && selectedItemInfo"
+            v-if="isMobileDevice && selectedItemInfo"
             class="absolute top-2 right-2 bg-white bg-opacity-95 p-2 rounded-lg shadow-lg text-xs max-w-32"
           >
             <div class="font-medium text-gray-800 mb-1">{{ selectedItemInfo.name }}</div>
@@ -105,14 +110,29 @@
         </div>
       </div>
       
-      <!-- 선택된 아이템 조작 패널 -->
-      <div v-if="selectedItemId" class="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+      <!-- 마스코트 조작 패널 제거됨 (마스코트는 중앙에 고정) -->
+      
+      <!-- 선택된 아이템 조작 패널 (절대 위치로 레이아웃 고정) -->
+      <div 
+        v-if="selectedItemId" 
+        class="fixed bottom-4 left-4 right-4 z-50 p-4 bg-blue-50 rounded-xl border border-blue-200 shadow-lg max-w-4xl mx-auto"
+        style="max-height: 200px; overflow-y: auto;"
+      >
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center space-x-2">
             <span class="text-blue-600 font-medium">{{ selectedItemInfo?.name }}</span>
             <span class="text-xs text-blue-500">(선택됨)</span>
           </div>
           <div class="flex space-x-2">
+            <button 
+              @click="selectedItemId = null"
+              class="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              title="닫기"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
             <button 
               @click="resetItemPosition(selectedItemId!)"
               class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition-colors"
@@ -124,7 +144,7 @@
               class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded transition-colors"
               title="아이템 제거"
             >
-              🗑️ 제거
+              제거
             </button>
           </div>
         </div>
@@ -389,19 +409,17 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { equipItems, getMascot, handleApiError, getShopItems } from '../api/index';
+import { customizeMascot, getMascot, getShopItems, handleApiError } from '../api/index';
 import DraggableItem from '../components/DraggableItem.vue';
 import { mascotTypes } from '../data/mockData';
 import type { Item, Mascot } from '../types/api';
-import { 
-  toRelativePosition, 
-  toAbsolutePosition, 
-  getContainerSize, 
-  getDefaultRelativePosition,
-  isAbsolutePosition,
-  type RelativePosition,
-  type AbsolutePosition,
-  type ContainerSize
+import {
+  getContainerSize,
+  getDefaultMascotRelativePosition,
+  toAbsoluteFromMascot,
+  toAbsolutePosition,
+  toRelativeToMascot,
+  type RelativePosition
 } from '../utils/coordinates';
 
 // 아이템 상태 인터페이스 (다중 아이템 지원)
@@ -413,6 +431,8 @@ interface EquippedItemState {
   rotation: number; // 회전 각도 (degrees)
   equippedAt: number; // 장착 시간 (타임스탬프)
 }
+
+// 마스코트 기반 좌표계 완성 - 모든 아이템이 마스코트를 기준으로 배치됨
 
 const router = useRouter();
 
@@ -433,6 +453,10 @@ const isMobileDevice = ref(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera M
 const equippedItemsList = ref<EquippedItemState[]>([]); // 장착된 아이템 목록
 const maxEquippedItems = 10; // 최대 장착 가능 아이템 수
 
+// 마스코트는 중앙에 고정 (드래그 불가)
+const mascotRef = ref<HTMLElement>();
+const mascotRect = ref<DOMRect | null>(null);
+
 // 토스트 알림
 const showToast = ref(false);
 const toastMessage = ref('');
@@ -445,14 +469,14 @@ const itemCategories = [
   { id: 'background', name: 'Background', icon: '🖼️' }
 ];
 
-// 퀵 포지션 옵션
+// 퀵 포지션 옵션 (마스코트 기준 상대 좌표 0~1)
 const quickPositions = [
-  { name: '좌상', icon: '↖', position: { x: 20, y: 20 } },
-  { name: '상단', icon: '↑', position: { x: 120, y: 20 } },
-  { name: '우상', icon: '↗', position: { x: 200, y: 20 } },
-  { name: '좌측', icon: '←', position: { x: 20, y: 120 } },
-  { name: '중앙', icon: '⊙', position: { x: 120, y: 120 } },
-  { name: '우측', icon: '→', position: { x: 200, y: 120 } },
+  { name: '좌상', icon: '↖', position: { x: 0.2, y: 0.2 } },    // 마스코트 좌상단
+  { name: '상단', icon: '↑', position: { x: 0.5, y: 0.2 } },    // 마스코트 상단 중앙
+  { name: '우상', icon: '↗', position: { x: 0.8, y: 0.2 } },    // 마스코트 우상단
+  { name: '좌측', icon: '←', position: { x: 0.2, y: 0.5 } },    // 마스코트 좌측 중앙
+  { name: '중앙', icon: '⊙', position: { x: 0.5, y: 0.5 } },    // 마스코트 정중앙
+  { name: '우측', icon: '→', position: { x: 0.8, y: 0.5 } },    // 마스코트 우측 중앙
 ];
 
 // 퀵 회전 옵션
@@ -478,9 +502,13 @@ const canEquipMoreItems = computed(() => {
   return equippedItemsList.value.length < maxEquippedItems;
 });
 
+// 마스코트는 CSS로 중앙에 고정됨
+
 // 기존 마스코트 데이터에서 아이템 로드 (호환성을 위함)
 function loadEquippedItemsFromMascot() {
   if (!currentMascot.value?.equippedItem) return;
+  
+  console.log('마스코트에서 장착 아이템 로드:', currentMascot.value.equippedItem);
   
   // 기존 단일 아이템 시스템과의 호환성
   ['head', 'clothing', 'accessory', 'background'].forEach(type => {
@@ -496,7 +524,21 @@ function loadEquippedItemsFromMascot() {
       );
       
       if (!existingItem) {
-        addEquippedItem(item);
+        // addEquippedItem 대신 직접 추가하여 무한 루프 방지
+        const id = generateItemId(item);
+        const newEquippedItem: EquippedItemState = {
+          id,
+          item,
+          relativePosition: getDefaultPosition(item.type),
+          scale: 1,
+          rotation: 0,
+          equippedAt: Date.now(),
+        };
+        
+        equippedItemsList.value.push(newEquippedItem);
+        equippedItemStates.value.set(id, newEquippedItem);
+        
+        console.log(`마스코트에서 아이템 로드: ${item.name}`);
       }
     }
   });
@@ -530,11 +572,23 @@ async function loadUserItems() {
 }
 
 // 유틸리티 함수들
+// 마스코트 이미지 URL 캐시 (리렌더링 최적화)
+const mascotImageUrlCache = new Map<string, string>();
+
 function getMascotImageUrl(type: string): string {
-  console.log('꾸미기 화면에서 getMascotImageUrl 호출됨:', { type });
+  // 캐시에서 확인
+  if (mascotImageUrlCache.has(type)) {
+    return mascotImageUrlCache.get(type)!;
+  }
+  
+  console.log('🖼️ 마스코트 이미지 URL 계산:', { type });
   const typeObj = mascotTypes.find(t => t.id === type);
   const imageUrl = typeObj ? typeObj.imageUrl : '/mascot/soll.png';
-  console.log('꾸미기 화면에서 결정된 이미지 URL:', imageUrl);
+  
+  // 캐시에 저장
+  mascotImageUrlCache.set(type, imageUrl);
+  console.log('✅ 마스코트 이미지 URL 캐시됨:', imageUrl);
+  
   return imageUrl;
 }
 
@@ -550,7 +604,7 @@ function getCategoryName(category: 'head' | 'clothing' | 'accessory' | 'backgrou
 
 // 아이템 타입별 기본 상대 위치 설정
 function getDefaultPosition(itemType: string): RelativePosition {
-  return getDefaultRelativePosition(itemType);
+  return getDefaultMascotRelativePosition(itemType);
 }
 
 // 다중 아이템 관리 함수들
@@ -569,7 +623,8 @@ function addEquippedItem(item: Item): boolean {
   const newEquippedItem: EquippedItemState = {
     id,
     item,
-    relativePosition: getDefaultPosition(item.type),
+    // 새 아이템은 마스코트 중앙에 자동 배치
+    relativePosition: { x: 0.5, y: 0.5 },
     scale: 1,
     rotation: 0,
     equippedAt: Date.now(),
@@ -577,6 +632,9 @@ function addEquippedItem(item: Item): boolean {
   
   equippedItemsList.value.push(newEquippedItem);
   equippedItemStates.value.set(id, newEquippedItem);
+  
+  // currentMascot.equippedItem 필드 동기화
+  updateMascotEquippedItems();
   
   showToastMessage(`${item.name}을(를) 장착했습니다!`);
   return true;
@@ -595,6 +653,9 @@ function removeEquippedItem(itemId: string): boolean {
     selectedItemId.value = null;
   }
   
+  // currentMascot.equippedItem 필드 동기화
+  updateMascotEquippedItems();
+  
   showToastMessage(`${removedItem.item.name}을(를) 해제했습니다!`);
   return true;
 }
@@ -607,15 +668,131 @@ function getEquippedCount(item: Item): number {
   return equippedItemsList.value.filter(equipped => equipped.item.id === item.id).length;
 }
 
-// 상대 좌표를 절대 좌표로 변환하여 반환
+// currentMascot.equippedItem 필드를 현재 장착된 아이템들과 동기화
+function updateMascotEquippedItems() {
+  if (!currentMascot.value) return;
+  
+  // 장착된 아이템들의 이름을 수집 (중복 제거)
+  const equippedItemNames = [...new Set(
+    equippedItemsList.value.map(equipped => equipped.item.name)
+  )];
+  
+  // 문자열로 연결 (기존 방식과 호환)
+  currentMascot.value.equippedItem = equippedItemNames.join(',');
+  
+  console.log('마스코트 장착 아이템 동기화:', {
+    equippedItems: equippedItemsList.value.map(e => e.item.name),
+    equippedItemString: currentMascot.value.equippedItem
+  });
+}
+
+// 안정적인 캔버스 bounding box 캐시
+let stableCanvasRect: DOMRect | null = null;
+let lastCanvasUpdateTime = 0;
+
+// 위치 계산 결과 캐시 (무한 루프 방지)
+const positionCache = new Map<string, { x: number; y: number; timestamp: number }>();
+const POSITION_CACHE_DURATION = 100; // 100ms (더 긴 캐시 시간으로 안정성 강화)
+const BASE_ITEM_SIZE = 120; // DraggableItem의 기본 사이즈와 일치시킴
+
+// 마스코트 기준 상대 좌표를 절대 좌표로 변환하여 반환
 function getAbsolutePosition(equippedItem: EquippedItemState): { x: number; y: number } {
+  if (!mascotRect.value || !mascotCanvas.value) {
+    // 안전한 폴백: 캔버스 중심에 아이템(스케일 반영) 배치
+    const canvasRect = mascotCanvas.value?.getBoundingClientRect();
+    if (canvasRect) {
+      const itemSize = BASE_ITEM_SIZE * (equippedItem.scale || 1);
+      const x = (canvasRect.width - itemSize) / 2;
+      const y = (canvasRect.height - itemSize) / 2;
+      return { x, y };
+    }
+    console.warn('⚠️ 마스코트/캔버스 좌표 미가용: 좌상단(0,0) 폴백');
+    return { x: 0, y: 0 };
+  }
+  
+  // 위치 계산 결과 캐시 확인 (무한 루프 방지)
+  const cacheKey = `${equippedItem.id}_${equippedItem.relativePosition.x}_${equippedItem.relativePosition.y}_${equippedItem.scale}`;
+  const now = Date.now();
+  const cachedPosition = positionCache.get(cacheKey);
+  
+  if (cachedPosition && (now - cachedPosition.timestamp < POSITION_CACHE_DURATION)) {
+    return { x: cachedPosition.x, y: cachedPosition.y };
+  }
+  
+  // 캔버스 위치를 안정적으로 계산 (캐시 사용)
+  const shouldUpdateCache = !stableCanvasRect || (now - lastCanvasUpdateTime > 300); // 300ms 캐시 (더 긴 캐시)
+  
+  if (shouldUpdateCache) {
+    const newCanvasRect = mascotCanvas.value.getBoundingClientRect();
+    
+    // 실제로 위치가 변경되었는지 확인 (불필요한 업데이트 방지)
+    // 5px 이상의 의미있는 변화만 감지 (선택 패널 fixed positioning으로 더 안정)
+    const hasSignificantChange = !stableCanvasRect || 
+      Math.abs(newCanvasRect.x - stableCanvasRect.x) > 5 ||
+      Math.abs(newCanvasRect.y - stableCanvasRect.y) > 5 ||
+      Math.abs(newCanvasRect.width - stableCanvasRect.width) > 5 ||
+      Math.abs(newCanvasRect.height - stableCanvasRect.height) > 5;
+    
+    if (hasSignificantChange) {
+      stableCanvasRect = newCanvasRect;
+      lastCanvasUpdateTime = now;
+      console.log('📍 캔버스 위치 실제 변경으로 캐시 업데이트:', stableCanvasRect);
+    }
+  }
+  
+  // 마스코트를 기준으로 한 브라우저 전체 화면 절대 좌표 계산
+  // 마스코트 기준 상대좌표로부터 브라우저 절대 좌표(아이템 중심)를 계산
+  const browserAbsoluteCenter = toAbsoluteFromMascot(equippedItem.relativePosition, mascotRect.value);
+
+  // 항상 최신 캔버스 위치를 사용하여 상대 좌표로 변환 (저장 등 레이아웃 변화 대응)
+  const canvasRect = mascotCanvas.value.getBoundingClientRect();
+
+  // 아이템의 사이즈(스케일 반영)를 고려하여 중심 -> 좌상단으로 보정
+  const itemSize = BASE_ITEM_SIZE * (equippedItem.scale || 1);
+  const half = itemSize / 2;
+  const containerRelativePos = {
+    x: browserAbsoluteCenter.x - canvasRect.left - half,
+    y: browserAbsoluteCenter.y - canvasRect.top - half
+  };
+  
+  // 계산 결과를 캐시에 저장
+  positionCache.set(cacheKey, {
+    x: containerRelativePos.x,
+    y: containerRelativePos.y,
+    timestamp: now
+  });
+  
+  return containerRelativePos;
+}
+
+// 마스코트는 항상 캔버스 중앙에 고정
+function getMascotCenterPosition(): { x: number; y: number } {
   if (!mascotCanvas.value) {
     return { x: 0, y: 0 };
   }
   
   const containerSize = getContainerSize(mascotCanvas.value);
-  return toAbsolutePosition(equippedItem.relativePosition, containerSize);
+  return {
+    x: containerSize.width / 2,
+    y: containerSize.height / 2,
+  };
 }
+
+// 마스코트 bounding box 업데이트
+function updateMascotRect() {
+  if (mascotRef.value) {
+    mascotRect.value = mascotRef.value.getBoundingClientRect();
+    console.log('마스코트 bounding box 업데이트됨:', mascotRect.value);
+    
+    // 마스코트 위치 변경 시 캔버스 캐시 무효화
+    stableCanvasRect = null;
+    lastCanvasUpdateTime = 0;
+    positionCache.clear();
+    updateItemPositionDebounce.clear();
+  }
+}
+
+// 마스코트 드래그 관련 함수들 제거됨 (마스코트는 고정)
 
 // 드래그 관련 메소드들
 function updateCanvasBounds() {
@@ -629,6 +806,15 @@ function updateCanvasBounds() {
       Math.abs(oldBounds.height - newBounds.height) > 1;
     
     canvasBounds.value = newBounds;
+    
+    // 캔버스 위치 변경 시 캐시 무효화
+    stableCanvasRect = null;
+    lastCanvasUpdateTime = 0;
+    positionCache.clear();
+    updateItemPositionDebounce.clear();
+    
+    // 마스코트 bounding box도 함께 업데이트
+    updateMascotRect();
     
     // 크기 변경 시 상대 좌표 기반으로 아이템 위치 재계산
     if (sizeChanged && oldBounds) {
@@ -644,14 +830,62 @@ function updateCanvasBounds() {
   }
 }
 
+// 위치 업데이트 디바운스 (무한 루프 방지)
+const updateItemPositionDebounce = new Map<string, number>();
+// 드래그 시 더 부드러운 업데이트를 위해 간격을 축소 (약 60fps 수준)
+const POSITION_UPDATE_DEBOUNCE = 16;
+
 function updateItemPosition(itemId: string, position: { x: number; y: number }) {
   const state = equippedItemStates.value.get(itemId);
-  if (state && mascotCanvas.value) {
-    // 절대 좌표를 상대 좌표로 변환
-    const containerSize = getContainerSize(mascotCanvas.value);
-    state.relativePosition = toRelativePosition(position, containerSize);
-    equippedItemStates.value.set(itemId, state);
+  if (!state || !mascotRect.value) return;
+  
+  // 디바운스 처리
+  const now = Date.now();
+  const lastUpdate = updateItemPositionDebounce.get(itemId) || 0;
+  
+  if (now - lastUpdate < POSITION_UPDATE_DEBOUNCE) {
+    // 디바운스로 업데이트 차단 (로깅 최소화)
+    return;
   }
+  
+  updateItemPositionDebounce.set(itemId, now);
+  
+  // 캔버스 상대 좌표(position: 좌상단 기준)를 브라우저 절대 좌표의 '아이템 중심'으로 변환
+  // 항상 최신 캔버스 위치를 측정하여 사용 (저장 직후 레이아웃 변화 대응)
+  const canvasRect = mascotCanvas.value?.getBoundingClientRect();
+  if (!canvasRect) return;
+  const itemSize = BASE_ITEM_SIZE * (state.scale || 1);
+  const half = itemSize / 2;
+  const absoluteCenter = {
+    x: canvasRect.left + position.x + half,
+    y: canvasRect.top + position.y + half,
+  };
+
+  // 브라우저 절대 좌표(중심)를 마스코트 기준 상대 좌표로 변환
+  const newRelativePosition = toRelativeToMascot(absoluteCenter, mascotRect.value);
+  
+  // 위치 변경이 실제로 있는지 확인 (미세한 변화 무시)
+  const oldPos = state.relativePosition;
+  // 기존 0.1은 변화 폭이 지나치게 커서 세밀한 드래그가 어렵던 원인
+  const POSITION_EPS = 0.005; // 0.5% 단위까지 반영
+  const positionChanged = Math.abs(oldPos.x - newRelativePosition.x) > POSITION_EPS || 
+                         Math.abs(oldPos.y - newRelativePosition.y) > POSITION_EPS;
+  
+  if (!positionChanged) {
+    // 의미있는 위치 변경 없음 (로깅 최소화)
+    return;
+  }
+  
+  state.relativePosition = newRelativePosition;
+  equippedItemStates.value.set(itemId, state);
+  
+  // 위치 캐시 무효화
+  positionCache.clear();
+  
+  console.log(`✅ 아이템 ${itemId} 위치 업데이트:`, {
+    absolutePosition: position,
+    relativeToMascot: state.relativePosition
+  });
 }
 
 function updateItemScale(itemId: string, scale: number) {
@@ -672,10 +906,16 @@ function updateItemRotation(itemId: string, rotation: number) {
 
 function selectItem(itemId: string) {
   selectedItemId.value = itemId;
+  
+  // 선택 시 캐시는 유지 (레이아웃 변화가 없으므로)
+  // positionCache.clear(); // 제거: 불필요한 캐시 정리 방지
+  // updateItemPositionDebounce.clear(); // 제거: 안정성 유지
+  
+  console.log('🎯 아이템 선택:', itemId);
 }
 
 function handleCanvasClick(e: Event) {
-  // 캔버스 빈 공간 클릭 시 선택 해제
+  // 캔버스 빈 공간 클릭 시 아이템 선택 해제
   if (e.target === mascotCanvas.value) {
     selectedItemId.value = null;
   }
@@ -706,10 +946,13 @@ function resetItemPosition(itemId: string) {
 
 function setItemQuickPosition(itemId: string, quickPosition: { name: string; icon: string; position: { x: number; y: number } }) {
   const state = equippedItemStates.value.get(itemId);
-  if (state && mascotCanvas.value) {
-    // 절대 좌표를 상대 좌표로 변환
-    const containerSize = getContainerSize(mascotCanvas.value);
-    state.relativePosition = toRelativePosition(quickPosition.position, containerSize);
+  if (state) {
+    // 퀵 포지션은 이미 마스코트 기준 상대 좌표로 설정
+    // quickPosition.position의 값들을 직접 사용 (0~1 범위)
+    state.relativePosition = {
+      x: quickPosition.position.x,
+      y: quickPosition.position.y
+    };
     equippedItemStates.value.set(itemId, state);
     
     showToastMessage(`${state.item.name} → ${quickPosition.name}`);
@@ -745,6 +988,8 @@ function removeSelectedItem() {
   }
 }
 
+// 마스코트 위치 조작 함수들 제거됨 (마스코트는 중앙 고정)
+
 // 아이템 클릭 처리 (제한 체크 포함)
 function handleItemClick(item: Item) {
   const isCurrentlyEquipped = isItemEquipped(item);
@@ -772,37 +1017,69 @@ function resetAllItems() {
     equippedItemsList.value = []; // 다중 아이템 목록도 초기화
     selectedItemId.value = null;
     
+    // currentMascot.equippedItem 필드 동기화
+    updateMascotEquippedItems();
+    
     // 다음 프레임에서 다시 기본값으로 설정되도록 함
     setTimeout(() => {
-      showToastMessage('모든 아이템이 초기화되었습니다');
+      showToastMessage('모든 아이템이 초기화되었습니다! 🔄');
     }, 100);
   }
 }
 
-function saveItemPositions() {
-  // 실제 저장 로직은 백엔드 연동이 필요하지만, 
-  // 현재는 localStorage에 저장하는 것으로 시뮬레이션
+async function saveItemPositions() {
   try {
-    const positionsData = {
-      version: 'relative', // 상대 좌표 버전임을 표시
+    // 로컬 저장소 데이터 준비 (기존 로직 유지)
+    const itemsData = {
+      version: 'mascot-based-v5', // 마스코트 기반 좌표계 버전
       equippedItems: equippedItemsList.value,
-      itemStates: {}
+      itemStates: {},
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     };
     
     equippedItemStates.value.forEach((state, itemId) => {
-      positionsData.itemStates[itemId] = {
-        relativePosition: state.relativePosition,
+      itemsData.itemStates[itemId] = {
+        relativePosition: state.relativePosition, // 마스코트 기준 상대 좌표
         scale: state.scale,
         rotation: state.rotation,
       };
     });
     
-    localStorage.setItem('mascot-multiple-items-v2', JSON.stringify(positionsData));
-    showToastMessage('아이템 위치가 저장되었습니다! 💾');
+    // 백엔드 API 호출용 데이터 준비
+    const customizationRequest = {
+      equippedItems: equippedItemsList.value.map(item => ({
+        itemId: item.item.id,
+        relativePosition: {
+          x: item.relativePosition.x,
+          y: item.relativePosition.y
+        },
+        scale: item.scale,
+        rotation: item.rotation
+      }))
+    };
     
-    console.log('저장된 다중 아이템 데이터 (상대 좌표):', positionsData);
+    console.log('백엔드로 전송할 커스터마이징 데이터:', customizationRequest);
+    
+    try {
+      // 백엔드 API 호출
+      const updatedMascot = await customizeMascot(customizationRequest);
+      console.log('백엔드 저장 성공:', updatedMascot);
+      showToastMessage('마스코트 커스터마이징이 서버에 저장되었습니다! 🎯✨');
+    } catch (backendError) {
+      console.error('백엔드 저장 실패:', backendError);
+      
+      // 에러 메시지 표시
+      const errorMessage = handleApiError(backendError);
+      showToastMessage(`서버 저장 실패: ${errorMessage}`);
+    }
+    
+    // localStorage 저장 (테스트 목적으로 유지)
+    localStorage.setItem('mascot-items-based-v5', JSON.stringify(itemsData));
+    console.log('로컬 저장 완료 (테스트용):', itemsData);
+    
   } catch (error) {
-    console.error('위치 저장 실패:', error);
+    console.error('저장 프로세스 실패:', error);
     showToastMessage('저장에 실패했습니다. 다시 시도해주세요.');
   }
 }
@@ -810,29 +1087,46 @@ function saveItemPositions() {
 // 저장된 위치 불러오기 (완전한 마이그레이션 포함)
 function loadItemPositions() {
   try {
-    // 1. 새로운 상대 좌표 데이터 먼저 시도
-    let savedData = localStorage.getItem('mascot-multiple-items-v2');
-    let isRelativeData = true;
-    let dataSource = 'relative-v2';
+    // 1. 새로운 마스코트 기반 좌표계 데이터 먼저 시도
+    let savedData = localStorage.getItem('mascot-items-based-v5');
+    let dataSource = 'mascot-based-v5';
     
-    // 2. 새 데이터가 없으면 기존 다중 아이템 절대 좌표 데이터 시도
+    // 2. 이전 고정 마스코트 데이터 시도
+    if (!savedData) {
+      savedData = localStorage.getItem('mascot-items-fixed-v4');
+      dataSource = 'fixed-mascot-v4';
+    }
+    
+    // 2. 이전 마스코트 컴포지션 데이터 시도
+    if (!savedData) {
+      savedData = localStorage.getItem('mascot-composition-v3');
+      dataSource = 'composition-v3';
+    }
+    
+    // 3. 이전 상대 좌표 데이터 시도
+    if (!savedData) {
+      savedData = localStorage.getItem('mascot-multiple-items-v2');
+      dataSource = 'relative-v2';
+    }
+    
+    // 4. 기존 다중 아이템 절대 좌표 데이터 시도
     if (!savedData) {
       savedData = localStorage.getItem('mascot-multiple-items');
-      isRelativeData = false;
       dataSource = 'absolute-multi';
     }
     
-    // 3. 그것도 없으면 기존 단일 아이템 데이터 시도
+    // 5. 기존 단일 아이템 데이터 시도
     if (!savedData) {
       savedData = localStorage.getItem('mascot-item-positions');
-      isRelativeData = false;
       dataSource = 'absolute-single';
     }
     
     if (savedData) {
       const positionsData = JSON.parse(savedData);
       
-      // 새로운 다중 아이템 형식 처리
+      // 마스코트는 항상 중앙에 고정 (위치 로드하지 않음)
+      
+      // 아이템 데이터 처리
       if (positionsData.equippedItems) {
         // 아이템 목록 로드
         equippedItemsList.value = positionsData.equippedItems;
@@ -848,15 +1142,31 @@ function loadItemPositions() {
           Object.entries(positionsData.itemStates).forEach(([itemId, data]: [string, any]) => {
             const state = equippedItemStates.value.get(itemId);
             if (state && data && data.scale !== undefined) {
-              // 상대 좌표 데이터인지 절대 좌표 데이터인지 확인
-              if (isRelativeData && data.relativePosition) {
-                // 새로운 상대 좌표 데이터
+              // 데이터 형식에 따른 처리
+              if (dataSource === 'mascot-based-v5' && data.relativePosition) {
+                // 이미 마스코트 기준 상대 좌표 - 직접 적용
                 state.relativePosition = data.relativePosition;
-              } else if (!isRelativeData && data.position && mascotCanvas.value) {
-                // 기존 절대 좌표 데이터를 상대 좌표로 마이그레이션
+              } else if ((dataSource === 'fixed-mascot-v4') && data.relativePosition) {
+                // 마스코트 고정 시스템 데이터 - 직접 적용 (마스코트 기준과 호환)
+                state.relativePosition = data.relativePosition;
+              } else if ((dataSource === 'composition-v3' || dataSource === 'relative-v2') && data.relativePosition && mascotCanvas.value && mascotRect.value) {
+                // 기존 캔버스 기준 상대 좌표를 마스코트 기준으로 2단계 변환
+                // 1단계: 캔버스 기준 상대 → 절대 좌표
                 const containerSize = getContainerSize(mascotCanvas.value);
-                state.relativePosition = toRelativePosition(data.position, containerSize);
-                console.log(`마이그레이션 (${dataSource}): ${itemId}`, data.position, '→', state.relativePosition);
+                const absolutePos = toAbsolutePosition(data.relativePosition, containerSize);
+                
+                // 2단계: 절대 좌표 → 마스코트 기준 상대 좌표
+                state.relativePosition = toRelativeToMascot(absolutePos, mascotRect.value);
+                
+                console.log(`캔버스→마스코트 마이그레이션 (${dataSource}): ${itemId}`, {
+                  oldCanvasRelative: data.relativePosition,
+                  absolutePosition: absolutePos,
+                  newMascotRelative: state.relativePosition
+                });
+              } else if ((dataSource === 'absolute-multi' || dataSource === 'absolute-single') && data.position && mascotRect.value) {
+                // 기존 절대 좌표 데이터를 마스코트 기준 상대 좌표로 직접 변환
+                state.relativePosition = toRelativeToMascot(data.position, mascotRect.value);
+                console.log(`절대→마스코트 마이그레이션 (${dataSource}): ${itemId}`, data.position, '→', state.relativePosition);
               }
               
               state.scale = data.scale;
@@ -867,10 +1177,9 @@ function loadItemPositions() {
         }
       } 
       // 기존 단일 아이템 형식 처리 (position 데이터가 직접 저장된 경우)
-      else if (dataSource === 'absolute-single' && mascotCanvas.value) {
+      else if (dataSource === 'absolute-single' && mascotRect.value) {
         console.log('기존 단일 아이템 데이터 마이그레이션 시작:', positionsData);
         
-        const containerSize = getContainerSize(mascotCanvas.value);
         Object.entries(positionsData).forEach(([itemIdStr, data]: [string, any]) => {
           if (data && data.position && data.scale !== undefined) {
             // 기존 아이템 ID로 아이템 찾기
@@ -880,7 +1189,7 @@ function loadItemPositions() {
             if (item) {
               // 새로운 다중 아이템 형식으로 변환
               const newId = generateItemId(item);
-              const relativePosition = toRelativePosition(data.position, containerSize);
+              const relativePosition = mascotRect.value ? toRelativeToMascot(data.position, mascotRect.value) : getDefaultMascotRelativePosition(item.type);
               
               const newEquippedItem: EquippedItemState = {
                 id: newId,
@@ -903,9 +1212,14 @@ function loadItemPositions() {
       console.log(`저장된 데이터 불러옴 (${dataSource}):`, positionsData);
       
       // 마이그레이션된 경우 새 형식으로 저장
-      if (!isRelativeData || dataSource !== 'relative-v2') {
+      if (dataSource !== 'mascot-based-v5') {
         saveItemPositions();
-        showToastMessage('기존 데이터를 새 형식으로 마이그레이션했습니다! 📱💻');
+        
+        if (dataSource === 'absolute-single' || dataSource === 'absolute-multi') {
+          showToastMessage('기존 데이터를 마스코트 기반 좌표계로 마이그레이션했습니다! 🎯📐');
+        } else {
+          showToastMessage('마스코트 기반 좌표계로 업그레이드되었습니다! 🎯✨');
+        }
       }
     }
   } catch (error) {
@@ -981,6 +1295,16 @@ async function toggleEquipItem(item: Item) {
   }
 }
 
+// 마스코트 이미지 로드 완료 처리
+function handleMascotImageLoad(event: Event) {
+  console.log('마스코트 이미지 로드 완료');
+  // 이미지 로드 후 마스코트 bounding box 업데이트
+  nextTick(() => {
+    updateMascotRect();
+    console.log('마스코트 이미지 로드 후 bounding box 업데이트 완료');
+  });
+}
+
 // 마스코트 이미지 에러 처리
 function handleMascotImageError(event: Event) {
   const img = event.target as HTMLImageElement;
@@ -1037,13 +1361,14 @@ async function loadMascotData() {
 
 // 화면 크기 변경 감지를 위한 ResizeObserver
 let resizeObserver: ResizeObserver | null = null;
+let mascotResizeObserver: ResizeObserver | null = null;
 
 // 컴포넌트 마운트
 onMounted(async () => {
   console.log('마스코트 꾸미기 페이지 로드됨');
   await loadMascotData();
   
-  // 캔버스 바운드 업데이트
+  // 캔버스 바운드 및 마스코트 bounding box 업데이트
   await nextTick();
   updateCanvasBounds();
   
@@ -1053,6 +1378,8 @@ onMounted(async () => {
   // 저장된 아이템 위치 불러오기
   await nextTick();
   loadItemPositions();
+  
+
   
   // 윈도우 리사이즈 이벤트 리스너 추가
   window.addEventListener('resize', updateCanvasBounds);
@@ -1069,6 +1396,19 @@ onMounted(async () => {
     console.log('ResizeObserver가 마스코트 캔버스를 감시하기 시작했습니다.');
   }
   
+  // 마스코트 요소 자체의 크기 변경을 감지하기 위한 ResizeObserver
+  if (mascotRef.value && 'ResizeObserver' in window) {
+    mascotResizeObserver = new ResizeObserver(() => {
+      // 다음 프레임에서 실행 (DOM 업데이트 완료 후)
+      nextTick(() => {
+        updateMascotRect();
+        console.log('마스코트 크기 변경 감지 - bounding box 업데이트됨');
+      });
+    });
+    mascotResizeObserver.observe(mascotRef.value);
+    console.log('마스코트 ResizeObserver가 마스코트 요소를 감시하기 시작했습니다.');
+  }
+  
   console.log('사용 가능한 아이템들:', items.value);
 });
 
@@ -1076,11 +1416,18 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('resize', updateCanvasBounds);
   
-  // ResizeObserver 정리
+  // Canvas ResizeObserver 정리
   if (resizeObserver) {
     resizeObserver.disconnect();
     resizeObserver = null;
-    console.log('ResizeObserver 정리 완료');
+    console.log('Canvas ResizeObserver 정리 완료');
+  }
+  
+  // Mascot ResizeObserver 정리
+  if (mascotResizeObserver) {
+    mascotResizeObserver.disconnect();
+    mascotResizeObserver = null;
+    console.log('Mascot ResizeObserver 정리 완료');
   }
 });
 </script>

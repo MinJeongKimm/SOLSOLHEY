@@ -53,6 +53,10 @@ spring:
       hibernate:
         format_sql: true
 
+# 로컬 환경 Rate Limiting 비활성화
+rate-limit:
+  enabled: false
+
 # 개발 환경 (PostgreSQL)
 ---
 spring:
@@ -77,6 +81,10 @@ spring:
   sql:
     init:
       mode: ${SPRING_SQL_INIT_MODE:never}
+
+# 개발 환경 Rate Limiting 비활성화
+rate-limit:
+  enabled: false
 
 # 운영 환경 (PostgreSQL)
 ---
@@ -108,7 +116,7 @@ cors:
   allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
   max-age: ${CORS_MAX_AGE:3600}
 
-# Rate Limiting 설정
+# Rate Limiting 설정 (전역)
 rate-limit:
   general:
     requests-per-minute: ${RATE_LIMIT_GENERAL_REQUESTS_PER_MINUTE:100}
@@ -116,6 +124,7 @@ rate-limit:
     attempts-per-15min: ${RATE_LIMIT_LOGIN_ATTEMPTS_PER_15MIN:10}
   cleanup:
     interval-hours: ${RATE_LIMIT_CLEANUP_INTERVAL_HOURS:1}
+  enabled: ${RATE_LIMIT_ENABLED:true}
 
 # 로깅 설정
 logging:
