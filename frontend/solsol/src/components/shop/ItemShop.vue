@@ -160,7 +160,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { getShopItems, purchaseItem } from '../../api/index';
+import { getShopItems, createOrder } from '../../api/index';
 import type { ShopItem } from '../../types/api';
 import PurchaseDialog from './PurchaseDialog.vue';
 
@@ -254,7 +254,13 @@ function closePurchaseDialog() {
 // 구매 처리
 async function handlePurchase(item: ShopItem, quantity: number) {
   try {
-    await purchaseItem(item.id, quantity);
+    const orderData = {
+      type: 'ITEM' as const,
+      itemId: item.id,
+      quantity: quantity
+    };
+    
+    await createOrder(orderData);
     
     // 구매 성공 후 처리
     closePurchaseDialog();
