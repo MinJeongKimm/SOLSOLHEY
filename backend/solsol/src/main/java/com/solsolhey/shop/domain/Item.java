@@ -40,6 +40,9 @@ public class Item {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
     
+    @Column(name = "category", nullable = false, length = 50)
+    private String category; // "head", "clothing", "accessory", "background"
+    
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;

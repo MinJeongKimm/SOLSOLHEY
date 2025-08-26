@@ -100,6 +100,7 @@
         v-for="item in filteredItems" 
         :key="item.id"
         class="relative border-2 border-gray-200 rounded-xl p-4 transition-all cursor-pointer hover:border-gray-300 hover:shadow-md"
+        :class="item.owned ? 'opacity-60 cursor-not-allowed' : ''"
         @click="handleItemClick(item)"
       >
         <!-- 아이템 이미지 -->
@@ -124,7 +125,10 @@
             <div class="text-lg font-bold text-blue-600 mb-2">
               {{ item.price }}P
             </div>
-            <span class="text-xs font-medium px-3 py-1 rounded-full bg-blue-500 text-white hover:bg-blue-600">
+            <span v-if="item.owned" class="text-xs font-medium px-3 py-1 rounded-full bg-gray-300 text-gray-700">
+              보유중
+            </span>
+            <span v-else class="text-xs font-medium px-3 py-1 rounded-full bg-blue-500 text-white hover:bg-blue-600">
               구매하기
             </span>
           </div>
@@ -186,13 +190,8 @@ const sortOrder = ref<'default' | 'price-low' | 'price-high'>('default');
 const showPurchaseDialog = ref(false);
 const selectedItem = ref<ShopItem | null>(null);
 
-// 아이템 타입 매핑 (프론트엔드 → 백엔드)
-const itemTypeMapping: Record<string, string> = {
-  'head': 'EQUIP',
-  'clothing': 'EQUIP',
-  'accessory': 'EQUIP',
-  'background': 'BACKGROUND'
-};
+// 아이템 타입 매핑 제거 (더 이상 필요 없음 - category 필드 직접 사용)
+// const itemTypeMapping: Record<string, string> = { ... };
 
 // 카테고리별 아이템 필터링
 const filteredItems = computed(() => {
@@ -203,10 +202,13 @@ const filteredItems = computed(() => {
   
   let filtered = [...items.value];  // 배열 복사
   
-  // 카테고리 필터링
+  // 카테고리 필터링 (배경 탭은 base/sticker 모두 포함)
   if (selectedCategory.value !== 'all') {
-    const backendType = itemTypeMapping[selectedCategory.value];
-    filtered = filtered.filter(item => item.type === backendType);
+    const targetCategories =
+      selectedCategory.value === 'background'
+        ? ['base', 'sticker']
+        : [selectedCategory.value];
+    filtered = filtered.filter(item => targetCategories.includes(item.category));
   }
   
   // 정렬
@@ -238,6 +240,7 @@ function isOwned(item: ShopItem): boolean {
 
 // 아이템 클릭 처리
 function handleItemClick(item: ShopItem) {
+  if (item.owned) return; // 보유 아이템은 클릭/구매 불가
   selectedItem.value = item;
   showPurchaseDialog.value = true;
 }
