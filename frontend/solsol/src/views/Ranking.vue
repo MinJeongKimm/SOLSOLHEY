@@ -56,41 +56,40 @@
               <h2 class="text-lg font-bold text-gray-800">
                 {{ activeTab === 'campus' ? '교내' : '전국' }} 내 순위
               </h2>
-              <!-- 랭킹에 등록된 경우 -->
-              <div v-if="myRank && myRank > 0" class="flex items-center space-x-2">
-                <span class="text-2xl font-bold text-blue-600">{{ myRank }}위</span>
+              <!-- 마스코트가 있는 경우 -->
+              <div v-if="hasMascot" class="flex items-center space-x-2">
+                <span class="text-2xl font-bold text-blue-600">{{ myRank || '계산 중...' }}위</span>
                 <span class="text-sm text-gray-600">• {{ myRank === 1 ? '🥇' : myRank === 2 ? '🥈' : myRank === 3 ? '🥉' : '🏅' }}</span>
               </div>
-              <!-- 랭킹에 등록되지 않은 경우 -->
+              <!-- 마스코트가 없는 경우 -->
               <div v-else class="flex items-center space-x-2">
-                <span class="text-lg text-gray-600">랭킹에 참가하지 않았습니다</span>
+                <span class="text-lg text-gray-600">마스코트가 없습니다</span>
               </div>
             </div>
           </div>
           
-          <!-- 랭킹에 등록되지 않은 경우 참가 버튼 표시 -->
-          <div v-if="!myRank || myRank === 0">
-            <button
-              @click="joinRanking"
-              :disabled="joining"
+          <!-- 마스코트가 없는 경우 마스코트 생성 안내 -->
+          <div v-if="!hasMascot">
+            <router-link
+              to="/mascot-create"
               class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg"
             >
-              {{ joining ? '참가 중...' : '랭킹 참가하기' }}
-            </button>
+              마스코트 만들기
+            </router-link>
           </div>
           
-          <!-- 랭킹에 등록된 경우 참가 완료 표시 -->
+          <!-- 마스코트가 있는 경우 참가 완료 표시 -->
           <div v-else class="bg-green-100 text-green-700 px-4 py-2 rounded-lg font-medium">
-            참가 완료! 🎉
+            자동 참가 완료! 🎉
           </div>
         </div>
         
-        <!-- 랭킹에 등록되지 않은 경우 안내 메시지 -->
-        <div v-if="!myRank || myRank === 0" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <!-- 마스코트가 없는 경우 안내 메시지 -->
+        <div v-if="!hasMascot" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <div class="flex items-center space-x-2">
             <span class="text-blue-600">💡</span>
             <span class="text-blue-700 text-sm">
-              {{ activeTab === 'campus' ? '교내' : '전국' }} 랭킹에서 내 순위를 확인하려면 랭킹에 참가하세요! 마스코트를 등록하고 다른 사용자들의 투표를 받아보세요.
+              {{ activeTab === 'campus' ? '교내' : '전국' }} 랭킹에서 내 순위를 확인하려면 마스코트를 생성하세요! 마스코트를 만들면 자동으로 랭킹에 참가됩니다.
             </span>
           </div>
         </div>
@@ -159,7 +158,7 @@
           <div class="space-y-3">
             <div
               v-for="entry in campusRankings.entries"
-              :key="entry.entryId"
+              :key="entry.mascotId"
               class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 hover:shadow-lg transition-all duration-200 border border-purple-100 hover:border-purple-300"
             >
               <div class="flex items-center space-x-4">
@@ -177,10 +176,10 @@
                   </div>
                 </div>
 
-                <!-- 마스코트 썸네일 -->
+                <!-- 마스코트 배경 -->
                 <div class="flex-shrink-0">
                   <img
-                    :src="entry.thumbnailUrl || '/mascot/pli.png'"
+                    :src="`/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
                     :alt="`${entry.ownerNickname}의 마스코트`"
                     class="w-16 h-16 rounded-lg object-cover"
                   />
@@ -196,14 +195,13 @@
                   </div>
                   <div class="flex items-center space-x-4 text-sm text-gray-600">
                     <span>득표: {{ entry.votes.toLocaleString() }}표</span>
-                    <span>트렌딩: {{ entry.trendScore.toFixed(1) }}</span>
                   </div>
                 </div>
 
                 <!-- 투표 버튼 -->
                 <div class="flex-shrink-0">
                   <button
-                    @click="voteForEntry(entry.entryId, 'LIKE')"
+                    @click="voteForMascot(entry.mascotId)"
                     :disabled="voting"
                     class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
@@ -276,10 +274,98 @@
           </div>
         </div>
         
-        <!-- 전국 랭킹 내용 -->
-        <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-12 text-center border border-purple-100">
-          <div class="text-gray-600 text-lg">전국 랭킹은 준비 중입니다</div>
-          <div class="text-gray-500 text-sm mt-2">곧 업데이트될 예정입니다</div>
+        <!-- 로딩 상태 -->
+        <div v-if="loading" class="flex justify-center items-center py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+        </div>
+
+        <!-- 에러 상태 -->
+        <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <div class="text-red-600 text-lg font-medium mb-2">오류가 발생했습니다</div>
+          <div class="text-red-500 mb-4">{{ error }}</div>
+          <button
+            @click="loadNationalRankings"
+            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+
+        <!-- 전국 랭킹 목록 -->
+        <div v-else-if="nationalRankings" class="space-y-4">
+          <!-- 랭킹 정보 -->
+          <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-100">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-semibold text-gray-800">전국 랭킹</h2>
+              <div class="text-sm text-gray-600">
+                총 {{ nationalRankings.total }}개 • {{ nationalRankings.period }} 기준
+              </div>
+            </div>
+          </div>
+
+          <!-- 랭킹 엔트리들 -->
+          <div class="space-y-3">
+            <div
+              v-for="entry in nationalRankings.entries"
+              :key="entry.mascotId"
+              class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 hover:shadow-lg transition-all duration-200 border border-purple-100 hover:border-purple-300"
+            >
+              <div class="flex items-center space-x-4">
+                <!-- 순위 -->
+                <div class="flex-shrink-0">
+                  <div
+                    :class="[
+                      'w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg',
+                      entry.rank === 1 ? 'bg-yellow-500' : 
+                      entry.rank === 2 ? 'bg-gray-400' : 
+                      entry.rank === 3 ? 'bg-orange-500' : 'bg-purple-500'
+                    ]"
+                  >
+                    {{ entry.rank }}
+                  </div>
+                </div>
+
+                <!-- 마스코트 배경 -->
+                <div class="flex-shrink-0">
+                  <img
+                    :src="`/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
+                    :alt="`${entry.ownerNickname}의 마스코트`"
+                    class="w-16 h-16 rounded-lg object-cover"
+                  />
+                </div>
+
+                <!-- 정보 -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center space-x-2 mb-1">
+                    <span class="text-lg font-semibold text-gray-800">
+                      {{ entry.ownerNickname }}
+                    </span>
+                    <span class="text-sm text-gray-600">님의 마스코트</span>
+                  </div>
+                  <div class="flex items-center space-x-4 text-sm text-gray-600">
+                    <span>득표: {{ entry.votes.toLocaleString() }}표</span>
+                    <span v-if="entry.school">학교: {{ entry.school.schoolName }}</span>
+                  </div>
+                </div>
+
+                <!-- 투표 버튼 -->
+                <div class="flex-shrink-0">
+                  <button
+                    @click="voteForNationalMascot(entry.mascotId)"
+                    :disabled="voting"
+                    class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    👍 투표
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 빈 상태 -->
+        <div v-else class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-12 text-center border border-purple-100">
+          <div class="text-gray-600 text-lg">전국 랭킹 데이터가 없습니다</div>
         </div>
       </div>
     </div>
@@ -287,18 +373,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
   getCampusRankings, 
   getNationalRankings,
   getCurrentUser, 
   voteForCampus,
-  joinCampusRanking,
-  joinNationalRanking,
+  voteForNational,
   type RankingResponse,
-  type VoteRequest,
-  type JoinRankingRequest
+  type VoteRequest
 } from '../api/ranking';
 import { bootstrapAuth, auth, getMascot } from '../api/index';
 
@@ -310,10 +394,11 @@ const activeTab = ref<'campus' | 'national'>('campus');
 const loading = ref(false);
 const error = ref<string | null>(null);
 const voting = ref(false);
-const joining = ref(false);
 const campusRankings = ref<RankingResponse | null>(null);
+const nationalRankings = ref<RankingResponse | null>(null);
 const currentUser = ref<any>(null);
 const myRank = ref<number | null>(null);
+const hasMascot = ref<boolean>(false);
 
 // 필터 설정
 const campusFilters = ref({
@@ -330,9 +415,19 @@ const nationalFilters = ref({
   page: 0
 });
 
+// 마스코트 존재 여부 확인
+const checkMascotExists = async () => {
+  try {
+    const mascot = await getMascot();
+    hasMascot.value = !!mascot;
+  } catch (error) {
+    hasMascot.value = false;
+  }
+};
+
 // 현재 사용자의 순위 찾기
 const findMyRank = () => {
-  if (!currentUser.value) {
+  if (!currentUser.value || !hasMascot.value) {
     myRank.value = null;
     return;
   }
@@ -356,50 +451,6 @@ const findMyRank = () => {
     // 전국 랭킹에서 내 순위 찾기 (아직 구현되지 않음)
     // TODO: 전국 랭킹 데이터가 로드되면 내 순위 찾기
     myRank.value = null;
-  }
-};
-
-// 랭킹 참가하기
-const joinRanking = async () => {
-  try {
-    joining.value = true;
-    error.value = null;
-
-    const mascot = await getMascot();
-    if (!mascot) {
-      alert('랭킹에 참가할 마스코트가 없습니다. 먼저 마스코트를 생성해주세요.');
-      router.push('/mascot-create');
-      return;
-    }
-
-    const contestType = activeTab.value === 'campus' ? 'CAMPUS' : 'NATIONAL';
-
-    const request: JoinRankingRequest = {
-      mascotId: mascot.id,
-      contestType: contestType,
-    };
-
-    if (contestType === 'CAMPUS') {
-      await joinCampusRanking(request);
-    } else {
-      await joinNationalRanking(request);
-    }
-
-    alert('랭킹에 성공적으로 참가했습니다!');
-
-    // 랭킹 새로고침
-    if (activeTab.value === 'campus') {
-      await loadCampusRankings();
-    } else {
-      await loadNationalRankings();
-    }
-
-  } catch (err: any) {
-    console.error('랭킹 참가 실패:', err);
-    error.value = err.message || '랭킹 참가에 실패했습니다.';
-    alert(error.value);
-  } finally {
-    joining.value = false;
   }
 };
 
@@ -452,8 +503,8 @@ const loadNationalRankings = async () => {
       nationalFilters.value.size
     );
     
-    // 전국 랭킹 데이터 처리 (아직 구현되지 않음)
-    console.log('전국 랭킹 데이터:', response);
+    nationalRankings.value = response;
+    findMyRank(); // 랭킹 로드 후 내 순위 갱신
   } catch (err: any) {
     console.error('전국 랭킹 로드 실패:', err);
     error.value = err.message || '전국 랭킹을 불러오는데 실패했습니다.';
@@ -468,16 +519,16 @@ const loadNationalRankings = async () => {
 };
 
 // 투표 처리
-const voteForEntry = async (entryId: number, voteType: 'LIKE' | 'DISLIKE') => {
+const voteForMascot = async (mascotId: number) => {
   try {
     voting.value = true;
     
     const voteData: VoteRequest = {
-      voteType,
-      comment: undefined
+      weight: 1, // 기본 투표 가중치
+      campusId: currentUser.value?.campusId
     };
     
-    const response = await voteForCampus(entryId, voteData);
+    const response = await voteForCampus(mascotId, voteData);
     
     if (response.success) {
       // 투표 성공 시 랭킹 새로고침
@@ -493,11 +544,45 @@ const voteForEntry = async (entryId: number, voteType: 'LIKE' | 'DISLIKE') => {
   }
 };
 
+// 전국 랭킹 투표 처리
+const voteForNationalMascot = async (mascotId: number) => {
+  try {
+    voting.value = true;
+    
+    const voteData: VoteRequest = {
+      weight: 1, // 기본 투표 가중치
+    };
+    
+    const response = await voteForNational(mascotId, voteData);
+    
+    if (response.success) {
+      // 투표 성공 시 랭킹 새로고침
+      await loadNationalRankings();
+    } else {
+      error.value = response.message;
+    }
+  } catch (err: any) {
+    console.error('전국 랭킹 투표 실패:', err);
+    error.value = err.message || '투표에 실패했습니다.';
+  } finally {
+    voting.value = false;
+  }
+};
+
 // 페이지 변경
 const changePage = (newPage: number) => {
   campusFilters.value.page = newPage;
   loadCampusRankings();
 };
+
+// 탭 변경 시 랭킹 로드
+watch(activeTab, async (newTab) => {
+  if (newTab === 'campus') {
+    await loadCampusRankings();
+  } else {
+    await loadNationalRankings();
+  }
+}, { immediate: true }); // immediate: true로 설정하여 컴포넌트 마운트 시 첫 번째 탭 로드
 
 // 컴포넌트 마운트 시 인증 확인 후 랭킹 로드
 onMounted(async () => {
@@ -515,8 +600,11 @@ onMounted(async () => {
     
     console.log('인증 성공, 랭킹 데이터 로드 시작');
     
-    // 3. 랭킹 데이터 로드
-    await loadCampusRankings();
+    // 3. 마스코트 존재 여부 확인
+    await checkMascotExists();
+    
+    // 4. 랭킹 데이터 로드 (탭 변경 시 로드되므로 여기서는 필요 없음)
+    // await loadCampusRankings(); 
     
   } catch (error) {
     console.error('랭킹 페이지 초기화 실패:', error);
