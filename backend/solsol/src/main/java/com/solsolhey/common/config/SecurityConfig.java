@@ -79,6 +79,7 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/health", "/actuator/**", "/api/v1/auth/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/mascot/view").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/mascot").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/friends/requests").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/attendance").authenticated()
