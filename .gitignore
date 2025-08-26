@@ -9,6 +9,7 @@ file:/Users/minjeong/.gradle
 
 ### cookies ###
 cookies.txt
+*.cookies
 
 ### local storage ###
 .localdb/
