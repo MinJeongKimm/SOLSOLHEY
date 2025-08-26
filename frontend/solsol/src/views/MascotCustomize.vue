@@ -686,12 +686,20 @@ const BASE_ITEM_SIZE = 120; // DraggableItem의 기본 사이즈와 일치시킴
 // 마스코트 기준 상대 좌표를 절대 좌표로 변환하여 반환
 function getAbsolutePosition(equippedItem: EquippedItemState): { x: number; y: number } {
   if (!mascotRect.value || !mascotCanvas.value) {
-    console.warn('⚠️ 마스코트 bounding box 또는 캔버스가 없어서 기본 위치로 설정됨');
+    // 안전한 폴백: 캔버스 중심에 아이템(스케일 반영) 배치
+    const canvasRect = mascotCanvas.value?.getBoundingClientRect();
+    if (canvasRect) {
+      const itemSize = BASE_ITEM_SIZE * (equippedItem.scale || 1);
+      const x = (canvasRect.width - itemSize) / 2;
+      const y = (canvasRect.height - itemSize) / 2;
+      return { x, y };
+    }
+    console.warn('⚠️ 마스코트/캔버스 좌표 미가용: 좌상단(0,0) 폴백');
     return { x: 0, y: 0 };
   }
   
   // 위치 계산 결과 캐시 확인 (무한 루프 방지)
-  const cacheKey = `${equippedItem.id}_${equippedItem.relativePosition.x}_${equippedItem.relativePosition.y}`;
+  const cacheKey = `${equippedItem.id}_${equippedItem.relativePosition.x}_${equippedItem.relativePosition.y}_${equippedItem.scale}`;
   const now = Date.now();
   const cachedPosition = positionCache.get(cacheKey);
   
