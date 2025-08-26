@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.solsolhey.point.dto.request.PointEarnRequest;
 import com.solsolhey.point.dto.response.PointTransactionResponse;
+import com.solsolhey.point.entity.PointTransaction.ReferenceType;
 import com.solsolhey.point.service.PointService;
 import com.solsolhey.user.dto.AttendanceRecordDto;
 import com.solsolhey.user.entity.Attendance;
@@ -58,12 +59,14 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .user(user)
                 .attendanceDate(today)
                 .consecutiveDays(consecutive)
+                .expReward(null)  // 자동 계산되도록 null 전달
+                .pointReward(null) // 자동 계산되도록 null 전달
                 .build();
 
         attendanceRepository.save(attendance);
 
-        // 포인트 지급 - PointEarnRequest 객체 생성하여 전달
-        PointTransactionResponse tx = pointService.earnPoints(user, new PointEarnRequest(10, "출석체크", null, null));
+        // 포인트 지급 - PointEarnRequest 객체 생성하여 전달 (DAILY_BONUS 타입으로 설정하여 일일 한도에서 제외)
+        PointTransactionResponse tx = pointService.earnPoints(user, new PointEarnRequest(10, "출석체크", user.getUserId(), ReferenceType.DAILY_BONUS));
 
         return new AttendanceResult(true, attendance.getConsecutiveDays(), attendance.getExpReward(), tx.pointAmount());
     }

@@ -1,5 +1,17 @@
 package com.solsolhey.point.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.solsolhey.common.exception.BusinessException;
 import com.solsolhey.common.exception.EntityNotFoundException;
 import com.solsolhey.point.dto.request.PointEarnRequest;
@@ -12,19 +24,9 @@ import com.solsolhey.point.entity.PointTransaction.TransactionType;
 import com.solsolhey.point.repository.PointTransactionRepository;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.user.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * 포인트 관리 서비스 구현체
@@ -43,11 +45,6 @@ public class PointServiceImpl implements PointService {
     @Override
     public PointTransactionResponse earnPoints(User user, PointEarnRequest request) {
         log.debug("포인트 적립: userId={}, amount={}", user.getUserId(), request.pointAmount());
-
-        // 일일 한도 확인
-        if (!canEarnMorePointsToday(user, request.pointAmount())) {
-            throw new BusinessException("일일 포인트 적립 한도를 초과했습니다.");
-        }
 
         // 사용자 포인트 업데이트
         user.addPoints(request.pointAmount());
