@@ -284,6 +284,7 @@ export interface ShopItem {
   type: string;
   imageUrl: string;
   isActive: boolean;
+  owned?: boolean;
 }
 
 export interface Gifticon {
