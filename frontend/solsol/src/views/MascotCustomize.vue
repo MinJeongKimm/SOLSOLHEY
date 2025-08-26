@@ -80,7 +80,7 @@
               :scale="equippedItem.scale"
               :rotation="equippedItem.rotation"
               :is-selected="selectedItemId === equippedItem.id"
-              :container-bounds="mascotRect"
+              :container-bounds="canvasBounds"
               @update:position="updateItemPosition(equippedItem.id, $event)"
               @update:scale="updateItemScale(equippedItem.id, $event)"
               @update:rotation="updateItemRotation(equippedItem.id, $event)"
@@ -720,7 +720,8 @@ function getAbsolutePosition(equippedItem: EquippedItemState): { x: number; y: n
   }
   
   // 마스코트를 기준으로 한 브라우저 전체 화면 절대 좌표 계산
-  const browserAbsolutePos = toAbsoluteFromMascot(equippedItem.relativePosition, mascotRect.value);
+  // 마스코트 기준 상대좌표로부터 브라우저 절대 좌표(아이템 중심)를 계산
+  const browserAbsoluteCenter = toAbsoluteFromMascot(equippedItem.relativePosition, mascotRect.value);
   
   // 안정적인 캔버스 위치를 사용하여 상대 좌표로 변환
   if (!stableCanvasRect) {
@@ -728,9 +729,12 @@ function getAbsolutePosition(equippedItem: EquippedItemState): { x: number; y: n
     return { x: 0, y: 0 };
   }
   
+  // 아이템의 사이즈(스케일 반영)를 고려하여 중심 -> 좌상단으로 보정
+  const itemSize = BASE_ITEM_SIZE * (equippedItem.scale || 1);
+  const half = itemSize / 2;
   const containerRelativePos = {
-    x: browserAbsolutePos.x - stableCanvasRect.left,
-    y: browserAbsolutePos.y - stableCanvasRect.top
+    x: browserAbsoluteCenter.x - stableCanvasRect.left - half,
+    y: browserAbsoluteCenter.y - stableCanvasRect.top - half
   };
   
   // 계산 결과를 캐시에 저장
