@@ -37,7 +37,7 @@ public class RankingController {
      * 교내 랭킹 조회
      */
     @GetMapping("/campus")
-    @PreAuthorize("hasRole('MASTER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "교내 랭킹 조회", description = "캠퍼스별 마스코트 콘테스트 랭킹을 조회합니다")
     public ResponseEntity<ApiResponse<RankingResponse>> getCampusRankings(
             @Parameter(description = "캠퍼스 ID") @RequestParam(required = false) Long campusId,
@@ -74,7 +74,7 @@ public class RankingController {
      * 전국 랭킹 조회
      */
     @GetMapping("/national")
-    @PreAuthorize("hasRole('MASTER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "전국 랭킹 조회", description = "전국 마스코트 콘테스트 랭킹을 조회합니다")
     public ResponseEntity<ApiResponse<RankingResponse>> getNationalRankings(
             @Parameter(description = "정렬 기준 (votes_desc, trending, newest)") @RequestParam(defaultValue = "votes_desc") String sort,

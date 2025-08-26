@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.solsolhey.mascot.dto.ApplyBackgroundRequest;
 import com.solsolhey.mascot.dto.ApplyBackgroundResponse;
+import com.solsolhey.mascot.dto.AvailableItemResponse;
 import com.solsolhey.mascot.dto.BackgroundResponse;
 import com.solsolhey.mascot.dto.MascotCreateRequest;
 import com.solsolhey.mascot.dto.MascotEquipRequest;
@@ -84,4 +85,13 @@ public interface MascotService {
      * @return 배경 적용 응답
      */
     ApplyBackgroundResponse resetBackground(Long mascotId, Long userId);
+    
+    // === 아이템 관련 메서드 ===
+    
+    /**
+     * 사용자가 보유한 아이템 목록 조회 (꾸미기용)
+     * @param userId 사용자 ID
+     * @return 보유한 아이템 목록
+     */
+    List<AvailableItemResponse> getAvailableItems(Long userId);
 }

@@ -1,98 +1,173 @@
 package com.solsolhey.finance.service;
 
-import com.solsolhey.finance.dto.ExchangeEstimateRequest;
-import com.solsolhey.finance.dto.ExchangeEstimateResponse;
-import com.solsolhey.finance.dto.ExchangeRateResponse;
-import com.solsolhey.finance.dto.TransactionHistoryRequest;
-import com.solsolhey.finance.dto.TransactionHistoryResponse;
+import com.solsolhey.finance.client.FinanceApiClient;
+import com.solsolhey.finance.dto.request.EstimateRequest;
+import com.solsolhey.finance.dto.request.TransactionHistoryRequest;
+import com.solsolhey.finance.dto.response.ExchangeRateResponse;
+import com.solsolhey.finance.dto.response.ExternalExchangeRateResponse;
+import com.solsolhey.finance.dto.response.ExternalTransactionHistoryResponse;
+import com.solsolhey.finance.dto.response.ExchangeEstimateResponse;
+import com.solsolhey.finance.exception.ExternalApiException;
+import com.solsolhey.finance.dto.response.SingleExchangeRateResponse;
+import com.solsolhey.finance.dto.response.TransactionsResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Finance 서비스 구현체
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class FinanceServiceImpl implements FinanceService {
     
     private final FinanceApiClient financeApiClient;
     
     @Override
-    public Mono<ExchangeRateResponse> getAllExchangeRates(String base) {
-        log.info("환율 전체 조회 서비스 호출 - base: {}", base);
+    public Mono<ExchangeRateResponse> getAllExchangeRates() {
+        log.info("환율 전체 조회 시작");
         
-        return financeApiClient.getAllExchangeRates(base)
-                .doOnSuccess(response -> {
-                    if ("success".equals(response.getCode())) {
-                        log.info("환율 전체 조회 성공 - 조회된 환율 개수: {}", 
-                                response.getPayload() != null ? response.getPayload().size() : 0);
-                    } else {
-                        log.warn("환율 전체 조회 응답 코드: {}, 메시지: {}", response.getCode(), response.getMessage());
+        return financeApiClient.getExchangeRates()
+                .map(this::convertToExchangeRateResponse)
+                .doOnSuccess(response -> log.info("환율 전체 조회 완료: {} 개 통화", 
+                        response.getPayload() != null ? response.getPayload().size() : 0))
+                .doOnError(error -> log.error("환율 전체 조회 중 오류 발생", error))
+                .onErrorResume(error -> {
+                    log.error("환율 전체 조회 실패", error);
+                    if (error instanceof ExternalApiException) {
+                        return Mono.error(error);
                     }
-                })
-                .doOnError(error -> log.error("환율 전체 조회 서비스 오류", error));
+                    return Mono.error(new ExternalApiException("환율 정보를 조회할 수 없습니다. 잠시 후 다시 시도해 주세요."));
+                });
     }
-    
+
     @Override
-    public Mono<ExchangeRateResponse> getExchangeRate(String base) {
-        log.info("환율 단건 조회 서비스 호출 - base: {}", base);
-        
-        if (base == null || base.trim().isEmpty()) {
-            log.error("환율 단건 조회 - 기준 통화가 필요합니다");
-            return Mono.error(new IllegalArgumentException("기준 통화는 필수입니다"));
-        }
-        
-        return financeApiClient.getExchangeRate(base)
-                .doOnSuccess(response -> {
-                    if ("success".equals(response.getCode())) {
-                        log.info("환율 단건 조회 성공 - 통화: {}", base);
-                    } else {
-                        log.warn("환율 단건 조회 응답 코드: {}, 메시지: {}", response.getCode(), response.getMessage());
+    public Mono<SingleExchangeRateResponse> getExchangeRate(String currency) {
+        log.info("환율 단건 조회 시작: {}", currency);
+        return financeApiClient.getExchangeRates()
+                .map(external -> {
+                    if (external == null || external.getRec() == null) {
+                        return SingleExchangeRateResponse.builder()
+                                .code("error")
+                                .message("환율 정보를 가져올 수 없습니다.")
+                                .currencyCode(currency)
+                                .build();
                     }
+                    var match = external.getRec().stream()
+                            .filter(r -> currency.equalsIgnoreCase(r.getCurrency()))
+                            .findFirst();
+                    return match.map(r -> SingleExchangeRateResponse.builder()
+                                    .code("success")
+                                    .message("환율 단건 조회 완료")
+                                    .currencyCode(r.getCurrency())
+                                    .exchangeRate(r.getExchangeRate())
+                                    .build()
+                            )
+                            .orElseGet(() -> SingleExchangeRateResponse.builder()
+                                    .code("error")
+                                    .message("요청한 통화를 찾을 수 없습니다.")
+                                    .currencyCode(currency)
+                                    .build());
                 })
-                .doOnError(error -> log.error("환율 단건 조회 서비스 오류", error));
+                .doOnError(error -> log.error("환율 단건 조회 중 오류 발생", error))
+                .onErrorResume(error -> Mono.just(
+                        SingleExchangeRateResponse.builder()
+                                .code("error")
+                                .message("환율 단건 조회에 실패했습니다.")
+                                .currencyCode(currency)
+                                .exchangeRate(null)
+                                .build()
+                ));
     }
-    
+
     @Override
-    public Mono<ExchangeEstimateResponse> getExchangeEstimate(ExchangeEstimateRequest request) {
-        log.info("환전 예상 금액 조회 서비스 호출 - {} {} -> {}", 
-                request.getAmount(), request.getBaseCurrency(), request.getTargetCurrency());
-        
-        return financeApiClient.getExchangeEstimate(
-                        request.getBaseCurrency(),
-                        request.getTargetCurrency(),
-                        request.getAmount().toString())
-                .doOnSuccess(response -> {
-                    if ("success".equals(response.getCode())) {
-                        log.info("환전 예상 금액 조회 성공");
-                    } else {
-                        log.warn("환전 예상 금액 조회 응답 코드: {}, 메시지: {}", response.getCode(), response.getMessage());
-                    }
-                })
-                .doOnError(error -> log.error("환전 예상 금액 조회 서비스 오류", error));
+    public Mono<ExchangeEstimateResponse> estimateExchange(EstimateRequest request) {
+        log.info("환전 예상 금액 조회 시작: {} -> {}, {}", request.getCurrency(), request.getExchangeCurrency(), request.getAmount());
+        return financeApiClient.estimateExchange(request.getCurrency(), request.getExchangeCurrency(), String.valueOf(request.getAmount()))
+                .map(external -> ExchangeEstimateResponse.builder()
+                        .code("success")
+                        .message("환전 예상 금액 조회 완료")
+                        .sourceCurrency(external.getRec().getCurrency().getCurrency())
+                        .targetCurrency(external.getRec().getExchangeCurrency().getCurrency())
+                        .estimatedAmount(external.getRec().getExchangeCurrency().getAmount())
+                        .build()
+                )
+                .onErrorResume(error -> Mono.just(
+                        ExchangeEstimateResponse.builder()
+                                .code("error")
+                                .message("환전 예상 금액 조회에 실패했습니다.")
+                                .build()
+                ));
     }
-    
+
     @Override
-    public Mono<TransactionHistoryResponse> getTransactionHistory(TransactionHistoryRequest request) {
-        log.info("계좌 거래내역 조회 서비스 호출 - 계좌: {}, 기간: {} ~ {}, 개수: {}", 
-                request.getAccountNumber(), request.getStartDate(), request.getEndDate(), request.getSize());
-        
+    public Mono<TransactionsResponse> getTransactionHistory(TransactionHistoryRequest request) {
+        log.info("계좌거래내역 조회 시작: {}", request.getAccountNo());
         return financeApiClient.getTransactionHistory(
-                        request.getAccountNumber(),
+                        request.getUserKey(),
+                        request.getAccountNo(),
                         request.getStartDate(),
                         request.getEndDate(),
-                        request.getSize())
-                .doOnSuccess(response -> {
-                    if ("success".equals(response.getCode())) {
-                        int transactionCount = 0;
-                        if (response.getPayload() != null && response.getPayload().getTransactions() != null) {
-                            transactionCount = response.getPayload().getTransactions().size();
-                        }
-                        log.info("계좌 거래내역 조회 성공 - 조회된 거래 개수: {}", transactionCount);
-                    } else {
-                        log.warn("계좌 거래내역 조회 응답 코드: {}, 메시지: {}", response.getCode(), response.getMessage());
-                    }
-                })
-                .doOnError(error -> log.error("계좌 거래내역 조회 서비스 오류", error));
+                        request.getTransactionType(),
+                        request.getOrderByType()
+                )
+                .map(this::convertToTransactionsResponse)
+                .onErrorResume(error -> Mono.just(
+                        TransactionsResponse.builder()
+                                .code("error")
+                                .message("계좌거래내역 조회에 실패했습니다: " + (error.getMessage() != null ? error.getMessage() : "원인 미상"))
+                                .build()
+                ));
+    }
+    
+    private ExchangeRateResponse convertToExchangeRateResponse(ExternalExchangeRateResponse externalResponse) {
+        if (externalResponse == null || externalResponse.getRec() == null) {
+            return ExchangeRateResponse.builder()
+                    .code("error")
+                    .message("환율 정보를 가져올 수 없습니다.")
+                    .build();
+        }
+        
+        List<com.solsolhey.finance.dto.response.ExchangeRateItem> exchangeRates = externalResponse.getRec().stream()
+                .map(com.solsolhey.finance.dto.response.ExchangeRateItem::fromExternal)
+                .collect(Collectors.toList());
+        
+        return ExchangeRateResponse.builder()
+                .code("success")
+                .payload(exchangeRates)
+                .message("환율 조회가 완료되었습니다.")
+                .build();
+    }
+
+    // 단건 변환 도우미는 리스트 필터 방식으로 대체됨
+
+    private TransactionsResponse convertToTransactionsResponse(ExternalTransactionHistoryResponse external) {
+        if (external == null || external.getRec() == null) {
+            return TransactionsResponse.builder()
+                    .code("error")
+                    .message("거래내역을 가져올 수 없습니다.")
+                    .build();
+        }
+        List<TransactionsResponse.TransactionItem> items = external.getRec().getList().stream()
+                .map(i -> TransactionsResponse.TransactionItem.builder()
+                        .date(i.getTransactionDate())
+                        .time(i.getTransactionTime())
+                        .typeName(i.getTransactionTypeName())
+                        .amount(i.getTransactionBalance())
+                        .build())
+                .collect(Collectors.toList());
+        return TransactionsResponse.builder()
+                .code("success")
+                .message("거래내역 조회 완료")
+                .totalCount(external.getRec().getTotalCount())
+                .items(items)
+                .build();
     }
 }

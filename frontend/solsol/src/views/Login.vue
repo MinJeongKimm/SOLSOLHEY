@@ -72,7 +72,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { login, auth, handleApiError, getMascot } from '../api/index';
+import { loginAndBootstrap, handleApiError, getMascot, getUserInfo } from '../api/index';
+import { usePointStore } from '../stores/point';
 import type { LoginRequest } from '../types/api';
 
 const userId = ref('');
@@ -114,17 +115,15 @@ async function onSubmit() {
       password: password.value,
     };
 
-    const response = await login(loginData);
+    const response = await loginAndBootstrap(loginData);
     
     if (response.success && response.data) {
-      // 토큰 저장 (백엔드는 data 객체 안에 token과 username을 전송)
-      auth.setToken(response.data.token);
+      // loginAndBootstrap()에서 이미 bootstrapAuth()가 호출됨
+      // 사용자 정보가 캐시에 반영되어 있음
       
-      // 사용자 정보 저장
-      auth.setUser({
-        username: response.data.username,
-        userId: userId.value,
-      });
+      // 포인트 스토어에서 사용자 포인트 정보 로드
+      const pointStore = usePointStore();
+      await pointStore.loadPoints();
       
       // 마스코트 존재 여부 확인
       try {

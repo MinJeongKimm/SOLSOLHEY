@@ -14,10 +14,43 @@ export interface User {
   nickname?: string;
   campus?: string;
   totalPoints?: number;
+  isAlreadyFriend?: boolean;
+  hasPendingRequest?: boolean;
 }
 
 export interface FriendRequest {
   friendUserId: number;
+}
+
+export interface PendingFriendRequest {
+  requestId: number;
+  userId: number;
+  username: string;
+  nickname?: string;
+  campus?: string;
+  totalPoints?: number;
+  createdAt: string;
+}
+
+// 백엔드에서 반환되는 FriendResponse 구조
+export interface FriendResponse {
+  friendId: number;
+  userId: number;
+  nickname: string;
+  email: string;
+  campus: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 백엔드에서 반환되는 Page 구조
+export interface PageResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
 }
 
 export interface SearchUserResponse {
@@ -28,32 +61,77 @@ export interface FriendListResponse {
   friends: Friend[];
 }
 
+export interface FriendRequestListResponse {
+  requests: PendingFriendRequest[];
+}
+
 // 친구 목록 조회
 export const getFriendList = async (): Promise<Friend[]> => {
   try {
-    const response = await apiRequest<FriendListResponse>('/friends');
-    return response.friends;
+    console.log('친구 목록 조회 API 호출 시작: /friends');
+    const response = await apiRequest<{ data: PageResponse<FriendResponse> }>('/friends');
+    console.log('친구 목록 API 응답:', response);
+    
+    // 백엔드에서 Page<FriendResponse> 형태로 반환되므로 data.content에서 추출
+    // FriendResponse를 Friend 형태로 변환
+    const result = (response.data?.content || []).map(friend => ({
+      friendId: friend.friendId,
+      nickname: friend.nickname,
+      campus: friend.campus,
+      username: friend.email, // email을 username으로 사용
+      totalPoints: 0 // 기본값 설정
+    }));
+    
+    console.log('변환된 친구 목록:', result);
+    return result;
   } catch (error) {
     console.error('친구 목록 조회 실패:', error);
     throw error;
   }
 };
 
-// 사용자 검색
-export const searchUsers = async (query: string): Promise<User[]> => {
+// 친구 요청 목록 조회
+export const getFriendRequests = async (): Promise<PendingFriendRequest[]> => {
   try {
-    const response = await apiRequest<SearchUserResponse>(`/users/search?q=${encodeURIComponent(query)}`);
-    return response.users;
+    console.log('API 호출 시작: /friends/requests/received');
+    const response = await apiRequest<{ data: PageResponse<FriendResponse> }>('/friends/requests/received');
+    console.log('API 응답:', response);
+    
+    // 백엔드에서 Page<FriendResponse> 형태로 반환되므로 data.content에서 추출
+    // FriendResponse를 PendingFriendRequest 형태로 변환
+    const result = (response.data?.content || []).map(friend => ({
+      requestId: friend.friendId,
+      userId: friend.userId,
+      username: friend.email, // email을 username으로 사용
+      nickname: friend.nickname,
+      campus: friend.campus,
+      totalPoints: 0, // 기본값 설정
+      createdAt: friend.createdAt
+    }));
+    
+    console.log('변환된 결과:', result);
+    return result;
   } catch (error) {
-    console.error('사용자 검색 실패:', error);
+    console.error('친구 요청 목록 조회 실패:', error);
     throw error;
   }
 };
 
-// 친구 요청 전송
-export const sendFriendRequest = async (friendUserId: number): Promise<void> => {
+// 사용자 검색
+export async function searchUsers(query: string): Promise<any[]> {
   try {
-    await apiRequest<void>('/friends/request', {
+    const response = await apiRequest<{ data: any[] }>(`/friends/search?keyword=${encodeURIComponent(query)}`);
+    return response.data || [];
+  } catch (error) {
+    console.error('사용자 검색 실패:', error);
+    throw error;
+  }
+}
+
+// 친구 요청 전송
+export async function sendFriendRequest(friendUserId: number): Promise<void> {
+  try {
+    await apiRequest<void>('/friends/requests', {
       method: 'POST',
       body: JSON.stringify({ friendUserId }),
     });
@@ -61,13 +139,13 @@ export const sendFriendRequest = async (friendUserId: number): Promise<void> => 
     console.error('친구 요청 실패:', error);
     throw error;
   }
-};
+}
 
 // 친구 요청 수락
 export const acceptFriendRequest = async (friendUserId: number): Promise<void> => {
   try {
-    await apiRequest<void>(`/friends/accept/${friendUserId}`, {
-      method: 'POST',
+    await apiRequest<void>(`/friends/requests/${friendUserId}/accept`, {
+      method: 'PUT',
     });
   } catch (error) {
     console.error('친구 요청 수락 실패:', error);
@@ -78,8 +156,8 @@ export const acceptFriendRequest = async (friendUserId: number): Promise<void> =
 // 친구 요청 거절
 export const rejectFriendRequest = async (friendUserId: number): Promise<void> => {
   try {
-    await apiRequest<void>(`/friends/reject/${friendUserId}`, {
-      method: 'POST',
+    await apiRequest<void>(`/friends/requests/${friendUserId}/reject`, {
+      method: 'PUT',
     });
   } catch (error) {
     console.error('친구 요청 거절 실패:', error);

@@ -286,17 +286,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { mascotTypes, levelExperience, realItems } from '../data/mockData';
-import { getMascot, handleApiError, auth, createShareLink, createShareImage, ShareType, ImageType, type ShareLinkCreateRequest, type ShareImageCreateRequest } from '../api/index';
-import type { Mascot, Item } from '../types/api';
+import { auth, createShareImage, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, type ShareImageCreateRequest, type ShareLinkCreateRequest } from '../api/index';
+import { levelExperience, mascotTypes, realItems } from '../data/mockData';
+import { usePointStore } from '../stores/point';
+import type { Mascot } from '../types/api';
 
 const router = useRouter();
 
+// Pinia Store 사용
+const pointStore = usePointStore();
+
 // 반응형 데이터
 const currentMascot = ref<Mascot | null>(null);
-const userCoins = ref(15000);
+// 포인트 상태는 Store에서 관리
+const userCoins = computed(() => pointStore.userPoints);
 const userLikes = ref(151);
 
 // 로컬 저장소에서 장착된 아이템 목록
@@ -496,22 +501,9 @@ function showSharePopup() {
 // 백엔드 연결 상태 확인
 async function checkBackendStatus() {
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/share/templates`, {
-      headers: {
-        'Authorization': `Bearer ${auth.getToken()}`
-      }
-    });
-    console.log('백엔드 연결 상태:', response.status, response.ok);
-    
-    // 토큰 만료 체크
-    if (response.status === 401) {
-      console.log('토큰이 만료되었습니다. 로그인 페이지로 이동합니다.');
-      showToastMessage('로그인이 만료되었습니다. 로그인 페이지로 이동합니다.');
-      setTimeout(() => {
-        auth.clearAuth();
-        router.push('/');
-      }, 2000);
-    }
+    // 공유 템플릿 목록을 호출하여 백엔드 연결 확인
+    await getAvailableTemplates();
+    console.log('백엔드 연결 상태: OK');
   } catch (error) {
     console.error('백엔드 연결 실패:', error);
   }
@@ -528,7 +520,7 @@ async function handleShare() {
     console.log('공유 시작:', { shareType: shareType.value, currentMascot: currentMascot.value });
     
     if (shareType.value === 'link') {
-      const message = shareLinkData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
+      const message = shareLinkData.value.message || '나의 마스코트와 함께한 이야기를 적어보세요!';
       
       const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
       const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
@@ -604,7 +596,7 @@ async function handleShare() {
         showToastMessage('마스코트 링크를 공유했습니다!');
       }
     } else {
-      const message = shareImageData.value.message || '나의 마스코트와 함께 즐거운 시간을 보내보세요!';
+      const message = shareImageData.value.message || '나의 마스코트와 함께한 이야기를 적어보세요!';
       
       console.log('이미지 공유 시도:', { message });
       
@@ -810,10 +802,23 @@ watch(localEquippedItems, (newValue) => {
 }, { deep: true });
 
 // 컴포넌트 마운트
-onMounted(() => {
-  console.log('Mascot 컴포넌트 마운트됨');
-  loadMascotData();
-  loadLocalEquippedItems(); // 로컬 장착 아이템도 함께 불러오기
+onMounted(async () => {
+  try {
+    // 포인트 로드
+    await pointStore.loadPoints();
+    
+    // 마스코트 정보 로드
+    const mascotData = await getMascot();
+    if (mascotData) {
+      currentMascot.value = mascotData;
+    } else {
+      // 마스코트가 없으면 생성 페이지로 이동
+      router.push('/mascot/create');
+    }
+  } catch (err) {
+    console.error('마스코트 정보 로드 실패:', err);
+    handleApiError(err);
+  }
 });
 </script>
 
