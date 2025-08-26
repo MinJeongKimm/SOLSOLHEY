@@ -501,6 +501,23 @@ export async function createOrder(orderData: OrderRequest): Promise<OrderRespons
   return (res && res.data) ? (res.data as OrderResponse) : ({} as OrderResponse);
 }
 
+// 안전한 주문 래퍼: 요청 포맷 강제 및 검증
+export async function purchaseItem(itemId: number, quantity: number = 1): Promise<OrderResponse> {
+  if (!Number.isFinite(itemId) || itemId <= 0) {
+    throw new Error('유효하지 않은 itemId 입니다.');
+  }
+  const q = Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 1;
+  return createOrder({ type: 'ITEM', itemId, quantity: q });
+}
+
+export async function purchaseGifticon(sku: string, quantity: number = 1): Promise<OrderResponse> {
+  if (!sku || typeof sku !== 'string') {
+    throw new Error('유효하지 않은 sku 입니다.');
+  }
+  const q = Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 1;
+  return createOrder({ type: 'GIFTICON', sku, quantity: q });
+}
+
 export async function getUserItems(): Promise<UserItem[]> {
   return apiRequest<UserItem[]>('/shop/user-items', {
     method: 'GET',

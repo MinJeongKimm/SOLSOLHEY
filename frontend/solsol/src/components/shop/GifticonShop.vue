@@ -152,7 +152,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { getGifticons, createOrder } from '../../api/index';
+import { getGifticons, purchaseGifticon } from '../../api/index';
 import type { Gifticon, ShopItem } from '../../types/api';
 import PurchaseDialog from './PurchaseDialog.vue';
 
@@ -255,13 +255,7 @@ async function handlePurchase(item: Gifticon | ShopItem, quantity: number) {
   }
   
   try {
-    const orderData = {
-      type: 'GIFTICON' as const,
-      sku: item.sku,
-      quantity: quantity
-    };
-    
-    await createOrder(orderData);
+    await purchaseGifticon(item.sku, quantity);
     
     // 구매 성공 후 처리
     closePurchaseDialog();
