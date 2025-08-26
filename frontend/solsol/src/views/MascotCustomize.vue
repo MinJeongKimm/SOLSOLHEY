@@ -460,9 +460,11 @@ const quickRotations = [0, 90, 180, 270];
 
 // 필터링된 아이템 목록 (보유한 아이템만)
 const filteredItems = computed(() => {
-  return items.value.filter(item => 
-    item.category === selectedCategory.value && item.owned === true
-  );
+  const targetCategories =
+    selectedCategory.value === 'background'
+      ? ['base', 'sticker']
+      : [selectedCategory.value];
+  return items.value.filter(item => targetCategories.includes(item.category) && item.owned === true);
 });
 
 // 장착된 아이템들의 상태 목록 (다중 아이템 지원)

@@ -202,9 +202,13 @@ const filteredItems = computed(() => {
   
   let filtered = [...items.value];  // 배열 복사
   
-  // 카테고리 필터링 (직접 category 필드 사용)
+  // 카테고리 필터링 (배경 탭은 base/sticker 모두 포함)
   if (selectedCategory.value !== 'all') {
-    filtered = filtered.filter(item => item.category === selectedCategory.value);
+    const targetCategories =
+      selectedCategory.value === 'background'
+        ? ['base', 'sticker']
+        : [selectedCategory.value];
+    filtered = filtered.filter(item => targetCategories.includes(item.category));
   }
   
   // 정렬
