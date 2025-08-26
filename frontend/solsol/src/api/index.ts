@@ -210,10 +210,13 @@ export interface MascotCustomizationRequest {
 }
 
 export async function customizeMascot(data: MascotCustomizationRequest): Promise<Mascot> {
-  const payload: UpdateMascotRequest = {
-    // 복합 커스터마이징 정보를 문자열로 보관
-    equippedItem: JSON.stringify(data),
-  };
+  // 백엔드는 MascotUpdateRequest.equippedItem(최대 100자)만 허용하므로,
+  // 커스터마이징 정보를 요약 문자열로 변환해서 보냅니다.
+  const ids = data.equippedItems.map(e => e.itemId).join(',');
+  let summary = ids ? `custom:${ids}` : 'custom:none';
+  if (summary.length > 100) summary = summary.slice(0, 97) + '...';
+
+  const payload: UpdateMascotRequest = { equippedItem: summary };
 
   const res = await apiRequest<any>('/mascot', {
     method: 'PATCH',
@@ -518,4 +521,3 @@ export function parseJwtPayload(token: string): any {
     return null;
   }
 }
-
