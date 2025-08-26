@@ -92,7 +92,7 @@ const lastTouchAngle = ref<number | null>(null); // 핀치 회전을 위한 각�
 const touchCenter = ref<{ x: number; y: number } | null>(null);
 const isMultiTouch = ref(false);
 const touchStartTime = ref<number>(0);
-const minimumMovement = 5; // 최소 이동 거리 (픽셀)
+const minimumMovement = 2; // 최소 이동 거리 (픽셀) - 모바일에서 더 민감하게 반응
 
 // 마우스 드래그 관련 상태
 const dragStartPos = ref<{ x: number; y: number } | null>(null);
