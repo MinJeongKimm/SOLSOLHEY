@@ -731,19 +731,16 @@ function getAbsolutePosition(equippedItem: EquippedItemState): { x: number; y: n
   // 마스코트를 기준으로 한 브라우저 전체 화면 절대 좌표 계산
   // 마스코트 기준 상대좌표로부터 브라우저 절대 좌표(아이템 중심)를 계산
   const browserAbsoluteCenter = toAbsoluteFromMascot(equippedItem.relativePosition, mascotRect.value);
-  
-  // 안정적인 캔버스 위치를 사용하여 상대 좌표로 변환
-  if (!stableCanvasRect) {
-    console.warn('⚠️ 캔버스 위치 캐시가 없어서 기본 위치로 설정됨');
-    return { x: 0, y: 0 };
-  }
-  
+
+  // 항상 최신 캔버스 위치를 사용하여 상대 좌표로 변환 (저장 등 레이아웃 변화 대응)
+  const canvasRect = mascotCanvas.value.getBoundingClientRect();
+
   // 아이템의 사이즈(스케일 반영)를 고려하여 중심 -> 좌상단으로 보정
   const itemSize = BASE_ITEM_SIZE * (equippedItem.scale || 1);
   const half = itemSize / 2;
   const containerRelativePos = {
-    x: browserAbsoluteCenter.x - stableCanvasRect.left - half,
-    y: browserAbsoluteCenter.y - stableCanvasRect.top - half
+    x: browserAbsoluteCenter.x - canvasRect.left - half,
+    y: browserAbsoluteCenter.y - canvasRect.top - half
   };
   
   // 계산 결과를 캐시에 저장
@@ -842,8 +839,8 @@ function updateItemPosition(itemId: string, position: { x: number; y: number }) 
   updateItemPositionDebounce.set(itemId, now);
   
   // 캔버스 상대 좌표(position: 좌상단 기준)를 브라우저 절대 좌표의 '아이템 중심'으로 변환
-  // stableCanvasRect가 없으면 즉시 측정하여 사용
-  const canvasRect = stableCanvasRect || mascotCanvas.value?.getBoundingClientRect();
+  // 항상 최신 캔버스 위치를 측정하여 사용 (저장 직후 레이아웃 변화 대응)
+  const canvasRect = mascotCanvas.value?.getBoundingClientRect();
   if (!canvasRect) return;
   const itemSize = BASE_ITEM_SIZE * (state.scale || 1);
   const half = itemSize / 2;
