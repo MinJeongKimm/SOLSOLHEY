@@ -198,6 +198,33 @@ export async function equipItems(data: EquipItemsRequest): Promise<Mascot> {
   return m;
 }
 
+// 마스코트 커스터마이징 저장 (아이템 위치/스케일/회전 등)
+// 백엔드의 equippedItem 문자열 필드에 JSON 문자열로 저장합니다.
+export interface MascotCustomizationRequest {
+  equippedItems: Array<{
+    itemId: number;
+    relativePosition: { x: number; y: number };
+    scale: number;
+    rotation: number;
+  }>;
+}
+
+export async function customizeMascot(data: MascotCustomizationRequest): Promise<Mascot> {
+  const payload: UpdateMascotRequest = {
+    // 복합 커스터마이징 정보를 문자열로 보관
+    equippedItem: JSON.stringify(data),
+  };
+
+  const res = await apiRequest<any>('/mascot', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
+  const m = mascot.transformBackendResponse(res);
+  if (!m) throw new Error('마스코트 커스터마이징에 실패했습니다.');
+  return m;
+}
+
 export async function updateMascot(data: UpdateMascotRequest): Promise<Mascot> {
   const res = await apiRequest<any>('/mascot', {
     method: 'PATCH',
@@ -491,5 +518,4 @@ export function parseJwtPayload(token: string): any {
     return null;
   }
 }
-
 
