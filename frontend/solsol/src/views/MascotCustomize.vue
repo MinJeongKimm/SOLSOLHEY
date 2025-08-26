@@ -45,7 +45,7 @@
         >
           <!-- 커스터마이즈 배경 -->
           <img 
-            src="/backgrounds/bg_customize.png" 
+            src="/backgrounds/base/bg_blue.png" 
             alt="꾸미기 배경" 
             class="absolute inset-0 w-full h-full object-cover"
           />
@@ -389,9 +389,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { equipItems, getMascot, handleApiError } from '../api/index';
+import { equipItems, getMascot, handleApiError, getShopItems } from '../api/index';
 import DraggableItem from '../components/DraggableItem.vue';
-import { mascotTypes, realItems } from '../data/mockData';
+import { mascotTypes } from '../data/mockData';
 import type { Item, Mascot } from '../types/api';
 import { 
   toRelativePosition, 
@@ -418,7 +418,7 @@ const router = useRouter();
 
 // 반응형 데이터
 const currentMascot = ref<Mascot | null>(null);
-const items = ref<Item[]>(realItems);
+const items = ref<Item[]>([]);
 const userCoins = ref(15000);
 const selectedCategory = ref<'head' | 'clothing' | 'accessory' | 'background'>('head');
 
@@ -460,9 +460,11 @@ const quickRotations = [0, 90, 180, 270];
 
 // 필터링된 아이템 목록 (보유한 아이템만)
 const filteredItems = computed(() => {
-  return items.value.filter(item => 
-    item.type === selectedCategory.value && item.isOwned
-  );
+  const targetCategories =
+    selectedCategory.value === 'background'
+      ? ['base', 'sticker']
+      : [selectedCategory.value];
+  return items.value.filter(item => targetCategories.includes(item.category) && item.owned === true);
 });
 
 // 장착된 아이템들의 상태 목록 (다중 아이템 지원)
@@ -514,6 +516,18 @@ const selectedItemInfo = computed(() => {
     rotation: state.rotation,
   };
 });
+
+// 사용자 보유 아이템 로드
+async function loadUserItems() {
+  try {
+    const shopItems = await getShopItems();
+    items.value = shopItems;
+    console.log('사용자 보유 아이템 로드됨:', shopItems);
+  } catch (error) {
+    console.error('아이템 로드 실패:', error);
+    showToastMessage('아이템 로드에 실패했습니다.');
+  }
+}
 
 // 유틸리티 함수들
 function getMascotImageUrl(type: string): string {
@@ -1032,6 +1046,9 @@ onMounted(async () => {
   // 캔버스 바운드 업데이트
   await nextTick();
   updateCanvasBounds();
+  
+  // 사용자 보유 아이템 로드 추가
+  await loadUserItems();
   
   // 저장된 아이템 위치 불러오기
   await nextTick();

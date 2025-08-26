@@ -45,7 +45,7 @@
           >
             <!-- 배경 이미지 (크기 조정) -->
             <img 
-              src="/backgrounds/bg_base.png" 
+              src="/backgrounds/base/bg_blue.png" 
               alt="방 배경" 
               class="w-3/4 h-3/4 object-contain"
             />
