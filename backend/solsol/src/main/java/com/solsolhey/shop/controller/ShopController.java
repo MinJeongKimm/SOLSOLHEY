@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -72,11 +71,11 @@ public class ShopController {
     })
     @PostMapping("/orders")
     public ResponseEntity<Map<String, Object>> createOrder(
-            @AuthenticationPrincipal Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Valid @RequestBody OrderRequest request) {
         
         try {
-            Long userId = getUserId(authentication);
+            Long userId = userDetails.getUserId();
             log.info("주문 생성 API 호출 - 사용자 ID: {}, type: {}", userId, request.getType());
             
             OrderResponse order = shopService.createOrder(userId, request);
@@ -135,12 +134,12 @@ public class ShopController {
     })
     @PostMapping("/gifticons/{id}/redeem")
     public ResponseEntity<Map<String, Object>> redeemGifticon(
-            @AuthenticationPrincipal Authentication authentication,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Parameter(description = "기프티콘 ID", example = "1")
             @PathVariable Long id) {
         
         try {
-            Long userId = getUserId(authentication);
+            Long userId = userDetails.getUserId();
             log.info("기프티콘 사용 API 호출 - 사용자 ID: {}, 기프티콘 ID: {}", userId, id);
             
             String message = shopService.redeemGifticon(userId, id);
@@ -161,22 +160,7 @@ public class ShopController {
         }
     }
     
-    /**
-     * Authentication에서 사용자 ID 추출
-     * TODO: 실제 인증 구현에 맞게 수정 필요
-     */
-    private Long getUserId(Authentication authentication) {
-        if (authentication == null || authentication.getName() == null) {
-            return 1L; // 기본 사용자 ID (테스트용)
-        }
-        
-        try {
-            return Long.parseLong(authentication.getName());
-        } catch (NumberFormatException e) {
-            log.warn("사용자 ID 파싱 실패: {}", authentication.getName());
-            return 1L; // 기본 사용자 ID (테스트용)
-        }
-    }
+    // 사용자 ID는 SecurityContext의 CustomUserDetails에서 직접 주입받아 사용합니다.
     
     /**
      * 에러 응답 생성
@@ -190,4 +174,3 @@ public class ShopController {
         return ResponseEntity.status(status).body(errorResponse);
     }
 }
-
