@@ -171,6 +171,9 @@ function handleMouseDown(e: MouseEvent) {
   
   e.preventDefault();
   e.stopPropagation();
+  // 텍스트 선택 방지 및 시각적 피드백
+  try { window.getSelection()?.removeAllRanges(); } catch {}
+  document.body.style.cursor = 'grabbing';
   
   emit('select');
   isDragging.value = true;
@@ -204,6 +207,7 @@ function handleMouseUp() {
   isDragging.value = false;
   dragStartPos.value = null;
   dragStartPosition.value = null;
+  document.body.style.cursor = '';
   
   document.removeEventListener('mousemove', handleMouseMove);
   document.removeEventListener('mouseup', handleMouseUp);
