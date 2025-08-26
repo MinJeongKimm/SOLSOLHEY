@@ -814,7 +814,8 @@ function updateCanvasBounds() {
 
 // 위치 업데이트 디바운스 (무한 루프 방지)
 const updateItemPositionDebounce = new Map<string, number>();
-const POSITION_UPDATE_DEBOUNCE = 100; // 100ms (더 긴 디바운스로 안정성 강화)
+// 드래그 시 더 부드러운 업데이트를 위해 간격을 축소 (약 60fps 수준)
+const POSITION_UPDATE_DEBOUNCE = 16;
 
 function updateItemPosition(itemId: string, position: { x: number; y: number }) {
   const state = equippedItemStates.value.get(itemId);
@@ -847,8 +848,10 @@ function updateItemPosition(itemId: string, position: { x: number; y: number }) 
   
   // 위치 변경이 실제로 있는지 확인 (미세한 변화 무시)
   const oldPos = state.relativePosition;
-  const positionChanged = Math.abs(oldPos.x - newRelativePosition.x) > 0.1 || 
-                         Math.abs(oldPos.y - newRelativePosition.y) > 0.1;
+  // 기존 0.1은 변화 폭이 지나치게 커서 세밀한 드래그가 어렵던 원인
+  const POSITION_EPS = 0.005; // 0.5% 단위까지 반영
+  const positionChanged = Math.abs(oldPos.x - newRelativePosition.x) > POSITION_EPS || 
+                         Math.abs(oldPos.y - newRelativePosition.y) > POSITION_EPS;
   
   if (!positionChanged) {
     // 의미있는 위치 변경 없음 (로깅 최소화)
