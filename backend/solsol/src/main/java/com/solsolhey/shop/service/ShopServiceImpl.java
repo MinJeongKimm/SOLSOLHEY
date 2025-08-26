@@ -191,12 +191,18 @@ public class ShopServiceImpl implements ShopService {
             orderRepository.save(savedOrder);
             log.info("주문 상태 업데이트 완료 - 주문 ID: {}, 상태: COMPLETED", savedOrder.getId());
             
-        } catch (Exception e) {
-            // 5단계: 포인트 차감 실패 시 주문 상태를 CANCELLED로 변경
+        } catch (RuntimeException e) {
+            // 5단계: 포인트 차감 실패 시 주문 상태를 CANCELLED로 변경 후 원래 예외를 그대로 전파
             savedOrder.setStatus(Order.OrderStatus.CANCELLED);
             orderRepository.save(savedOrder);
             log.error("포인트 차감 실패로 주문 취소: userId={}, amount={}, item={}, orderId={}", userId, totalPrice, item.getName(), savedOrder.getId(), e);
-            throw new IllegalStateException("포인트 차감에 실패했습니다: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            // 체크 예외는 불가피하게 래핑
+            savedOrder.setStatus(Order.OrderStatus.CANCELLED);
+            orderRepository.save(savedOrder);
+            log.error("포인트 차감 실패로 주문 취소(체크 예외): userId={}, amount={}, item={}, orderId={}", userId, totalPrice, item.getName(), savedOrder.getId(), e);
+            throw new IllegalStateException("포인트 차감 처리 중 알 수 없는 오류가 발생했습니다.");
         }
         
         return savedOrder;
@@ -244,12 +250,17 @@ public class ShopServiceImpl implements ShopService {
             orderRepository.save(savedOrder);
             log.info("기프티콘 주문 상태 업데이트 완료 - 주문 ID: {}, 상태: COMPLETED", savedOrder.getId());
             
-        } catch (Exception e) {
-            // 4단계: 포인트 차감 실패 시 주문 상태를 CANCELLED로 변경
+        } catch (RuntimeException e) {
+            // 4단계: 포인트 차감 실패 시 주문 상태를 CANCELLED로 변경 후 원래 예외를 그대로 전파
             savedOrder.setStatus(Order.OrderStatus.CANCELLED);
             orderRepository.save(savedOrder);
             log.error("포인트 차감 실패로 기프티콘 주문 취소: userId={}, amount={}, sku={}, orderId={}", userId, gifticonPrice, request.getSku(), savedOrder.getId(), e);
-            throw new IllegalStateException("포인트 차감에 실패했습니다: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            savedOrder.setStatus(Order.OrderStatus.CANCELLED);
+            orderRepository.save(savedOrder);
+            log.error("포인트 차감 실패로 기프티콘 주문 취소(체크 예외): userId={}, amount={}, sku={}, orderId={}", userId, gifticonPrice, request.getSku(), savedOrder.getId(), e);
+            throw new IllegalStateException("포인트 차감 처리 중 알 수 없는 오류가 발생했습니다.");
         }
         
         return savedOrder;
