@@ -73,7 +73,7 @@
             
             <!-- 드래그 가능한 장착된 아이템들 -->
             <DraggableItem
-              v-for="equippedItem in equippedItems"
+              v-for="(equippedItem, index) in equippedItems"
               :key="equippedItem.id"
               :item="equippedItem.item"
               :position="getAbsolutePosition(equippedItem)"
@@ -112,14 +112,27 @@
       
       <!-- 마스코트 조작 패널 제거됨 (마스코트는 중앙에 고정) -->
       
-      <!-- 선택된 아이템 조작 패널 -->
-      <div v-if="selectedItemId" class="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+      <!-- 선택된 아이템 조작 패널 (절대 위치로 레이아웃 고정) -->
+      <div 
+        v-if="selectedItemId" 
+        class="fixed bottom-4 left-4 right-4 z-50 p-4 bg-blue-50 rounded-xl border border-blue-200 shadow-lg max-w-4xl mx-auto"
+        style="max-height: 200px; overflow-y: auto;"
+      >
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center space-x-2">
             <span class="text-blue-600 font-medium">{{ selectedItemInfo?.name }}</span>
             <span class="text-xs text-blue-500">(선택됨)</span>
           </div>
           <div class="flex space-x-2">
+            <button 
+              @click="selectedItemId = null"
+              class="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              title="닫기"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
             <button 
               @click="resetItemPosition(selectedItemId!)"
               class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded transition-colors"
@@ -131,7 +144,7 @@
               class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded transition-colors"
               title="아이템 제거"
             >
-              🗑️ 제거
+              제거
             </button>
           </div>
         </div>
@@ -396,7 +409,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { getMascot, handleApiError } from '../api/index';
+import { customizeMascot, getMascot, handleApiError } from '../api/index';
 import DraggableItem from '../components/DraggableItem.vue';
 import { mascotTypes, realItems } from '../data/mockData';
 import type { Item, Mascot } from '../types/api';
@@ -547,11 +560,23 @@ const selectedItemInfo = computed(() => {
 // 마스코트 관련 선택 정보 제거됨 (마스코트는 고정)
 
 // 유틸리티 함수들
+// 마스코트 이미지 URL 캐시 (리렌더링 최적화)
+const mascotImageUrlCache = new Map<string, string>();
+
 function getMascotImageUrl(type: string): string {
-  console.log('꾸미기 화면에서 getMascotImageUrl 호출됨:', { type });
+  // 캐시에서 확인
+  if (mascotImageUrlCache.has(type)) {
+    return mascotImageUrlCache.get(type)!;
+  }
+  
+  console.log('🖼️ 마스코트 이미지 URL 계산:', { type });
   const typeObj = mascotTypes.find(t => t.id === type);
   const imageUrl = typeObj ? typeObj.imageUrl : '/mascot/soll.png';
-  console.log('꾸미기 화면에서 결정된 이미지 URL:', imageUrl);
+  
+  // 캐시에 저장
+  mascotImageUrlCache.set(type, imageUrl);
+  console.log('✅ 마스코트 이미지 URL 캐시됨:', imageUrl);
+  
   return imageUrl;
 }
 
@@ -648,15 +673,74 @@ function updateMascotEquippedItems() {
   });
 }
 
+// 안정적인 캔버스 bounding box 캐시
+let stableCanvasRect: DOMRect | null = null;
+let lastCanvasUpdateTime = 0;
+
+// 위치 계산 결과 캐시 (무한 루프 방지)
+const positionCache = new Map<string, { x: number; y: number; timestamp: number }>();
+const POSITION_CACHE_DURATION = 100; // 100ms (더 긴 캐시 시간으로 안정성 강화)
+const BASE_ITEM_SIZE = 120; // DraggableItem의 기본 사이즈와 일치시킴
+
 // 마스코트 기준 상대 좌표를 절대 좌표로 변환하여 반환
 function getAbsolutePosition(equippedItem: EquippedItemState): { x: number; y: number } {
-  if (!mascotRect.value) {
-    console.warn('마스코트 bounding box가 없어서 기본 위치로 설정됨');
+  if (!mascotRect.value || !mascotCanvas.value) {
+    console.warn('⚠️ 마스코트 bounding box 또는 캔버스가 없어서 기본 위치로 설정됨');
     return { x: 0, y: 0 };
   }
   
-  // 마스코트를 기준으로 한 절대 좌표 계산
-  return toAbsoluteFromMascot(equippedItem.relativePosition, mascotRect.value);
+  // 위치 계산 결과 캐시 확인 (무한 루프 방지)
+  const cacheKey = `${equippedItem.id}_${equippedItem.relativePosition.x}_${equippedItem.relativePosition.y}`;
+  const now = Date.now();
+  const cachedPosition = positionCache.get(cacheKey);
+  
+  if (cachedPosition && (now - cachedPosition.timestamp < POSITION_CACHE_DURATION)) {
+    return { x: cachedPosition.x, y: cachedPosition.y };
+  }
+  
+  // 캔버스 위치를 안정적으로 계산 (캐시 사용)
+  const shouldUpdateCache = !stableCanvasRect || (now - lastCanvasUpdateTime > 300); // 300ms 캐시 (더 긴 캐시)
+  
+  if (shouldUpdateCache) {
+    const newCanvasRect = mascotCanvas.value.getBoundingClientRect();
+    
+    // 실제로 위치가 변경되었는지 확인 (불필요한 업데이트 방지)
+    // 5px 이상의 의미있는 변화만 감지 (선택 패널 fixed positioning으로 더 안정)
+    const hasSignificantChange = !stableCanvasRect || 
+      Math.abs(newCanvasRect.x - stableCanvasRect.x) > 5 ||
+      Math.abs(newCanvasRect.y - stableCanvasRect.y) > 5 ||
+      Math.abs(newCanvasRect.width - stableCanvasRect.width) > 5 ||
+      Math.abs(newCanvasRect.height - stableCanvasRect.height) > 5;
+    
+    if (hasSignificantChange) {
+      stableCanvasRect = newCanvasRect;
+      lastCanvasUpdateTime = now;
+      console.log('📍 캔버스 위치 실제 변경으로 캐시 업데이트:', stableCanvasRect);
+    }
+  }
+  
+  // 마스코트를 기준으로 한 브라우저 전체 화면 절대 좌표 계산
+  const browserAbsolutePos = toAbsoluteFromMascot(equippedItem.relativePosition, mascotRect.value);
+  
+  // 안정적인 캔버스 위치를 사용하여 상대 좌표로 변환
+  if (!stableCanvasRect) {
+    console.warn('⚠️ 캔버스 위치 캐시가 없어서 기본 위치로 설정됨');
+    return { x: 0, y: 0 };
+  }
+  
+  const containerRelativePos = {
+    x: browserAbsolutePos.x - stableCanvasRect.left,
+    y: browserAbsolutePos.y - stableCanvasRect.top
+  };
+  
+  // 계산 결과를 캐시에 저장
+  positionCache.set(cacheKey, {
+    x: containerRelativePos.x,
+    y: containerRelativePos.y,
+    timestamp: now
+  });
+  
+  return containerRelativePos;
 }
 
 // 마스코트는 항상 캔버스 중앙에 고정
@@ -677,6 +761,12 @@ function updateMascotRect() {
   if (mascotRef.value) {
     mascotRect.value = mascotRef.value.getBoundingClientRect();
     console.log('마스코트 bounding box 업데이트됨:', mascotRect.value);
+    
+    // 마스코트 위치 변경 시 캔버스 캐시 무효화
+    stableCanvasRect = null;
+    lastCanvasUpdateTime = 0;
+    positionCache.clear();
+    updateItemPositionDebounce.clear();
   }
 }
 
@@ -695,6 +785,12 @@ function updateCanvasBounds() {
     
     canvasBounds.value = newBounds;
     
+    // 캔버스 위치 변경 시 캐시 무효화
+    stableCanvasRect = null;
+    lastCanvasUpdateTime = 0;
+    positionCache.clear();
+    updateItemPositionDebounce.clear();
+    
     // 마스코트 bounding box도 함께 업데이트
     updateMascotRect();
     
@@ -712,24 +808,59 @@ function updateCanvasBounds() {
   }
 }
 
+// 위치 업데이트 디바운스 (무한 루프 방지)
+const updateItemPositionDebounce = new Map<string, number>();
+const POSITION_UPDATE_DEBOUNCE = 100; // 100ms (더 긴 디바운스로 안정성 강화)
+
 function updateItemPosition(itemId: string, position: { x: number; y: number }) {
   const state = equippedItemStates.value.get(itemId);
-  if (state && mascotRect.value) {
-    // 절대 좌표를 마스코트 기준 상대 좌표로 변환
-    state.relativePosition = toRelativeToMascot(position, mascotRect.value);
-    equippedItemStates.value.set(itemId, state);
-    
-    console.log(`아이템 ${itemId} 위치 업데이트:`, {
-      absolutePosition: position,
-      relativeToMascot: state.relativePosition,
-      mascotRect: {
-        left: mascotRect.value.left,
-        top: mascotRect.value.top,
-        width: mascotRect.value.width,
-        height: mascotRect.value.height
-      }
-    });
+  if (!state || !mascotRect.value) return;
+  
+  // 디바운스 처리
+  const now = Date.now();
+  const lastUpdate = updateItemPositionDebounce.get(itemId) || 0;
+  
+  if (now - lastUpdate < POSITION_UPDATE_DEBOUNCE) {
+    // 디바운스로 업데이트 차단 (로깅 최소화)
+    return;
   }
+  
+  updateItemPositionDebounce.set(itemId, now);
+  
+  // 캔버스 상대 좌표(position: 좌상단 기준)를 브라우저 절대 좌표의 '아이템 중심'으로 변환
+  // stableCanvasRect가 없으면 즉시 측정하여 사용
+  const canvasRect = stableCanvasRect || mascotCanvas.value?.getBoundingClientRect();
+  if (!canvasRect) return;
+  const itemSize = BASE_ITEM_SIZE * (state.scale || 1);
+  const half = itemSize / 2;
+  const absoluteCenter = {
+    x: canvasRect.left + position.x + half,
+    y: canvasRect.top + position.y + half,
+  };
+
+  // 브라우저 절대 좌표(중심)를 마스코트 기준 상대 좌표로 변환
+  const newRelativePosition = toRelativeToMascot(absoluteCenter, mascotRect.value);
+  
+  // 위치 변경이 실제로 있는지 확인 (미세한 변화 무시)
+  const oldPos = state.relativePosition;
+  const positionChanged = Math.abs(oldPos.x - newRelativePosition.x) > 0.1 || 
+                         Math.abs(oldPos.y - newRelativePosition.y) > 0.1;
+  
+  if (!positionChanged) {
+    // 의미있는 위치 변경 없음 (로깅 최소화)
+    return;
+  }
+  
+  state.relativePosition = newRelativePosition;
+  equippedItemStates.value.set(itemId, state);
+  
+  // 위치 캐시 무효화
+  positionCache.clear();
+  
+  console.log(`✅ 아이템 ${itemId} 위치 업데이트:`, {
+    absolutePosition: position,
+    relativeToMascot: state.relativePosition
+  });
 }
 
 function updateItemScale(itemId: string, scale: number) {
@@ -750,6 +881,12 @@ function updateItemRotation(itemId: string, rotation: number) {
 
 function selectItem(itemId: string) {
   selectedItemId.value = itemId;
+  
+  // 선택 시 캐시는 유지 (레이아웃 변화가 없으므로)
+  // positionCache.clear(); // 제거: 불필요한 캐시 정리 방지
+  // updateItemPositionDebounce.clear(); // 제거: 안정성 유지
+  
+  console.log('🎯 아이템 선택:', itemId);
 }
 
 function handleCanvasClick(e: Event) {
@@ -865,10 +1002,9 @@ function resetAllItems() {
   }
 }
 
-function saveItemPositions() {
-  // 실제 저장 로직은 백엔드 연동이 필요하지만, 
-  // 현재는 localStorage에 저장하는 것으로 시뮬레이션
+async function saveItemPositions() {
   try {
+    // 로컬 저장소 데이터 준비 (기존 로직 유지)
     const itemsData = {
       version: 'mascot-based-v5', // 마스코트 기반 좌표계 버전
       equippedItems: equippedItemsList.value,
@@ -885,12 +1021,40 @@ function saveItemPositions() {
       };
     });
     
-    localStorage.setItem('mascot-items-based-v5', JSON.stringify(itemsData));
-    showToastMessage('아이템 위치가 저장되었습니다! 🎯💾');
+    // 백엔드 API 호출용 데이터 준비
+    const customizationRequest = {
+      equippedItems: equippedItemsList.value.map(item => ({
+        itemId: item.item.id,
+        relativePosition: {
+          x: item.relativePosition.x,
+          y: item.relativePosition.y
+        },
+        scale: item.scale,
+        rotation: item.rotation
+      }))
+    };
     
-    console.log('저장된 아이템 데이터 (마스코트 기반 좌표계):', itemsData);
+    console.log('백엔드로 전송할 커스터마이징 데이터:', customizationRequest);
+    
+    try {
+      // 백엔드 API 호출
+      const updatedMascot = await customizeMascot(customizationRequest);
+      console.log('백엔드 저장 성공:', updatedMascot);
+      showToastMessage('마스코트 커스터마이징이 서버에 저장되었습니다! 🎯✨');
+    } catch (backendError) {
+      console.error('백엔드 저장 실패:', backendError);
+      
+      // 에러 메시지 표시
+      const errorMessage = handleApiError(backendError);
+      showToastMessage(`서버 저장 실패: ${errorMessage}`);
+    }
+    
+    // localStorage 저장 (테스트 목적으로 유지)
+    localStorage.setItem('mascot-items-based-v5', JSON.stringify(itemsData));
+    console.log('로컬 저장 완료 (테스트용):', itemsData);
+    
   } catch (error) {
-    console.error('아이템 저장 실패:', error);
+    console.error('저장 프로세스 실패:', error);
     showToastMessage('저장에 실패했습니다. 다시 시도해주세요.');
   }
 }
@@ -1187,6 +1351,8 @@ onMounted(async () => {
   // 저장된 아이템 위치 불러오기
   await nextTick();
   loadItemPositions();
+  
+
   
   // 윈도우 리사이즈 이벤트 리스너 추가
   window.addEventListener('resize', updateCanvasBounds);

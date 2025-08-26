@@ -2,6 +2,7 @@
   <div
     ref="itemElement"
     class="absolute cursor-move select-none"
+    style="touch-action: none;"
     :style="itemStyle"
     @mousedown="handleMouseDown"
     @touchstart="handleTouchStart"
@@ -149,6 +150,7 @@ const itemStyle = computed(() => {
     transform: `${dragScale} ${rotation}`,
     transformOrigin: 'center center',
     transition: isDragging.value || isRotating.value ? 'none' : 'transform 0.2s ease',
+    willChange: 'transform, left, top',
   };
 });
 
