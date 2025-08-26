@@ -611,7 +611,8 @@ function addEquippedItem(item: Item): boolean {
   const newEquippedItem: EquippedItemState = {
     id,
     item,
-    relativePosition: getDefaultPosition(item.type),
+    // 새 아이템은 마스코트 중앙에 자동 배치
+    relativePosition: { x: 0.5, y: 0.5 },
     scale: 1,
     rotation: 0,
     equippedAt: Date.now(),
