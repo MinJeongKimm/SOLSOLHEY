@@ -17,12 +17,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * 투표 기록 엔티티
+ * 투표 기록 엔티티 (마스코트 기반)
  */
 @Entity
 @Table(name = "votes", indexes = {
-    @Index(name = "idx_voter_entry", columnList = "voter_id, entry_id"),
-    @Index(name = "idx_entry_id", columnList = "entry_id"),
+    @Index(name = "idx_voter_mascot", columnList = "voter_id, mascot_id"),
+    @Index(name = "idx_mascot_id", columnList = "mascot_id"),
     @Index(name = "idx_idempotency_key", columnList = "idempotency_key")
 })
 @Getter
@@ -34,15 +34,15 @@ public class Vote extends BaseEntity {
     @Column(name = "vote_id")
     private Long voteId;
 
-    @Column(name = "entry_id", nullable = false)
-    private Long entryId;
+    @Column(name = "mascot_id", nullable = false)
+    private Long mascotId;
 
     @Column(name = "voter_id", nullable = false)
     private Long voterId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "contest_type", nullable = false, length = 20)
-    private ContestEntry.ContestType contestType;
+    @Column(name = "vote_type", nullable = false, length = 20)
+    private VoteType voteType;
 
     @Column(name = "weight", nullable = false)
     private Integer weight = 1;
@@ -53,19 +53,22 @@ public class Vote extends BaseEntity {
     @Column(name = "campus_id")
     private Long campusId;
 
-    @Column(name = "contest_id")
-    private Long contestId;
+    /**
+     * 투표 타입 (교내/전국)
+     */
+    public enum VoteType {
+        CAMPUS, NATIONAL
+    }
 
     @Builder
-    public Vote(Long entryId, Long voterId, ContestEntry.ContestType contestType,
-                Integer weight, String idempotencyKey, Long campusId, Long contestId) {
-        this.entryId = entryId;
+    public Vote(Long mascotId, Long voterId, VoteType voteType,
+                Integer weight, String idempotencyKey, Long campusId) {
+        this.mascotId = mascotId;
         this.voterId = voterId;
-        this.contestType = contestType;
+        this.voteType = voteType;
         this.weight = weight != null ? weight : 1;
         this.idempotencyKey = idempotencyKey;
         this.campusId = campusId;
-        this.contestId = contestId;
     }
 
     /**
@@ -76,10 +79,10 @@ public class Vote extends BaseEntity {
     }
 
     /**
-     * 같은 엔트리에 대한 투표인지 체크
+     * 같은 마스코트에 대한 투표인지 체크
      */
-    public boolean isSameEntry(Long entryId) {
-        return this.entryId.equals(entryId);
+    public boolean isSameMascot(Long mascotId) {
+        return this.mascotId.equals(mascotId);
     }
 
     /**

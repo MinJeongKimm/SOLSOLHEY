@@ -3,12 +3,10 @@ package com.solsolhey.ranking.controller;
 import com.solsolhey.common.exception.BusinessException;
 import com.solsolhey.common.response.ApiResponse;
 import com.solsolhey.ranking.dto.request.CampusRankingRequest;
-import com.solsolhey.ranking.dto.request.JoinRankingRequest;
 import com.solsolhey.ranking.dto.request.NationalRankingRequest;
 import com.solsolhey.ranking.dto.request.VoteRequest;
 import com.solsolhey.ranking.dto.response.RankingResponse;
 import com.solsolhey.ranking.dto.response.VoteResponse;
-import com.solsolhey.ranking.entity.ContestEntry;
 import com.solsolhey.ranking.service.RankingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 랭킹 API 컨트롤러
+ * 랭킹 API 컨트롤러 (마스코트 기반)
  */
 @RestController
 @RequestMapping("/api/v1/rankings")
@@ -44,7 +42,7 @@ public class RankingController {
      */
     @GetMapping("/campus")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "교내 랭킹 조회", description = "캠퍼스별 마스코트 콘테스트 랭킹을 조회합니다")
+    @Operation(summary = "교내 랭킹 조회", description = "캠퍼스별 마스코트 랭킹을 조회합니다")
     public ResponseEntity<ApiResponse<RankingResponse>> getCampusRankings(
             @Parameter(description = "캠퍼스 ID") @RequestParam(required = false) Long campusId,
             @Parameter(description = "정렬 기준 (votes_desc, trending, newest)") @RequestParam(defaultValue = "votes_desc") String sort,
@@ -81,7 +79,7 @@ public class RankingController {
      */
     @GetMapping("/national")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "전국 랭킹 조회", description = "전국 마스코트 콘테스트 랭킹을 조회합니다")
+    @Operation(summary = "전국 랭킹 조회", description = "전국 마스코트 랭킹을 조회합니다")
     public ResponseEntity<ApiResponse<RankingResponse>> getNationalRankings(
             @Parameter(description = "정렬 기준 (votes_desc, trending, newest)") @RequestParam(defaultValue = "votes_desc") String sort,
             @Parameter(description = "집계 기간 (daily, weekly, monthly, all)") @RequestParam(defaultValue = "weekly") String period,
@@ -116,11 +114,11 @@ public class RankingController {
     /**
      * 교내 랭킹 투표
      */
-    @PostMapping("/campus/{entryId}/vote")
+    @PostMapping("/campus/{mascotId}/vote")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "교내 랭킹 투표", description = "교내 마스코트 콘테스트에 투표합니다")
+    @Operation(summary = "교내 랭킹 투표", description = "교내 마스코트에 투표합니다")
     public ResponseEntity<ApiResponse<VoteResponse>> voteForCampus(
-            @Parameter(description = "투표 대상 엔트리 ID") @PathVariable Long entryId,
+            @Parameter(description = "투표 대상 마스코트 ID") @PathVariable Long mascotId,
             @Valid @RequestBody VoteRequest request,
             BindingResult bindingResult) {
 
@@ -137,7 +135,7 @@ public class RankingController {
             Long voterId = getCurrentUserId();
             String userCampus = getCurrentUserCampus();
 
-            VoteResponse response = rankingService.voteForCampus(entryId, request, voterId, userCampus);
+            VoteResponse response = rankingService.voteForCampus(mascotId, request, voterId, userCampus);
             
             if (response.getSuccess()) {
                 return ResponseEntity.ok(ApiResponse.success("투표가 완료되었습니다.", response));
@@ -159,7 +157,7 @@ public class RankingController {
             }
 
         } catch (Exception e) {
-            log.error("교내 투표 처리 실패 - entryId: {}", entryId, e);
+            log.error("교내 투표 처리 실패 - mascotId: {}", mascotId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.<VoteResponse>internalServerError("서버 오류가 발생했습니다."));
         }
@@ -168,11 +166,11 @@ public class RankingController {
     /**
      * 전국 랭킹 투표
      */
-    @PostMapping("/national/{entryId}/vote")
+    @PostMapping("/national/{mascotId}/vote")
     @PreAuthorize("hasRole('MASTER')")
-    @Operation(summary = "전국 랭킹 투표", description = "전국 마스코트 콘테스트에 투표합니다")
+    @Operation(summary = "전국 랭킹 투표", description = "전국 마스코트에 투표합니다")
     public ResponseEntity<ApiResponse<VoteResponse>> voteForNational(
-            @Parameter(description = "투표 대상 엔트리 ID") @PathVariable Long entryId,
+            @Parameter(description = "투표 대상 마스코트 ID") @PathVariable Long mascotId,
             @Valid @RequestBody VoteRequest request,
             BindingResult bindingResult) {
 
@@ -187,7 +185,7 @@ public class RankingController {
 
         try {
             Long voterId = getCurrentUserId();
-            VoteResponse response = rankingService.voteForNational(entryId, request, voterId);
+            VoteResponse response = rankingService.voteForNational(mascotId, request, voterId);
             
             if (response.getSuccess()) {
                 return ResponseEntity.ok(ApiResponse.success("투표가 완료되었습니다.", response));
@@ -206,75 +204,9 @@ public class RankingController {
             }
 
         } catch (Exception e) {
-            log.error("전국 투표 처리 실패 - entryId: {}", entryId, e);
+            log.error("전국 투표 처리 실패 - mascotId: {}", mascotId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.<VoteResponse>internalServerError("서버 오류가 발생했습니다."));
-        }
-    }
-
-    /**
-     * 교내 랭킹 참가
-     */
-    @PostMapping("/campus/join")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "교내 랭킹 참가", description = "마스코트를 교내 콘테스트에 참가시킵니다.")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> joinCampusRanking(
-            @Valid @RequestBody JoinRankingRequest request) {
-
-        try {
-            Long userId = getCurrentUserId();
-            log.info("교내 랭킹 참가 API 호출 - 사용자 ID: {}, 마스코트 ID: {}",
-                    userId, request.getMascotId());
-
-            ContestEntry entry = rankingService.participateInContest(userId, request.getMascotId(), ContestEntry.ContestType.CAMPUS, request.getThumbnailUrl());
-
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("entryId", entry.getEntryId());
-
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success("교내 콘테스트에 성공적으로 참가했습니다.", responseData));
-
-        } catch (BusinessException e) {
-            log.warn("교내 랭킹 참가 실패: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error(HttpStatus.CONFLICT, e.getMessage()));
-        } catch (Exception e) {
-            log.error("교내 랭킹 참가 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.internalServerError("콘테스트 참가에 실패했습니다."));
-        }
-    }
-
-    /**
-     * 전국 랭킹 참가
-     */
-    @PostMapping("/national/join")
-    @PreAuthorize("isAuthenticated()") // 또는 특정 권한
-    @Operation(summary = "전국 랭킹 참가", description = "마스코트를 전국 콘테스트에 참가시킵니다.")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> joinNationalRanking(
-            @Valid @RequestBody JoinRankingRequest request) {
-
-        try {
-            Long userId = getCurrentUserId();
-            log.info("전국 랭킹 참가 API 호출 - 사용자 ID: {}, 마스코트 ID: {}",
-                    userId, request.getMascotId());
-
-            ContestEntry entry = rankingService.participateInContest(userId, request.getMascotId(), ContestEntry.ContestType.NATIONAL, request.getThumbnailUrl());
-
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("entryId", entry.getEntryId());
-
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(ApiResponse.success("전국 콘테스트에 성공적으로 참가했습니다.", responseData));
-
-        } catch (BusinessException e) {
-            log.warn("전국 랭킹 참가 실패: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(ApiResponse.error(HttpStatus.CONFLICT, e.getMessage()));
-        } catch (Exception e) {
-            log.error("전국 랭킹 참가 중 오류 발생", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.internalServerError("콘테스트 참가에 실패했습니다."));
         }
     }
 

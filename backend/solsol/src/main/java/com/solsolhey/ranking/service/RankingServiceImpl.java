@@ -19,19 +19,18 @@ import com.solsolhey.ranking.dto.response.FilterInfo;
 import com.solsolhey.ranking.dto.response.RankingEntryResponse;
 import com.solsolhey.ranking.dto.response.RankingResponse;
 import com.solsolhey.ranking.dto.response.VoteResponse;
-import com.solsolhey.ranking.entity.ContestEntry;
 import com.solsolhey.ranking.entity.Vote;
-import com.solsolhey.ranking.repository.ContestEntryRepository;
-import com.solsolhey.ranking.repository.ContestRepository;
 import com.solsolhey.ranking.repository.VoteRepository;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.user.repository.UserRepository;
+import com.solsolhey.mascot.domain.Mascot;
+import com.solsolhey.mascot.repository.MascotRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 랭킹 서비스 구현체
+ * 랭킹 서비스 구현체 (마스코트 기반)
  */
 @Service
 @RequiredArgsConstructor
@@ -39,10 +38,9 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 public class RankingServiceImpl implements RankingService {
 
-    private final ContestEntryRepository contestEntryRepository;
     private final VoteRepository voteRepository;
     private final UserRepository userRepository;
-    private final ContestRepository contestRepository;
+    private final MascotRepository mascotRepository;
 
     // 일일 투표 제한 (교내: 10회, 전국: 5회)
     private static final int DAILY_CAMPUS_VOTE_LIMIT = 10;
@@ -59,15 +57,13 @@ public class RankingServiceImpl implements RankingService {
             getCampusNameById(request.getCampusId()) : userCampus;
 
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
-        Page<ContestEntry> entries = getCampusEntriesBySortType(
-            targetCampus, request.getSort(), pageable);
+        
+        // 해당 캠퍼스의 마스코트들을 조회하고 투표 수 기준으로 정렬
+        List<Mascot> mascots = mascotRepository.findByUserCampus(targetCampus);
+        
+        List<RankingEntryResponse> entryResponses = buildCampusEntryResponses(mascots, targetCampus);
 
-        List<RankingEntryResponse> entryResponses = buildCampusEntryResponses(entries.getContent());
-
-        long totalCount = contestEntryRepository.countCampusEntries(
-            ContestEntry.ContestType.CAMPUS, 
-            ContestEntry.EntryStatus.ACTIVE, 
-            targetCampus);
+        long totalCount = mascots.size();
 
         CampusInfo campusInfo = new CampusInfo(request.getCampusId(), targetCampus);
 
@@ -89,27 +85,20 @@ public class RankingServiceImpl implements RankingService {
                  request.getSort(), request.getPeriod(), request.getRegion(), request.getSchoolId());
 
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
-        Page<ContestEntry> entries;
-
+        
+        List<Mascot> mascots;
         if (request.getSchoolId() != null) {
             // 특정 학교 필터링
             String schoolName = getCampusNameById(request.getSchoolId());
-            entries = contestEntryRepository.findNationalRankingBySchool(
-                ContestEntry.ContestType.NATIONAL,
-                ContestEntry.EntryStatus.ACTIVE,
-                schoolName,
-                pageable
-            );
+            mascots = mascotRepository.findByUserCampus(schoolName);
         } else {
-            // 전체 전국 랭킹
-            entries = getNationalEntriesBySortType(request.getSort(), pageable);
+            // 전체 전국 마스코트
+            mascots = mascotRepository.findAll();
         }
 
-        List<RankingEntryResponse> entryResponses = buildNationalEntryResponses(entries.getContent());
+        List<RankingEntryResponse> entryResponses = buildNationalEntryResponses(mascots);
 
-        long totalCount = contestEntryRepository.countByContestTypeAndStatus(
-            ContestEntry.ContestType.NATIONAL, 
-            ContestEntry.EntryStatus.ACTIVE);
+        long totalCount = mascots.size();
 
         FilterInfo filters = FilterInfo.of(request.getRegion(), request.getSchoolId());
 
@@ -125,16 +114,16 @@ public class RankingServiceImpl implements RankingService {
     }
 
     @Override
-    public VoteResponse voteForCampus(Long entryId, VoteRequest request, Long voterId, String userCampus) {
-        log.info("교내 투표 요청 - entryId: {}, voterId: {}, campus: {}", entryId, voterId, userCampus);
+    public VoteResponse voteForCampus(Long mascotId, VoteRequest request, Long voterId, String userCampus) {
+        log.info("교내 투표 요청 - mascotId: {}, voterId: {}, campus: {}", mascotId, voterId, userCampus);
 
         // 기본 유효성 검사
-        if (!canVote(voterId, entryId, ContestEntry.ContestType.CAMPUS)) {
+        if (!canVote(voterId, mascotId, Vote.VoteType.CAMPUS)) {
             return VoteResponse.failure("투표할 수 없는 상태입니다.");
         }
 
         // 일일 투표 한도 확인
-        if (hasReachedDailyVoteLimit(voterId, ContestEntry.ContestType.CAMPUS)) {
+        if (hasReachedDailyVoteLimit(voterId, Vote.VoteType.CAMPUS)) {
             return VoteResponse.failure("오늘의 투표 한도를 초과했습니다. 내일 다시 시도해주세요.");
         }
 
@@ -143,29 +132,29 @@ public class RankingServiceImpl implements RankingService {
             return VoteResponse.failure("중복 요청이 감지되었습니다.", request.getIdempotencyKey());
         }
 
-        ContestEntry entry = getContestEntry(entryId);
+        Mascot mascot = getMascotById(mascotId);
         
         // 캠퍼스 권한 확인
-        User entryOwner = getUserById(entry.getUserId());
-        if (!userCampus.equals(entryOwner.getCampus())) {
+        User mascotOwner = getUserById(mascot.getUserId());
+        if (!userCampus.equals(mascotOwner.getCampus())) {
             return VoteResponse.failure("해당 캠퍼스 투표 권한이 없습니다.");
         }
 
         // 투표 처리
-        return processVote(entry, voterId, request, ContestEntry.ContestType.CAMPUS);
+        return processVote(mascotId, voterId, request, Vote.VoteType.CAMPUS);
     }
 
     @Override
-    public VoteResponse voteForNational(Long entryId, VoteRequest request, Long voterId) {
-        log.info("전국 투표 요청 - entryId: {}, voterId: {}", entryId, voterId);
+    public VoteResponse voteForNational(Long mascotId, VoteRequest request, Long voterId) {
+        log.info("전국 투표 요청 - mascotId: {}, voterId: {}", mascotId, voterId);
 
         // 기본 유효성 검사
-        if (!canVote(voterId, entryId, ContestEntry.ContestType.NATIONAL)) {
+        if (!canVote(voterId, mascotId, Vote.VoteType.NATIONAL)) {
             return VoteResponse.failure("투표할 수 없는 상태입니다.");
         }
 
         // 일일 투표 한도 확인
-        if (hasReachedDailyVoteLimit(voterId, ContestEntry.ContestType.NATIONAL)) {
+        if (hasReachedDailyVoteLimit(voterId, Vote.VoteType.NATIONAL)) {
             return VoteResponse.failure("투표 한도를 초과했습니다. 잠시 후 다시 시도해주세요.");
         }
 
@@ -174,76 +163,34 @@ public class RankingServiceImpl implements RankingService {
             return VoteResponse.failure("중복 요청이 감지되었습니다.", request.getIdempotencyKey());
         }
 
-        ContestEntry entry = getContestEntry(entryId);
-
         // 투표 처리
-        return processVote(entry, voterId, request, ContestEntry.ContestType.NATIONAL);
-    }
-
-    @Override
-    public ContestEntry participateInContest(Long userId, Long mascotId, ContestEntry.ContestType contestType, String thumbnailUrl) {
-        log.info("콘테스트 참가 요청 - userId: {}, mascotId: {}, contestType: {}", userId, mascotId, contestType);
-
-        // 중복 참가 확인
-        if (contestEntryRepository.existsByUserIdAndMascotIdAndContestTypeAndStatus(
-                userId, mascotId, contestType, ContestEntry.EntryStatus.ACTIVE)) {
-            throw new BusinessException("이미 참가한 콘테스트입니다.");
-        }
-
-        // 현재 활성 콘테스트 찾기
-        Long contestId = null;
-        if (contestType == ContestEntry.ContestType.CAMPUS) {
-            contestId = contestRepository.findDefaultActiveCampusContest(LocalDateTime.now())
-                    .map(contest -> contest.getContestId())
-                    .orElse(null);
-        } else if (contestType == ContestEntry.ContestType.NATIONAL) {
-            contestId = contestRepository.findDefaultActiveNationalContest(LocalDateTime.now())
-                    .map(contest -> contest.getContestId())
-                    .orElse(null);
-        }
-
-        if (contestId == null) {
-            throw new BusinessException("현재 진행중인 콘테스트가 없습니다.");
-        }
-
-        log.info("참가할 콘테스트 ID: {}", contestId);
-
-        ContestEntry entry = ContestEntry.builder()
-                .userId(userId)
-                .mascotId(mascotId)
-                .contestId(contestId)
-                .contestType(contestType)
-                .thumbnailUrl(thumbnailUrl)
-                .build();
-
-        return contestEntryRepository.save(entry);
+        return processVote(mascotId, voterId, request, Vote.VoteType.NATIONAL);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public boolean canVote(Long voterId, Long entryId, ContestEntry.ContestType contestType) {
+    public boolean canVote(Long voterId, Long mascotId, Vote.VoteType voteType) {
         // 중복 투표 확인
-        if (hasAlreadyVoted(voterId, entryId)) {
+        if (hasAlreadyVoted(voterId, mascotId)) {
             return false;
         }
 
-        // 자기 자신의 엔트리인지 확인
-        ContestEntry entry = getContestEntry(entryId);
-        if (entry.getUserId().equals(voterId)) {
+        // 자기 자신의 마스코트인지 확인
+        Mascot mascot = getMascotById(mascotId);
+        if (mascot.getUserId().equals(voterId)) {
             return false;
         }
 
-        // 엔트리가 활성 상태인지 확인
-        return entry.getStatus() == ContestEntry.EntryStatus.ACTIVE;
+        return true; // 마스코트가 존재하면 투표 가능
     }
 
     @Override
     @Transactional(readOnly = true)
-    public boolean hasReachedDailyVoteLimit(Long voterId, ContestEntry.ContestType contestType) {
+    public boolean hasReachedDailyVoteLimit(Long voterId, Vote.VoteType voteType) {
         LocalDateTime today = LocalDateTime.now();
-        Long dailyVoteCount = voteRepository.countDailyVotesByVoter(voterId, contestType, today);
+        Long dailyVoteCount = voteRepository.countDailyVotesByVoter(voterId, voteType, today);
         
-        int limit = contestType == ContestEntry.ContestType.CAMPUS ? 
+        int limit = voteType == Vote.VoteType.CAMPUS ? 
             DAILY_CAMPUS_VOTE_LIMIT : DAILY_NATIONAL_VOTE_LIMIT;
             
         return dailyVoteCount >= limit;
@@ -251,8 +198,8 @@ public class RankingServiceImpl implements RankingService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean hasAlreadyVoted(Long voterId, Long entryId) {
-        return voteRepository.existsByVoterIdAndEntryId(voterId, entryId);
+    public boolean hasAlreadyVoted(Long voterId, Long mascotId) {
+        return voteRepository.existsByVoterIdAndMascotId(voterId, mascotId);
     }
 
     @Override
@@ -263,103 +210,75 @@ public class RankingServiceImpl implements RankingService {
 
     @Override
     @Transactional(readOnly = true)
-    public ContestEntry getContestEntry(Long entryId) {
-        return contestEntryRepository.findById(entryId)
-                .orElseThrow(() -> new BusinessException("존재하지 않는 콘테스트 엔트리입니다."));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<ContestEntry> getUserEntries(Long userId, ContestEntry.ContestType contestType) {
-        return contestEntryRepository.findByUserIdAndContestType(userId, contestType);
+    public Mascot getMascotById(Long mascotId) {
+        return mascotRepository.findById(mascotId)
+                .orElseThrow(() -> new BusinessException("존재하지 않는 마스코트입니다."));
     }
 
     // === Private Helper Methods ===
 
-    private VoteResponse processVote(ContestEntry entry, Long voterId, VoteRequest request, 
-                                   ContestEntry.ContestType contestType) {
+    private VoteResponse processVote(Long mascotId, Long voterId, VoteRequest request, Vote.VoteType voteType) {
         try {
             // 투표 생성
             Vote vote = Vote.builder()
-                    .entryId(entry.getEntryId())
+                    .mascotId(mascotId)
                     .voterId(voterId)
-                    .contestType(contestType)
+                    .voteType(voteType)
                     .weight(request.getWeight())
                     .idempotencyKey(request.getIdempotencyKey())
                     .campusId(request.getCampusId())
-                    .contestId(request.getContestId())
                     .build();
 
             voteRepository.save(vote);
 
-            // 엔트리 투표 수 업데이트
-            entry.addVote(request.getWeight());
-            contestEntryRepository.save(entry);
-
             // 응답 생성
-            if (contestType == ContestEntry.ContestType.CAMPUS) {
+            if (voteType == Vote.VoteType.CAMPUS) {
                 return VoteResponse.successForCampus(
-                    entry.getEntryId(), 
+                    mascotId, 
                     request.getCampusId(), 
-                    request.getContestId(),
-                    entry.getVotes(),
+                    getVoteCount(mascotId, voteType),
                     LocalDateTime.now()
                 );
             } else {
                 return VoteResponse.successForNational(
-                    entry.getEntryId(),
-                    request.getContestId(),
-                    entry.getVotes(),
+                    mascotId,
+                    getVoteCount(mascotId, voteType),
                     LocalDateTime.now()
                 );
             }
 
         } catch (Exception e) {
-            log.error("투표 처리 실패 - entryId: {}, voterId: {}", entry.getEntryId(), voterId, e);
+            log.error("투표 처리 실패 - mascotId: {}, voterId: {}", mascotId, voterId, e);
             return VoteResponse.failure("투표 처리 중 오류가 발생했습니다.");
         }
     }
 
-    private Page<ContestEntry> getCampusEntriesBySortType(String campus, String sort, Pageable pageable) {
-        ContestEntry.EntryStatus status = ContestEntry.EntryStatus.ACTIVE;
-        ContestEntry.ContestType type = ContestEntry.ContestType.CAMPUS;
-
-        return switch (sort) {
-            case "trending" -> contestEntryRepository.findCampusRankingByTrend(type, status, campus, pageable);
-            case "newest" -> contestEntryRepository.findCampusRankingByNewest(type, status, campus, pageable);
-            default -> contestEntryRepository.findCampusRankingByVotes(type, status, campus, pageable);
-        };
+    private long getVoteCount(Long mascotId, Vote.VoteType voteType) {
+        return voteRepository.countByMascotIdAndVoteType(mascotId, voteType);
     }
 
-    private Page<ContestEntry> getNationalEntriesBySortType(String sort, Pageable pageable) {
-        ContestEntry.EntryStatus status = ContestEntry.EntryStatus.ACTIVE;
-        ContestEntry.ContestType type = ContestEntry.ContestType.NATIONAL;
-
-        return switch (sort) {
-            case "trending" -> contestEntryRepository.findByContestTypeAndStatusOrderByTrendScoreDesc(type, status, pageable);
-            case "newest" -> contestEntryRepository.findByContestTypeAndStatusOrderByCreatedAtDesc(type, status, pageable);
-            default -> contestEntryRepository.findByContestTypeAndStatusOrderByVotesDesc(type, status, pageable);
-        };
-    }
-
-    private List<RankingEntryResponse> buildCampusEntryResponses(List<ContestEntry> entries) {
-        return IntStream.range(0, entries.size())
+    private List<RankingEntryResponse> buildCampusEntryResponses(List<Mascot> mascots, String campus) {
+        return IntStream.range(0, mascots.size())
                 .mapToObj(i -> {
-                    ContestEntry entry = entries.get(i);
-                    User owner = getUserById(entry.getUserId());
-                    return RankingEntryResponse.fromCampus(entry, i + 1, owner.getNickname());
+                    Mascot mascot = mascots.get(i);
+                    User owner = getUserById(mascot.getUserId());
+                    long voteCount = getVoteCount(mascot.getId(), Vote.VoteType.CAMPUS);
+                    return RankingEntryResponse.fromCampus(mascot, i + 1, owner.getNickname(), voteCount);
                 })
+                .sorted((a, b) -> Long.compare(b.getVotes(), a.getVotes()))
                 .toList();
     }
 
-    private List<RankingEntryResponse> buildNationalEntryResponses(List<ContestEntry> entries) {
-        return IntStream.range(0, entries.size())
+    private List<RankingEntryResponse> buildNationalEntryResponses(List<Mascot> mascots) {
+        return IntStream.range(0, mascots.size())
                 .mapToObj(i -> {
-                    ContestEntry entry = entries.get(i);
-                    User owner = getUserById(entry.getUserId());
+                    Mascot mascot = mascots.get(i);
+                    User owner = getUserById(mascot.getUserId());
+                    long voteCount = getVoteCount(mascot.getId(), Vote.VoteType.NATIONAL);
                     return RankingEntryResponse.fromNational(
-                        entry, i + 1, owner.getNickname(), owner.getCampus(), owner.getUserId());
+                        mascot, i + 1, owner.getNickname(), owner.getCampus(), owner.getUserId(), voteCount);
                 })
+                .sorted((a, b) -> Long.compare(b.getVotes(), a.getVotes()))
                 .toList();
     }
 
