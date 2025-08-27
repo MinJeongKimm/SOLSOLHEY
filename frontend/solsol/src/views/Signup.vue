@@ -1,7 +1,17 @@
 <template>
   <div class="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-blue-100 to-blue-300 px-4">
     <div class="w-full max-w-sm bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-6" role="main" aria-label="회원가입 폼">
-      <h1 class="text-2xl font-bold text-center text-blue-600 mb-2" tabindex="0">회원가입</h1>
+      <!-- 상단 헤더: 뒤로가기 + 타이틀 -->
+      <div class="relative mb-2">
+        <button
+          @click="goLogin"
+          class="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
+          aria-label="로그인으로 돌아가기"
+        >
+          <img src="/icons/icon_back.png" alt="" class="w-5 h-5" />
+        </button>
+        <h1 class="text-2xl font-bold text-center text-blue-600" tabindex="0">회원가입</h1>
+      </div>
       <form v-if="!successMessage" @submit.prevent="onSubmit" class="flex flex-col gap-4" autocomplete="on" aria-live="polite">
         <div>
           <label for="userId" class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
@@ -199,7 +209,7 @@ function validateCampus(value: string) {
 }
 
 function goLogin() {
-  router.push('/');
+  router.push('/login');
 }
 
 async function onSubmit() {
