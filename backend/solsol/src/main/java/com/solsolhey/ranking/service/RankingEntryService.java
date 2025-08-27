@@ -71,3 +71,4 @@ public interface RankingEntryService {
      */
     boolean hasUserParticipatedWithSnapshot(Long userId, Long mascotSnapshotId);
 }
+
