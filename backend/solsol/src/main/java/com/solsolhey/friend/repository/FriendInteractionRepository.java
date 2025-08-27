@@ -69,4 +69,20 @@ public interface FriendInteractionRepository extends JpaRepository<FriendInterac
     Long countTodayInteractionsByToUser(@Param("toUser") User toUser, 
                                        @Param("startOfDay") LocalDateTime startOfDay,
                                        @Param("endOfDay") LocalDateTime endOfDay);
+
+    /**
+     * 대상 사용자에게 받은 특정 타입 상호작용 누적 카운트
+     */
+    long countByToUserAndInteractionType(User toUser, InteractionType type);
+
+    /**
+     * 주어진 기간 내 from -> to 방향, 특정 타입 상호작용 카운트 (예: LIKE 핑퐁 계산용)
+     */
+    @Query("SELECT COUNT(fi) FROM FriendInteraction fi WHERE fi.fromUser = :from AND fi.toUser = :to " +
+           "AND fi.interactionType = :type AND fi.createdAt >= :start AND fi.createdAt < :end")
+    long countDirectionalByTypeAndCreatedAtBetween(@Param("from") User from,
+                                                   @Param("to") User to,
+                                                   @Param("type") InteractionType type,
+                                                   @Param("start") LocalDateTime start,
+                                                   @Param("end") LocalDateTime end);
 }
