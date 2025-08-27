@@ -1079,9 +1079,11 @@ async function handleRankingSubmit(data: CreateEntryRequest) {
     // 랭킹 목록 새로고침 (득표수, 순위 업데이트를 위해)
     if (activeTab.value === 'national') {
       await loadNationalRankings();
+      await loadNationalRankingEntries(); // 전국 랭킹 슬롯 엔트리 새로고침
       await updateNationalSlotRankingInfo();
     } else {
       await loadCampusRankings();
+      await loadCampusRankingEntries(); // 교내 랭킹 슬롯 엔트리 새로고침
       await updateCampusSlotRankingInfo();
     }
     

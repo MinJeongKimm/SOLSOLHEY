@@ -348,29 +348,46 @@ public class RankingServiceImpl implements RankingService {
             User owner = getUserById(mascot.getUserId());
             long voteCount = getVoteCount(mascot.getId(), Vote.VoteType.CAMPUS);
             
-            // 스냅샷 조회 (가장 최근 스냅샷 사용)
-            MascotSnapshot snapshot = mascotSnapshotRepository.findByMascotIdOrderByCreatedAtDesc(mascot.getId())
-                .stream()
-                .findFirst()
-                .orElse(null);
-            
-            if (snapshot == null) {
-                log.warn("마스코트 ID {}에 대한 스냅샷을 찾을 수 없습니다.", mascot.getId());
-                continue; // 스냅샷이 없는 마스코트는 건너뛰기
+            // 새로 등록한 엔트리(이미지 업로드)인지 확인
+            if (entry.getImageUrl() != null && entry.getImageUrl().startsWith("http://localhost:8080/uploads/ranking/")) {
+                // 이미지 업로드로 등록된 엔트리: 스냅샷 없이 처리
+                RankingEntryResponse rankedEntry = RankingEntryResponse.fromWithEntry(
+                    mascot,
+                    null, // 스냅샷 없음
+                    Integer.valueOf(i + 1), // 실제 순위
+                    owner.getNickname(),
+                    null, // schoolName
+                    null, // schoolId
+                    voteCount,
+                    entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
+                    entry.getTitle() // 등록 시 설정한 제목 사용
+                );
+                rankedEntries.add(rankedEntry);
+            } else {
+                // 기존 스냅샷 기반 엔트리: 스냅샷 조회
+                MascotSnapshot snapshot = mascotSnapshotRepository.findByMascotIdOrderByCreatedAtDesc(mascot.getId())
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+                
+                if (snapshot == null) {
+                    log.warn("마스코트 ID {}에 대한 스냅샷을 찾을 수 없습니다.", mascot.getId());
+                    continue; // 스냅샷이 없는 마스코트는 건너뛰기
+                }
+                
+                RankingEntryResponse rankedEntry = RankingEntryResponse.fromWithEntry(
+                    mascot,
+                    snapshot,
+                    Integer.valueOf(i + 1), // 실제 순위
+                    owner.getNickname(),
+                    null, // schoolName
+                    null, // schoolId
+                    voteCount,
+                    entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
+                    entry.getTitle() // 등록 시 설정한 제목 사용
+                );
+                rankedEntries.add(rankedEntry);
             }
-            
-            RankingEntryResponse rankedEntry = RankingEntryResponse.fromWithEntry(
-                mascot,
-                snapshot,
-                Integer.valueOf(i + 1), // 실제 순위
-                owner.getNickname(),
-                null, // schoolName
-                null, // schoolId
-                voteCount,
-                entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
-                entry.getTitle() // 등록 시 설정한 제목 사용
-            );
-            rankedEntries.add(rankedEntry);
         }
         
         return rankedEntries;
@@ -405,29 +422,46 @@ public class RankingServiceImpl implements RankingService {
             User owner = getUserById(mascot.getUserId());
             long voteCount = getVoteCount(mascot.getId(), Vote.VoteType.NATIONAL);
             
-            // 스냅샷 조회 (가장 최근 스냅샷 사용)
-            MascotSnapshot snapshot = mascotSnapshotRepository.findByMascotIdOrderByCreatedAtDesc(mascot.getId())
-                .stream()
-                .findFirst()
-                .orElse(null);
-            
-            if (snapshot == null) {
-                log.warn("마스코트 ID {}에 대한 스냅샷을 찾을 수 없습니다.", mascot.getId());
-                continue; // 스냅샷이 없는 마스코트는 건너뛰기
+            // 새로 등록한 엔트리(이미지 업로드)인지 확인
+            if (entry.getImageUrl() != null && entry.getImageUrl().startsWith("http://localhost:8080/uploads/ranking/")) {
+                // 이미지 업로드로 등록된 엔트리: 스냅샷 없이 처리
+                RankingEntryResponse rankedEntry = RankingEntryResponse.fromWithEntry(
+                    mascot,
+                    null, // 스냅샷 없음
+                    Integer.valueOf(i + 1), // 실제 순위
+                    owner.getNickname(),
+                    owner.getCampus(),
+                    null, // schoolId
+                    voteCount,
+                    entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
+                    entry.getTitle() // 등록 시 설정한 제목 사용
+                );
+                rankedEntries.add(rankedEntry);
+            } else {
+                // 기존 스냅샷 기반 엔트리: 스냅샷 조회
+                MascotSnapshot snapshot = mascotSnapshotRepository.findByMascotIdOrderByCreatedAtDesc(mascot.getId())
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+                
+                if (snapshot == null) {
+                    log.warn("마스코트 ID {}에 대한 스냅샷을 찾을 수 없습니다.", mascot.getId());
+                    continue; // 스냅샷이 없는 마스코트는 건너뛰기
+                }
+                
+                RankingEntryResponse rankedEntry = RankingEntryResponse.fromWithEntry(
+                    mascot,
+                    null, // 스냅샷 없음
+                    Integer.valueOf(i + 1), // 실제 순위
+                    owner.getNickname(),
+                    owner.getCampus(),
+                    null, // schoolId
+                    voteCount,
+                    entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
+                    entry.getTitle() // 등록 시 설정한 제목 사용
+                );
+                rankedEntries.add(rankedEntry);
             }
-            
-            RankingEntryResponse rankedEntry = RankingEntryResponse.fromWithEntry(
-                mascot,
-                snapshot,
-                Integer.valueOf(i + 1), // 실제 순위
-                owner.getNickname(),
-                owner.getCampus(),
-                null, // schoolId
-                voteCount,
-                entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
-                entry.getTitle() // 등록 시 설정한 제목 사용
-            );
-            rankedEntries.add(rankedEntry);
         }
         
         return rankedEntries;
