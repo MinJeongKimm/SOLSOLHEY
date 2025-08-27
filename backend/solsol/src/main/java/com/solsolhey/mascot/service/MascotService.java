@@ -94,4 +94,8 @@ public interface MascotService {
      * @return 보유한 아이템 목록
      */
     List<AvailableItemResponse> getAvailableItems(Long userId);
+
+    // === 커스터마이징 레이아웃 저장/조회 ===
+    com.solsolhey.mascot.dto.MascotCustomizationDto getCustomization(Long userId);
+    com.solsolhey.mascot.dto.MascotCustomizationDto saveCustomization(Long userId, com.solsolhey.mascot.dto.MascotCustomizationDto dto);
 }

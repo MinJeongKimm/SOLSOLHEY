@@ -1,10 +1,19 @@
 package com.solsolhey.user.entity;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
-import lombok.*;
-
-import java.time.LocalDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 /**
  * 사용자 엔티티
@@ -67,20 +76,15 @@ public class User extends BaseEntity {
      * 포인트 추가
      */
     public void addPoints(Integer points) {
-        if (points > 0) {
             this.totalPoints += points;
-        }
     }
 
     /**
      * 포인트 차감
      */
     public void deductPoints(Integer points) {
-        if (points > 0 && this.totalPoints >= points) {
+        if(points> 0)
             this.totalPoints -= points;
-        } else {
-            throw new IllegalArgumentException("포인트가 부족합니다.");
-        }
     }
 
     /**

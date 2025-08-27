@@ -26,6 +26,7 @@ import com.solsolhey.mascot.dto.AvailableItemResponse;
 import com.solsolhey.mascot.dto.BackgroundResponse;
 import com.solsolhey.mascot.dto.MascotCreateRequest;
 import com.solsolhey.mascot.dto.MascotEquipRequest;
+import com.solsolhey.mascot.dto.MascotCustomizationDto;
 import com.solsolhey.mascot.dto.MascotResponse;
 import com.solsolhey.mascot.dto.MascotUpdateRequest;
 import com.solsolhey.mascot.dto.UserBackgroundResponse;
@@ -71,6 +72,57 @@ public class MascotController {
         } catch (Exception e) {
             log.error("마스코트 생성 중 오류 발생", e);
             return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "마스코트 생성에 실패했습니다.");
+        }
+    }
+
+    /**
+     * 마스코트 커스터마이징 조회
+     */
+    @GetMapping("/customization")
+    public ResponseEntity<Map<String, Object>> getCustomization(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        try {
+            Long userId = userDetails.getUserId();
+            log.info("마스코트 커스터마이징 조회 API 호출 - 사용자 ID: {}", userId);
+
+            MascotCustomizationDto dto = mascotService.getCustomization(userId);
+            Map<String, Object> result = new HashMap<>();
+            result.put("result", "SUCCESS");
+            result.put("message", "커스터마이징 조회가 완료되었습니다.");
+            result.put("data", dto);
+            return ResponseEntity.ok(result);
+        } catch (MascotNotFoundException e) {
+            return createErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (Exception e) {
+            log.error("마스코트 커스터마이징 조회 중 오류 발생", e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "커스터마이징 조회에 실패했습니다.");
+        }
+    }
+
+    /**
+     * 마스코트 커스터마이징 저장
+     */
+    @PutMapping("/customization")
+    public ResponseEntity<Map<String, Object>> saveCustomization(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody MascotCustomizationDto request) {
+        try {
+            Long userId = userDetails.getUserId();
+            log.info("마스코트 커스터마이징 저장 API 호출 - 사용자 ID: {}", userId);
+
+            MascotCustomizationDto saved = mascotService.saveCustomization(userId, request);
+            Map<String, Object> result = new HashMap<>();
+            result.put("result", "SUCCESS");
+            result.put("message", "커스터마이징이 저장되었습니다.");
+            result.put("data", saved);
+            return ResponseEntity.ok(result);
+        } catch (MascotNotFoundException e) {
+            return createErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (Exception e) {
+            log.error("마스코트 커스터마이징 저장 중 오류 발생", e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "커스터마이징 저장에 실패했습니다.");
         }
     }
     

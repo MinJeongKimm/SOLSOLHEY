@@ -198,6 +198,75 @@ export async function equipItems(data: EquipItemsRequest): Promise<Mascot> {
   return m;
 }
 
+// 마스코트 커스터마이징 저장 (아이템 위치/스케일/회전 등)
+// 백엔드의 equippedItem 문자열 필드에 JSON 문자열로 저장합니다.
+export interface MascotCustomizationRequest {
+  equippedItems: Array<{
+    itemId: number;
+    relativePosition: { x: number; y: number };
+    scale: number;
+    rotation: number;
+  }>;
+}
+
+export async function customizeMascot(data: MascotCustomizationRequest): Promise<Mascot> {
+  // 백엔드는 MascotUpdateRequest.equippedItem(최대 100자)만 허용하므로,
+  // 커스터마이징 정보를 요약 문자열로 변환해서 보냅니다.
+  const ids = data.equippedItems.map(e => e.itemId).join(',');
+  let summary = ids ? `custom:${ids}` : 'custom:none';
+  if (summary.length > 100) summary = summary.slice(0, 97) + '...';
+
+  const payload: UpdateMascotRequest = { equippedItem: summary };
+
+  const res = await apiRequest<any>('/mascot', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+
+  const m = mascot.transformBackendResponse(res);
+  if (!m) throw new Error('마스코트 커스터마이징에 실패했습니다.');
+  return m;
+}
+
+// 신규: 서버 저장용 커스터마이징 전체 포맷
+export interface MascotCustomization {
+  version: 'v1';
+  equippedItems: Array<{
+    itemId: number;
+    relativePosition: { x: number; y: number };
+    scale: number;
+    rotation: number;
+  }>;
+}
+
+export async function getMascotCustomization(): Promise<MascotCustomization | null> {
+  const res = await apiRequest<any>('/mascot/customization', { method: 'GET' });
+  const data = res && res.data ? (res.data as MascotCustomization) : null;
+  return data;
+}
+
+export async function saveMascotCustomization(payload: MascotCustomization): Promise<MascotCustomization> {
+  // 좌표/스케일을 소수점 3자리로 제한하여 전송 (페이로드 최적화)
+  const compact: MascotCustomization = {
+    version: 'v1',
+    equippedItems: payload.equippedItems.map(e => ({
+      itemId: e.itemId,
+      relativePosition: {
+        x: Math.round(e.relativePosition.x * 1000) / 1000,
+        y: Math.round(e.relativePosition.y * 1000) / 1000,
+      },
+      scale: Math.round(e.scale * 1000) / 1000,
+      rotation: Math.round((e.rotation % 360 + 360) % 360),
+    })),
+  };
+
+  const res = await apiRequest<any>('/mascot/customization', {
+    method: 'PUT',
+    body: JSON.stringify(compact),
+  });
+  return (res && res.data) ? (res.data as MascotCustomization) : compact;
+}
+
 export async function updateMascot(data: UpdateMascotRequest): Promise<Mascot> {
   const res = await apiRequest<any>('/mascot', {
     method: 'PATCH',
@@ -491,5 +560,3 @@ export function parseJwtPayload(token: string): any {
     return null;
   }
 }
-
-

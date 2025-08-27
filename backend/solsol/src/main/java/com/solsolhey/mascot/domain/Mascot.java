@@ -43,6 +43,10 @@ public class Mascot {
     
     @Column(name = "equipped_item", length = 100)
     private String equippedItem;
+
+    // 마스코트 커스터마이징 레이아웃(아이템 위치/스케일/회전 등)을 JSON 문자열로 저장
+    @Column(name = "equipped_layout", columnDefinition = "TEXT")
+    private String equippedLayout;
     
     @Column(name = "background_id", length = 50)
     @Builder.Default
@@ -78,6 +82,11 @@ public class Mascot {
     // 아이템 장착
     public void equipItem(String item) {
         this.equippedItem = item;
+    }
+
+    // 커스터마이징 레이아웃 저장
+    public void updateEquippedLayout(String layoutJson) {
+        this.equippedLayout = layoutJson;
     }
     
     // 이름 변경
