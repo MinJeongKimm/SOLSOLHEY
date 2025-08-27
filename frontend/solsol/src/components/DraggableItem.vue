@@ -109,26 +109,9 @@ const rotateStartRotation = ref<number>(0);
 const cumulativeRotation = ref<number>(0); // 누적 회전값 (연속적인 회전을 위함)
 const lastKnownRotation = ref<number>(0); // 이전 회전값 추적
 
-// props.rotation 변화를 감지하여 연속적인 회전 계산
-watch(() => props.rotation, (newRotation, oldRotation) => {
-  if (oldRotation === undefined) {
-    // 초기 설정
-    cumulativeRotation.value = newRotation;
-    lastKnownRotation.value = newRotation;
-    return;
-  }
-  
-  // 360도 경계에서의 연속성 보장
-  let rotationDelta = newRotation - oldRotation;
-  
-  // 180도 이상 차이나면 반대 방향으로 회전한 것으로 판단
-  if (rotationDelta > 180) {
-    rotationDelta -= 360;
-  } else if (rotationDelta < -180) {
-    rotationDelta += 360;
-  }
-  
-  cumulativeRotation.value += rotationDelta;
+// props.rotation 기반 회전 사용 (연속 회전 누적 제거로 일관성 확보)
+watch(() => props.rotation, (newRotation) => {
+  cumulativeRotation.value = newRotation;
   lastKnownRotation.value = newRotation;
 }, { immediate: true });
 
@@ -138,8 +121,8 @@ const itemStyle = computed(() => {
   const size = baseSize * props.scale;
   
   const dragScale = isDragging.value ? 'scale(1.05)' : 'scale(1)';
-  // 연속적인 회전을 위해 누적 회전값 사용
-  const rotation = `rotate(${cumulativeRotation.value}deg)`;
+  // 저장/표시 일관성을 위해 props.rotation 기반으로 회전
+  const rotation = `rotate(${props.rotation}deg)`;
   
   return {
     left: `${props.position.x}px`,
@@ -450,13 +433,6 @@ function handleRotateMove(e: MouseEvent) {
   // 새로운 회전 각도 계산 (정규화)
   let newRotation = rotateStartRotation.value + deltaAngle;
   newRotation = ((newRotation % 360) + 360) % 360; // 0-360 범위로 정규화
-  
-  // 누적 회전값도 함께 업데이트 (즉시 반영)
-  const rotationDiff = newRotation - lastKnownRotation.value;
-  if (Math.abs(rotationDiff) < 180) {
-    cumulativeRotation.value += rotationDiff;
-  }
-  lastKnownRotation.value = newRotation;
   
   emit('update:rotation', newRotation);
 }
