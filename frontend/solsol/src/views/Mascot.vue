@@ -61,43 +61,23 @@
                   @error="handleImageError"
                 />
                 
-                <!-- 장착된 아이템들 (실제 이미지로 오버레이) -->
+                <!-- 장착된 아이템들 (서버 커스터마이징 기반 렌더) -->
                 <div class="absolute inset-0">
-                  <!-- 머리 아이템 -->
-                  <img 
-                    v-if="getEquippedItemImage('head')" 
-                    :src="getEquippedItemImage('head')" 
-                    :alt="getEquippedItemName('head')"
-                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
-                    style="top: -20px; left: 0; z-index: 10;"
+                  <img
+                    v-for="ri in resolvedItems"
+                    :key="ri.key"
+                    :src="ri.src"
+                    class="absolute object-contain pointer-events-none"
+                    :style="{
+                      left: ri.leftPct + '%',
+                      top: ri.topPct + '%',
+                      width: ri.sizePx + 'px',
+                      height: ri.sizePx + 'px',
+                      transform: `translate(-50%, -50%) rotate(${ri.rotation}deg)`,
+                    }"
                   />
+
                   
-                  <!-- 의상 아이템 -->
-                  <img 
-                    v-if="getEquippedItemImage('clothing')" 
-                    :src="getEquippedItemImage('clothing')" 
-                    :alt="getEquippedItemName('clothing')"
-                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
-                    style="top: 0; left: 0; z-index: 5;"
-                  />
-                  
-                  <!-- 액세서리 아이템 -->
-                  <img 
-                    v-if="getEquippedItemImage('accessory')" 
-                    :src="getEquippedItemImage('accessory')" 
-                    :alt="getEquippedItemName('accessory')"
-                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
-                    style="top: 10px; left: 0; z-index: 15;"
-                  />
-                  
-                  <!-- 배경 아이템 (마스코트 뒤에 배치) -->
-                  <img 
-                    v-if="getEquippedItemImage('background')" 
-                    :src="getEquippedItemImage('background')" 
-                    :alt="getEquippedItemName('background')"
-                    class="absolute w-32 h-32 object-contain pointer-events-none animate-float"
-                    style="top: 0; left: 0; z-index: 1;"
-                  />
                 </div>
               </div>
             </div>
@@ -286,10 +266,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth, createShareImage, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, type ShareImageCreateRequest, type ShareLinkCreateRequest } from '../api/index';
-import { levelExperience, mascotTypes, realItems } from '../data/mockData';
+import { auth, createShareImage, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareImageCreateRequest, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
+import type { ShopItem } from '../types/api';
+import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
 import type { Mascot } from '../types/api';
 
@@ -304,8 +285,38 @@ const currentMascot = ref<Mascot | null>(null);
 const userCoins = computed(() => pointStore.userPoints);
 const userLikes = ref(151);
 
-// 로컬 저장소에서 장착된 아이템 목록
-const localEquippedItems = ref<any[]>([]);
+// 서버 커스터마이징 + 아이템 카탈로그 (동기 렌더)
+const customization = ref<MascotCustomization | null>(null);
+const shopItems = ref<ShopItem[]>([]);
+// 과거 폴백 제거됨
+
+// 렌더링용 파생: 서버에서 받은 커스터마이징이 있으면 이를 사용
+const BASE_ITEM_SIZE = 120; // Customize.vue와 동일 기준
+const resolvedItems = computed(() => {
+  if (!customization.value || !customization.value.equippedItems?.length) return [] as Array<{
+    key: string;
+    src: string;
+    leftPct: number;
+    topPct: number;
+    sizePx: number;
+    rotation: number;
+  }>;
+  const byId = new Map<number, ShopItem>(shopItems.value.map(s => [s.id, s]));
+  return customization.value.equippedItems
+    .map((e, idx) => {
+      const si = byId.get(e.itemId);
+      if (!si) return null;
+      return {
+        key: `${e.itemId}-${idx}`,
+        src: si.imageUrl,
+        leftPct: e.relativePosition.x * 100,
+        topPct: e.relativePosition.y * 100,
+        sizePx: Math.max(24, BASE_ITEM_SIZE * (e.scale ?? 1)),
+        rotation: ((e.rotation ?? 0) % 360 + 360) % 360,
+      };
+    })
+    .filter(Boolean) as any[];
+});
 
 // 토스트 알림
 const showToast = ref(false);
@@ -371,82 +382,6 @@ function getExpPercentage(): number {
 }
 
 // 장착된 아이템의 이미지 URL 가져오기 (로컬 저장소 포함)
-function getEquippedItemImage(itemType: 'head' | 'clothing' | 'accessory' | 'background'): string | undefined {
-  // 1. 먼저 현재 마스코트의 equippedItem에서 찾기
-  if (currentMascot.value?.equippedItem) {
-    const equippedItem = realItems.find(item => 
-      item.type === itemType && 
-      currentMascot.value!.equippedItem!.includes(item.name)
-    );
-    
-    if (equippedItem) {
-      return equippedItem.imageUrl;
-    }
-  }
-  
-  // 2. 로컬 저장소에서 해당 타입의 첫 번째 아이템 찾기
-  const localEquippedItem = localEquippedItems.value.find(equipped => 
-    equipped.item && equipped.item.type === itemType
-  );
-  
-  if (localEquippedItem && localEquippedItem.item) {
-    console.log(`로컬에서 ${itemType} 아이템 발견:`, localEquippedItem.item.name);
-    return localEquippedItem.item.imageUrl;
-  }
-  
-  return undefined;
-}
-
-// 장착된 아이템의 이름 가져오기 (로컬 저장소 포함)
-function getEquippedItemName(itemType: 'head' | 'clothing' | 'accessory' | 'background'): string | undefined {
-  // 1. 먼저 현재 마스코트의 equippedItem에서 찾기
-  if (currentMascot.value?.equippedItem) {
-    const equippedItem = realItems.find(item => 
-      item.type === itemType && 
-      currentMascot.value!.equippedItem!.includes(item.name)
-    );
-    
-    if (equippedItem) {
-      return equippedItem.name;
-    }
-  }
-  
-  // 2. 로컬 저장소에서 해당 타입의 첫 번째 아이템 찾기
-  const localEquippedItem = localEquippedItems.value.find(equipped => 
-    equipped.item && equipped.item.type === itemType
-  );
-  
-  if (localEquippedItem && localEquippedItem.item) {
-    return localEquippedItem.item.name;
-  }
-  
-  return undefined;
-}
-
-// localStorage에서 장착된 아이템 목록 불러오기
-function loadLocalEquippedItems() {
-  try {
-    // 최신 마스코트 기반 좌표계 데이터 시도
-    let savedData = localStorage.getItem('mascot-items-based-v5');
-    
-    if (!savedData) {
-      // 이전 버전들도 시도
-      savedData = localStorage.getItem('mascot-items-fixed-v4') ||
-                 localStorage.getItem('mascot-composition-v3') ||
-                 localStorage.getItem('mascot-multiple-items-v2');
-    }
-    
-    if (savedData) {
-      const positionsData = JSON.parse(savedData);
-      if (positionsData.equippedItems && Array.isArray(positionsData.equippedItems)) {
-        localEquippedItems.value = positionsData.equippedItems;
-        console.log('로컬 장착 아이템 불러옴:', localEquippedItems.value);
-      }
-    }
-  } catch (error) {
-    console.error('로컬 장착 아이템 불러오기 실패:', error);
-  }
-}
 
 // 꾸미기 화면으로 이동
 function goToCustomize() {
@@ -767,6 +702,12 @@ async function loadMascotData() {
     if (mascotData) {
       currentMascot.value = mascotData;
       console.log('currentMascot 설정 완료:', currentMascot.value); // 디버깅용
+      // 서버 커스터마이징/아이템 카탈로그 로드
+      await Promise.all([
+        (async () => { try { customization.value = await getMascotCustomization(); } catch { customization.value = null; } })(),
+        (async () => { try { shopItems.value = await getShopItems(); } catch { shopItems.value = []; } })(),
+      ]);
+      await nextTick();
     } else {
       console.log('마스코트 데이터가 없습니다. 생성 페이지로 이동합니다.'); // 디버깅용
       // 마스코트가 없으면 생성 페이지로 이동
@@ -796,27 +737,31 @@ watch(currentMascot, (newValue, oldValue) => {
   });
 }, { deep: true });
 
-// localEquippedItems 변경 감지
-watch(localEquippedItems, (newValue) => {
-  console.log('로컬 장착 아이템 변경됨:', newValue);
-}, { deep: true });
+// (폴백 제거됨)
 
 // 컴포넌트 마운트
 onMounted(async () => {
   try {
     // 포인트 로드
     await pointStore.loadPoints();
-    
+
     // 마스코트 정보 로드
     const mascotData = await getMascot();
-    if (mascotData) {
-      currentMascot.value = mascotData;
-    } else {
-      // 마스코트가 없으면 생성 페이지로 이동
+    if (!mascotData) {
       router.push('/mascot/create');
+      return;
     }
+    currentMascot.value = mascotData;
+
+    // 커스터마이징 + 아이템 카탈로그 동시 로드
+    const [cust, items] = await Promise.all([
+      getMascotCustomization().catch(() => null),
+      getShopItems().catch(() => []),
+    ]);
+    customization.value = cust;
+    shopItems.value = items as any;
   } catch (err) {
-    console.error('마스코트 정보 로드 실패:', err);
+    console.error('메인화면 데이터 로드 실패:', err);
     handleApiError(err);
   }
 });
