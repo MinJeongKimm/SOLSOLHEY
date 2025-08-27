@@ -25,7 +25,7 @@
       <!-- 마스코트 미리보기 영역 -->
       <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 mb-6">
         <!-- 배경 커스터마이징 UI -->
-        <div class="mb-4 bg-white bg-opacity-80 rounded-lg p-3 flex items-center gap-4">
+        <div v-if="showBgPanel" class="mb-4 bg-white bg-opacity-80 rounded-lg p-3 flex items-center gap-4">
           <div class="flex items-center gap-2">
             <span class="text-sm text-gray-700">배경색</span>
             <input type="color" v-model="bgColor" class="w-8 h-8 rounded cursor-pointer border" />
@@ -45,9 +45,7 @@
               :class="bgPattern === 'stripes' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'"
               @click="bgPattern = 'stripes'">스트라이프</button>
           </div>
-          <div class="ml-auto">
-            <button @click="saveBackground" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">배경 저장</button>
-          </div>
+          <!-- 저장 버튼 제거: 메인 저장에 통합됨 -->
         </div>
         <!-- 모바일 도움말 -->
         <div v-if="isMobileDevice" class="mb-4 p-3 bg-blue-100 rounded-lg text-sm text-blue-800">
@@ -69,13 +67,23 @@
           class="relative h-64 rounded-xl overflow-hidden flex items-center justify-center"
           :style="previewBackgroundStyle"
         >
+          <!-- 배경 커스터마이징 토글 아이콘 (좌하단) -->
+          <button
+            class="absolute bottom-2 left-2 z-20 w-9 h-9 rounded-full shadow bg-white/90 hover:bg-white flex items-center justify-center border border-gray-200"
+            title="배경 커스터마이징"
+            @click.stop="toggleBgPanel"
+          >
+            <!-- 팔레트 아이콘 -->
+            <span class="text-lg">🎨</span>
+          </button>
           <!-- 커스터마이즈 배경 -->
-          <img 
+          <!--08.27 임시 삭제 코드 by 민정-->
+          <!-- <img 
             src="/backgrounds/base/bg_blue.png" 
             alt="꾸미기 배경" 
             class="absolute inset-0 w-full h-full object-cover"
           />
-          
+           -->
           <!-- 마스코트 + 장착된 아이템들 -->
           <div 
             ref="mascotCanvas"
@@ -319,17 +327,16 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { getMascot, getShopItems, handleApiError, getMascotCustomization, saveMascotCustomization, updateMascotBackground } from '../api/index';
+import { getMascot, getMascotCustomization, getShopItems, handleApiError, saveMascotCustomization, updateMascotBackground } from '../api/index';
 import DraggableItem from '../components/DraggableItem.vue';
 import { mascotTypes } from '../data/mockData';
 import type { Item, Mascot } from '../types/api';
 import {
+  constrainMascotRelativePositionLoose,
   getContainerSize,
   getDefaultMascotRelativePosition,
   toAbsoluteFromMascot,
-  toAbsolutePosition,
   toRelativeToMascot,
-  constrainMascotRelativePositionLoose,
   type RelativePosition
 } from '../utils/coordinates';
 
@@ -371,6 +378,7 @@ const mascotRect = ref<DOMRect | null>(null);
 // 토스트 알림
 const showToast = ref(false);
 const toastMessage = ref('');
+const showBgPanel = ref(false);
 
 // 배경 커스터마이징 상태
 const bgColor = ref<string>('#ffffff');
@@ -399,6 +407,10 @@ async function saveBackground() {
     const msg = handleApiError(e);
     showToastMessage(`배경 저장 실패: ${msg}`);
   }
+}
+
+function toggleBgPanel() {
+  showBgPanel.value = !showBgPanel.value;
 }
 
 // 아이템 카테고리
@@ -962,7 +974,9 @@ async function saveItemPositions() {
     try {
       isSaving.value = true;
       await saveMascotCustomization(payload);
-      showToastMessage('마스코트 커스터마이징이 서버에 저장되었습니다! 🎯✨');
+      // 배경도 함께 저장하여 일관된 저장 UX 제공
+      await updateMascotBackground({ backgroundColor: bgColor.value, patternType: bgPattern.value });
+      showToastMessage('커스터마이징이 서버에 저장되었습니다! 🎯✨');
 
       // 저장 직후 한 프레임 뒤에 캔버스 바운드를 갱신하여 좌표 캐시를 안정화
       await nextTick();
