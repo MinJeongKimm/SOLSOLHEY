@@ -297,6 +297,8 @@ function normalizeType(val: unknown): string {
 
 // 렌더링용 파생: 커스터마이징 + 아이템 메타데이터 조인 후 레이어 분리
 const BASE_ITEM_SIZE = 120; // Customize.vue와 동일 기준
+// NOTE: 과거의 문자열 기반 currentMascot.equippedItem 의존성은 제거되었습니다.
+//       서버 커스터마이징(getMascotCustomization) + 아이템 메타(getShopItems)만 사용합니다.
 const joinedItems = computed(() => {
   if (!customization.value || !customization.value.equippedItems?.length) return [] as Array<{
     key: string;
@@ -774,34 +776,5 @@ export async function loadImage(src: string): Promise<HTMLImageElement> {
   transition: all 0.3s ease;
 }
 
-/* 아이템별 기본 스타일 */
-.item-head {
-  width: 60%;
-  height: 60%;
-  top: -15%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  object-fit: contain;
-}
-
-.item-accessory {
-  width: 30%;
-  height: 30%;
-  top: 25%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 3;
-  object-fit: contain;
-}
-
-.item-clothing {
-  width: 80%;
-  height: 80%;
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1;
-  object-fit: contain;
-}
+/* (구) 타입별 절대 포지셔닝 스타일 제거됨: 실제 커스텀 좌표/스케일/회전 사용 */
 </style>
