@@ -64,10 +64,10 @@ public class RankingServiceImpl implements RankingService {
 
         Pageable pageable = PageRequest.of(request.getPage(), request.getSize());
         
-        // 해당 캠퍼스의 마스코트들 중 RankingEntry가 존재하는 것만 조회
+        // 해당 캠퍼스의 마스코트들 중 교내 랭킹 RankingEntry가 존재하는 것만 조회
         List<Mascot> allMascots = mascotRepository.findByUserCampus(targetCampus);
         List<Mascot> rankedMascots = allMascots.stream()
-            .filter(mascot -> rankingEntryRepository.existsByMascotSnapshotId(mascot.getId()))
+            .filter(mascot -> rankingEntryRepository.existsByMascotIdAndRankingType(mascot.getId(), "CAMPUS"))
             .toList();
         
         List<RankingEntryResponse> entryResponses = buildCampusEntryResponses(rankedMascots, targetCampus, request.getSort());
@@ -105,9 +105,9 @@ public class RankingServiceImpl implements RankingService {
             allMascots = mascotRepository.findAll();
         }
 
-        // RankingEntry가 존재하는 마스코트만 필터링
+        // RankingEntry가 존재하는 마스코트만 필터링 (전국 랭킹)
         List<Mascot> rankedMascots = allMascots.stream()
-            .filter(mascot -> rankingEntryRepository.existsByMascotSnapshotId(mascot.getId()))
+            .filter(mascot -> rankingEntryRepository.existsByMascotIdAndRankingType(mascot.getId(), "NATIONAL"))
             .toList();
 
         List<RankingEntryResponse> entryResponses = buildNationalEntryResponses(rankedMascots, request.getSort());

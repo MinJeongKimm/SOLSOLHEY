@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.solsolhey.common.exception.BusinessException;
+import com.solsolhey.mascot.domain.Mascot;
+import com.solsolhey.mascot.repository.MascotRepository;
 import com.solsolhey.ranking.dto.request.CreateEntryRequest;
 import com.solsolhey.ranking.dto.response.EntryResponse;
 import com.solsolhey.ranking.dto.response.LeaderboardResponse;
@@ -59,6 +61,7 @@ public class RankingEntryServiceImpl implements RankingEntryService {
         // RankingEntry 생성 및 저장
         RankingEntry entry = RankingEntry.builder()
             .userId(userId)
+            .mascotId(request.mascotId())
             .mascotSnapshotId(request.mascotSnapshotId())
             .title(request.title())
             .description(request.description())
@@ -170,5 +173,16 @@ public class RankingEntryServiceImpl implements RankingEntryService {
         } catch (IOException e) {
             throw new BusinessException("이미지 업로드에 실패했습니다: " + e.getMessage());
         }
+    }
+
+    @Autowired
+    private MascotRepository mascotRepository;
+
+    @Override
+    public Long getCurrentUserMascotId(Long userId) {
+        // 사용자의 마스코트 ID 조회
+        Mascot mascot = mascotRepository.findByUserId(userId)
+            .orElseThrow(() -> new BusinessException("사용자의 마스코트를 찾을 수 없습니다."));
+        return mascot.getId();
     }
 }

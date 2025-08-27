@@ -64,6 +64,14 @@ public interface RankingEntryService {
     List<EntryResponse> getUserEntriesByType(Long userId, String rankingType);
 
     /**
+     * 현재 사용자의 마스코트 ID 조회
+     * 
+     * @param userId 사용자 ID
+     * @return 마스코트 ID
+     */
+    Long getCurrentUserMascotId(Long userId);
+
+    /**
      * 특정 마스코트 스냅샷이 이미 참가되어 있는지 확인
      * 
      * @param mascotSnapshotId 마스코트 스냅샷 ID

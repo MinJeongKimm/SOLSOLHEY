@@ -41,6 +41,9 @@ public class RankingEntry extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "mascot_id", nullable = false)
+    private Long mascotId; // 마스코트 ID 추가
+
     @Column(name = "mascot_snapshot_id")
     private Long mascotSnapshotId; // null 가능
 
@@ -60,8 +63,9 @@ public class RankingEntry extends BaseEntity {
     private String description;
 
     @Builder
-    public RankingEntry(Long userId, Long mascotSnapshotId, String title, String description, String imageUrl, String rankingType) {
+    public RankingEntry(Long userId, Long mascotId, Long mascotSnapshotId, String title, String description, String imageUrl, String rankingType) {
         this.userId = userId;
+        this.mascotId = mascotId;
         this.mascotSnapshotId = mascotSnapshotId;
         this.title = title;
         this.description = description;

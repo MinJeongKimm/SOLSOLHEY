@@ -49,11 +49,14 @@ public class RankingEntryController {
         try {
             Long userId = userDetails.getUserId();
             
+            // 현재 사용자의 마스코트 ID 가져오기
+            Long mascotId = rankingEntryService.getCurrentUserMascotId(userId);
+            
             // 이미지 업로드 및 URL 생성
             String imageUrl = rankingEntryService.uploadMascotImage(mascotImage);
             
-            // CreateEntryRequest 생성 (mascotSnapshotId는 null로 설정, 이미지 업로드 방식이므로)
-            CreateEntryRequest request = new CreateEntryRequest(null, title, description, imageUrl, rankingType);
+            // CreateEntryRequest 생성 (mascotId 포함, mascotSnapshotId는 null로 설정)
+            CreateEntryRequest request = new CreateEntryRequest(mascotId, null, title, description, imageUrl, rankingType);
             
             EntryResponse response = rankingEntryService.createEntry(userId, request);
             

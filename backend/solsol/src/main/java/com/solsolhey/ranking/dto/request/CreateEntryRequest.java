@@ -2,12 +2,16 @@ package com.solsolhey.ranking.dto.request;
 
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 /**
  * 랭킹 참가 등록 요청 DTO
  */
 public record CreateEntryRequest(
+    
+    @NotNull(message = "마스코트 ID는 필수입니다")
+    Long mascotId,
     
     Long mascotSnapshotId, // 이미지 업로드 방식에서는 null 가능
     

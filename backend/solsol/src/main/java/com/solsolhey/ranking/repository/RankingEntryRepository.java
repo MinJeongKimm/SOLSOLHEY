@@ -52,4 +52,16 @@ public interface RankingEntryRepository extends JpaRepository<RankingEntry, Long
      */
     @Query("SELECT re FROM RankingEntry re WHERE re.userId = :userId AND re.rankingType = :rankingType ORDER BY re.createdAt DESC")
     List<RankingEntry> findByUserIdAndRankingTypeOrderByCreatedAtDesc(@Param("userId") Long userId, @Param("rankingType") String rankingType);
+
+    /**
+     * 특정 마스코트 ID로 RankingEntry가 존재하는지 확인
+     */
+    @Query("SELECT COUNT(re) > 0 FROM RankingEntry re WHERE re.mascotId = :mascotId")
+    boolean existsByMascotId(@Param("mascotId") Long mascotId);
+
+    /**
+     * 특정 마스코트 ID와 랭킹 타입으로 RankingEntry가 존재하는지 확인
+     */
+    @Query("SELECT COUNT(re) > 0 FROM RankingEntry re WHERE re.mascotId = :mascotId AND re.rankingType = :rankingType")
+    boolean existsByMascotIdAndRankingType(@Param("mascotId") Long mascotId, @Param("rankingType") String rankingType);
 }
