@@ -23,7 +23,7 @@
       </div>
 
       <!-- 마스코트 미리보기 영역 -->
-      <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 mb-6">
+      <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl mb-6 w-full">
         <!-- 배경 커스터마이징 UI -->
         <div v-if="showBgPanel" class="mb-4 bg-white bg-opacity-80 rounded-lg p-3 flex items-center gap-4">
           <div class="flex items-center gap-2">
@@ -50,7 +50,7 @@
         <!-- 모바일 도움말 제거 -->
         
         <div 
-          class="relative h-64 rounded-xl overflow-hidden flex items-center justify-center"
+          class="relative w-full h-80 rounded-xl overflow-hidden flex items-center justify-center"
           :style="previewBackgroundStyle"
         >
           <!-- 배경 커스터마이징 토글 아이콘 (좌하단) -->
