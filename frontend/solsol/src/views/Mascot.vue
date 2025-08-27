@@ -40,6 +40,7 @@
         <div class="relative">
           <!-- 방 배경 컨테이너 -->
           <div 
+            ref="canvasEl"
             class="w-full h-80 rounded-xl shadow-lg relative overflow-hidden"
             :style="roomBackgroundStyle"
           >
@@ -58,9 +59,11 @@
             <div class="absolute inset-0 z-10 flex items-center justify-center">
               <div class="relative animate-float">
                 <img 
+                  ref="mascotEl"
                   :src="getMascotImageUrl(currentMascot.type)" 
                   :alt="currentMascot.name" 
                   class="w-32 h-32 object-contain"
+                  @load="updateRects"
                   @error="handleImageError"
                 />
               </div>
@@ -73,13 +76,7 @@
                 :key="ri.key"
                 :src="ri.src"
                 class="absolute object-contain pointer-events-none"
-                :style="{
-                  left: ri.leftPct + '%',
-                  top: ri.topPct + '%',
-                  width: ri.sizePx + 'px',
-                  height: ri.sizePx + 'px',
-                  transform: `translate(-50%, -50%) rotate(${ri.rotation}deg)`,
-                }"
+                :style="styleForItem(ri)"
               />
             </div>
 
@@ -267,12 +264,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { auth, createShareLink, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
 import type { Mascot, ShopItem } from '../types/api';
+import { toAbsoluteFromMascot } from '../utils/coordinates';
 
 const router = useRouter();
 
@@ -304,9 +302,8 @@ const joinedItems = computed(() => {
     key: string;
     src: string;
     type: string;
-    leftPct: number;
-    topPct: number;
-    sizePx: number;
+    relativePosition: { x: number; y: number };
+    scale: number;
     rotation: number;
   }>;
   const byId = new Map<number, ShopItem>(shopItems.value.map(s => [s.id, s]));
@@ -319,9 +316,8 @@ const joinedItems = computed(() => {
         key: `${e.itemId}-${idx}`,
         src: si.imageUrl,
         type: t,
-        leftPct: e.relativePosition.x * 100,
-        topPct: e.relativePosition.y * 100,
-        sizePx: Math.max(24, BASE_ITEM_SIZE * (e.scale ?? 1)),
+        relativePosition: { x: e.relativePosition.x, y: e.relativePosition.y },
+        scale: e.scale,
         rotation: ((e.rotation ?? 0) % 360 + 360) % 360,
       };
     })
@@ -330,6 +326,38 @@ const joinedItems = computed(() => {
 
 const backgroundEquippedItems = computed(() => joinedItems.value.filter(i => i.type === 'background'));
 const foregroundEquippedItems = computed(() => joinedItems.value.filter(i => i.type !== 'background'));
+
+// 캔버스/마스코트 DOMRect 추적 (커스터마이즈 화면과 동일 좌표계로 렌더)
+const canvasEl = ref<HTMLElement>();
+const mascotEl = ref<HTMLElement>();
+const canvasRect = ref<DOMRect | null>(null);
+const mascotRect = ref<DOMRect | null>(null);
+
+function updateRects() {
+  if (canvasEl.value) {
+    canvasRect.value = canvasEl.value.getBoundingClientRect();
+  }
+  if (mascotEl.value) {
+    mascotRect.value = mascotEl.value.getBoundingClientRect();
+  }
+}
+
+function styleForItem(e: { relativePosition: { x: number; y: number }; scale: number; rotation: number }) {
+  if (!canvasRect.value || !mascotRect.value) return {} as Record<string, string>;
+  const center = toAbsoluteFromMascot(e.relativePosition, mascotRect.value);
+  const left = center.x - canvasRect.value.left;
+  const top = center.y - canvasRect.value.top;
+  const size = Math.max(12, BASE_ITEM_SIZE * (e.scale ?? 1));
+  return {
+    position: 'absolute',
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${size}px`,
+    height: `${size}px`,
+    transform: `translate(-50%, -50%) rotate(${e.rotation}deg)`,
+    pointerEvents: 'none',
+  } as Record<string, string>;
+}
 
 // 토스트 알림
 const showToast = ref(false);
@@ -737,10 +765,17 @@ onMounted(async () => {
     ]);
     customization.value = cust;
     shopItems.value = items as any;
+    await nextTick();
+    updateRects();
+    window.addEventListener('resize', updateRects);
   } catch (err) {
     console.error('메인화면 데이터 로드 실패:', err);
     handleApiError(err);
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateRects);
 });
 </script>
 
