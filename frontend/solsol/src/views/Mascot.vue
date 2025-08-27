@@ -88,7 +88,7 @@
             </div>
             
             <!-- 공유 버튼 -->
-            <div class="absolute top-3 right-3">
+            <div class="absolute top-3 right-3 z-50 pointer-events-auto">
               <button 
                 @click="showSharePopup"
                 class="bg-white bg-opacity-90 p-1 rounded-lg hover:bg-opacity-100 transition-all flex items-center justify-center w-8 h-8"
