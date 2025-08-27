@@ -61,7 +61,7 @@ public class RankingServiceImpl implements RankingService {
         // 해당 캠퍼스의 마스코트들을 조회하고 투표 수 기준으로 정렬
         List<Mascot> mascots = mascotRepository.findByUserCampus(targetCampus);
         
-        List<RankingEntryResponse> entryResponses = buildCampusEntryResponses(mascots, targetCampus);
+        List<RankingEntryResponse> entryResponses = buildCampusEntryResponses(mascots, targetCampus, request.getSort());
 
         long totalCount = mascots.size();
 
@@ -96,7 +96,7 @@ public class RankingServiceImpl implements RankingService {
             mascots = mascotRepository.findAll();
         }
 
-        List<RankingEntryResponse> entryResponses = buildNationalEntryResponses(mascots);
+        List<RankingEntryResponse> entryResponses = buildNationalEntryResponses(mascots, request.getSort());
 
         long totalCount = mascots.size();
 
@@ -257,8 +257,8 @@ public class RankingServiceImpl implements RankingService {
         return voteRepository.countByMascotIdAndVoteType(mascotId, voteType);
     }
 
-    private List<RankingEntryResponse> buildCampusEntryResponses(List<Mascot> mascots, String campus) {
-        // 1. 투표 수로 정렬된 리스트 생성 (순위는 나중에 계산)
+    private List<RankingEntryResponse> buildCampusEntryResponses(List<Mascot> mascots, String campus, String sortType) {
+        // 1. 정렬 타입에 따른 정렬 로직 적용
         List<RankingEntryResponse> sortedEntries = IntStream.range(0, mascots.size())
                 .mapToObj(i -> {
                     Mascot mascot = mascots.get(i);
@@ -266,7 +266,27 @@ public class RankingServiceImpl implements RankingService {
                     long voteCount = getVoteCount(mascot.getId(), Vote.VoteType.CAMPUS);
                     return RankingEntryResponse.fromCampus(mascot, 0, owner.getNickname(), voteCount); // 임시 순위 0
                 })
-                .sorted((a, b) -> Long.compare(b.getVotes(), a.getVotes()))
+                .sorted((a, b) -> {
+                    if ("newest".equals(sortType)) {
+                        // 최신순: 마스코트 생성일 기준 내림차순
+                        Mascot mascotA = mascots.stream()
+                            .filter(m -> m.getId().equals(a.getMascotId()))
+                            .findFirst()
+                            .orElse(null);
+                        Mascot mascotB = mascots.stream()
+                            .filter(m -> m.getId().equals(b.getMascotId()))
+                            .findFirst()
+                            .orElse(null);
+                        
+                        if (mascotA != null && mascotB != null) {
+                            return mascotB.getCreatedAt().compareTo(mascotA.getCreatedAt());
+                        }
+                        return 0;
+                    } else {
+                        // 기본값: 득표순 (votes_desc)
+                        return Long.compare(b.getVotes(), a.getVotes());
+                    }
+                })
                 .toList();
         
         // 2. 정렬된 순서대로 순위 재계산하여 새로운 객체 생성
@@ -291,8 +311,8 @@ public class RankingServiceImpl implements RankingService {
         return rankedEntries;
     }
 
-    private List<RankingEntryResponse> buildNationalEntryResponses(List<Mascot> mascots) {
-        // 1. 투표 수로 정렬된 리스트 생성 (순위는 나중에 계산)
+    private List<RankingEntryResponse> buildNationalEntryResponses(List<Mascot> mascots, String sortType) {
+        // 1. 정렬 타입에 따른 정렬 로직 적용
         List<RankingEntryResponse> sortedEntries = IntStream.range(0, mascots.size())
                 .mapToObj(i -> {
                     Mascot mascot = mascots.get(i);
@@ -301,7 +321,27 @@ public class RankingServiceImpl implements RankingService {
                     return RankingEntryResponse.fromNational(
                         mascot, 0, owner.getNickname(), owner.getCampus(), null, voteCount); // 임시 순위 0
                 })
-                .sorted((a, b) -> Long.compare(b.getVotes(), a.getVotes()))
+                .sorted((a, b) -> {
+                    if ("newest".equals(sortType)) {
+                        // 최신순: 마스코트 생성일 기준 내림차순
+                        Mascot mascotA = mascots.stream()
+                            .filter(m -> m.getId().equals(a.getMascotId()))
+                            .findFirst()
+                            .orElse(null);
+                        Mascot mascotB = mascots.stream()
+                            .filter(m -> m.getId().equals(b.getMascotId()))
+                            .findFirst()
+                            .orElse(null);
+                        
+                        if (mascotA != null && mascotB != null) {
+                            return mascotB.getCreatedAt().compareTo(mascotA.getCreatedAt());
+                        }
+                        return 0;
+                    } else {
+                        // 기본값: 득표순 (votes_desc)
+                        return Long.compare(b.getVotes(), a.getVotes());
+                    }
+                })
                 .toList();
         
         // 2. 정렬된 순서대로 순위 재계산하여 새로운 객체 생성

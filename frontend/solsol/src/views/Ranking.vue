@@ -103,7 +103,6 @@
               class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
             >
               <option value="votes_desc">득표순</option>
-              <option value="trending">트렌딩순</option>
               <option value="newest">최신순</option>
             </select>
             
@@ -257,7 +256,6 @@
               class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
             >
               <option value="votes_desc">득표순</option>
-              <option value="trending">트렌딩순</option>
               <option value="newest">최신순</option>
             </select>
             
