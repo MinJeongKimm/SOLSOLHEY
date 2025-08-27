@@ -26,7 +26,7 @@ public class FinanceUserProvisioningService {
     /**
      * 회원가입 커밋 후 금융 사용자 생성 트리거 (옵션 B)
      */
-    @TransactionalEventListener(org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT)
+    @TransactionalEventListener(phase = org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT)
     public void onUserRegistered(UserRegisteredEvent event) {
         Long userId = event.getUserId();
         try {
@@ -122,4 +122,3 @@ public class FinanceUserProvisioningService {
         return email.charAt(0) + "****" + email.substring(at);
     }
 }
-
