@@ -392,6 +392,33 @@ export async function getTemplatesByType(templateType: string): Promise<any> {
 
 // API 에러 핸들링 헬퍼
 export function handleApiError(error: unknown): string {
+  // 우리 HttpError(from apiRequest)
+  if (error instanceof HttpError) {
+    const body = (error as HttpError).body as any | undefined;
+    // 서버가 표준 래핑 응답을 보낸 경우
+    if (body) {
+      const errs = body.errors;
+      if (errs) {
+        const first = Object.values(errs)[0];
+        if (first) return String(first);
+      }
+      if (body.message) return String(body.message);
+    }
+    // 상태 코드에 따른 기본 메시지
+    switch ((error as HttpError).status) {
+      case 404:
+        return '없는 유저 입니다.';
+      case 401:
+        return '인증이 필요합니다. 다시 로그인해 주세요.';
+      case 400:
+        return '잘못된 요청입니다.';
+      case 500:
+        return '서버 오류가 발생했습니다.';
+      default:
+        return `요청 실패 (HTTP ${(error as HttpError).status})`;
+    }
+  }
+  // 기존 ApiError (타 타입 호환성)
   if (error instanceof ApiError) {
     const errs = (error.response as any)?.errors;
     if (errs) {
@@ -400,7 +427,6 @@ export function handleApiError(error: unknown): string {
     }
     return (error.response as any).message ?? '요청 실패';
   }
-  
   return '알 수 없는 오류가 발생했습니다.';
 }
 
@@ -547,6 +573,50 @@ export async function createOrder(orderData: OrderRequest): Promise<OrderRespons
 export async function getUserItems(): Promise<UserItem[]> {
   return apiRequest<UserItem[]>('/shop/user-items', {
     method: 'GET',
+  });
+}
+
+// 금융 관련 API 함수들
+// 환율 전체 조회
+export async function getAllExchangeRates(): Promise<any> {
+  return apiRequest<any>('/finance/exchange-rates', {
+    method: 'GET',
+  });
+}
+
+// 환율 단건 조회
+export async function getExchangeRate(currency: string): Promise<any> {
+  const query = encodeURIComponent(currency);
+  return apiRequest<any>(`/finance/exchange-rate?currency=${query}`, {
+    method: 'GET',
+  });
+}
+
+// 환전 예상 금액 조회
+export async function estimateExchange(data: { currency: string; exchangeCurrency: string; amount: string | number; }): Promise<any> {
+  const payload = {
+    currency: data.currency,
+    exchangeCurrency: data.exchangeCurrency,
+    amount: String(data.amount),
+  };
+  return apiRequest<any>('/finance/exchange/estimate', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+// 계좌 거래내역 조회
+export async function getTransactionHistory(data: {
+  userKey: string;
+  accountNo: string;
+  startDate: string; // YYYYMMDD
+  endDate: string;   // YYYYMMDD
+  transactionType: 'M' | 'D' | 'A';
+  orderByType?: 'ASC' | 'DESC';
+}): Promise<any> {
+  return apiRequest<any>('/finance/accounts/transactions', {
+    method: 'POST',
+    body: JSON.stringify(data),
   });
 }
 

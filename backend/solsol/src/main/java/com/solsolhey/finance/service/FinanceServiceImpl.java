@@ -91,14 +91,22 @@ public class FinanceServiceImpl implements FinanceService {
     public Mono<ExchangeEstimateResponse> estimateExchange(EstimateRequest request) {
         log.info("환전 예상 금액 조회 시작: {} -> {}, {}", request.getCurrency(), request.getExchangeCurrency(), request.getAmount());
         return financeApiClient.estimateExchange(request.getCurrency(), request.getExchangeCurrency(), String.valueOf(request.getAmount()))
-                .map(external -> ExchangeEstimateResponse.builder()
-                        .code("success")
-                        .message("환전 예상 금액 조회 완료")
-                        .sourceCurrency(external.getRec().getCurrency().getCurrency())
-                        .targetCurrency(external.getRec().getExchangeCurrency().getCurrency())
-                        .estimatedAmount(external.getRec().getExchangeCurrency().getAmount())
-                        .build()
-                )
+                .map(external -> {
+                    var rec = external.getRec();
+                    var src = rec.getCurrency();
+                    var dst = rec.getExchangeCurrency();
+                    return ExchangeEstimateResponse.builder()
+                            .code("success")
+                            .message("환전 예상 금액 조회 완료")
+                            .sourceCurrency(src.getCurrency())
+                            .sourceAmount(src.getAmount())
+                            .sourceCurrencyName(src.getCurrencyName())
+                            .targetCurrency(dst.getCurrency())
+                            .targetAmount(dst.getAmount())
+                            .targetCurrencyName(dst.getCurrencyName())
+                            .estimatedAmount(dst.getAmount()) // 하위호환 유지
+                            .build();
+                })
                 .onErrorResume(error -> Mono.just(
                         ExchangeEstimateResponse.builder()
                                 .code("error")

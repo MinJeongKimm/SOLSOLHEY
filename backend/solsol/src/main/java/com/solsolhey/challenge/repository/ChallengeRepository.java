@@ -64,4 +64,9 @@ public interface ChallengeRepository extends JpaRepository<Challenge, Long> {
      */
     @Query("SELECT c FROM Challenge c WHERE c.endDate < :now AND c.isActive = true")
     List<Challenge> findExpiredChallenges(@Param("now") LocalDateTime now);
+
+    /**
+     * 이름으로 챌린지 조회
+     */
+    java.util.Optional<Challenge> findByChallengeName(String challengeName);
 }
