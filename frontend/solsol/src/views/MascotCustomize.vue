@@ -73,7 +73,7 @@
           <!-- 마스코트 + 장착된 아이템들 -->
           <div 
             ref="mascotCanvas"
-            class="absolute inset-0 flex items-center justify-center"
+            class="mascot-canvas absolute inset-0 flex items-center justify-center"
             @click="handleCanvasClick"
           >
             <!-- 중앙 고정 마스코트 이미지 -->
@@ -983,10 +983,9 @@ function selectItem(itemId: string) {
 }
 
 function handleCanvasClick(e: Event) {
-  // 캔버스 빈 공간 클릭 시 아이템 선택 해제
-  if (e.target === mascotCanvas.value) {
-    selectedItemId.value = null;
-  }
+  // 캔버스 영역 클릭 시(아이템이 아닌 경우) 선택 해제
+  // DraggableItem 루트에서는 @click.stop 처리되어 이 핸들러가 호출되지 않음
+  selectedItemId.value = null;
 }
 
 // UI 개선 메소드들
