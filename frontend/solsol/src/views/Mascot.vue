@@ -45,7 +45,7 @@
             :style="roomBackgroundStyle"
           >
             <!-- 레이어 1: 배경 아이템 (마스코트 뒤, 캔버스 전체 채움) -->
-            <div class="absolute inset-0 z-0 overflow-hidden">
+            <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
               <img
                 v-for="bg in backgroundEquippedItems"
                 :key="bg.key"
@@ -70,7 +70,7 @@
             </div>
 
             <!-- 레이어 3: 전경 아이템 (마스코트 앞) -->
-            <div class="absolute inset-0 z-20 animate-float">
+            <div class="absolute inset-0 z-20 animate-float pointer-events-none">
               <img
                 v-for="ri in foregroundEquippedItems"
                 :key="ri.key"
