@@ -201,10 +201,15 @@
                 <div class="flex-shrink-0">
                   <button
                     @click="voteForMascot(entry.mascotId)"
-                    :disabled="voting"
+                    :disabled="voting || !canVoteForMascot(entry.mascotId, entry.ownerNickname)"
                     class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    👍 투표
+                    <span v-if="!canVoteForMascot(entry.mascotId, entry.ownerNickname)">
+                      <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
+                      <span v-else-if="votedMascots.has(entry.mascotId)">이미 투표함</span>
+                      <span v-else>투표 불가</span>
+                    </span>
+                    <span v-else>👍 투표</span>
                   </button>
                 </div>
               </div>
@@ -350,10 +355,15 @@
                 <div class="flex-shrink-0">
                   <button
                     @click="voteForNationalMascot(entry.mascotId)"
-                    :disabled="voting"
+                    :disabled="voting || !canVoteForMascot(entry.mascotId, entry.ownerNickname)"
                     class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    👍 투표
+                    <span v-if="!canVoteForMascot(entry.mascotId, entry.ownerNickname)">
+                      <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
+                      <span v-else-if="votedMascots.has(entry.mascotId)">이미 투표함</span>
+                      <span v-else>투표 불가</span>
+                    </span>
+                    <span v-else>👍 투표</span>
                   </button>
                 </div>
               </div>
@@ -397,6 +407,7 @@ const nationalRankings = ref<RankingResponse | null>(null);
 const currentUser = ref<any>(null);
 const myRank = ref<number | null>(null);
 const hasMascot = ref<boolean>(false);
+const votedMascots = ref<Set<number>>(new Set()); // 이미 투표한 마스코트 ID들
 
 // 필터 설정
 const campusFilters = ref({
@@ -461,6 +472,26 @@ const findMyRank = () => {
       myRank.value = null;
     }
   }
+};
+
+// 투표 가능 여부 확인
+const canVoteForMascot = (mascotId: number, ownerNickname: string) => {
+  // 본인 마스코트인지 확인
+  if (currentUser.value && ownerNickname === currentUser.value.nickname) {
+    return false;
+  }
+  
+  // 이미 투표했는지 확인
+  if (votedMascots.value.has(mascotId)) {
+    return false;
+  }
+  
+  return true;
+};
+
+// 투표 후 상태 업데이트
+const updateVoteStatus = (mascotId: number) => {
+  votedMascots.value.add(mascotId);
 };
 
 // 교내 랭킹 로드
@@ -546,6 +577,8 @@ const voteForMascot = async (mascotId: number) => {
     const response = await voteForCampus(mascotId, voteData);
     
     if (response.success) {
+      // 투표 성공 시 상태 업데이트
+      updateVoteStatus(mascotId);
       // 투표 성공 시 랭킹 새로고침
       await loadCampusRankings();
     } else {
@@ -571,6 +604,8 @@ const voteForNationalMascot = async (mascotId: number) => {
     const response = await voteForNational(mascotId, voteData);
     
     if (response.success) {
+      // 투표 성공 시 상태 업데이트
+      updateVoteStatus(mascotId);
       // 투표 성공 시 랭킹 새로고침
       await loadNationalRankings();
     } else {
@@ -578,7 +613,7 @@ const voteForNationalMascot = async (mascotId: number) => {
     }
   } catch (err: any) {
     console.error('전국 랭킹 투표 실패:', err);
-    error.value = err.message || '투표에 실패했습니다.';
+    error.value = err.message || '전국 랭킹 투표에 실패했습니다.';
   } finally {
     voting.value = false;
   }
