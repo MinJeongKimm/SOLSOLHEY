@@ -18,25 +18,28 @@ public class SignUpResponse {
 
     private boolean success;
     private String message;
-    private Long username; // 실제로는 생성된 사용자 ID
+    private Long userId; // 생성된 사용자 ID
+    private String email; // 가입한 이메일(표시용)
     private Map<String, String> errors; // 실패 시 필드별 에러
 
     @Builder
-    public SignUpResponse(boolean success, String message, Long username, Map<String, String> errors) {
+    public SignUpResponse(boolean success, String message, Long userId, String email, Map<String, String> errors) {
         this.success = success;
         this.message = message;
-        this.username = username;
+        this.userId = userId;
+        this.email = email;
         this.errors = errors;
     }
 
     /**
      * 성공 응답 생성
      */
-    public static SignUpResponse success(String message, Long userId) {
+    public static SignUpResponse success(String message, Long userId, String email) {
         return SignUpResponse.builder()
                 .success(true)
                 .message(message)
-                .username(userId)
+                .userId(userId)
+                .email(email)
                 .build();
     }
 

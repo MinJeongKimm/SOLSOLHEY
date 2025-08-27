@@ -186,7 +186,6 @@ public class AuthController {
         var u = userDetails.getUser();
         var dto = new com.solsolhey.user.dto.response.UserResponse(
                 u.getUserId(),
-                u.getUsername(),
                 u.getEmail(),
                 u.getNickname(),
                 u.getCampus(),
