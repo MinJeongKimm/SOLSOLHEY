@@ -76,8 +76,8 @@ npm run dev
 
 - **인증 (`AuthController`, prefix: `/api/v1/auth`)**
   - POST `/signup`, POST `/login`, POST `/logout`
-  - POST `/refresh`
-  - GET `/check-username?username=...`, GET `/check-email?email=...`
+  - POST `/refresh`, GET `/me`
+  - 회원가입 직후, 외부 금융 API 사용자도 비동기 생성(옵션 B). 실패해도 가입은 성공하며, 백그라운드에서 재시도합니다.
 
 - **마스코트 (`MascotController`, prefix: `/api/v1/mascot`)**
   - POST ``/`` (생성), GET ``/`` (조회), PATCH ``/`` (업데이트), DELETE ``/`` (삭제)
@@ -164,10 +164,26 @@ Remove      파일을 삭제하는 작업만 수행하는 경우
 - 개발 유의사항
   - Entity 변경 전 합의, 환경 변수 템플릿 최신화, API 명세 준수, 테스트 코드 권장
 
-## 🧪 최근 진행 내역 (요약)
-- 8/16: 환경/의존성 세팅, ERD, 핵심 엔티티 생성
-- 8/17: 공통 응답/예외 처리, JWT 인증·보안 설정, 헬스체크 추가
-- 8/18: 인증 API(회원가입/로그인/로그아웃/리프레시), FE 인증 플로우 및 라우팅/가드, Tailwind 적용
+## 🧷 금융 API 연동 개요
+- 목적: 금융 기능 호출 시 사용자 식별을 위해 외부 `userKey`를 사용합니다.
+- 시점: 우리 서비스 회원가입 성공 직후, 커밋 이후 비동기로 금융 사용자 생성 요청을 전송합니다.
+- 금융용 이메일 생성 규칙(전역 중복 방지): `<local>+<createdAtEpochMs>@<domain>`
+  - 예: `alice@example.com` + `created_at=2025-08-27T12:34:56.789Z` → `alice+1756307696789@example.com`
+  - 로컬 파트 길이 보호: 40자로 절단. 재시도 시 동일 값으로 멱등 처리.
+- 실패 처리(옵션 B): 가입은 성공으로 유지. `users.finance_user_key`는 NULL이며, 스케줄러(60초 주기)가 재시도합니다.
+- 중복 응답 처리: 생성 시 중복이면 `/member/search`로 `userKey`를 조회하여 저장합니다.
+
+### 관련 DB/마이그레이션
+- `users.finance_user_key VARCHAR(100)` 컬럼 추가(Flyway V7), 유니크 인덱스 적용.
+
+### 환경 변수 (백엔드)
+- `FINANCE_API_KEY` 외에 다음을 지원합니다:
+  - `FINANCE_API_BASE_URL` (기본: `https://finopenapi.ssafy.io/ssafy/api/v1/edu`)
+  - `FINANCE_API_MEMBER_BASE_URL` (기본: `https://finopenapi.ssafy.io/ssafy/api/v1`)
+
+### Swagger 변경점
+- 인증 DTO에서 username 제거, 이메일을 주체로 통일.
+- 회원가입 응답은 `userId`, `email`만 포함. 금융 `userKey`는 내부 저장 필드입니다(응답에 노출되지 않음).
 
 ## 🆘 트러블슈팅
 ### 일반적인 문제
