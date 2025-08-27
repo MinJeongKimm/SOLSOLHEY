@@ -103,7 +103,7 @@ public class AuthServiceImpl implements AuthService {
 
         } catch (AuthException.UserNotFoundException e) {
             log.warn("로그인 실패: userId={}, 원인=사용자 없음", requestDto.userId());
-            return ApiResponse.unauthorized("로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.");
+            return ApiResponse.unauthorized("로그인에 실패했습니다. 회원가입 후 로그인해주세요.");
         } catch (AuthenticationException e) {
             log.warn("로그인 실패: userId={}, 원인={}", requestDto.userId(), e.getMessage());
             return ApiResponse.unauthorized("로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.");

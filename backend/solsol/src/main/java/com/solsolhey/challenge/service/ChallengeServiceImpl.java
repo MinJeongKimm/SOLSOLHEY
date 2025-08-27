@@ -31,6 +31,7 @@ public class ChallengeServiceImpl implements ChallengeService {
     private final UserChallengeRepository userChallengeRepository;
     private final ChallengeCategoryRepository categoryRepository;
     private final PointService pointService;
+    private final com.solsolhey.exp.service.ExpDailyCounterService expDailyCounterService;
 
     /**
      * 챌린지 목록 조회
@@ -146,6 +147,15 @@ public class ChallengeServiceImpl implements ChallengeService {
         
         UserChallenge savedUserChallenge = userChallengeRepository.save(userChallenge);
 
+        // EXP: 챌린지 참여 카테고리 1일 1회 +5 (마스코트 존재 시)
+        try {
+            if (challenge.getCategory() != null) {
+                expDailyCounterService.awardChallengeCategoryExp(user, challenge.getCategory().getCategoryName());
+            }
+        } catch (Exception e) {
+            log.warn("챌린지 카테고리 EXP 적립 실패: userId={}, challengeId={}, err={}", user.getUserId(), challengeId, e.getMessage());
+        }
+
         log.info("챌린지 참여 완료: challengeId={}, userId={}, userChallengeId={}", 
                 challengeId, user.getUserId(), savedUserChallenge.getUserChallengeId());
 
@@ -173,7 +183,18 @@ public class ChallengeServiceImpl implements ChallengeService {
 
         boolean wasCompleted = userChallenge.isCompleted();
 
-        // 진행도 업데이트
+        // 진행도 업데이트 (FINANCE 카테고리 방어 로직)
+        boolean isFinance = challenge.getCategory().getCategoryName() == ChallengeCategory.CategoryType.FINANCE;
+        if (isFinance) {
+            String payload = request.getPayload();
+            boolean validFinanceSuccess = payload != null && payload.startsWith("FINANCE_") && payload.endsWith("_SUCCESS");
+            if (!validFinanceSuccess) {
+                log.warn("금융 챌린지 진행도 갱신 무시: payload 누락/무효. challengeId={}, userId={}, step={}, payload={}",
+                        challengeId, user.getUserId(), request.getStepValue(), payload);
+                return ChallengeProgressResponseDto.failure("금융 챌린지는 외부 API 성공 후에만 완료할 수 있습니다.");
+            }
+        }
+
         userChallenge.updateProgress(request.getStepValue());
         
         // 추가 데이터가 있으면 업데이트

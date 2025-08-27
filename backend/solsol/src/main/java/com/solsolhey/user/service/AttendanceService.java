@@ -23,6 +23,7 @@ public interface AttendanceService {
      */
     List<AttendanceRecordDto> getAttendanceRecords(User user, LocalDate startDate, LocalDate endDate);
 
-    record AttendanceResult(boolean attended, int consecutiveDays, int expReward, int pointReward) {}
+    record ExpAwardedView(Integer amount, String type, String category, Integer totalExp, Integer level) {}
+    record AttendanceResult(boolean attended, int consecutiveDays, int pointReward, ExpAwardedView expAwarded) {}
 }
 

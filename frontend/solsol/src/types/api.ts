@@ -106,9 +106,17 @@ export interface Mascot {
   level: number;
   exp: number; // 백엔드의 exp 필드와 일치
   equippedItem?: string; // 백엔드의 equippedItem 필드와 일치 (단순 문자열)
+  backgroundColor?: string;
+  backgroundPattern?: string; // 'dots' | 'stripes' | 'none'
   createdAt?: string;
   updatedAt?: string;
   snapshotImage?: string; // 최근 저장된 스냅샷(Data URL 또는 URL)
+}
+
+// 배경 커스터마이징 요청
+export interface MascotBackgroundUpdateRequest {
+  backgroundColor: string; // HEX color, e.g., #FFFFFF
+  patternType?: 'dots' | 'stripes' | 'none';
 }
 
 // evolutionStage는 level 기반으로 계산 (프론트엔드에서 처리)

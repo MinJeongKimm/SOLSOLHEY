@@ -36,54 +36,50 @@
 
       <!-- 마스코트가 있는 경우 메인 영역 -->
       <div v-else class="space-y-4">
-        <!-- 메인 캔버스: 방 배경 + 마스코트 -->
+        <!-- 메인 캔버스: 방 배경 + 레이어링(배경/마스코트/전경) -->
         <div class="relative">
-          <!-- 방 배경 -->
+          <!-- 방 배경 컨테이너 -->
           <div 
-            class="w-full h-80 rounded-xl shadow-lg relative overflow-hidden flex items-center justify-center"
-            style="background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%)"
+            ref="canvasEl"
+            class="w-full h-80 rounded-xl shadow-lg relative overflow-hidden"
+            :style="roomBackgroundStyle"
           >
-            <!-- 배경 이미지 (크기 조정) -->
-            <img 
-              src="/backgrounds/base/bg_blue.png" 
-              alt="방 배경" 
-              class="w-3/4 h-3/4 object-contain"
-            />
-            
-            <!-- 마스코트 -->
-            <div class="absolute inset-0 flex items-center justify-center">
-              <!-- 공통 래퍼에 플로팅 애니메이션을 적용해 완전 동기화 -->
+            <!-- 레이어 1: 배경 아이템 (마스코트 뒤, 캔버스 전체 채움) -->
+            <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+              <img
+                v-for="bg in backgroundEquippedItems"
+                :key="bg.key"
+                :src="bg.src"
+                alt="배경 아이템"
+                class="absolute inset-0 w-full h-full object-cover pointer-events-none"
+              />
+            </div>
+
+            <!-- 레이어 2: 마스코트 (중간) -->
+            <div class="absolute inset-0 z-10 flex items-center justify-center">
               <div class="relative animate-float">
-                <!-- 마스코트 이미지 (크기 키움) -->
                 <img 
+                  ref="mascotEl"
                   :src="getMascotImageUrl(currentMascot.type)" 
                   :alt="currentMascot.name" 
                   class="w-32 h-32 object-contain"
+                  @load="updateRects"
                   @error="handleImageError"
                 />
-                
-                <!-- 장착된 아이템들 (서버 커스터마이징 기반 렌더) -->
-                <!-- 플로팅은 부모에 적용되어 자식과 완전 동기화됨 -->
-                <div class="absolute inset-0">
-                  <img
-                    v-for="ri in resolvedItems"
-                    :key="ri.key"
-                    :src="ri.src"
-                    class="absolute object-contain pointer-events-none"
-                    :style="{
-                      left: ri.leftPct + '%',
-                      top: ri.topPct + '%',
-                      width: ri.sizePx + 'px',
-                      height: ri.sizePx + 'px',
-                      transform: `translate(-50%, -50%) rotate(${ri.rotation}deg)`,
-                    }"
-                  />
-
-                  
-                </div>
               </div>
             </div>
-            
+
+            <!-- 레이어 3: 전경 아이템 (마스코트 앞) -->
+            <div class="absolute inset-0 z-20 animate-float pointer-events-none">
+              <img
+                v-for="ri in foregroundEquippedItems"
+                :key="ri.key"
+                :src="ri.src"
+                class="absolute object-contain pointer-events-none"
+                :style="styleForItem(ri)"
+              />
+            </div>
+
             <!-- 마스코트 이름 -->
             <div class="absolute top-3 left-3">
               <div class="bg-white bg-opacity-90 px-2 py-1 rounded-full">
@@ -92,7 +88,7 @@
             </div>
             
             <!-- 공유 버튼 -->
-            <div class="absolute top-3 right-3">
+            <div class="absolute top-3 right-3 z-50 pointer-events-auto">
               <button 
                 @click="showSharePopup"
                 class="bg-white bg-opacity-90 p-1 rounded-lg hover:bg-opacity-100 transition-all flex items-center justify-center w-8 h-8"
@@ -103,8 +99,8 @@
           </div>
         </div>
 
-        <!-- 레벨 카드 -->
-        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4">
+        <!-- 레벨 카드 (클릭 시 EXP 요약 표시) -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 cursor-pointer" @click="openExpSummary">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center space-x-2">
               <span class="text-xl">⭐</span>
@@ -257,6 +253,36 @@
       </div>
     </div>
 
+    <!-- EXP 요약 모달 -->
+    <div v-if="showExpSummary" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-gray-800">EXP 요약</h3>
+          <button @click="closeExpSummary" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+        </div>
+        <div v-if="expSummary" class="space-y-3">
+          <div class="flex justify-between text-sm"><span class="text-gray-600">총 EXP</span><span class="font-semibold">{{ expSummary.totalExp }}</span></div>
+          <div class="flex justify-between text-sm"><span class="text-gray-600">레벨</span><span class="font-semibold">{{ expSummary.level }}</span></div>
+          <div class="mt-2">
+            <p class="text-sm text-gray-700 font-medium">오늘 상태 (KST)</p>
+            <ul class="mt-1 text-sm text-gray-700 space-y-1">
+              <li>출석: <span class="font-semibold">{{ expSummary.today?.attendance ? '완료' : '미완료' }}</span></li>
+              <li>7연속 보너스: <span class="font-semibold">{{ expSummary.today?.streak7 ? '지급' : '미지급' }}</span></li>
+              <li>친구 방문(내가): <span class="font-semibold">{{ expSummary.today?.friend?.active?.count }}</span>회 (남은 +3: {{ expSummary.today?.friend?.active?.remainingTop3 }})</li>
+              <li>친구 방문(나에게): <span class="font-semibold">{{ expSummary.today?.friend?.passive?.count }}</span>회</li>
+              <li>카테고리: 
+                <span class="font-semibold">F: {{ expSummary.today?.categories?.FINANCE ? '✔' : '✗' }}, 
+                A: {{ expSummary.today?.categories?.ACADEMIC ? '✔' : '✗' }}, 
+                S: {{ expSummary.today?.categories?.SOCIAL ? '✔' : '✗' }}, 
+                E: {{ expSummary.today?.categories?.EVENT ? '✔' : '✗' }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div v-else class="text-center text-gray-500 text-sm">요약을 불러오는 중...</div>
+      </div>
+    </div>
+
     <!-- 알림 토스트 -->
     <div 
       v-if="showToast" 
@@ -268,13 +294,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, nextTick } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
-import type { ShopItem } from '../types/api';
+import { auth, apiRequest, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
-import type { Mascot } from '../types/api';
+import type { Mascot, ShopItem } from '../types/api';
+import { toAbsoluteFromMascot } from '../utils/coordinates';
 
 const router = useRouter();
 
@@ -292,15 +318,22 @@ const customization = ref<MascotCustomization | null>(null);
 const shopItems = ref<ShopItem[]>([]);
 // 과거 폴백 제거됨
 
-// 렌더링용 파생: 서버에서 받은 커스터마이징이 있으면 이를 사용
+// 타입 표준화 유틸 (Customize.vue와 동일 컨셉)
+function normalizeType(val: unknown): string {
+  return (val ?? '').toString().toLowerCase();
+}
+
+// 렌더링용 파생: 커스터마이징 + 아이템 메타데이터 조인 후 레이어 분리
 const BASE_ITEM_SIZE = 120; // Customize.vue와 동일 기준
-const resolvedItems = computed(() => {
+// NOTE: 과거의 문자열 기반 currentMascot.equippedItem 의존성은 제거되었습니다.
+//       서버 커스터마이징(getMascotCustomization) + 아이템 메타(getShopItems)만 사용합니다.
+const joinedItems = computed(() => {
   if (!customization.value || !customization.value.equippedItems?.length) return [] as Array<{
     key: string;
     src: string;
-    leftPct: number;
-    topPct: number;
-    sizePx: number;
+    type: string;
+    relativePosition: { x: number; y: number };
+    scale: number;
     rotation: number;
   }>;
   const byId = new Map<number, ShopItem>(shopItems.value.map(s => [s.id, s]));
@@ -308,17 +341,53 @@ const resolvedItems = computed(() => {
     .map((e, idx) => {
       const si = byId.get(e.itemId);
       if (!si) return null;
+      const t = normalizeType((si as any).type || (si as any).category);
       return {
         key: `${e.itemId}-${idx}`,
         src: si.imageUrl,
-        leftPct: e.relativePosition.x * 100,
-        topPct: e.relativePosition.y * 100,
-        sizePx: Math.max(24, BASE_ITEM_SIZE * (e.scale ?? 1)),
+        type: t,
+        relativePosition: { x: e.relativePosition.x, y: e.relativePosition.y },
+        scale: e.scale,
         rotation: ((e.rotation ?? 0) % 360 + 360) % 360,
       };
     })
     .filter(Boolean) as any[];
 });
+
+const backgroundEquippedItems = computed(() => joinedItems.value.filter(i => i.type === 'background'));
+const foregroundEquippedItems = computed(() => joinedItems.value.filter(i => i.type !== 'background'));
+
+// 캔버스/마스코트 DOMRect 추적 (커스터마이즈 화면과 동일 좌표계로 렌더)
+const canvasEl = ref<HTMLElement>();
+const mascotEl = ref<HTMLElement>();
+const canvasRect = ref<DOMRect | null>(null);
+const mascotRect = ref<DOMRect | null>(null);
+
+function updateRects() {
+  if (canvasEl.value) {
+    canvasRect.value = canvasEl.value.getBoundingClientRect();
+  }
+  if (mascotEl.value) {
+    mascotRect.value = mascotEl.value.getBoundingClientRect();
+  }
+}
+
+function styleForItem(e: { relativePosition: { x: number; y: number }; scale: number; rotation: number }) {
+  if (!canvasRect.value || !mascotRect.value) return {} as Record<string, string>;
+  const center = toAbsoluteFromMascot(e.relativePosition, mascotRect.value);
+  const left = center.x - canvasRect.value.left;
+  const top = center.y - canvasRect.value.top;
+  const size = Math.max(12, BASE_ITEM_SIZE * (e.scale ?? 1));
+  return {
+    position: 'absolute',
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${size}px`,
+    height: `${size}px`,
+    transform: `translate(-50%, -50%) rotate(${e.rotation}deg)`,
+    pointerEvents: 'none',
+  } as Record<string, string>;
+}
 
 // 토스트 알림
 const showToast = ref(false);
@@ -333,6 +402,10 @@ const shareLinkData = ref({
 const shareImageData = ref({
   message: ''
 });
+
+// EXP 요약
+const showExpSummary = ref(false);
+const expSummary = ref<any | null>(null);
 
 // (스냅샷 모달 제거)
 
@@ -359,6 +432,27 @@ function handleImageError(event: Event) {
   target.src = '/mascot/soll.png'; // 기본 이미지로 대체
   console.error('이미지 로드 실패:', target.src);
 }
+
+// 저장된 배경색/패턴을 뷰에 반영
+const roomBackgroundStyle = computed(() => {
+  const color = currentMascot.value?.backgroundColor;
+  const pattern = currentMascot.value?.backgroundPattern;
+  if (!color && !pattern) {
+    return { background: 'linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%)' } as Record<string, string>;
+  }
+  const style: Record<string, string> = {
+    backgroundColor: color || '#f5f7ff',
+  };
+  if (pattern === 'dots') {
+    style.backgroundImage = 'radial-gradient(circle, rgba(0,0,0,0.10) 1px, transparent 1px)';
+    style.backgroundSize = '12px 12px';
+  } else if (pattern === 'stripes') {
+    style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0 10px, transparent 10px 20px)';
+  } else {
+    style.backgroundImage = 'none';
+  }
+  return style;
+});
 
 // 캔버스 합성: 배경 → 마스코트 → 아이템(위치/스케일/회전)
 async function composeShareImageBlob(): Promise<Blob> {
@@ -501,6 +595,21 @@ async function checkBackendStatus() {
   } catch (error) {
     console.error('백엔드 연결 실패:', error);
   }
+}
+
+async function openExpSummary() {
+  try {
+    showExpSummary.value = true;
+    expSummary.value = null;
+    const res = await apiRequest<any>('/exp/summary', { method: 'GET' });
+    expSummary.value = res?.data || null;
+  } catch (e) {
+    expSummary.value = { totalExp: currentMascot.value?.exp ?? 0, level: currentMascot.value?.level ?? 1, today: null };
+  }
+}
+
+function closeExpSummary() {
+  showExpSummary.value = false;
 }
 
 // 공유 팝업 닫기
@@ -708,10 +817,17 @@ onMounted(async () => {
     ]);
     customization.value = cust;
     shopItems.value = items as any;
+    await nextTick();
+    updateRects();
+    window.addEventListener('resize', updateRects);
   } catch (err) {
     console.error('메인화면 데이터 로드 실패:', err);
     handleApiError(err);
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateRects);
 });
 </script>
 
@@ -747,34 +863,5 @@ export async function loadImage(src: string): Promise<HTMLImageElement> {
   transition: all 0.3s ease;
 }
 
-/* 아이템별 기본 스타일 */
-.item-head {
-  width: 60%;
-  height: 60%;
-  top: -15%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  object-fit: contain;
-}
-
-.item-accessory {
-  width: 30%;
-  height: 30%;
-  top: 25%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 3;
-  object-fit: contain;
-}
-
-.item-clothing {
-  width: 80%;
-  height: 80%;
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1;
-  object-fit: contain;
-}
+/* (구) 타입별 절대 포지셔닝 스타일 제거됨: 실제 커스텀 좌표/스케일/회전 사용 */
 </style>

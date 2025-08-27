@@ -32,42 +32,7 @@
     <div class="p-4 space-y-4">
       <!-- 카테고리 필터 탭 -->
       <div class="space-y-3">
-        <!-- 보상 타입 탭 -->
-        <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-          <button 
-            @click="selectedRewardType = 'all'"
-            :class="[
-              'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors',
-              selectedRewardType === 'all' 
-                ? 'bg-white text-gray-900 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
-            ]"
-          >
-            전체
-          </button>
-          <button 
-            @click="selectedRewardType = 'points'"
-            :class="[
-              'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors',
-              selectedRewardType === 'points' 
-                ? 'bg-white text-gray-900 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
-            ]"
-          >
-            포인트
-          </button>
-          <button 
-            @click="selectedRewardType = 'exp'"
-            :class="[
-              'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors',
-              selectedRewardType === 'exp' 
-                ? 'bg-white text-gray-900 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
-            ]"
-          >
-            경험치
-          </button>
-        </div>
+        
 
         <!-- 카테고리 탭 -->
         <div class="flex flex-wrap gap-2">
@@ -194,15 +159,16 @@
                       :class="challenge.isJoined && challenge.userStatus === 'COMPLETED' ? 'text-gray-400' : 'text-blue-600'">
                   {{ challenge.rewardPoints }}P
                 </span>
-                <span v-else 
-                      :class="challenge.isJoined && challenge.userStatus === 'COMPLETED' ? 'text-gray-400' : 'text-green-600'">
-                  {{ challenge.rewardExp }}XP
-                </span>
                 
                 <!-- 완료 상태 텍스트 -->
                 <span v-if="challenge.isJoined && challenge.userStatus === 'COMPLETED'" 
                       class="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                   완료됨
+                </span>
+                <!-- 참여중 배지 -->
+                <span v-else-if="challenge.isJoined" 
+                      class="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                  참여중
                 </span>
               </p>
             </div>
@@ -349,36 +315,48 @@
         </div>
 
                  <!-- 액션 버튼 -->
-         <div class="flex space-x-3 mt-6">
-           <button 
-             @click="joinSelectedChallenge"
-             :disabled="selectedChallenge.isJoined"
-             :class="[
-               'flex-1 py-3 px-4 rounded-lg font-medium transition-colors',
-               selectedChallenge.isJoined
-                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                 : 'bg-blue-500 text-white hover:bg-blue-600'
-             ]"
-           >
-             {{ selectedChallenge.isJoined ? '이미 참여중' : '챌린지 참여' }}
-           </button>
-           
-           <!-- 완료된 챌린지인 경우 완료 상태 표시 -->
-           <div v-if="selectedChallenge.isJoined && selectedChallenge.userStatus === 'COMPLETED'" 
-                class="flex-1 py-3 px-4 bg-green-100 text-green-700 rounded-lg font-medium flex items-center justify-center">
-             <span class="mr-2">🎉</span>
-             챌린지 완료!
-           </div>
-           
-           <button 
-             @click="selectedChallenge = null"
-             class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
-           >
-             닫기
-           </button>
-         </div>
+        <div class="flex space-x-2 mt-6">
+          <button 
+            @click="joinSelectedChallenge"
+            :disabled="selectedChallenge.isJoined"
+            :class="[
+              'flex-1 sm:flex-none py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-medium transition-colors whitespace-nowrap text-xs sm:text-sm',
+              selectedChallenge.isJoined
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-500 text-white hover:bg-blue-600'
+            ]"
+          >
+            {{ selectedChallenge.isJoined ? '이미 참여중' : '챌린지 참여' }}
+          </button>
+          
+          <!-- 완료된 챌린지인 경우 완료 상태 표시 -->
+          <div v-if="selectedChallenge.isJoined && selectedChallenge.userStatus === 'COMPLETED'" 
+                class="flex-1 sm:flex-none py-2 sm:py-3 px-3 sm:px-4 bg-green-100 text-green-700 rounded-lg font-medium flex items-center justify-center whitespace-nowrap text-xs sm:text-sm">
+            <span class="mr-2">🎉</span>
+            챌린지 완료!
+          </div>
+          
+          <button 
+            @click="selectedChallenge = null"
+            class="flex-1 sm:flex-none py-2 sm:py-3 px-3 sm:px-4 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors whitespace-nowrap text-xs sm:text-sm"
+          >
+            닫기
+          </button>
+        </div>
       </div>
     </div>
+
+    <!-- 금융 API 팝업 -->
+    <FinanceApiModal
+      :visible="showFinanceModal"
+      :title="financeModalTitle"
+      :defaultTab="financeDefaultTab"
+      :onlyTab="financeDefaultTab"
+      :challengeId="financeChallengeId"
+      :targetCount="financeTargetCount"
+      @close="closeFinanceModal"
+      @succeeded="onFinanceSucceeded"
+    />
   </div>
 </template>
 
@@ -389,6 +367,7 @@ import { getChallenges, joinChallenge, updateChallengeProgress } from '../api/in
 import { usePointStore } from '../stores/point';
 import type { Challenge } from '../types/api';
 import Dropdown from '../components/Dropdown.vue';
+import FinanceApiModal from '../components/FinanceApiModal.vue';
 
 const router = useRouter();
 const pointStore = usePointStore();
@@ -398,7 +377,6 @@ const challenges = ref<Challenge[]>([]);
 const selectedChallenge = ref<Challenge | null>(null);
 const loading = ref(false);
 const error = ref('');
-const selectedRewardType = ref<'all' | 'points' | 'exp'>('all');
 const selectedCategory = ref<'all' | 'ACADEMIC' | 'FINANCE' | 'SOCIAL' | 'EVENT'>('all');
 const selectedStatus = ref<'all' | 'available' | 'completed'>('all');
 
@@ -419,16 +397,17 @@ const updatingProgress = ref(false);
 // 포인트 상태는 Store에서 관리
 const userPoints = computed(() => pointStore.userPoints);
 
+// 리스트 내 특정 챌린지 상태 동기화 헬퍼
+function syncChallengeStatusInList(challengeId: number, updates: Partial<Challenge>) {
+  const idx = challenges.value.findIndex(c => c.challengeId === challengeId);
+  if (idx >= 0) {
+    challenges.value[idx] = { ...challenges.value[idx], ...updates } as Challenge;
+  }
+}
+
 // 필터링된 챌린지 목록
 const filteredChallenges = computed(() => {
   return challenges.value.filter(challenge => {
-    // 보상 타입 필터링
-    if (selectedRewardType.value !== 'all') {
-      if (getRewardType(challenge) !== selectedRewardType.value) {
-        return false;
-      }
-    }
-    
     // 카테고리 필터링
     if (selectedCategory.value !== 'all') {
       if (challenge.categoryName !== selectedCategory.value) {
@@ -455,6 +434,8 @@ const filteredChallenges = computed(() => {
   });
 });
 
+// 완료 버튼은 기존 로직 유지
+
 // 라우터 함수
 function goBack() {
   router.back();
@@ -478,7 +459,12 @@ async function loadChallenges() {
 
 // 챌린지 선택
 function selectChallenge(challenge: Challenge) {
-  selectedChallenge.value = challenge;
+  // 금융 + 보류중이면 '처음 화면(미참여)'처럼 보이도록 복제 객체로 표시
+  let ch: Challenge = challenge;
+  if (challenge.categoryName === 'FINANCE' && pendingFinance.value.has(challenge.challengeId) && challenge.userStatus !== 'COMPLETED') {
+    ch = { ...challenge, isJoined: false, userStatus: 'NOT_JOINED' } as any;
+  }
+  selectedChallenge.value = ch;
   
   // 진행도 초기화
   if (challenge.isJoined) {
@@ -533,19 +519,92 @@ async function loadChallengeProgress(challengeId: number) {
   }
 }
 
+// 금융 팝업 상태 및 유틸
+type FinanceTab = 'EXCHANGE_RATES' | 'SINGLE_RATE' | 'ESTIMATE' | 'TX_HISTORY';
+const showFinanceModal = ref(false);
+const financeModalTitle = ref('');
+const financeDefaultTab = ref<FinanceTab>('EXCHANGE_RATES');
+const financeChallengeId = ref<number | null>(null);
+const financeTargetCount = ref<number | null>(null);
+// 금융 챌린지 '참여 후 외부 액션 미수행' 상태를 로컬로 관리
+const pendingFinance = ref<Set<number>>(new Set());
+// 금융 챌린지 액션 성공 후(아직 완료 버튼 미누름) 상태
+const succeededFinance = ref<Set<number>>(new Set());
+
+function inferFinanceTabByName(name: string): FinanceTab {
+  const n = (name || '').toLowerCase();
+  if (n.includes('환율 전체') || n.includes('전체 환율') || n.includes('환율전체')) return 'EXCHANGE_RATES';
+  if (n.includes('환율 확인') || n.includes('단건') || n.includes('환율확인')) return 'SINGLE_RATE';
+  if (n.includes('환전') || n.includes('예상') || n.includes('환전예상')) return 'ESTIMATE';
+  if (n.includes('거래내역')) return 'TX_HISTORY';
+  return 'EXCHANGE_RATES';
+}
+
+function isRecognizedFinanceAction(name: string): boolean {
+  const n = (name || '').toLowerCase();
+  return (
+    n.includes('환율 전체') || n.includes('전체 환율') || n.includes('환율전체') ||
+    n.includes('환율 확인') || n.includes('단건') || n.includes('환율확인') ||
+    n.includes('환전') || n.includes('예상') || n.includes('환전예상') ||
+    n.includes('거래내역')
+  );
+}
+
+function openFinanceModalFor(ch: Challenge) {
+  financeModalTitle.value = ch.challengeName;
+  financeDefaultTab.value = inferFinanceTabByName(ch.challengeName);
+  financeChallengeId.value = ch.challengeId;
+  financeTargetCount.value = ch.targetCount || 1;
+  showFinanceModal.value = true;
+}
+
+function onFinanceCompleted() {
+  if (financeChallengeId.value != null) {
+    pendingFinance.value.delete(financeChallengeId.value);
+  }
+  showFinanceModal.value = false;
+  loadChallenges();
+}
+
+function closeFinanceModal() {
+  showFinanceModal.value = false;
+  // 닫기 시: 보류 중이면 '처음 화면'으로, 성공이면 '완료하기 버튼' 화면으로
+  if (financeChallengeId.value != null && pendingFinance.value.has(financeChallengeId.value)) {
+    const id = financeChallengeId.value;
+    const found = challenges.value.find(c => c.challengeId === id);
+    if (found) {
+      const ch: Challenge = { ...found, isJoined: false, userStatus: 'NOT_JOINED' } as any;
+      selectedChallenge.value = ch;
+    }
+  } else if (financeChallengeId.value != null && succeededFinance.value.has(financeChallengeId.value)) {
+    const id = financeChallengeId.value;
+    const found = challenges.value.find(c => c.challengeId === id);
+    if (found) {
+      // 참여중 + 미완료 상태로 상세 모달 열기 → '챌린지 완료하기' 버튼 노출
+      const ch: Challenge = { ...found, isJoined: true, userStatus: 'IN_PROGRESS' } as any;
+      selectedChallenge.value = ch;
+      // 진행도 초기화 표시
+      currentProgress.value = 0;
+      isCompleted.value = false;
+      rewardPoints.value = 0;
+      progressStep.value = null;
+    }
+  }
+  // 목록도 동기화
+  loadChallenges();
+}
+
+function onFinanceSucceeded() {
+  if (financeChallengeId.value != null) {
+    pendingFinance.value.delete(financeChallengeId.value);
+    succeededFinance.value.add(financeChallengeId.value);
+  }
+}
+
 // 챌린지 타입별 보상 결정 (백엔드 타입에 맞춤)
 function getRewardType(challenge: Challenge): 'points' | 'exp' {
-  // 챌린지 타입에 따라 보상 결정
-  switch (challenge.challengeType) {
-    case 'DAILY':
-    case 'WEEKLY':
-      return 'points'; // 일일/주간 챌린지는 포인트 보상
-    case 'MONTHLY':
-    case 'SPECIAL':
-      return 'exp';    // 월간/특별 챌린지는 경험치 보상
-    default:
-      return 'points'; // 기본값은 포인트
-  }
+  // 정책 변경: 챌린지는 포인트만 지급
+  return 'points';
 }
 
 // 카테고리별 색상 결정 (백엔드 카테고리에 맞춤)
@@ -597,19 +656,40 @@ async function joinSelectedChallenge() {
   if (!selectedChallenge.value) return;
   
   try {
-    await joinChallenge(selectedChallenge.value.challengeId);
+    const cid = selectedChallenge.value.challengeId;
+    const isFinance = selectedChallenge.value.categoryName === 'FINANCE';
+    // 보류 중인 금융 챌린지라면 재참여 API 호출 없이 바로 팝업만 열기
+    if (isFinance && pendingFinance.value.has(cid)) {
+      const joined = selectedChallenge.value;
+      selectedChallenge.value = null;
+      openFinanceModalFor(joined);
+      return;
+    }
+
+    await joinChallenge(cid);
     
     // 참여 상태 업데이트
     selectedChallenge.value.isJoined = true;
+    // 목록에도 즉시 반영
+    syncChallengeStatusInList(selectedChallenge.value.challengeId, { isJoined: true });
+    // 진행도 초기화 및 로드 (비금융의 경우 유지)
+    if (!isFinance) {
+      await loadChallengeProgress(cid);
+    }
     
-    // 진행도 초기화 및 로드
-    await loadChallengeProgress(selectedChallenge.value.challengeId);
-    
-    // 모달 닫기
+    // 모달 닫기 및 다음 동작
+    const joined = selectedChallenge.value;
     selectedChallenge.value = null;
-    
-    // 챌린지 목록 새로고침
-    await loadChallenges();
+
+    if (isFinance && joined && isRecognizedFinanceAction(joined.challengeName)) {
+      // 금융은 외부 액션 성공 전까지 로컬로 보류 처리하여 다음에 눌렀을 때 '처음 화면'으로 보이게 함
+      pendingFinance.value.add(joined.challengeId);
+      // 금융 챌린지는 팝업으로 진행
+      openFinanceModalFor(joined);
+    } else {
+      // 비금융은 목록 새로고침 유지
+      await loadChallenges();
+    }
     
   } catch (err: any) {
     console.error('챌린지 참여 실패:', err);
@@ -646,6 +726,16 @@ async function updateProgress() {
       } else {
         alert('진행도가 업데이트되었습니다!');
       }
+
+      // 완료 상태 동기화 (isCompleted 플래그 true인 경우)
+      if (response.isCompleted) {
+        if (selectedChallenge.value) {
+          selectedChallenge.value.isJoined = true;
+          selectedChallenge.value.userStatus = 'COMPLETED';
+          syncChallengeStatusInList(selectedChallenge.value.challengeId, { isJoined: true, userStatus: 'COMPLETED' as any });
+        }
+        await loadChallenges();
+      }
       
       // 진행도 입력 필드 초기화
       progressStep.value = null;
@@ -666,10 +756,24 @@ async function completeChallenge() {
   
   updatingProgress.value = true;
   try {
+    const ch = selectedChallenge.value;
+    const cid = ch.challengeId;
+    const isFinance = ch.categoryName === 'FINANCE';
+    let payload = '챌린지 완료';
+    if (isFinance) {
+      // 금융은 조회 성공 후에만 완료 가능
+      if (!succeededFinance.value.has(cid)) {
+        alert('외부 조회를 완료한 뒤에 완료할 수 있습니다.');
+        updatingProgress.value = false;
+        return;
+      }
+      const action = inferFinanceTabByName(ch.challengeName);
+      payload = `FINANCE_${action}_SUCCESS`;
+    }
     // 목표 진행도로 바로 완료 처리
-    const response = await updateChallengeProgress(selectedChallenge.value.challengeId, {
-      step: selectedChallenge.value.targetCount,
-      payload: '챌린지 완료'
+    const response = await updateChallengeProgress(cid, {
+      step: ch.targetCount,
+      payload,
     });
     
     if (response.success && response.userChallenge) {
@@ -689,6 +793,15 @@ async function completeChallenge() {
       } else {
         alert('🎉 챌린지가 완료되었습니다!');
       }
+
+      // 완료 상태 동기화
+      if (selectedChallenge.value) {
+        selectedChallenge.value.isJoined = true;
+        selectedChallenge.value.userStatus = 'COMPLETED';
+        syncChallengeStatusInList(selectedChallenge.value.challengeId, { isJoined: true, userStatus: 'COMPLETED' as any });
+      }
+
+      await loadChallenges();
     } else {
       alert(response.message || '챌린지 완료 처리에 실패했습니다.');
     }

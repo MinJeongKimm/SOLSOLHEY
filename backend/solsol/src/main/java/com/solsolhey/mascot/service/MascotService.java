@@ -85,6 +85,15 @@ public interface MascotService {
      * @return 배경 적용 응답
      */
     ApplyBackgroundResponse resetBackground(Long mascotId, Long userId);
+
+    /**
+     * 배경 커스터마이징(색상/패턴) 업데이트
+     * @param userId 사용자 ID
+     * @param backgroundColor 배경 색상(hex)
+     * @param patternType 패턴 타입(dots/stripes/none)
+     * @return 업데이트된 마스코트 응답
+     */
+    MascotResponse updateBackgroundCustomization(Long userId, String backgroundColor, String patternType);
     
     // === 아이템 관련 메서드 ===
     
