@@ -32,42 +32,7 @@
     <div class="p-4 space-y-4">
       <!-- 카테고리 필터 탭 -->
       <div class="space-y-3">
-        <!-- 보상 타입 탭 -->
-        <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-          <button 
-            @click="selectedRewardType = 'all'"
-            :class="[
-              'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors',
-              selectedRewardType === 'all' 
-                ? 'bg-white text-gray-900 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
-            ]"
-          >
-            전체
-          </button>
-          <button 
-            @click="selectedRewardType = 'points'"
-            :class="[
-              'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors',
-              selectedRewardType === 'points' 
-                ? 'bg-white text-gray-900 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
-            ]"
-          >
-            포인트
-          </button>
-          <button 
-            @click="selectedRewardType = 'exp'"
-            :class="[
-              'flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors',
-              selectedRewardType === 'exp' 
-                ? 'bg-white text-gray-900 shadow-sm' 
-                : 'text-gray-600 hover:text-gray-900'
-            ]"
-          >
-            경험치
-          </button>
-        </div>
+        
 
         <!-- 카테고리 탭 -->
         <div class="flex flex-wrap gap-2">
@@ -398,7 +363,6 @@ const challenges = ref<Challenge[]>([]);
 const selectedChallenge = ref<Challenge | null>(null);
 const loading = ref(false);
 const error = ref('');
-const selectedRewardType = ref<'all' | 'points' | 'exp'>('all');
 const selectedCategory = ref<'all' | 'ACADEMIC' | 'FINANCE' | 'SOCIAL' | 'EVENT'>('all');
 const selectedStatus = ref<'all' | 'available' | 'completed'>('all');
 
@@ -422,13 +386,6 @@ const userPoints = computed(() => pointStore.userPoints);
 // 필터링된 챌린지 목록
 const filteredChallenges = computed(() => {
   return challenges.value.filter(challenge => {
-    // 보상 타입 필터링
-    if (selectedRewardType.value !== 'all') {
-      if (getRewardType(challenge) !== selectedRewardType.value) {
-        return false;
-      }
-    }
-    
     // 카테고리 필터링
     if (selectedCategory.value !== 'all') {
       if (challenge.categoryName !== selectedCategory.value) {
