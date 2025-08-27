@@ -31,11 +31,6 @@ public class User extends BaseEntity {
     private Long userId;
 
     @NotBlank
-    @Size(max = 50)
-    @Column(name = "username", nullable = false, length = 50)
-    private String username;
-
-    @NotBlank
     @Email
     @Size(max = 100)
     @Column(name = "email", unique = true, nullable = false, length = 100)
@@ -61,9 +56,8 @@ public class User extends BaseEntity {
     private Boolean isActive = true;
 
     @Builder
-    public User(String username, String email, String passwordHash, 
+    public User(String email, String passwordHash, 
                 String nickname, String campus) {
-        this.username = username;
         this.email = email;
         this.passwordHash = passwordHash;
         this.nickname = nickname;

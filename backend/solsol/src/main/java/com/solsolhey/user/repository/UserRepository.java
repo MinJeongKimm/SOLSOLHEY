@@ -15,10 +15,7 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    /**
-     * 사용자명으로 활성 사용자 조회
-     */
-    Optional<User> findByUsernameAndIsActiveTrue(String username);
+    // username 기반 조회는 더 이상 사용하지 않습니다 (principal은 이메일 사용).
 
     /**
      * 사용자 ID로 활성 사용자 조회
@@ -30,10 +27,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     Optional<User> findByEmailAndIsActiveTrue(String email);
 
-    /**
-     * 사용자명으로 사용자 조회 (활성/비활성 무관)
-     */
-    Optional<User> findByUsername(String username);
+    // username 기반 조회는 더 이상 사용하지 않습니다.
 
     /**
      * 이메일로 사용자 조회 (활성/비활성 무관)
@@ -46,9 +40,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByNickname(String nickname);
 
     /**
-     * 사용자명 중복 체크
+     * 닉네임 중복 여부
      */
-    boolean existsByUsername(String username);
+    boolean existsByNickname(String nickname);
+
+    // username 중복 체크는 더 이상 사용하지 않습니다.
 
     /**
      * 이메일 중복 체크
@@ -77,13 +73,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     java.util.List<User> findTopUsersOrderByTotalPointsDesc(
             org.springframework.data.domain.Pageable pageable);
 
-    /**
-     * 사용자명이나 닉네임으로 검색 (대소문자 무관)
-     */
-    @Query("SELECT u FROM User u WHERE u.isActive = true AND " +
-           "(LOWER(u.username) LIKE LOWER(CONCAT('%', :username, '%')) OR " +
-           "LOWER(u.nickname) LIKE LOWER(CONCAT('%', :nickname, '%')))")
-    java.util.List<User> findByUsernameContainingIgnoreCaseOrNicknameContainingIgnoreCase(
-            @Param("username") String username, @Param("nickname") String nickname);
+    // username 포함 검색은 사용하지 않습니다. 필요 시 닉네임/이메일 기준으로 별도 구현.
     
 }
