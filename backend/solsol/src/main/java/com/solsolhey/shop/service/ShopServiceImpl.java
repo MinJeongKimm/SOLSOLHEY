@@ -352,6 +352,12 @@ public class ShopServiceImpl implements ShopService {
             g.setStatus(UserGifticon.Status.EXPIRED);
             userGifticonRepository.save(g);
         }
+        // 만료일 보정: 누락된 경우 생성일 기준 1년으로 세팅
+        if (g.getExpiresAt() == null) {
+            LocalDateTime base = g.getCreatedAt() != null ? g.getCreatedAt() : LocalDateTime.now();
+            g.setExpiresAt(base.plusYears(1));
+            userGifticonRepository.save(g);
+        }
         return com.solsolhey.shop.dto.PurchasedGifticonDetailResponse.from(g);
     }
 
