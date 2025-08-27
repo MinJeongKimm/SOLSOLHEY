@@ -109,6 +109,7 @@ export interface Mascot {
   equippedItem?: string; // 백엔드의 equippedItem 필드와 일치 (단순 문자열)
   createdAt?: string;
   updatedAt?: string;
+  snapshotImage?: string; // 최근 저장된 스냅샷(Data URL 또는 URL)
 }
 
 // evolutionStage는 level 기반으로 계산 (프론트엔드에서 처리)
@@ -345,7 +346,6 @@ export interface RankingResponse {
     campusName: string;
   };
 }
-
 
 
 
