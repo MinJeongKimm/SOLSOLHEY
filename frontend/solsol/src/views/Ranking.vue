@@ -518,22 +518,28 @@ const findMyRank = () => {
 
 // 투표 가능 여부 확인
 const canVoteForMascot = (mascotId: number, ownerNickname: string) => {
+  console.log('투표 가능 여부 확인:', { mascotId, ownerNickname, currentUser: currentUser.value });
+  
   // 본인 마스코트인지 확인
   if (currentUser.value && ownerNickname === currentUser.value.nickname) {
+    console.log('본인 마스코트 - 투표 불가');
     return false;
   }
   
   // 이미 투표했는지 확인
   if (activeTab.value === 'campus') {
     if (votedMascots.value.has(mascotId)) {
+      console.log('교내 랭킹 이미 투표함 - 투표 불가');
       return false;
     }
   } else {
     if (nationalVotedMascots.value.has(mascotId)) {
+      console.log('전국 랭킹 이미 투표함 - 투표 불가');
       return false;
     }
   }
   
+  console.log('투표 가능');
   return true;
 };
 

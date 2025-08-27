@@ -206,8 +206,19 @@ public class RankingServiceImpl implements RankingService {
         }
 
         // RankingEntry가 존재하는지 확인 (랭킹에 참가한 마스코트만 투표 가능)
-        if (!rankingEntryRepository.existsByMascotSnapshotId(mascotId)) {
+        if (!rankingEntryRepository.existsByMascotId(mascotId)) {
             return false;
+        }
+        
+        // 해당 투표 타입의 RankingEntry가 존재하는지 확인
+        if (voteType == Vote.VoteType.CAMPUS) {
+            if (!rankingEntryRepository.existsByMascotIdAndRankingType(mascotId, "CAMPUS")) {
+                return false;
+            }
+        } else if (voteType == Vote.VoteType.NATIONAL) {
+            if (!rankingEntryRepository.existsByMascotIdAndRankingType(mascotId, "NATIONAL")) {
+                return false;
+            }
         }
 
         return true; // 마스코트가 존재하고 랭킹에 참가했으면 투표 가능
