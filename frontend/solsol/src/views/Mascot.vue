@@ -99,8 +99,8 @@
           </div>
         </div>
 
-        <!-- 레벨 카드 -->
-        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4">
+        <!-- 레벨 카드 (클릭 시 EXP 요약 표시) -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 cursor-pointer" @click="openExpSummary">
           <div class="flex items-center justify-between mb-3">
             <div class="flex items-center space-x-2">
               <span class="text-xl">⭐</span>
@@ -253,6 +253,36 @@
       </div>
     </div>
 
+    <!-- EXP 요약 모달 -->
+    <div v-if="showExpSummary" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold text-gray-800">EXP 요약</h3>
+          <button @click="closeExpSummary" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+        </div>
+        <div v-if="expSummary" class="space-y-3">
+          <div class="flex justify-between text-sm"><span class="text-gray-600">총 EXP</span><span class="font-semibold">{{ expSummary.totalExp }}</span></div>
+          <div class="flex justify-between text-sm"><span class="text-gray-600">레벨</span><span class="font-semibold">{{ expSummary.level }}</span></div>
+          <div class="mt-2">
+            <p class="text-sm text-gray-700 font-medium">오늘 상태 (KST)</p>
+            <ul class="mt-1 text-sm text-gray-700 space-y-1">
+              <li>출석: <span class="font-semibold">{{ expSummary.today?.attendance ? '완료' : '미완료' }}</span></li>
+              <li>7연속 보너스: <span class="font-semibold">{{ expSummary.today?.streak7 ? '지급' : '미지급' }}</span></li>
+              <li>친구 방문(내가): <span class="font-semibold">{{ expSummary.today?.friend?.active?.count }}</span>회 (남은 +3: {{ expSummary.today?.friend?.active?.remainingTop3 }})</li>
+              <li>친구 방문(나에게): <span class="font-semibold">{{ expSummary.today?.friend?.passive?.count }}</span>회</li>
+              <li>카테고리: 
+                <span class="font-semibold">F: {{ expSummary.today?.categories?.FINANCE ? '✔' : '✗' }}, 
+                A: {{ expSummary.today?.categories?.ACADEMIC ? '✔' : '✗' }}, 
+                S: {{ expSummary.today?.categories?.SOCIAL ? '✔' : '✗' }}, 
+                E: {{ expSummary.today?.categories?.EVENT ? '✔' : '✗' }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div v-else class="text-center text-gray-500 text-sm">요약을 불러오는 중...</div>
+      </div>
+    </div>
+
     <!-- 알림 토스트 -->
     <div 
       v-if="showToast" 
@@ -266,7 +296,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth, createShareLink, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
+import { auth, apiRequest, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
 import type { Mascot, ShopItem } from '../types/api';
@@ -372,6 +402,10 @@ const shareLinkData = ref({
 const shareImageData = ref({
   message: ''
 });
+
+// EXP 요약
+const showExpSummary = ref(false);
+const expSummary = ref<any | null>(null);
 
 // (스냅샷 모달 제거)
 
@@ -560,6 +594,21 @@ async function checkBackendStatus() {
   } catch (error) {
     console.error('백엔드 연결 실패:', error);
   }
+}
+
+async function openExpSummary() {
+  try {
+    showExpSummary.value = true;
+    expSummary.value = null;
+    const res = await apiRequest<any>('/exp/summary', { method: 'GET' });
+    expSummary.value = res?.data || null;
+  } catch (e) {
+    expSummary.value = { totalExp: currentMascot.value?.exp ?? 0, level: currentMascot.value?.level ?? 1, today: null };
+  }
+}
+
+function closeExpSummary() {
+  showExpSummary.value = false;
 }
 
 // 공유 팝업 닫기
