@@ -535,17 +535,8 @@ async function loadChallengeProgress(challengeId: number) {
 
 // 챌린지 타입별 보상 결정 (백엔드 타입에 맞춤)
 function getRewardType(challenge: Challenge): 'points' | 'exp' {
-  // 챌린지 타입에 따라 보상 결정
-  switch (challenge.challengeType) {
-    case 'DAILY':
-    case 'WEEKLY':
-      return 'points'; // 일일/주간 챌린지는 포인트 보상
-    case 'MONTHLY':
-    case 'SPECIAL':
-      return 'exp';    // 월간/특별 챌린지는 경험치 보상
-    default:
-      return 'points'; // 기본값은 포인트
-  }
+  // 정책 변경: 챌린지는 포인트만 지급
+  return 'points';
 }
 
 // 카테고리별 색상 결정 (백엔드 카테고리에 맞춤)

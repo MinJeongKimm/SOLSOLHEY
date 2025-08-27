@@ -48,13 +48,15 @@ public class AttendanceController {
             resp.put("consecutiveDays", result.consecutiveDays());
             resp.put("pointReward", result.pointReward());
             if (result.expAwarded() != null) {
-                resp.put("expAwarded", Map.of(
-                        "amount", result.expAwarded().amount(),
-                        "type", result.expAwarded().type(),
-                        "category", result.expAwarded().category(),
-                        "totalExp", result.expAwarded().totalExp(),
-                        "level", result.expAwarded().level()
-                ));
+                var exp = new java.util.HashMap<String, Object>();
+                exp.put("amount", result.expAwarded().amount());
+                exp.put("type", result.expAwarded().type());
+                if (result.expAwarded().category() != null) {
+                    exp.put("category", result.expAwarded().category());
+                }
+                exp.put("totalExp", result.expAwarded().totalExp());
+                exp.put("level", result.expAwarded().level());
+                resp.put("expAwarded", exp);
             }
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(ApiResponse.success("출석 완료", resp));

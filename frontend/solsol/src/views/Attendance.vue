@@ -314,18 +314,22 @@ async function checkAttendance() {
       todayAttended.value = true;
       
       // 백엔드에서 받은 보상 정보 사용
-      const { consecutiveDays: newConsecutiveDays, expReward, pointReward } = result.data;
+      const { consecutiveDays: newConsecutiveDays, pointReward, expAwarded } = result.data;
       
-      // 포인트와 경험치 증가 (백엔드에서 계산된 값 사용)
+      // 포인트 증가 (백엔드에서 계산된 값 사용)
       userCoins.value += pointReward || 10;
-      userExp.value += expReward || 5;
       
       // 출석 기록에 오늘 날짜 추가 (로컬 시간 기준)
       const today = new Date();
       const todayString = getLocalDateString(today);
       attendanceRecords.value.add(todayString);
       
-      alert(`출석체크 완료! +${pointReward || 10}P, +${expReward || 5}XP 획득! (연속 ${newConsecutiveDays}일)`);
+      // EXP는 expAwarded 존재 시에만 알림 노출(로컬 가산 금지)
+      if (expAwarded && typeof expAwarded.amount === 'number') {
+        alert(`출석체크 완료! +${pointReward || 10}P, +${expAwarded.amount}XP 획득! (연속 ${newConsecutiveDays}일)`);
+      } else {
+        alert(`출석체크 완료! +${pointReward || 10}P 획득! (연속 ${newConsecutiveDays}일)`);
+      }
     } else {
       throw new Error('출석체크 응답이 올바르지 않습니다.');
     }
