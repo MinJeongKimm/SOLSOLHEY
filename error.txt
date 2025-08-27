@@ -1,0 +1,462 @@
+ org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564) ~[tomcat-embed-core-10.1.43.jar:6.0]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.43.jar:6.0]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231) ~[spring-security-web-6.4.8.jar:6.4.8]   
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at com.solsolhey.auth.jwt.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:73) ~[main/:na]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at com.solsolhey.common.security.RateLimitingFilter.doFilter(RateLimitingFilter.java:47) ~[main/:na]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107) ~[spring-security-web-6.4.8.jar:6.4.8]      
+        at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93) ~[spring-security-web-6.4.8.jar:6.4.8]       
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at com.solsolhey.common.security.CsrfCookieSeedFilter.doFilterInternal(CsrfCookieSeedFilter.java:21) ~[main/:na]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.csrf.CsrfFilter.doFilterInternal(CsrfFilter.java:117) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-6.4.8.jar:6.4.8]    
+        at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-6.4.8.jar:6.4.8]  
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$4(HandlerMappingIntrospector.java:267) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:238) ~[spring-security-config-6.4.8.jar:6.4.8]
+        at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:116) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:398) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1769) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1189) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:658) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+
+2025-08-27T15:52:35.860+09:00  WARN 30144 --- [solsol] [nio-8080-exec-7] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/campus
+Hibernate: select c1_0.id,c1_0.name from campus c1_0
+2025-08-27T15:52:55.546+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.auth.controller.AuthController       : ?뚯썝媛??API ?몄텧: userId=test1@gmail.combootRun
+2025-08-27T15:52:55.548+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.auth.service.AuthServiceImpl         : ?뚯썝媛???쒕룄: userId=test1@gmail.com
+<===Hibernate: select u1_0.user_id from users u1_0 where u1_0.email=? fetch first ? rows only
+2025-08-27T15:52:55.752+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.s.common.util.UsernameGenerator      : ?앹꽦??username: test1gma69 (?먮낯 ?대 찓?? test1@gmail.com)
+<==Hibernate: insert into users (campus,created_at,email,is_active,nickname,password_hash,total_points,updated_at,username,user_id) values (?,?,?,?,?,?,?,?,?,default)
+2025-08-27T15:52:55.918+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.auth.service.AuthServiceImpl         : ?뚯썝媛???꾨즺: userId=1, username=test1gma69, nickname=源?명뵾
+<=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/campus
+Hibernate: select c1_0.id,c1_0.name from campus c1_0
+2025-08-27T15:53:20.724+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.auth.controller.AuthController       : ?뚯썝媛??API ?몄텧: userId=test2@gmail.combootRun
+2025-08-27T15:53:20.726+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.auth.service.AuthServiceImpl         : ?뚯썝媛???쒕룄: userId=test2@gmail.com
+Hibernate: select u1_0.user_id from users u1_0 where u1_0.email=? fetch first ? rows only
+<===2025-08-27T15:53:20.914+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.s.common.util.UsernameGenerator      : ?앹꽦??username: test2gma91 (?먮낯 ?대찓?? test2@gmail.com)
+Hibernate: insert into users (campus,created_at,email,is_active,nickname,password_hash,total_points,updated_at,username,user_id) values (?,?,?,?,?,?,?,?,?,default)
+2025-08-27T15:53:20.918+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.auth.service.AuthServiceImpl         : ?뚯썝媛???꾨즺: userId=2, username=test2gma91, nickname=諛뺤떥??
+2025-08-27T15:53:27.192+09:00  INFO 30144 --- [solsol] [nio-8080-exec-7] c.s.auth.controller.AuthController       : 濡쒓렇??API ?몄텧: userId=test1@gmail.com:bootRun
+2025-08-27T15:53:27.193+09:00  INFO 30144 --- [solsol] [nio-8080-exec-7] c.s.auth.service.AuthServiceImpl         : 濡쒓렇???쒕룄: userId=test1@gmail.com
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.email=? and u1_0.is_active
+<=Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.username=? and u1_0.is_active
+2025-08-27T15:53:27.698+09:00  INFO 30144 --- [solsol] [nio-8080-exec-7] c.s.auth.service.AuthServiceImpl         : 濡쒓렇???꾨즺: userId=1, username=test1gma69otRun
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/auth/me
+ACCESS_TOKEN(cookie) PRESENT, length=198
+<==Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/users/1
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/mascot
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+2025-08-27T15:53:27.999+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
+2025-08-27T15:53:28.000+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 議고쉶 ?붿껌 - ?ъ슜??ID: 1
+Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
+<====== JWT FILTER START ===
+JWT FILTER >>> POST /api/v1/mascot
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+2025-08-27T15:54:02.496+09:00  INFO 30144 --- [solsol] [nio-8080-exec-8] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 ?앹꽦 API ?몄텧 - ?ъ슜??ID: 1bootRun
+2025-08-27T15:54:02.498+09:00  INFO 30144 --- [solsol] [nio-8080-exec-8] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 ?앹꽦 ?붿껌 - ?ъ슜??ID: 1, ?대쫫: ?좎씠, ??? soll
+Hibernate: select m1_0.id from mascots m1_0 where m1_0.user_id=? fetch first ? rows only
+Hibernate: insert into mascots (background_id,created_at,equipped_item,equipped_layout,exp,level,name,snapshot_image,type,updated_at,user_id,id) values (?,?,?,?,?,?,?,?,?,?,?,default)
+2025-08-27T15:54:02.515+09:00  INFO 30144 --- [solsol] [nio-8080-exec-8] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 ?앹꽦 ?꾨즺 - ID: 1       
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/users/1
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/mascot
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+2025-08-27T15:54:04.603+09:00  INFO 30144 --- [solsol] [nio-8080-exec-3] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
+2025-08-27T15:54:04.604+09:00  INFO 30144 --- [solsol] [nio-8080-exec-3] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 議고쉶 ?붿껌 - ?ъ슜??ID: 1
+Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/mascot/customization
+ACCESS_TOKEN(cookie) PRESENT, length=198
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/shop/items
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+2025-08-27T15:54:04.637+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.shop.controller.ShopController       : ?곹뭹 紐⑸줉 議고쉶 API ?몄텧 - ?ъ슜??ID: 1, type: null
+2025-08-27T15:54:04.638+09:00  INFO 30144 --- [solsol] [nio-8080-exec-4] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 而ㅼ뒪?곕쭏?댁쭠 뒪?곕쭏? 댁쭠 ? 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
+Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
+Hibernate: select i1_0.id,i1_0.category,i1_0.created_at,i1_0.description,i1_0.image_url,i1_0.is_active,i1_0.name,i1_0.price,i1_0.type,i1_0.updated_at from shop_items i1_0 where i1_0.is_active
+2025-08-27T15:54:04.647+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.shop.service.ShopServiceImpl         : ?ъ슜??1 ?꾩껜 ?쒖꽦 ?곹뭹 議고쉶 (蹂댁 쑀 ?щ? ?ы븿): 7 媛?
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/challenges
+ACCESS_TOKEN(cookie) PRESENT, length=198
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/users/1
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+2025-08-27T15:54:07.376+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.c.controller.ChallengeController     : 梨뚮┛吏 紐⑸줉 議고쉶 ?붿껌: category=null, userId=1
+2025-08-27T15:54:07.378+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.c.service.ChallengeServiceImpl       : 梨뚮┛吏 紐⑸줉 議고쉶 ?쒕룄: category=null, userId=1
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
+<=Hibernate: select c1_0.challenge_id,c1_0.category_id,c1_0.challenge_name,c1_0.challenge_type,c1_0.created_at,c1_0.description,c1_0.difficulty,c1_0.end_date,c1_0.is_active,c1_0.reward_exp,c1_0.reward_points,c1_0.start_date,c1_0.target_count,c1_0.updated_at from challenge c1_0 where c1_0.is_active=true and (c1_0.start_date is null or c1_0.start_date<=?) and (c1_0.end_date is null or c1_0.end_date>?) order by c1_0.created_at desc
+Hibernate: select cc1_0.category_id,cc1_0.category_name,cc1_0.description,cc1_0.display_name,cc1_0.is_active from challenge_category cc1_0 where cc1_0.category_id=?
+Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=?
+Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=? and uc1_0.status='COMPLETED'
+Hibernate: select uc1_0.user_challenge_id,uc1_0.challenge_id,uc1_0.completed_at,uc1_0.progress_count,uc1_0.progress_data,uc1_0.started_at,uc1_0.status,uc1_0.target_count,uc1_0.user_id from user_challenge uc1_0 where uc1_0.user_id=? and uc1_0.challenge_id=?
+Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=?
+Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=? and uc1_0.status='COMPLETED'
+Hibernate: select uc1_0.user_challenge_id,uc1_0.challenge_id,uc1_0.completed_at,uc1_0.progress_count,uc1_0.progress_data,uc1_0.started_at,uc1_0.status,uc1_0.target_count,uc1_0.user_id from user_challenge uc1_0 where uc1_0.user_id=? and uc1_0.challenge_id=?
+Hibernate: select cc1_0.category_id,cc1_0.category_name,cc1_0.description,cc1_0.display_name,cc1_0.is_active from challenge_category cc1_0 where cc1_0.category_id=?
+Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=?
+Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=? and uc1_0.status='COMPLETED'
+Hibernate: select uc1_0.user_challenge_id,uc1_0.challenge_id,uc1_0.completed_at,uc1_0.progress_count,uc1_0.progress_data,uc1_0.started_at,uc1_0.status,uc1_0.target_count,uc1_0.user_id from user_challenge uc1_0 where uc1_0.user_id=? and uc1_0.challenge_id=?
+Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=?
+Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=? and uc1_0.status='COMPLETED'
+Hibernate: select uc1_0.user_challenge_id,uc1_0.challenge_id,uc1_0.completed_at,uc1_0.progress_count,uc1_0.progress_data,uc1_0.started_at,uc1_0.status,uc1_0.target_count,uc1_0.user_id from user_challenge uc1_0 where uc1_0.user_id=? and uc1_0.challenge_id=?
+Hibernate: select cc1_0.category_id,cc1_0.category_name,cc1_0.description,cc1_0.display_name,cc1_0.is_active from challenge_category cc1_0 where cc1_0.category_id=?
+Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=?
+Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=? and uc1_0.status='COMPLETED'
+Hibernate: select uc1_0.user_challenge_id,uc1_0.challenge_id,uc1_0.completed_at,uc1_0.progress_count,uc1_0.progress_data,uc1_0.started_at,uc1_0.status,uc1_0.target_count,uc1_0.user_id from user_challenge uc1_0 where uc1_0.user_id=? and uc1_0.challenge_id=?
+2025-08-27T15:54:07.549+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.c.service.ChallengeServiceImpl       : 梨뚮┛吏 紐⑸줉 議고쉶 ?꾨즺: count=5    
+<=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/users/1
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/mascot
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+2025-08-27T15:54:10.005+09:00  INFO 30144 --- [solsol] [nio-8080-exec-5] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
+2025-08-27T15:54:10.006+09:00  INFO 30144 --- [solsol] [nio-8080-exec-5] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 議고쉶 ?붿껌 - ?ъ슜??ID: 1
+Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
+=== JWT FILTER START ===
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/shop/items
+ACCESS_TOKEN(cookie) PRESENT, length=198
+JWT FILTER >>> GET /api/v1/mascot/customization
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+2025-08-27T15:54:10.039+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 而ㅼ뒪?곕쭏?댁쭠 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
+2025-08-27T15:54:10.040+09:00  INFO 30144 --- [solsol] [nio-8080-exec-8] c.s.shop.controller.ShopController       : ?곹뭹 紐⑸줉 議고쉶 API ?몄텧 - ?ъ슜??ID: 1, type: null
+Hibernate: select i1_0.id,i1_0.category,i1_0.created_at,i1_0.description,i1_0.image_url,i1_0.is_active,i1_0.name,i1_0.price,i1_0.type,i1_0.updated_at from shop_items_at from shop_items i1_0 where i1_0.is_active
+Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
+2025-08-27T15:54:10.046+09:00  INFO 30144 --- [solsol] [nio-8080-exec-8] c.s.shop.service.ShopServiceImpl         : ?ъ슜??1 ?꾩껜 ?쒖꽦 ?곹뭹 議고쉶 (蹂댁 쑀 ?щ? ?ы븿): 7 媛?
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/attendance/today
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select a1_0.attendance_id from attendance a1_0 where a1_0.user_id=? and a1_0.attendance_date=? fetch first ? rows only
+=== JWT FILTER START ===
+JWT FILTER >>> POST /api/v1/attendance
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select a1_0.attendance_id from attendance a1_0 where a1_0.user_id=? and a1_0.attendance_date=? fetch first ? rows only
+Hibernate: select a1_0.attendance_id,a1_0.attendance_date,a1_0.consecutive_days,a1_0.created_at,a1_0.exp_reward,a1_0.point_reward,a1_0.updated_at,a1_0.user_id from attendance a1_0 where a1_0.user_id=? order by a1_0.attendance_date desc fetch first ? rows only
+Hibernate: insert into attendance (attendance_date,consecutive_days,created_at,exp_reward,point_reward,updated_at,user_id,attendance_id) values (?,?,?,?,?,?,?,default)
+Hibernate: select pt1_0.transaction_id,pt1_0.balance_after,pt1_0.created_at,pt1_0.description,pt1_0.point_amount,pt1_0.reference_id,pt1_0.reference_type,pt1_0.transaction_type,pt1_0.updated_at,pt1_0.user_id from point_transactions pt1_0 where pt1_0.user_id=? and pt1_0.created_at between ? and ? order by pt1_0.created_at desc
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
+Hibernate: insert into point_transactions (balance_after,created_at,description,point_amount,reference_id,reference_type,transaction_type,updated_at,user_id,transaction_id) values (?,?,?,?,?,?,?,?,?,default)
+Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
+Hibernate: select edc1_0.counter_id,edc1_0.attendance_awarded,edc1_0.attendance_streak7_awarded,edc1_0.cat_academic_awarded,edc1_0.cat_event_awarded,edc1_0.cat_finance_awarded,edc1_0.cat_social_awarded,edc1_0.counter_date,edc1_0.created_at,edc1_0.friend_active_award_count,edc1_0.friend_passive_award_count,edc1_0.updated_at,edc1_0.user_id from exp_daily_counter edc1_0 where edc1_0.user_id=? and edc1_0.counter_date=? for update
+Hibernate: insert into exp_daily_counter (attendance_awarded,attendance_streak7_awarded,cat_academic_awarded,cat_event_awarded,cat_finance_awarded,cat_social_awarded,counter_date,created_at,friend_active_award_count,friend_passive_award_count,updated_at,user_id,counter_id) values (?,?,?,?,?,?,?,?,?,?,?,?,default)
+Hibernate: update users set campus=?,email=?,is_active=?,nickname=?,password_hash=?,total_points=?,updated_at=?,username=? where user_id=?
+Hibernate: update mascots set background_id=?,equipped_item=?,equipped_layout=?,exp=?,level=?,name=?,snapshot_image=?,type=?,updated_at=?,user_id=? where id=?
+Hibernate: update exp_daily_counter set attendance_awarded=?,attendance_streak7_awarded=?,cat_academic_awarded=?,cat_event_awarded=?,cat_finance_awarded=?,cat_social_awarded=?,counter_date=?,friend_active_award_count=?,friend_passive_award_count=?,updated_at=?,user_id=? where counter_id=?
+2025-08-27T15:54:16.723+09:00 ERROR 30144 --- [solsol] [nio-8080-exec-4] c.s.u.controller.AttendanceController    : 異쒖꽍 泥섎━ ?ㅽ뙣
+
+java.lang.NullPointerException: null
+        at java.base/java.util.Objects.requireNonNull(Objects.java:209) ~[na:na]
+        at java.base/java.util.ImmutableCollections$MapN.<init>(ImmutableCollections.java:1186) ~[na:na]
+        at java.base/java.util.Map.of(Map.java:1445) ~[na:na]
+        at com.solsolhey.user.controller.AttendanceController.checkIn(AttendanceController.java:51) ~[main/:na]
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360) ~[spring-aop-6.2.9.jar:6.2.9]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.2.9.jar:6.2.9] 
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.2.9.jar:6.2.9]
+        at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethoddInterceptor.proceed(AuthorizationManagerBeforeMethodInterceptor.java:268) ~[spring-security-core-6.4.8.jar:6.4.8]
+        at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.attemptAuthorization(AuthorizationManagerBeforeMethodInterceptor.java:263) ~[spring-security-core-6.4.8.jar:6.4.8]
+        at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.invoke(AuthorizationManagerBeforeMethodInterceptor.java:196) ~[spring-security-core-6.4.8.jar:6.4.8]
+        at org.springframework.security.config.annotation.method.configuration.DeferringMethodInterceptor.invoke(DeferringMethodInterceptor.java:44) ~[spring-security-config-6.4.8.jar:6.4.8]
+        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.9.jar:6.2.9]
+        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728) ~[spring-aop-6.2.9.jar:6.2.9]       
+        at com.solsolhey.user.controller.AttendanceController$$SpringCGLIB$$0.checkIn(<generated>) ~[main/:na]
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
+        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+        at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
+        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191) ~[spring-web-6.2.9.jar:6.2.9]   
+        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:991) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:896) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590) ~[tomcat-embed-core-10.1.43.jar:6.0]
+        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.43.jar:6.0]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231) ~[spring-security-web-6.4.8.jar:6.4.8]   
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at com.solsolhey.auth.jwt.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:73) ~[main/:na]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at com.solsolhey.common.security.RateLimitingFilter.doFilter(RateLimitingFilter.java:47) ~[main/:na]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107) ~[spring-security-web-6.4.8.jar:6.4.8]      
+        at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93) ~[spring-security-web-6.4.8.jar:6.4.8]       
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at com.solsolhey.common.security.CsrfCookieSeedFilter.doFilterInternal(CsrfCookieSeedFilter.java:21) ~[main/:na]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.csrf.CsrfFilter.doFilterInternal(CsrfFilter.java:131) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-6.4.8.jar:6.4.8]    
+        at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-6.4.8.jar:6.4.8]  
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
+        at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191) ~[spring-security-web-6.4.8.jar:6.4.8]
+        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$4(HandlerMappingIntrospector.java:267) ~[spring-webmvc-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:238) ~[spring-security-config-6.4.8.jar:6.4.8]
+        at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
+        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
+        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:116) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:398) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1769) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1189) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:658) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/users/1
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/mascot
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+2025-08-27T16:02:03.428+09:00  INFO 30144 --- [solsol] [nio-8080-exec-6] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
+2025-08-27T16:02:03.429+09:00  INFO 30144 --- [solsol] [nio-8080-exec-6] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 議고쉶 ?붿껌 - ?ъ슜??ID: 1
+Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/mascot/customization
+ACCESS_TOKEN(cookie) PRESENT, length=198
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/shop/items
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_actives_active
+2025-08-27T16:02:03.454+09:00  INFO 30144 --- [solsol] [nio-8080-exec-5] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 而ㅼ뒪?곕쭏?댁쭠 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
+Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
+2025-08-27T16:02:03.457+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.shop.controller.ShopController       : ?곹뭹 紐⑸줉 議고쉶 API ?몄텧 - ?ъ슜??ID: 1, type: null
+Hibernate: select i1_0.id,i1_0.category,i1_0.created_at,i1_0.description,i1_0.image_url,i1_0.is_active,i1_0.name,i1_0.price,i1_0.type,i1_0.updated_at from shop_items i1_0 where i1_0.is_active
+2025-08-27T16:02:03.462+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.shop.service.ShopServiceImpl         : ?ъ슜??1 ?꾩껜 ?쒖꽦 ?곹뭹 議고쉶 (蹂댁 쑀 ?щ? ?ы븿): 7 媛?
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/attendance/today
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select a1_0.attendance_id from attendance a1_0 where a1_0.user_id=? and a1_0.attendance_date=? fetch first ? rows only
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/users/1
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/mascot
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+2025-08-27T16:02:15.914+09:00  INFO 30144 --- [solsol] [nio-8080-exec-3] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
+2025-08-27T16:02:15.914+09:00  INFO 30144 --- [solsol] [nio-8080-exec-3] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 議고쉶 ?붿껌 - ?ъ슜??ID: 1
+Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/mascot/customization
+ACCESS_TOKEN(cookie) PRESENT, length=198
+=== JWT FILTER START ===
+JWT FILTER >>> GET /api/v1/shop/items
+ACCESS_TOKEN(cookie) PRESENT, length=198
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
+2025-08-27T16:02:15.941+09:00  INFO 30144 --- [solsol] [nio-8080-exec-4] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 而ㅼ뒪?곕쭏?댁쭠 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
+2025-08-27T16:02:15.942+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.shop.controller.ShopController       : ?곹뭹 紐⑸줉 議고쉶 API ?몄텧 - ?ъ슜??ID: 1, type: null
+Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0mage,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
+Hibernate: select i1_0.id,i1_0.category,i1_0.created_at,i1_0.description,i1_0.image_url,i1_0.is_active,i1_0.name,i1_0.price,i1_0.type,i1_0.updated_at from shop_items i1_0 where i1_0.is_active
+2025-08-27T16:02:15.948+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.shop.service.ShopServiceImpl         : ?ъ슜??1 ?꾩껜 ?쒖꽦 ?곹뭹 議고쉶 (蹂댁 쑀 ?щ? ?ы븿): 7 媛?
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
+<==========---> 80% EXECUTING [15m 46s]

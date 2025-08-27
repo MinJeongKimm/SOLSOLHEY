@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50 flex flex-col">
     <!-- 상단 헤더 -->
     <div class="bg-white shadow-sm border-b border-gray-200">
       <div class="flex items-center justify-between px-4 py-3">
@@ -28,10 +28,10 @@
       </div>
     </div>
 
-    <!-- 상점 컨텐츠 -->
-    <div class="p-4">
+    <!-- 상점 컨텐츠 (상단 필터는 고정, 아이템 영역만 스크롤) -->
+    <div class="p-4 flex-1 flex flex-col overflow-hidden">
       <!-- 탭 네비게이션 -->
-      <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6">
+      <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6 sticky top-0 z-20">
         <button 
           @click="activeTab = 'items'"
           :class="[
@@ -56,19 +56,21 @@
         </button>
       </div>
 
-      <!-- 탭별 컨텐츠 -->
-      <!-- 로딩 상태일 때 -->
-      <div v-if="isLoading" class="flex justify-center py-8">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-      </div>
-      
-      <!-- 로딩 완료 후 탭 컨텐츠 표시 -->
-      <div v-else>
-        <div v-if="activeTab === 'items'">
-          <ItemShop :user-points="validUserPoints" @points-updated="handlePointsUpdated" />
+      <!-- 스크롤 영역: 아이템 리스트만 스크롤 -->
+      <div class="flex-1 overflow-y-auto">
+        <!-- 로딩 상태일 때 -->
+        <div v-if="isLoading" class="flex justify-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
         </div>
-        <div v-else-if="activeTab === 'gifticons'">
-          <GifticonShop :user-points="validUserPoints" @points-updated="handlePointsUpdated" />
+        
+        <!-- 로딩 완료 후 탭 컨텐츠 표시 -->
+        <div v-else>
+          <div v-if="activeTab === 'items'">
+            <ItemShop :user-points="validUserPoints" @points-updated="handlePointsUpdated" />
+          </div>
+          <div v-else-if="activeTab === 'gifticons'">
+            <GifticonShop :user-points="validUserPoints" @points-updated="handlePointsUpdated" />
+          </div>
         </div>
       </div>
     </div>
