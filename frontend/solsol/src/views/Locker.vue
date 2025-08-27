@@ -11,7 +11,9 @@
         <h1 class="text-xl font-bold text-gray-800">보관함</h1>
         <button @click="goShop" class="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="상점">
           <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M5 7l1.5 11.5A2 2 0 0 0 8.5 21h7a2 2 0 0 0 2-1.5L19 7M10 11v6M14 11v6M9 7l1-3h4l1 3" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2m0 0h13.2l-1.68 8.39a2 2 0 01-1.97 1.61H8.53a2 2 0 01-1.97-1.61L5.4 5m0 0L5 3m0 0H3" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 21a1 1 0 100-2 1 1 0 000 2z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 21a1 1 0 100-2 1 1 0 000 2z" />
           </svg>
         </button>
       </div>
