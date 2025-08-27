@@ -52,16 +52,18 @@
             
             <!-- 마스코트 -->
             <div class="absolute inset-0 flex items-center justify-center">
-              <div class="relative">
+              <!-- 공통 래퍼에 플로팅 애니메이션을 적용해 완전 동기화 -->
+              <div class="relative animate-float">
                 <!-- 마스코트 이미지 (크기 키움) -->
                 <img 
                   :src="getMascotImageUrl(currentMascot.type)" 
                   :alt="currentMascot.name" 
-                  class="w-32 h-32 object-contain animate-float"
+                  class="w-32 h-32 object-contain"
                   @error="handleImageError"
                 />
                 
                 <!-- 장착된 아이템들 (서버 커스터마이징 기반 렌더) -->
+                <!-- 플로팅은 부모에 적용되어 자식과 완전 동기화됨 -->
                 <div class="absolute inset-0">
                   <img
                     v-for="ri in resolvedItems"
