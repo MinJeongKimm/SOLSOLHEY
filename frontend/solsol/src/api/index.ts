@@ -228,6 +228,45 @@ export async function customizeMascot(data: MascotCustomizationRequest): Promise
   return m;
 }
 
+// 신규: 서버 저장용 커스터마이징 전체 포맷
+export interface MascotCustomization {
+  version: 'v1';
+  equippedItems: Array<{
+    itemId: number;
+    relativePosition: { x: number; y: number };
+    scale: number;
+    rotation: number;
+  }>;
+}
+
+export async function getMascotCustomization(): Promise<MascotCustomization | null> {
+  const res = await apiRequest<any>('/mascot/customization', { method: 'GET' });
+  const data = res && res.data ? (res.data as MascotCustomization) : null;
+  return data;
+}
+
+export async function saveMascotCustomization(payload: MascotCustomization): Promise<MascotCustomization> {
+  // 좌표/스케일을 소수점 3자리로 제한하여 전송 (페이로드 최적화)
+  const compact: MascotCustomization = {
+    version: 'v1',
+    equippedItems: payload.equippedItems.map(e => ({
+      itemId: e.itemId,
+      relativePosition: {
+        x: Math.round(e.relativePosition.x * 1000) / 1000,
+        y: Math.round(e.relativePosition.y * 1000) / 1000,
+      },
+      scale: Math.round(e.scale * 1000) / 1000,
+      rotation: Math.round((e.rotation % 360 + 360) % 360),
+    })),
+  };
+
+  const res = await apiRequest<any>('/mascot/customization', {
+    method: 'PUT',
+    body: JSON.stringify(compact),
+  });
+  return (res && res.data) ? (res.data as MascotCustomization) : compact;
+}
+
 export async function updateMascot(data: UpdateMascotRequest): Promise<Mascot> {
   const res = await apiRequest<any>('/mascot', {
     method: 'PATCH',
