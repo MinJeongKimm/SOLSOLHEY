@@ -171,11 +171,11 @@
                   </div>
                 </div>
 
-                <!-- 마스코트 배경 -->
+                <!-- 마스코트 이미지 (등록한 이미지 우선, 없으면 배경) -->
                 <div class="flex-shrink-0">
                   <img
-                    :src="`/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
-                    :alt="`${entry.ownerNickname}의 마스코트`"
+                    :src="entry.entryImageUrl || `/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
+                    :alt="`${entry.mascotName || '마스코트'} (${entry.ownerNickname})`"
                     class="w-12 h-12 rounded-lg object-cover"
                   />
                 </div>
@@ -184,9 +184,9 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center space-x-2 mb-1">
                     <span class="text-lg font-semibold text-gray-800">
-                      {{ entry.ownerNickname }}
+                      {{ entry.mascotName || '마스코트' }}
                     </span>
-                    <span class="text-sm text-gray-600">님의 마스코트</span>
+                    <span class="text-sm text-gray-600">({{ entry.ownerNickname }})</span>
                   </div>
                   <div class="flex items-center space-x-4 text-sm text-gray-600">
                     <span>득표: {{ entry.votes.toLocaleString() }}표</span>
@@ -327,11 +327,11 @@
                   </div>
                 </div>
 
-                <!-- 마스코트 배경 -->
+                <!-- 마스코트 이미지 (등록한 이미지 우선, 없으면 배경) -->
                 <div class="flex-shrink-0">
                   <img
-                    :src="`/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
-                    :alt="`${entry.ownerNickname}의 마스코트`"
+                    :src="entry.entryImageUrl || `/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
+                    :alt="`${entry.mascotName || '마스코트'} (${entry.ownerNickname})`"
                     class="w-12 h-12 rounded-lg object-cover"
                   />
                 </div>
@@ -340,9 +340,9 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center space-x-2 mb-1">
                     <span class="text-lg font-semibold text-gray-800">
-                      {{ entry.ownerNickname }}
+                      {{ entry.mascotName || '마스코트' }}
                     </span>
-                    <span class="text-sm text-gray-600">님의 마스코트</span>
+                    <span class="text-sm text-gray-600">({{ entry.ownerNickname }})</span>
                   </div>
                   <div class="flex items-center space-x-4 text-sm text-gray-600">
                     <span>득표: {{ entry.votes.toLocaleString() }}표</span>

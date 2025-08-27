@@ -24,6 +24,7 @@ import com.solsolhey.ranking.dto.response.FilterInfo;
 import com.solsolhey.ranking.dto.response.RankingEntryResponse;
 import com.solsolhey.ranking.dto.response.RankingResponse;
 import com.solsolhey.ranking.dto.response.VoteResponse;
+import com.solsolhey.ranking.entity.RankingEntry;
 import com.solsolhey.ranking.entity.Vote;
 import com.solsolhey.ranking.repository.RankingEntryRepository;
 import com.solsolhey.ranking.repository.VoteRepository;
@@ -308,6 +309,17 @@ public class RankingServiceImpl implements RankingService {
                 )
             ));
         
+        // 마스코트 ID별로 RankingEntry를 일괄 조회 (이미지 등록 시 사용)
+        Map<Long, RankingEntry> entryMap = rankingEntryRepository.findByMascotIdInAndRankingType(mascotIds, "CAMPUS")
+            .stream()
+            .collect(Collectors.groupingBy(
+                RankingEntry::getMascotId,
+                Collectors.collectingAndThen(
+                    Collectors.maxBy((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt())),
+                    opt -> opt.orElse(null)
+                )
+            ));
+        
         // 정렬된 순서대로 RankingEntryResponse 생성
         List<RankingEntryResponse> rankedEntries = new ArrayList<>();
         for (int i = 0; i < sortedMascots.size(); i++) {
@@ -322,12 +334,19 @@ public class RankingServiceImpl implements RankingService {
                 continue; // 스냅샷이 없는 마스코트는 건너뛰기
             }
             
-            RankingEntryResponse rankedEntry = RankingEntryResponse.fromCampus(
+            // RankingEntry에서 이미지 정보 가져오기
+            RankingEntry entry = entryMap.get(mascot.getId());
+            String entryImageUrl = entry != null ? entry.getImageUrl() : null;
+            
+            RankingEntryResponse rankedEntry = RankingEntryResponse.fromWithEntry(
                 mascot,
                 snapshot,
                 Integer.valueOf(i + 1), // 실제 순위
                 owner.getNickname(),
-                voteCount
+                null, // schoolName
+                null, // schoolId
+                voteCount,
+                entryImageUrl
             );
             rankedEntries.add(rankedEntry);
         }
@@ -367,6 +386,17 @@ public class RankingServiceImpl implements RankingService {
                 )
             ));
         
+        // 마스코트 ID별로 RankingEntry를 일괄 조회 (이미지 등록 시 사용)
+        Map<Long, RankingEntry> entryMap = rankingEntryRepository.findByMascotIdInAndRankingType(mascotIds, "NATIONAL")
+            .stream()
+            .collect(Collectors.groupingBy(
+                RankingEntry::getMascotId,
+                Collectors.collectingAndThen(
+                    Collectors.maxBy((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt())),
+                    opt -> opt.orElse(null)
+                )
+            ));
+        
         // 정렬된 순서대로 RankingEntryResponse 생성
         List<RankingEntryResponse> rankedEntries = new ArrayList<>();
         for (int i = 0; i < sortedMascots.size(); i++) {
@@ -381,14 +411,19 @@ public class RankingServiceImpl implements RankingService {
                 continue; // 스냅샷이 없는 마스코트는 건너뛰기
             }
             
-            RankingEntryResponse rankedEntry = RankingEntryResponse.fromNational(
+            // RankingEntry에서 이미지 정보 가져오기
+            RankingEntry entry = entryMap.get(mascot.getId());
+            String entryImageUrl = entry != null ? entry.getImageUrl() : null;
+            
+            RankingEntryResponse rankedEntry = RankingEntryResponse.fromWithEntry(
                 mascot,
                 snapshot,
                 Integer.valueOf(i + 1), // 실제 순위
                 owner.getNickname(),
                 owner.getCampus(),
-                null, // schoolId는 null로 설정
-                voteCount
+                null, // schoolId
+                voteCount,
+                entryImageUrl
             );
             rankedEntries.add(rankedEntry);
         }
