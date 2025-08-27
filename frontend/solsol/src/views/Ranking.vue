@@ -45,6 +45,70 @@
         </nav>
       </div>
 
+      <!-- 내 순위 섹션 (탭 아래, 고정 위치) -->
+      <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6 border-2 border-blue-200">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+              <span class="text-white text-xl">👤</span>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-gray-800">
+                {{ activeTab === 'campus' ? '교내' : '전국' }} 내 순위
+              </h2>
+              <!-- 마스코트가 있는 경우 -->
+              <div v-if="hasMascot" class="flex items-center space-x-2">
+                <span class="text-2xl font-bold text-blue-600">{{ myRank || '계산 중...' }}위</span>
+              </div>
+              <!-- 마스코트가 없는 경우 -->
+              <div v-else class="flex items-center space-x-2">
+                <span class="text-lg text-gray-600">마스코트가 없습니다</span>
+              </div>
+              
+              <!-- 추가 정보 표시 -->
+              <div v-if="hasMascot" class="mt-2 space-y-1">
+                <!-- 교내 랭킹일 때 학교 정보와 정렬 기준 표시 -->
+                <div v-if="activeTab === 'campus'" class="flex items-center space-x-4 text-sm text-gray-600">
+                  <span v-if="currentUser?.campus" class="flex items-center space-x-1">
+                    <span class="text-gray-500">🏫</span>
+                    <span>{{ currentUser.campus }}</span>
+                  </span>
+                  <span class="flex items-center space-x-1">
+                    <span class="text-gray-500">📊</span>
+                    <span>{{ getSortDisplayName(campusFilters.sort) }} • {{ getPeriodDisplayName(campusFilters.period) }}</span>
+                  </span>
+                </div>
+                <!-- 전국 랭킹일 때 정렬 기준만 표시 -->
+                <div v-else class="flex items-center space-x-1 text-sm text-gray-600">
+                  <span class="text-gray-500">📊</span>
+                  <span>{{ getSortDisplayName(nationalFilters.sort) }} • {{ getPeriodDisplayName(nationalFilters.period) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 마스코트가 없는 경우 마스코트 생성 안내 -->
+          <div v-if="!hasMascot">
+            <router-link
+              to="/mascot-create"
+              class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg"
+            >
+              마스코트 만들기
+            </router-link>
+          </div>
+        </div>
+        
+        <!-- 마스코트가 없는 경우 안내 메시지 -->
+        <div v-if="!hasMascot" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div class="flex items-center space-x-2">
+            <span class="text-blue-600">💡</span>
+            <span class="text-blue-700 text-sm">
+              {{ activeTab === 'campus' ? '교내' : '전국' }} 랭킹에서 내 순위를 확인하려면 마스코트를 생성하세요! 마스코트를 만들면 자동으로 랭킹에 참가됩니다.
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- 교내 랭킹 -->
       <div v-if="activeTab === 'campus'" class="space-y-6">
         <!-- 교내 랭킹 필터 -->
@@ -56,7 +120,6 @@
               class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
             >
               <option value="votes_desc">득표순</option>
-              <option value="trending">트렌딩순</option>
               <option value="newest">최신순</option>
             </select>
             
@@ -107,29 +170,29 @@
           <!-- 랭킹 엔트리들 -->
           <div class="space-y-3">
             <div
-              v-for="entry in campusRankings.entries"
-              :key="entry.entryId"
-              class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 hover:shadow-lg transition-all duration-200 border border-purple-100 hover:border-purple-300"
+            v-for="entry in campusRankings.entries"
+            :key="entry.mascotId"
+            class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 hover:shadow-lg transition-all duration-200 border border-purple-100 hover:border-purple-300"
             >
-              <div class="flex items-center space-x-4">
-                <!-- 순위 -->
-                <div class="flex-shrink-0">
-                  <div
-                    :class="[
-                      'w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg',
-                      entry.rank === 1 ? 'bg-yellow-500' : 
-                      entry.rank === 2 ? 'bg-gray-400' : 
-                      entry.rank === 3 ? 'bg-orange-500' : 'bg-purple-500'
-                    ]"
+            <div class="flex items-center space-x-4">
+              <!-- 순위 -->
+              <div class="flex-shrink-0">
+                <div
+                :class="[
+                  'w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg',
+                  entry.rank === 1 ? 'bg-yellow-500' : 
+                  entry.rank === 2 ? 'bg-gray-400' : 
+                  entry.rank === 3 ? 'bg-orange-500' : 'bg-purple-500'
+                ]"
                   >
                     {{ entry.rank }}
                   </div>
                 </div>
 
-                <!-- 마스코트 썸네일 -->
+                <!-- 마스코트 배경 -->
                 <div class="flex-shrink-0">
                   <img
-                    :src="entry.thumbnailUrl || '/mascot/pli.png'"
+                    :src="`/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
                     :alt="`${entry.ownerNickname}의 마스코트`"
                     class="w-16 h-16 rounded-lg object-cover"
                   />
@@ -145,18 +208,25 @@
                   </div>
                   <div class="flex items-center space-x-4 text-sm text-gray-600">
                     <span>득표: {{ entry.votes.toLocaleString() }}표</span>
-                    <span>트렌딩: {{ entry.trendScore.toFixed(1) }}</span>
+                    <span v-if="entry.school?.name" class="text-gray-500">
+                      학교: {{ entry.school.name }}
+                    </span>
                   </div>
                 </div>
 
                 <!-- 투표 버튼 -->
                 <div class="flex-shrink-0">
                   <button
-                    @click="voteForEntry(entry.entryId, 'LIKE')"
-                    :disabled="voting"
+                    @click="voteForMascot(entry.mascotId)"
+                    :disabled="voting || !canVoteForMascot(entry.mascotId, entry.ownerNickname)"
                     class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    👍 투표
+                    <span v-if="!canVoteForMascot(entry.mascotId, entry.ownerNickname)">
+                      <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
+                      <span v-else-if="votedMascots.has(entry.mascotId)">이미 투표함</span>
+                      <span v-else>투표 불가</span>
+                    </span>
+                    <span v-else>👍 투표</span>
                   </button>
                 </div>
               </div>
@@ -208,7 +278,6 @@
               class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
             >
               <option value="votes_desc">득표순</option>
-              <option value="trending">트렌딩순</option>
               <option value="newest">최신순</option>
             </select>
             
@@ -225,10 +294,103 @@
           </div>
         </div>
         
-        <!-- 전국 랭킹 내용 -->
-        <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-12 text-center border border-purple-100">
-          <div class="text-gray-600 text-lg">전국 랭킹은 준비 중입니다</div>
-          <div class="text-gray-500 text-sm mt-2">곧 업데이트될 예정입니다</div>
+        <!-- 로딩 상태 -->
+        <div v-if="loading" class="flex justify-center items-center py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+        </div>
+
+        <!-- 에러 상태 -->
+        <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <div class="text-red-600 text-lg font-medium mb-2">오류가 발생했습니다</div>
+          <div class="text-red-500 mb-4">{{ error }}</div>
+          <button
+            @click="loadNationalRankings"
+            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+          >
+            다시 시도
+          </button>
+        </div>
+
+        <!-- 전국 랭킹 목록 -->
+        <div v-else-if="nationalRankings" class="space-y-4">
+          <!-- 랭킹 정보 -->
+          <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-100">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-xl font-semibold text-gray-800">전국 랭킹</h2>
+              <div class="text-sm text-gray-600">
+                총 {{ nationalRankings.total }}개 • {{ nationalRankings.period }} 기준
+              </div>
+            </div>
+          </div>
+
+          <!-- 랭킹 엔트리들 -->
+          <div class="space-y-3">
+            <div
+              v-for="entry in nationalRankings.entries"
+              :key="entry.mascotId"
+              class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 hover:shadow-lg transition-all duration-200 border border-purple-100 hover:border-purple-300"
+            >
+              <div class="flex items-center space-x-4">
+                <!-- 순위 -->
+                <div class="flex-shrink-0">
+                  <div
+                    :class="[
+                      'w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg',
+                      entry.rank === 1 ? 'bg-yellow-500' : 
+                      entry.rank === 2 ? 'bg-gray-400' : 
+                      entry.rank === 3 ? 'bg-orange-500' : 'bg-purple-500'
+                    ]"
+                  >
+                    {{ entry.rank }}
+                  </div>
+                </div>
+
+                <!-- 마스코트 배경 -->
+                <div class="flex-shrink-0">
+                  <img
+                    :src="`/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
+                    :alt="`${entry.ownerNickname}의 마스코트`"
+                    class="w-16 h-16 rounded-lg object-cover"
+                  />
+                </div>
+
+                <!-- 정보 -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center space-x-2 mb-1">
+                    <span class="text-lg font-semibold text-gray-800">
+                      {{ entry.ownerNickname }}
+                    </span>
+                    <span class="text-sm text-gray-600">님의 마스코트</span>
+                  </div>
+                  <div class="flex items-center space-x-4 text-sm text-gray-600">
+                    <span>득표: {{ entry.votes.toLocaleString() }}표</span>
+                    <span v-if="entry.school?.name">학교: {{ entry.school.name }}</span>
+                  </div>
+                </div>
+
+                <!-- 투표 버튼 -->
+                <div class="flex-shrink-0">
+                  <button
+                    @click="voteForNationalMascot(entry.mascotId)"
+                    :disabled="voting || !canVoteForMascot(entry.mascotId, entry.ownerNickname)"
+                    class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <span v-if="!canVoteForMascot(entry.mascotId, entry.ownerNickname)">
+                      <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
+                      <span v-else-if="nationalVotedMascots.has(entry.mascotId)">이미 투표함</span>
+                      <span v-else>투표 불가</span>
+                    </span>
+                    <span v-else>👍 투표</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 빈 상태 -->
+        <div v-else class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-12 text-center border border-purple-100">
+          <div class="text-gray-600 text-lg">전국 랭킹 데이터가 없습니다</div>
         </div>
       </div>
     </div>
@@ -236,17 +398,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { 
   getCampusRankings, 
   getNationalRankings,
   getCurrentUser, 
   voteForCampus,
+  voteForNational,
+  getUserCampusVotedMascotIds,
+  getUserNationalVotedMascotIds,
   type RankingResponse,
   type VoteRequest
 } from '../api/ranking';
-import { bootstrapAuth, auth } from '../api/index';
+import { bootstrapAuth, auth, getMascot } from '../api/index';
 
 // Router 인스턴스
 const router = useRouter();
@@ -257,7 +422,12 @@ const loading = ref(false);
 const error = ref<string | null>(null);
 const voting = ref(false);
 const campusRankings = ref<RankingResponse | null>(null);
+const nationalRankings = ref<RankingResponse | null>(null);
 const currentUser = ref<any>(null);
+const myRank = ref<number | null>(null);
+const hasMascot = ref<boolean>(false);
+const votedMascots = ref<Set<number>>(new Set()); // 교내 랭킹 투표한 마스코트 ID들
+const nationalVotedMascots = ref<Set<number>>(new Set()); // 전국 랭킹 투표한 마스코트 ID들
 
 // 필터 설정
 const campusFilters = ref({
@@ -273,6 +443,116 @@ const nationalFilters = ref({
   size: 10,
   page: 0
 });
+
+// 마스코트 존재 여부 확인
+const checkMascotExists = async () => {
+  try {
+    const mascot = await getMascot();
+    hasMascot.value = !!mascot;
+  } catch (error) {
+    hasMascot.value = false;
+  }
+};
+
+// 현재 사용자의 순위 찾기
+const findMyRank = () => {
+  if (!currentUser.value || !hasMascot.value) {
+    myRank.value = null;
+    return;
+  }
+  
+  if (activeTab.value === 'campus') {
+    // 교내 랭킹에서 내 순위 찾기
+    if (campusRankings.value) {
+      const myEntry = campusRankings.value.entries.find(entry => 
+        entry.ownerNickname === currentUser.value.nickname
+      );
+      
+      if (myEntry) {
+        myRank.value = myEntry.rank;
+      } else {
+        myRank.value = 0; // 랭킹에 등록되지 않음
+      }
+    } else {
+      myRank.value = null;
+    }
+  } else {
+    // 전국 랭킹에서 내 순위 찾기
+    if (nationalRankings.value) {
+      const myEntry = nationalRankings.value.entries.find(entry => 
+        entry.ownerNickname === currentUser.value.nickname
+      );
+      
+      if (myEntry) {
+        myRank.value = myEntry.rank;
+      } else {
+        myRank.value = 0; // 랭킹에 등록되지 않음
+      }
+    } else {
+      myRank.value = null;
+    }
+  }
+};
+
+// 투표 가능 여부 확인
+const canVoteForMascot = (mascotId: number, ownerNickname: string) => {
+  // 본인 마스코트인지 확인
+  if (currentUser.value && ownerNickname === currentUser.value.nickname) {
+    return false;
+  }
+  
+  // 이미 투표했는지 확인
+  if (activeTab.value === 'campus') {
+    if (votedMascots.value.has(mascotId)) {
+      return false;
+    }
+  } else {
+    if (nationalVotedMascots.value.has(mascotId)) {
+      return false;
+    }
+  }
+  
+  return true;
+};
+
+// 투표 후 상태 업데이트
+const updateVoteStatus = (mascotId: number) => {
+  if (activeTab.value === 'campus') {
+    votedMascots.value.add(mascotId);
+  } else {
+    nationalVotedMascots.value.add(mascotId);
+  }
+};
+
+// 정렬 기준을 사용자 친화적인 텍스트로 변환
+const getSortDisplayName = (sort: string) => {
+  switch (sort) {
+    case 'votes_desc':
+      return '득표순';
+    case 'newest':
+      return '최신순';
+    case 'trending':
+      return '트렌딩순';
+    default:
+      return '득표순';
+  }
+};
+
+// 기간을 사용자 친화적인 텍스트로 변환
+const getPeriodDisplayName = (period: string) => {
+  switch (period) {
+    case 'daily':
+      return '일간';
+    case 'weekly':
+      return '주간';
+    case 'monthly':
+      return '월간';
+    case 'all':
+      return '전체';
+    default:
+      return '주간';
+  }
+};
 
 // 교내 랭킹 로드
 const loadCampusRankings = async () => {
@@ -293,7 +573,11 @@ const loadCampusRankings = async () => {
       campusFilters.value.size
     );
     
+    console.log('교내 랭킹 API 응답:', response);
+    console.log('교내 랭킹 entries:', response.entries);
+    
     campusRankings.value = response;
+    findMyRank(); // 랭킹 로드 후 내 순위 갱신
   } catch (err: any) {
     console.error('교내 랭킹 로드 실패:', err);
     error.value = err.message || '랭킹을 불러오는데 실패했습니다.';
@@ -322,8 +606,11 @@ const loadNationalRankings = async () => {
       nationalFilters.value.size
     );
     
-    // 전국 랭킹 데이터 처리 (아직 구현되지 않음)
-    console.log('전국 랭킹 데이터:', response);
+    console.log('전국 랭킹 API 응답:', response);
+    console.log('전국 랭킹 entries:', response.entries);
+    
+    nationalRankings.value = response;
+    findMyRank(); // 랭킹 로드 후 내 순위 갱신
   } catch (err: any) {
     console.error('전국 랭킹 로드 실패:', err);
     error.value = err.message || '전국 랭킹을 불러오는데 실패했습니다.';
@@ -338,18 +625,20 @@ const loadNationalRankings = async () => {
 };
 
 // 투표 처리
-const voteForEntry = async (entryId: number, voteType: 'LIKE' | 'DISLIKE') => {
+const voteForMascot = async (mascotId: number) => {
   try {
     voting.value = true;
     
     const voteData: VoteRequest = {
-      voteType,
-      comment: undefined
+      weight: 1, // 기본 투표 가중치
+      campusId: currentUser.value?.campusId
     };
     
-    const response = await voteForCampus(entryId, voteData);
+    const response = await voteForCampus(mascotId, voteData);
     
     if (response.success) {
+      // 투표 성공 시 상태 업데이트
+      updateVoteStatus(mascotId);
       // 투표 성공 시 랭킹 새로고침
       await loadCampusRankings();
     } else {
@@ -363,11 +652,61 @@ const voteForEntry = async (entryId: number, voteType: 'LIKE' | 'DISLIKE') => {
   }
 };
 
+// 전국 랭킹 투표 처리
+const voteForNationalMascot = async (mascotId: number) => {
+  try {
+    voting.value = true;
+    
+    const voteData: VoteRequest = {
+      weight: 1, // 기본 투표 가중치
+    };
+    
+    const response = await voteForNational(mascotId, voteData);
+    
+    if (response.success) {
+      // 투표 성공 시 상태 업데이트
+      updateVoteStatus(mascotId);
+      // 투표 성공 시 랭킹 새로고침
+      await loadNationalRankings();
+    } else {
+      error.value = response.message;
+    }
+  } catch (err: any) {
+    console.error('전국 랭킹 투표 실패:', err);
+    error.value = err.message || '전국 랭킹 투표에 실패했습니다.';
+  } finally {
+    voting.value = false;
+  }
+};
+
 // 페이지 변경
 const changePage = (newPage: number) => {
   campusFilters.value.page = newPage;
   loadCampusRankings();
 };
+
+// 탭 변경 시 랭킹 로드
+watch(activeTab, async (newTab) => {
+  if (newTab === 'campus') {
+    // 교내 랭킹 탭으로 변경 시 교내 랭킹 투표 히스토리 로드
+    try {
+      const votedMascotIds = await getUserCampusVotedMascotIds();
+      votedMascots.value = new Set(votedMascotIds);
+    } catch (error) {
+      console.error('교내 랭킹 투표 히스토리 로드 실패:', error);
+    }
+    await loadCampusRankings();
+  } else {
+    // 전국 랭킹 탭으로 변경 시 전국 랭킹 투표 히스토리 로드
+    try {
+      const nationalVotedMascotIds = await getUserNationalVotedMascotIds();
+      nationalVotedMascots.value = new Set(nationalVotedMascotIds);
+    } catch (error) {
+      console.error('전국 랭킹 투표 히스토리 로드 실패:', error);
+    }
+    await loadNationalRankings();
+  }
+}, { immediate: true }); // immediate: true로 설정하여 컴포넌트 마운트 시 첫 번째 탭 로드
 
 // 컴포넌트 마운트 시 인증 확인 후 랭킹 로드
 onMounted(async () => {
@@ -385,8 +724,18 @@ onMounted(async () => {
     
     console.log('인증 성공, 랭킹 데이터 로드 시작');
     
-    // 3. 랭킹 데이터 로드
-    await loadCampusRankings();
+    // 3. 마스코트 존재 여부 확인
+    await checkMascotExists();
+    
+    // 4. 사용자의 투표 히스토리 가져오기
+    const votedMascotIds = await getUserCampusVotedMascotIds();
+    votedMascots.value = new Set(votedMascotIds);
+
+    const nationalVotedMascotIds = await getUserNationalVotedMascotIds();
+    nationalVotedMascots.value = new Set(nationalVotedMascotIds);
+
+    // 5. 랭킹 데이터 로드 (탭 변경 시 로드되므로 여기서는 필요 없음)
+    // await loadCampusRankings(); 
     
   } catch (error) {
     console.error('랭킹 페이지 초기화 실패:', error);

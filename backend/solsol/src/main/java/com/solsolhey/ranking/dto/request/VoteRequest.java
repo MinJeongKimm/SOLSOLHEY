@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * 투표 요청 DTO (교내/전국 공통)
+ * 투표 요청 DTO (교내/전국 공통, 마스코트 기반)
  */
 @Getter
 @Setter
@@ -18,11 +18,6 @@ public class VoteRequest {
      * 대상 캠퍼스 ID (교내 투표용, 여러 캠퍼스 운영 시 명시)
      */
     private Long campusId;
-
-    /**
-     * 대상 콘테스트 ID (동시 운영 시 명시 권장)
-     */
-    private Long contestId;
 
     /**
      * 투표 가중치 (기본 1, 운영/마스터만 허용)
@@ -36,9 +31,8 @@ public class VoteRequest {
     @Size(max = 100, message = "멱등키는 100자 이하여야 합니다.")
     private String idempotencyKey;
 
-    public VoteRequest(Long campusId, Long contestId, Integer weight, String idempotencyKey) {
+    public VoteRequest(Long campusId, Integer weight, String idempotencyKey) {
         this.campusId = campusId;
-        this.contestId = contestId;
         this.weight = weight != null ? weight : 1;
         this.idempotencyKey = idempotencyKey;
     }
