@@ -152,3 +152,51 @@ export async function getCurrentUser(): Promise<UserResponse> {
     throw error;
   }
 }
+
+// 사용자 투표 히스토리 조회 (투표한 마스코트 ID 목록)
+export async function getUserVotedMascotIds(): Promise<number[]> {
+  try {
+    const res = await apiRequest<ApiResponse<number[]>>('/rankings/my-votes');
+    if (!res || (res as any).success === false || !res.data) {
+      throw new Error((res as any)?.message || '투표 히스토리 조회 실패');
+    }
+    return res.data as number[];
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    throw error;
+  }
+}
+
+// 사용자 교내 랭킹 투표 히스토리 조회 (투표한 마스코트 ID 목록)
+export async function getUserCampusVotedMascotIds(): Promise<number[]> {
+  try {
+    const res = await apiRequest<ApiResponse<number[]>>('/rankings/campus/my-votes');
+    if (!res || (res as any).success === false || !res.data) {
+      throw new Error((res as any)?.message || '교내 랭킹 투표 히스토리 조회 실패');
+    }
+    return res.data as number[];
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    throw error;
+  }
+}
+
+// 사용자 전국 랭킹 투표 히스토리 조회 (투표한 마스코트 ID 목록)
+export async function getUserNationalVotedMascotIds(): Promise<number[]> {
+  try {
+    const res = await apiRequest<ApiResponse<number[]>>('/rankings/national/my-votes');
+    if (!res || (res as any).success === false || !res.data) {
+      throw new Error((res as any)?.message || '전국 랭킹 투표 히스토리 조회 실패');
+    }
+    return res.data as number[];
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    throw error;
+  }
+}

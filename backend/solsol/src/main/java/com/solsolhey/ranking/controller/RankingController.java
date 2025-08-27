@@ -1,5 +1,7 @@
 package com.solsolhey.ranking.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -212,6 +214,50 @@ public class RankingController {
             log.error("전국 투표 처리 실패 - mascotId: {}", mascotId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.<VoteResponse>internalServerError("서버 오류가 발생했습니다."));
+        }
+    }
+
+    /**
+     * 사용자 투표 히스토리 조회
+     */
+    @GetMapping("/campus/my-votes")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "사용자 교내 랭킹 투표 히스토리 조회", description = "현재 로그인한 사용자가 교내 랭킹에 투표한 마스코트 ID 목록을 조회합니다")
+    public ResponseEntity<ApiResponse<List<Long>>> getMyCampusVotedMascotIds(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.solsolhey.auth.dto.response.CustomUserDetails userDetails) {
+
+        try {
+            Long voterId = userDetails.getUser().getUserId();
+            List<Long> votedMascotIds = rankingService.getUserVotedMascotIdsForCampus(voterId);
+            
+            return ResponseEntity.ok(ApiResponse.success("교내 랭킹 투표 히스토리 조회 완료", votedMascotIds));
+
+        } catch (Exception e) {
+            log.error("사용자 교내 랭킹 투표 히스토리 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.<List<Long>>internalServerError("교내 랭킹 투표 히스토리를 조회하는데 실패했습니다."));
+        }
+    }
+
+    /**
+     * 사용자 전국 랭킹 투표 히스토리 조회
+     */
+    @GetMapping("/national/my-votes")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "사용자 전국 랭킹 투표 히스토리 조회", description = "현재 로그인한 사용자가 전국 랭킹에 투표한 마스코트 ID 목록을 조회합니다")
+    public ResponseEntity<ApiResponse<List<Long>>> getMyNationalVotedMascotIds(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.solsolhey.auth.dto.response.CustomUserDetails userDetails) {
+
+        try {
+            Long voterId = userDetails.getUser().getUserId();
+            List<Long> votedMascotIds = rankingService.getUserVotedMascotIdsForNational(voterId);
+            
+            return ResponseEntity.ok(ApiResponse.success("전국 랭킹 투표 히스토리 조회 완료", votedMascotIds));
+
+        } catch (Exception e) {
+            log.error("사용자 전국 랭킹 투표 히스토리 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.<List<Long>>internalServerError("전국 랭킹 투표 히스토리를 조회하는데 실패했습니다."));
         }
     }
 

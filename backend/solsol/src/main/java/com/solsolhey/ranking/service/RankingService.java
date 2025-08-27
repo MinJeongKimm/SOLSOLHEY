@@ -1,12 +1,14 @@
 package com.solsolhey.ranking.service;
 
+import java.util.List;
+
+import com.solsolhey.mascot.domain.Mascot;
 import com.solsolhey.ranking.dto.request.CampusRankingRequest;
 import com.solsolhey.ranking.dto.request.NationalRankingRequest;
 import com.solsolhey.ranking.dto.request.VoteRequest;
 import com.solsolhey.ranking.dto.response.RankingResponse;
 import com.solsolhey.ranking.dto.response.VoteResponse;
 import com.solsolhey.ranking.entity.Vote;
-import com.solsolhey.mascot.domain.Mascot;
 
 /**
  * 랭킹 서비스 인터페이스 (마스코트 기반)
@@ -57,4 +59,14 @@ public interface RankingService {
      * 마스코트 조회
      */
     Mascot getMascotById(Long mascotId);
+
+    /**
+     * 사용자의 교내 랭킹 투표 히스토리 조회 (투표한 마스코트 ID 목록)
+     */
+    List<Long> getUserVotedMascotIdsForCampus(Long voterId);
+
+    /**
+     * 사용자의 전국 랭킹 투표 히스토리 조회 (투표한 마스코트 ID 목록)
+     */
+    List<Long> getUserVotedMascotIdsForNational(Long voterId);
 }

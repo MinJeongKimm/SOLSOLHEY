@@ -378,4 +378,56 @@ public class RankingServiceImpl implements RankingService {
         // 임시로 캠퍼스 ID를 이름으로 변환하는 로직
         return "캠퍼스_" + campusId;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> getUserVotedMascotIdsForCampus(Long voterId) {
+        log.info("사용자 교내 랭킹 투표 히스토리 조회 - voterId: {}", voterId);
+        
+        try {
+            // 사용자가 교내 랭킹에 투표한 마스코트 ID를 가져옴 (CAMPUS 타입만)
+            List<Vote> userVotes = voteRepository.findByVoterIdAndVoteTypeOrderByCreatedAtDesc(voterId, Vote.VoteType.CAMPUS);
+            
+            // 중복 제거하여 마스코트 ID 목록 반환
+            List<Long> votedMascotIds = userVotes.stream()
+                .map(Vote::getMascotId)
+                .distinct()
+                .toList();
+            
+            log.info("사용자 교내 랭킹 투표 히스토리 조회 완료 - voterId: {}, 투표한 마스코트 수: {}", 
+                     voterId, votedMascotIds.size());
+            
+            return votedMascotIds;
+            
+        } catch (Exception e) {
+            log.error("사용자 교내 랭킹 투표 히스토리 조회 실패 - voterId: {}", voterId, e);
+            throw new BusinessException("교내 랭킹 투표 히스토리를 조회하는데 실패했습니다.");
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> getUserVotedMascotIdsForNational(Long voterId) {
+        log.info("사용자 전국 랭킹 투표 히스토리 조회 - voterId: {}", voterId);
+        
+        try {
+            // 사용자가 전국 랭킹에 투표한 마스코트 ID를 가져옴 (NATIONAL 타입만)
+            List<Vote> userVotes = voteRepository.findByVoterIdAndVoteTypeOrderByCreatedAtDesc(voterId, Vote.VoteType.NATIONAL);
+            
+            // 중복 제거하여 마스코트 ID 목록 반환
+            List<Long> votedMascotIds = userVotes.stream()
+                .map(Vote::getMascotId)
+                .distinct()
+                .toList();
+            
+            log.info("사용자 전국 랭킹 투표 히스토리 조회 완료 - voterId: {}, 투표한 마스코트 수: {}", 
+                     voterId, votedMascotIds.size());
+            
+            return votedMascotIds;
+            
+        } catch (Exception e) {
+            log.error("사용자 전국 랭킹 투표 히스토리 조회 실패 - voterId: {}", voterId, e);
+            throw new BusinessException("전국 랭킹 투표 히스토리를 조회하는데 실패했습니다.");
+        }
+    }
 }

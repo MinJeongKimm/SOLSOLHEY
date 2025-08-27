@@ -51,6 +51,11 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     List<Vote> findByVoterIdOrderByCreatedAtDesc(Long voterId);
 
     /**
+     * 투표자별 투표 타입별 투표 목록 조회
+     */
+    List<Vote> findByVoterIdAndVoteTypeOrderByCreatedAtDesc(Long voterId, Vote.VoteType voteType);
+
+    /**
      * 마스코트별 총 투표 수 조회
      */
     @Query("SELECT SUM(v.weight) FROM Vote v WHERE v.mascotId = :mascotId")

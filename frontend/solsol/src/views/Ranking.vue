@@ -360,7 +360,7 @@
                   >
                     <span v-if="!canVoteForMascot(entry.mascotId, entry.ownerNickname)">
                       <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
-                      <span v-else-if="votedMascots.has(entry.mascotId)">이미 투표함</span>
+                      <span v-else-if="nationalVotedMascots.has(entry.mascotId)">이미 투표함</span>
                       <span v-else>투표 불가</span>
                     </span>
                     <span v-else>👍 투표</span>
@@ -389,6 +389,8 @@ import {
   getCurrentUser, 
   voteForCampus,
   voteForNational,
+  getUserCampusVotedMascotIds,
+  getUserNationalVotedMascotIds,
   type RankingResponse,
   type VoteRequest
 } from '../api/ranking';
@@ -407,7 +409,8 @@ const nationalRankings = ref<RankingResponse | null>(null);
 const currentUser = ref<any>(null);
 const myRank = ref<number | null>(null);
 const hasMascot = ref<boolean>(false);
-const votedMascots = ref<Set<number>>(new Set()); // 이미 투표한 마스코트 ID들
+const votedMascots = ref<Set<number>>(new Set()); // 교내 랭킹 투표한 마스코트 ID들
+const nationalVotedMascots = ref<Set<number>>(new Set()); // 전국 랭킹 투표한 마스코트 ID들
 
 // 필터 설정
 const campusFilters = ref({
@@ -482,8 +485,14 @@ const canVoteForMascot = (mascotId: number, ownerNickname: string) => {
   }
   
   // 이미 투표했는지 확인
-  if (votedMascots.value.has(mascotId)) {
-    return false;
+  if (activeTab.value === 'campus') {
+    if (votedMascots.value.has(mascotId)) {
+      return false;
+    }
+  } else {
+    if (nationalVotedMascots.value.has(mascotId)) {
+      return false;
+    }
   }
   
   return true;
@@ -491,7 +500,11 @@ const canVoteForMascot = (mascotId: number, ownerNickname: string) => {
 
 // 투표 후 상태 업데이트
 const updateVoteStatus = (mascotId: number) => {
-  votedMascots.value.add(mascotId);
+  if (activeTab.value === 'campus') {
+    votedMascots.value.add(mascotId);
+  } else {
+    nationalVotedMascots.value.add(mascotId);
+  }
 };
 
 // 교내 랭킹 로드
@@ -628,8 +641,22 @@ const changePage = (newPage: number) => {
 // 탭 변경 시 랭킹 로드
 watch(activeTab, async (newTab) => {
   if (newTab === 'campus') {
+    // 교내 랭킹 탭으로 변경 시 교내 랭킹 투표 히스토리 로드
+    try {
+      const votedMascotIds = await getUserCampusVotedMascotIds();
+      votedMascots.value = new Set(votedMascotIds);
+    } catch (error) {
+      console.error('교내 랭킹 투표 히스토리 로드 실패:', error);
+    }
     await loadCampusRankings();
   } else {
+    // 전국 랭킹 탭으로 변경 시 전국 랭킹 투표 히스토리 로드
+    try {
+      const nationalVotedMascotIds = await getUserNationalVotedMascotIds();
+      nationalVotedMascots.value = new Set(nationalVotedMascotIds);
+    } catch (error) {
+      console.error('전국 랭킹 투표 히스토리 로드 실패:', error);
+    }
     await loadNationalRankings();
   }
 }, { immediate: true }); // immediate: true로 설정하여 컴포넌트 마운트 시 첫 번째 탭 로드
@@ -653,7 +680,14 @@ onMounted(async () => {
     // 3. 마스코트 존재 여부 확인
     await checkMascotExists();
     
-    // 4. 랭킹 데이터 로드 (탭 변경 시 로드되므로 여기서는 필요 없음)
+    // 4. 사용자의 투표 히스토리 가져오기
+    const votedMascotIds = await getUserCampusVotedMascotIds();
+    votedMascots.value = new Set(votedMascotIds);
+
+    const nationalVotedMascotIds = await getUserNationalVotedMascotIds();
+    nationalVotedMascots.value = new Set(nationalVotedMascotIds);
+
+    // 5. 랭킹 데이터 로드 (탭 변경 시 로드되므로 여기서는 필요 없음)
     // await loadCampusRankings(); 
     
   } catch (error) {
