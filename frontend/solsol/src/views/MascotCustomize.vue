@@ -105,7 +105,7 @@
             <!-- 이미 위에서 마스코트 이미지를 렌더링 중이므로 이 블록은 유지 -->
 
             <!-- 레이어 3: 전경 아이템 (마스코트 앞) -->
-            <div class="absolute inset-0 z-20">
+            <div class="absolute inset-0 z-20" ref="foregroundLayer">
               <DraggableItem
                 v-for="fg in foregroundEquippedItems"
                 :key="fg.id"
@@ -114,7 +114,7 @@
                 :scale="fg.scale"
                 :rotation="fg.rotation"
                 :is-selected="selectedItemId === fg.id"
-                :container-bounds="canvasBounds"
+                :container-bounds="foregroundBounds || canvasBounds"
                 @update:position="updateItemPosition(fg.id, $event)"
                 @update:scale="updateItemScale(fg.id, $event)"
                 @update:rotation="updateItemRotation(fg.id, $event)"
@@ -365,6 +365,8 @@ const selectedCategory = ref<'head' | 'clothing' | 'accessory' | 'background'>('
 // 드래그 관련 상태
 const mascotCanvas = ref<HTMLElement>();
 const canvasBounds = ref<DOMRect | null>(null);
+const foregroundLayer = ref<HTMLElement>();
+const foregroundBounds = ref<DOMRect | null>(null);
 const selectedItemId = ref<string | null>(null); // 고유 ID로 변경
 const equippedItemStates = ref<Map<string, EquippedItemState>>(new Map()); // 다중 아이템 지원
 const isMobileDevice = ref(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
@@ -859,6 +861,12 @@ function updateCanvasBounds() {
       Math.abs(oldBounds.y - newBounds.y) > 8;
 
     canvasBounds.value = newBounds;
+    // 전경 레이어(z-20)의 경계도 갱신 (없으면 캔버스 경계를 사용)
+    if (foregroundLayer.value) {
+      foregroundBounds.value = foregroundLayer.value.getBoundingClientRect();
+    } else {
+      foregroundBounds.value = newBounds;
+    }
 
     if (sizeChanged || positionChanged) {
       // 의미있는 변경에만 캐시 무효화
