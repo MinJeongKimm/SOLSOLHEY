@@ -43,14 +43,15 @@
               <div class="flex items-center space-x-3">
                 <!-- 사용자 아바타 -->
                 <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
-                  <span class="text-white font-bold text-lg">{{ request.nickname?.charAt(0) || request.username?.charAt(0) || '?' }}</span>
+                  <span class="text-white font-bold text-lg">{{ request.nickname?.charAt(0) || '?' }}</span>
                 </div>
                 
                 <!-- 사용자 정보 -->
                 <div>
-                  <h4 class="font-semibold text-gray-800">{{ request.nickname || request.username }}</h4>
+                  <h4 class="font-semibold text-gray-800">{{ request.nickname }}</h4>
                   <p class="text-sm text-gray-600">{{ request.campus || '캠퍼스 정보 없음' }}</p>
-                  <p class="text-xs text-gray-500">@{{ request.username }}</p>
+                  <p class="text-xs text-gray-500">{{ request.email }}</p>
+                  
                 </div>
               </div>
               
@@ -92,13 +93,14 @@
             <div class="flex items-center space-x-3">
               <!-- 캐릭터 이미지 (기본 이미지 사용) -->
               <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center">
-                <span class="text-white text-lg font-bold">{{ friend.nickname?.charAt(0) || friend.username?.charAt(0) || '?' }}</span>
+                <span class="text-white text-lg font-bold">{{ friend.nickname?.charAt(0) || '?' }}</span>
               </div>
               
               <!-- 친구 정보 -->
               <div class="flex-1">
-                <h4 class="font-semibold text-gray-800">{{ friend.nickname || friend.username }}</h4>
+                <h4 class="font-semibold text-gray-800">{{ friend.nickname }}</h4>
                 <p class="text-sm text-gray-600">{{ friend.campus || '캠퍼스 정보 없음' }}</p>
+                <p class="text-xs text-gray-500">{{ friend.email }}</p>
                 <p class="text-xs text-blue-500">{{ friend.totalPoints || 0 }} 포인트</p>
               </div>
               
@@ -135,7 +137,7 @@
       <div class="bg-white rounded-lg p-6 shadow-xl max-w-md w-full">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">친구 삭제</h3>
         <p class="text-gray-600 mb-6">
-          {{ friendToDelete?.nickname || friendToDelete?.username }} 친구를 정말로 삭제하시겠습니까?
+          {{ friendToDelete?.nickname }} 친구를 정말로 삭제하시겠습니까?
           이 작업은 되돌릴 수 없습니다.
         </p>
         <div class="flex justify-end space-x-2">

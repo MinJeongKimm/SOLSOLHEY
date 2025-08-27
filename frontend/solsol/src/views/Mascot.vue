@@ -472,9 +472,10 @@ function showToastMessage(message: string) {
 }
 
 // 공유 팝업 표시
-function showSharePopup() {
+async function showSharePopup() {
   // 토큰 상태 확인
-  if (!auth.isAuthenticated()) {
+  const ok = await auth.isAuthenticatedAsync();
+  if (!ok) {
     showToastMessage('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
     setTimeout(() => {
       router.push('/');
@@ -516,7 +517,8 @@ async function handleShare() {
       const message = shareLinkData.value.message || '나의 마스코트와 함께한 이야기를 적어보세요!';
       
       const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
-      const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+      const u: any = await auth.fetchUser();
+      const userNickname = u?.nickname || '나의';
       const mascotName = currentMascot.value?.name || '마스코트';
       const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
       
@@ -594,7 +596,8 @@ async function handleShare() {
         const blob = await composeShareImageBlob();
         const mascotName = currentMascot.value?.name || 'mascot';
         const file = new File([blob], `${mascotName}_share.png`, { type: blob.type || 'image/png' });
-        const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+        const u2: any = await auth.fetchUser();
+        const userNickname = u2?.nickname || '나의';
         const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {

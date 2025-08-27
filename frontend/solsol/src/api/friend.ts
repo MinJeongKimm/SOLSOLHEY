@@ -5,17 +5,17 @@ export interface Friend {
   nickname?: string;
   campus?: string;
   totalPoints?: number;
-  username?: string;
+  email?: string;
 }
 
 export interface User {
   userId: number;
-  username: string;
   nickname?: string;
   campus?: string;
   totalPoints?: number;
   isAlreadyFriend?: boolean;
   hasPendingRequest?: boolean;
+  email?: string;
 }
 
 export interface FriendRequest {
@@ -25,11 +25,11 @@ export interface FriendRequest {
 export interface PendingFriendRequest {
   requestId: number;
   userId: number;
-  username: string;
   nickname?: string;
   campus?: string;
   totalPoints?: number;
   createdAt: string;
+  email?: string;
 }
 
 // 백엔드에서 반환되는 FriendResponse 구조
@@ -78,7 +78,7 @@ export const getFriendList = async (): Promise<Friend[]> => {
       friendId: friend.friendId,
       nickname: friend.nickname,
       campus: friend.campus,
-      username: friend.email, // email을 username으로 사용
+      email: friend.email,
       totalPoints: 0 // 기본값 설정
     }));
     
@@ -102,9 +102,9 @@ export const getFriendRequests = async (): Promise<PendingFriendRequest[]> => {
     const result = (response.data?.content || []).map(friend => ({
       requestId: friend.friendId,
       userId: friend.userId,
-      username: friend.email, // email을 username으로 사용
       nickname: friend.nickname,
       campus: friend.campus,
+      email: friend.email,
       totalPoints: 0, // 기본값 설정
       createdAt: friend.createdAt
     }));
