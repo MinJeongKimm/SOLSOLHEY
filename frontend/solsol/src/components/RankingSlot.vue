@@ -16,7 +16,7 @@
           </svg>
         </div>
         <p class="text-sm text-gray-500 text-center">
-          {{ isActive ? '클릭하여 랭킹에 참가' : '잠금 해제 필요' }}
+          {{ isActive ? '클릭하여 랭킹에 참가' : '' }}
         </p>
       </div>
     </div>
