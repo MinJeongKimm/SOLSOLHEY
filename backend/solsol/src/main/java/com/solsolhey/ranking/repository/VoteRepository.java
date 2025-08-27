@@ -11,25 +11,24 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.solsolhey.ranking.entity.ContestEntry;
 import com.solsolhey.ranking.entity.Vote;
 
 /**
- * 투표 레포지토리
+ * 투표 레포지토리 (마스코트 기반)
  */
 @Repository
 public interface VoteRepository extends JpaRepository<Vote, Long> {
 
     /**
-     * 중복 투표 체크 (투표자 + 엔트리)
+     * 중복 투표 체크 (투표자 + 마스코트)
      */
-    boolean existsByVoterIdAndEntryId(Long voterId, Long entryId);
+    boolean existsByVoterIdAndMascotId(Long voterId, Long mascotId);
 
     /**
-     * 중복 투표 체크 (투표자 + 엔트리 + 콘테스트 타입)
+     * 중복 투표 체크 (투표자 + 마스코트 + 투표 타입)
      */
-    boolean existsByVoterIdAndEntryIdAndContestType(
-            Long voterId, Long entryId, ContestEntry.ContestType contestType);
+    boolean existsByVoterIdAndMascotIdAndVoteType(
+            Long voterId, Long mascotId, Vote.VoteType voteType);
 
     /**
      * 멱등키 중복 체크
@@ -42,9 +41,9 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     Optional<Vote> findByIdempotencyKey(String idempotencyKey);
 
     /**
-     * 엔트리별 투표 목록 조회
+     * 마스코트별 투표 목록 조회
      */
-    List<Vote> findByEntryIdOrderByCreatedAtDesc(Long entryId);
+    List<Vote> findByMascotIdOrderByCreatedAtDesc(Long mascotId);
 
     /**
      * 투표자별 투표 목록 조회
@@ -52,94 +51,99 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     List<Vote> findByVoterIdOrderByCreatedAtDesc(Long voterId);
 
     /**
-     * 엔트리별 총 투표 수 조회
+     * 투표자별 투표 타입별 투표 목록 조회
      */
-    @Query("SELECT SUM(v.weight) FROM Vote v WHERE v.entryId = :entryId")
-    Long sumVotesByEntryId(@Param("entryId") Long entryId);
+    List<Vote> findByVoterIdAndVoteTypeOrderByCreatedAtDesc(Long voterId, Vote.VoteType voteType);
 
     /**
-     * 콘테스트 타입별 총 투표 수 조회
+     * 마스코트별 총 투표 수 조회
      */
-    @Query("SELECT SUM(v.weight) FROM Vote v WHERE v.contestType = :contestType")
-    Long sumVotesByContestType(@Param("contestType") ContestEntry.ContestType contestType);
+    @Query("SELECT SUM(v.weight) FROM Vote v WHERE v.mascotId = :mascotId")
+    Long sumVotesByMascotId(@Param("mascotId") Long mascotId);
+
+    /**
+     * 투표 타입별 총 투표 수 조회
+     */
+    @Query("SELECT SUM(v.weight) FROM Vote v WHERE v.voteType = :voteType")
+    Long sumVotesByVoteType(@Param("voteType") Vote.VoteType voteType);
 
     /**
      * 투표자의 일일 투표 수 조회
      */
     @Query("SELECT COUNT(v) FROM Vote v " +
            "WHERE v.voterId = :voterId " +
-           "AND v.contestType = :contestType " +
-           "AND DATE(v.createdAt) = DATE(:date)")
+           "AND v.voteType = :voteType " +
+           "AND CAST(v.createdAt AS DATE) = CAST(:date AS DATE)")
     Long countDailyVotesByVoter(
             @Param("voterId") Long voterId,
-            @Param("contestType") ContestEntry.ContestType contestType,
+            @Param("voteType") Vote.VoteType voteType,
             @Param("date") LocalDateTime date);
 
     /**
-     * 투표자의 특정 콘테스트 투표 수 조회
+     * 마스코트별 투표 수 조회 (투표 타입별)
      */
-    long countByVoterIdAndContestId(Long voterId, Long contestId);
+    long countByMascotIdAndVoteType(Long mascotId, Vote.VoteType voteType);
 
     /**
      * 캠퍼스별 투표 수 조회
      */
-    long countByCampusIdAndContestType(Long campusId, ContestEntry.ContestType contestType);
+    long countByCampusIdAndVoteType(Long campusId, Vote.VoteType voteType);
 
     /**
      * 기간별 투표 조회
      */
-    Page<Vote> findByContestTypeAndCreatedAtBetween(
-            ContestEntry.ContestType contestType,
+    Page<Vote> findByVoteTypeAndCreatedAtBetween(
+            Vote.VoteType voteType,
             LocalDateTime startDate,
             LocalDateTime endDate,
             Pageable pageable);
 
     /**
-     * 엔트리별 기간 투표 수 조회
+     * 마스코트별 기간 투표 수 조회
      */
     @Query("SELECT SUM(v.weight) FROM Vote v " +
-           "WHERE v.entryId = :entryId " +
+           "WHERE v.mascotId = :mascotId " +
            "AND v.createdAt BETWEEN :startDate AND :endDate")
-    Long sumVotesByEntryIdAndPeriod(
-            @Param("entryId") Long entryId,
+    Long sumVotesByMascotIdAndPeriod(
+            @Param("mascotId") Long mascotId,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate);
 
     /**
      * 투표자의 최근 투표 조회
      */
-    Optional<Vote> findTopByVoterIdAndContestTypeOrderByCreatedAtDesc(
-            Long voterId, ContestEntry.ContestType contestType);
+    Optional<Vote> findTopByVoterIdAndVoteTypeOrderByCreatedAtDesc(
+            Long voterId, Vote.VoteType voteType);
 
     /**
-     * 엔트리별 최근 투표 조회
+     * 마스코트별 최근 투표 조회
      */
-    Optional<Vote> findTopByEntryIdOrderByCreatedAtDesc(Long entryId);
+    Optional<Vote> findTopByMascotIdOrderByCreatedAtDesc(Long mascotId);
 
     /**
      * 활발한 투표자 조회 (기간별)
      */
     @Query("SELECT v.voterId, COUNT(v) as voteCount FROM Vote v " +
-           "WHERE v.contestType = :contestType " +
+           "WHERE v.voteType = :voteType " +
            "AND v.createdAt BETWEEN :startDate AND :endDate " +
            "GROUP BY v.voterId " +
            "ORDER BY voteCount DESC")
     Page<Object[]> findActiveVoters(
-            @Param("contestType") ContestEntry.ContestType contestType,
+            @Param("voteType") Vote.VoteType voteType,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);
 
     /**
-     * 인기 엔트리 조회 (기간별 투표수 기준)
+     * 인기 마스코트 조회 (기간별 투표수 기준)
      */
-    @Query("SELECT v.entryId, SUM(v.weight) as totalVotes FROM Vote v " +
-           "WHERE v.contestType = :contestType " +
+    @Query("SELECT v.mascotId, SUM(v.weight) as totalVotes FROM Vote v " +
+           "WHERE v.voteType = :voteType " +
            "AND v.createdAt BETWEEN :startDate AND :endDate " +
-           "GROUP BY v.entryId " +
+           "GROUP BY v.mascotId " +
            "ORDER BY totalVotes DESC")
-    Page<Object[]> findPopularEntriesByPeriod(
-            @Param("contestType") ContestEntry.ContestType contestType,
+    Page<Object[]> findPopularMascotsByPeriod(
+            @Param("voteType") Vote.VoteType voteType,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);
@@ -148,11 +152,11 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
      * 투표 트렌드 분석 (시간대별)
      */
     @Query("SELECT HOUR(v.createdAt) as hour, COUNT(v) as voteCount FROM Vote v " +
-           "WHERE v.contestType = :contestType " +
-           "AND DATE(v.createdAt) = DATE(:date) " +
+           "WHERE v.voteType = :voteType " +
+           "AND CAST(v.createdAt AS DATE) = CAST(:date AS DATE) " +
            "GROUP BY HOUR(v.createdAt) " +
            "ORDER BY hour")
     List<Object[]> findVoteTrendsByHour(
-            @Param("contestType") ContestEntry.ContestType contestType,
+            @Param("voteType") Vote.VoteType voteType,
             @Param("date") LocalDateTime date);
 }
