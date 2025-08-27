@@ -138,19 +138,11 @@ export async function voteForNational(
 }
 
 // 사용자 정보 조회 (campus 정보 포함)
+// Deprecated direct fetch: use auth as the single source of truth
 export async function getCurrentUser(): Promise<UserResponse> {
-  try {
-    const res = await apiRequest<ApiResponse<UserResponse>>('/auth/me');
-    if (!res || (res as any).success === false || !res.data) {
-      throw new Error((res as any)?.message || '사용자 정보 조회 실패');
-    }
-    return res.data as UserResponse;
-  } catch (error: any) {
-    if (error?.status === 401 || error?.status === 403) {
-      throw new Error('로그인이 필요합니다.');
-    }
-    throw error;
-  }
+  const u = await auth.fetchUser<UserResponse>();
+  if (!u) throw new Error('로그인이 필요합니다.');
+  return u;
 }
 
 // 사용자 투표 히스토리 조회 (투표한 마스코트 ID 목록)

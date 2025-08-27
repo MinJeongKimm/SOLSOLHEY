@@ -22,7 +22,8 @@ export type SignupRequest = {
 export interface SignupResponse {
   success: boolean;
   message: string;
-  username?: number;
+  userId?: number;
+  email?: string;
   errors?: Record<string, string>;
 }
 
@@ -37,7 +38,6 @@ export interface LoginResponse {
   message: string;
   data?: {
     token: string;
-    username: string;
   };
   errors?: Record<string, string>;
 }
@@ -57,7 +57,6 @@ export interface ErrorResponse {
 
 // 사용자 정보 타입
 export interface User {
-  username: string;
   userId: number;
   nickname: string;
 }
@@ -266,7 +265,6 @@ export interface ChallengeProgressResponse {
 // 사용자 관련 타입 정의
 export interface UserResponse {
   userId: number;
-  username: string;
   email: string;
   nickname: string;
   campus?: string;
@@ -346,6 +344,4 @@ export interface RankingResponse {
     campusName: string;
   };
 }
-
-
 

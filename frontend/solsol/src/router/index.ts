@@ -82,8 +82,8 @@ const router = createRouter({
 })
 
 // 인증 가드
-router.beforeEach((to, from, next) => {
-  const isAuthenticated = auth.isAuthenticated()
+router.beforeEach(async (to, from, next) => {
+  const isAuthenticated = await auth.isAuthenticatedAsync()
   
   // 인증이 필요한 페이지
   if (to.meta.requiresAuth && !isAuthenticated) {
