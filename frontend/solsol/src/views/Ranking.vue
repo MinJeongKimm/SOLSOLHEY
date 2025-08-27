@@ -1131,18 +1131,35 @@ async function updateNationalSlotRankingInfo() {
       await loadNationalRankings();
     }
     
+    console.log('전국 랭킹 데이터:', nationalRankings.value);
+    console.log('전국 랭킹 엔트리들:', nationalRankings.value?.entries);
+    
     for (let i = 0; i < nationalRankingSlots.value.length; i++) {
       const slot = nationalRankingSlots.value[i];
+      console.log(`전국 슬롯 ${i} 상태:`, slot);
+      
       if (slot.entry && nationalRankings.value) {
-        // 실제 랭킹 데이터에서 해당 마스코트의 정보 찾기
-        const rankingEntry = nationalRankings.value.entries.find(entry => 
-          entry.mascotId === slot.entry!.mascotId
-        );
+        console.log(`전국 슬롯 ${i} 엔트리:`, slot.entry);
+        console.log(`전국 슬롯 ${i} mascotId:`, slot.entry.mascotId, '타입:', typeof slot.entry.mascotId);
+        
+        // 실제 랭킹 데이터에서 해당 엔트리의 정보 찾기 (entryId 기준)
+        const rankingEntry = nationalRankings.value.entries.find(entry => {
+          console.log(`랭킹 엔트리 비교:`, { 
+            rankingEntryId: entry.entryId, 
+            rankingEntryIdType: typeof entry.entryId,
+            slotEntryId: slot.entry!.entryId,
+            slotEntryIdType: typeof slot.entry!.entryId,
+            isMatch: entry.entryId === slot.entry!.entryId
+          });
+          return entry.entryId === slot.entry!.entryId;
+        });
+        
+        console.log(`전국 슬롯 ${i} 매칭된 랭킹 엔트리:`, rankingEntry);
         
         if (rankingEntry) {
           slot.voteCount = rankingEntry.votes;
           slot.rank = rankingEntry.rank;
-          console.log(`전국 슬롯 ${i} 랭킹 정보 업데이트:`, { 
+          console.log(`전국 슬롯 ${i} 랭킹 정보 업데이트 완료:`, { 
             voteCount: slot.voteCount, 
             rank: slot.rank 
           });
@@ -1150,7 +1167,13 @@ async function updateNationalSlotRankingInfo() {
           // 랭킹에 등록되지 않은 경우 기본값 설정
           slot.voteCount = 0;
           slot.rank = 0;
+          console.log(`전국 슬롯 ${i} 랭킹 정보 없음 - 기본값 설정:`, { 
+            voteCount: slot.voteCount, 
+            rank: slot.rank 
+          });
         }
+      } else {
+        console.log(`전국 슬롯 ${i} 엔트리 없음 또는 랭킹 데이터 없음`);
       }
     }
   } catch (error) {
@@ -1186,18 +1209,35 @@ async function updateCampusSlotRankingInfo() {
       await loadCampusRankings();
     }
     
+    console.log('교내 랭킹 데이터:', campusRankings.value);
+    console.log('교내 랭킹 엔트리들:', campusRankings.value?.entries);
+    
     for (let i = 0; i < campusRankingSlots.value.length; i++) {
       const slot = campusRankingSlots.value[i];
+      console.log(`교내 슬롯 ${i} 상태:`, slot);
+      
       if (slot.entry && campusRankings.value) {
-        // 실제 랭킹 데이터에서 해당 마스코트의 정보 찾기
-        const rankingEntry = campusRankings.value.entries.find(entry => 
-          entry.mascotId === slot.entry!.mascotId
-        );
+        console.log(`교내 슬롯 ${i} 엔트리:`, slot.entry);
+        console.log(`교내 슬롯 ${i} mascotId:`, slot.entry.mascotId, '타입:', typeof slot.entry.mascotId);
+        
+        // 실제 랭킹 데이터에서 해당 엔트리의 정보 찾기 (entryId 기준)
+        const rankingEntry = campusRankings.value.entries.find(entry => {
+          console.log(`랭킹 엔트리 비교:`, { 
+            rankingEntryId: entry.entryId, 
+            rankingEntryIdType: typeof entry.entryId,
+            slotEntryId: slot.entry!.entryId,
+            slotEntryIdType: typeof slot.entry!.entryId,
+            isMatch: entry.entryId === slot.entry!.entryId
+          });
+          return entry.entryId === slot.entry!.entryId;
+        });
+        
+        console.log(`교내 슬롯 ${i} 매칭된 랭킹 엔트리:`, rankingEntry);
         
         if (rankingEntry) {
           slot.voteCount = rankingEntry.votes;
           slot.rank = rankingEntry.rank;
-          console.log(`교내 슬롯 ${i} 랭킹 정보 업데이트:`, { 
+          console.log(`교내 슬롯 ${i} 랭킹 정보 업데이트 완료:`, { 
             voteCount: slot.voteCount, 
             rank: slot.rank 
           });
@@ -1205,7 +1245,13 @@ async function updateCampusSlotRankingInfo() {
           // 랭킹에 등록되지 않은 경우 기본값 설정
           slot.voteCount = 0;
           slot.rank = 0;
+          console.log(`교내 슬롯 ${i} 랭킹 정보 없음 - 기본값 설정:`, { 
+            voteCount: slot.voteCount, 
+            rank: slot.rank 
+          });
         }
+      } else {
+        console.log(`교내 슬롯 ${i} 엔트리 없음 또는 랭킹 데이터 없음`);
       }
     }
   } catch (error) {
