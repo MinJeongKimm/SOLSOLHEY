@@ -262,15 +262,23 @@ function isAttendedDay(date: Date): boolean {
 // 출석 기록 조회
 async function fetchAttendanceRecords() {
   try {
-    // 현재는 출석 기록을 조회하지 않고 빈 Set으로 유지
-    // 실제로는 백엔드에서 출석 기록을 가져와야 함
-    // const response = await apiRequest<any>('/attendance/records', {
-    //   method: 'GET',
-    //   params: { startDate: thirtyDaysAgo.toISOString().split('T')[0] }
-    // });
+    // 새로운 출석 기록 API 호출 - 중복 경로 수정
+    const response = await apiRequest<any>('/attendance/records', {
+      method: 'GET'
+    });
     
-    // 임시 하드코딩된 로직 제거 - 실제 출석체크 시에만 기록에 추가
-    attendanceRecords.value = new Set();
+    if (response && response.success && response.data) {
+      // 응답 데이터를 Set으로 변환하여 저장
+      const records = response.data;
+      records.forEach((record: any) => {
+        // 배열 형태의 날짜를 YYYY-MM-DD 형식의 문자열로 변환
+        const [year, month, day] = record.attendanceDate;
+        const dateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        attendanceRecords.value.add(dateString);
+      });
+    } else {
+      attendanceRecords.value = new Set();
+    }
   } catch (error) {
     console.error('출석 기록 조회 오류:', error);
     attendanceRecords.value = new Set();
@@ -287,7 +295,8 @@ async function previousMonth() {
     currentMonth.value--;
   }
   
-  // 월 변경 시 출석 기록 조회하지 않음 (실제 출석체크 시에만 기록에 추가됨)
+  // 월 변경 시 해당 월의 출석 기록 조회
+  await fetchAttendanceRecords();
 }
 
 // 다음 월
@@ -299,7 +308,8 @@ async function nextMonth() {
     currentMonth.value++;
   }
   
-  // 월 변경 시 출석 기록 조회하지 않음 (실제 출석체크 시에만 기록에 추가됨)
+  // 월 변경 시 해당 월의 출석 기록 조회
+  await fetchAttendanceRecords();
 }
 
 // 출석체크
@@ -348,7 +358,7 @@ async function checkAttendance() {
   }
 }
 
-// 컴포넌트 마운트 시 오늘 출석 여부 확인
+// 컴포넌트 마운트 시 오늘 출석 여부 확인 및 출석 기록 조회
 onMounted(async () => {
   try {
     // 오늘 출석 상태 확인 API 호출
@@ -368,10 +378,8 @@ onMounted(async () => {
       todayAttended.value = false;
     }
     
-    // 출석 기록이 비어있다면 빈 Set으로 초기화
-    if (attendanceRecords.value.size === 0) {
-      attendanceRecords.value = new Set();
-    }
+    // 출석 기록 조회
+    await fetchAttendanceRecords();
   } catch (error) {
     console.error('오늘 출석 상태 확인 오류:', error);
     todayAttended.value = false;

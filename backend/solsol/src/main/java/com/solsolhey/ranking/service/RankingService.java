@@ -1,14 +1,17 @@
 package com.solsolhey.ranking.service;
 
+import java.util.List;
+
+import com.solsolhey.mascot.domain.Mascot;
 import com.solsolhey.ranking.dto.request.CampusRankingRequest;
 import com.solsolhey.ranking.dto.request.NationalRankingRequest;
 import com.solsolhey.ranking.dto.request.VoteRequest;
 import com.solsolhey.ranking.dto.response.RankingResponse;
 import com.solsolhey.ranking.dto.response.VoteResponse;
-import com.solsolhey.ranking.entity.ContestEntry;
+import com.solsolhey.ranking.entity.Vote;
 
 /**
- * 랭킹 서비스 인터페이스
+ * 랭킹 서비스 인터페이스 (마스코트 기반)
  */
 public interface RankingService {
 
@@ -25,32 +28,27 @@ public interface RankingService {
     /**
      * 교내 랭킹 투표
      */
-    VoteResponse voteForCampus(Long entryId, VoteRequest request, Long voterId, String userCampus);
+    VoteResponse voteForCampus(Long mascotId, VoteRequest request, Long voterId, String userCampus);
 
     /**
      * 전국 랭킹 투표
      */
-    VoteResponse voteForNational(Long entryId, VoteRequest request, Long voterId);
-
-    /**
-     * 콘테스트 참가 (마스코트 등록)
-     */
-    ContestEntry participateInContest(Long userId, Long mascotId, ContestEntry.ContestType contestType);
+    VoteResponse voteForNational(Long mascotId, VoteRequest request, Long voterId);
 
     /**
      * 투표 가능 여부 확인
      */
-    boolean canVote(Long voterId, Long entryId, ContestEntry.ContestType contestType);
+    boolean canVote(Long voterId, Long mascotId, Vote.VoteType voteType);
 
     /**
      * 일일 투표 한도 확인
      */
-    boolean hasReachedDailyVoteLimit(Long voterId, ContestEntry.ContestType contestType);
+    boolean hasReachedDailyVoteLimit(Long voterId, Vote.VoteType voteType);
 
     /**
      * 중복 투표 확인
      */
-    boolean hasAlreadyVoted(Long voterId, Long entryId);
+    boolean hasAlreadyVoted(Long voterId, Long mascotId);
 
     /**
      * 멱등키 중복 확인
@@ -58,12 +56,17 @@ public interface RankingService {
     boolean isDuplicateIdempotencyKey(String idempotencyKey);
 
     /**
-     * 콘테스트 엔트리 조회
+     * 마스코트 조회
      */
-    ContestEntry getContestEntry(Long entryId);
+    Mascot getMascotById(Long mascotId);
 
     /**
-     * 사용자별 참가 엔트리 조회
+     * 사용자의 교내 랭킹 투표 히스토리 조회 (투표한 마스코트 ID 목록)
      */
-    java.util.List<ContestEntry> getUserEntries(Long userId, ContestEntry.ContestType contestType);
+    List<Long> getUserVotedMascotIdsForCampus(Long voterId);
+
+    /**
+     * 사용자의 전국 랭킹 투표 히스토리 조회 (투표한 마스코트 ID 목록)
+     */
+    List<Long> getUserVotedMascotIdsForNational(Long voterId);
 }

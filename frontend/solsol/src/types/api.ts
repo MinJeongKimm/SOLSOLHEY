@@ -321,5 +321,31 @@ export interface UserItem {
   item: ShopItem;
 }
 
+// 랭킹 관련 타입 정의
+export interface SchoolInfo {
+  id: number;
+  name: string;
+}
+
+export interface RankingEntry {
+  rank: number;
+  mascotId: number;
+  ownerNickname: string;
+  votes: number;
+  backgroundId: string;
+  school?: SchoolInfo;
+}
+
+export interface RankingResponse {
+  entries: RankingEntry[];
+  total: number;
+  page: number;
+  size: number;
+  period: string;
+  campus?: {
+    campusName: string;
+  };
+}
+
 
 

@@ -2,18 +2,16 @@ import { apiRequest } from './index';
 import { auth } from './index';
 import type { ApiResponse, UserResponse } from '../types/api';
 
-// 랭킹 관련 타입 정의
+// 랭킹 관련 타입 정의 (마스코트 기반)
 export interface RankingEntry {
   rank: number;
-  entryId: number;
   mascotId: number;
   ownerNickname: string;
   votes: number;
-  trendScore: number;
-  thumbnailUrl: string;
+  backgroundId: string;
   school?: {
-    schoolId: number;
-    schoolName: string;
+    id: number | null;
+    name: string;
   };
 }
 
@@ -39,16 +37,17 @@ export interface RankingResponse {
 }
 
 export interface VoteRequest {
-  voteType: 'LIKE' | 'DISLIKE';
-  comment?: string;
-  userId?: number; // JWT 토큰에서 추출한 사용자 ID
+  weight?: number;
+  idempotencyKey?: string;
+  campusId?: number;
 }
 
 export interface VoteResponse {
   success: boolean;
   message: string;
-  newVoteCount?: number;
-  userVoteStatus?: 'LIKE' | 'DISLIKE' | 'NONE';
+  mascotId?: number;
+  newVotes?: number;
+  votedAt?: string;
 }
 
 // 교내 랭킹 조회
@@ -100,31 +99,42 @@ export async function getNationalRankings(
   }
 
   const res = await apiRequest<ApiResponse<RankingResponse>>(`/rankings/national?${params}`);
-  if (!res || (res as any).success === false) throw new Error((res as any)?.message || '랭킹 조회 실패');
+  if (!res || (res as any).success === false) throw new Error((res as any)?.message || '전국 랭킹 조회 실패');
   return res.data as RankingResponse;
 }
 
-// 교내 랭킹 투표
+// 교내 랭킹 투표 (마스코트 기반)
 export async function voteForCampus(
-  entryId: number,
+  mascotId: number,
   voteData: VoteRequest
 ): Promise<VoteResponse> {
-  // 백엔드가 JWT에서 사용자 식별 → userId 전달 불필요
-  return apiRequest<VoteResponse>(`/rankings/campus/${entryId}/vote`, {
+  const res = await apiRequest<ApiResponse<VoteResponse>>(`/rankings/campus/${mascotId}/vote`, {
     method: 'POST',
     body: JSON.stringify(voteData),
   });
+  
+  if (!res || (res as any).success === false) {
+    throw new Error((res as any)?.message || '투표 실패');
+  }
+  
+  return res.data as VoteResponse;
 }
 
-// 전국 랭킹 투표
+// 전국 랭킹 투표 (마스코트 기반)
 export async function voteForNational(
-  entryId: number,
+  mascotId: number,
   voteData: VoteRequest
 ): Promise<VoteResponse> {
-  return apiRequest<VoteResponse>(`/rankings/national/${entryId}/vote`, {
+  const res = await apiRequest<ApiResponse<VoteResponse>>(`/rankings/national/${mascotId}/vote`, {
     method: 'POST',
     body: JSON.stringify(voteData),
   });
+  
+  if (!res || (res as any).success === false) {
+    throw new Error((res as any)?.message || '투표 실패');
+  }
+  
+  return res.data as VoteResponse;
 }
 
 // 사용자 정보 조회 (campus 정보 포함)
@@ -135,6 +145,54 @@ export async function getCurrentUser(): Promise<UserResponse> {
       throw new Error((res as any)?.message || '사용자 정보 조회 실패');
     }
     return res.data as UserResponse;
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    throw error;
+  }
+}
+
+// 사용자 투표 히스토리 조회 (투표한 마스코트 ID 목록)
+export async function getUserVotedMascotIds(): Promise<number[]> {
+  try {
+    const res = await apiRequest<ApiResponse<number[]>>('/rankings/my-votes');
+    if (!res || (res as any).success === false || !res.data) {
+      throw new Error((res as any)?.message || '투표 히스토리 조회 실패');
+    }
+    return res.data as number[];
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    throw error;
+  }
+}
+
+// 사용자 교내 랭킹 투표 히스토리 조회 (투표한 마스코트 ID 목록)
+export async function getUserCampusVotedMascotIds(): Promise<number[]> {
+  try {
+    const res = await apiRequest<ApiResponse<number[]>>('/rankings/campus/my-votes');
+    if (!res || (res as any).success === false || !res.data) {
+      throw new Error((res as any)?.message || '교내 랭킹 투표 히스토리 조회 실패');
+    }
+    return res.data as number[];
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    throw error;
+  }
+}
+
+// 사용자 전국 랭킹 투표 히스토리 조회 (투표한 마스코트 ID 목록)
+export async function getUserNationalVotedMascotIds(): Promise<number[]> {
+  try {
+    const res = await apiRequest<ApiResponse<number[]>>('/rankings/national/my-votes');
+    if (!res || (res as any).success === false || !res.data) {
+      throw new Error((res as any)?.message || '전국 랭킹 투표 히스토리 조회 실패');
+    }
+    return res.data as number[];
   } catch (error: any) {
     if (error?.status === 401 || error?.status === 403) {
       throw new Error('로그인이 필요합니다.');
