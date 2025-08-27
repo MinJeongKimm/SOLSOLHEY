@@ -314,6 +314,8 @@ export const mascot = {
       level: d.level,
       exp: d.exp,
       equippedItem: d.equippedItem ?? null,
+      backgroundColor: d.backgroundColor ?? undefined,
+      backgroundPattern: d.backgroundPattern ?? undefined,
       createdAt: d.createdAt,
       updatedAt: d.updatedAt,
       snapshotImage: d.snapshotImage,
