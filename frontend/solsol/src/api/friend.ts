@@ -2,6 +2,7 @@ import { apiRequest } from './index';
 
 export interface Friend {
   friendId: number;
+  userId?: number;
   nickname?: string;
   campus?: string;
   totalPoints?: number;
@@ -139,6 +140,7 @@ export const getFriendList = async (): Promise<Friend[]> => {
     // FriendResponse를 Friend 형태로 변환
     const result = (response.data?.content || []).map(friend => ({
       friendId: friend.friendId,
+      userId: friend.userId,
       nickname: friend.nickname,
       campus: friend.campus,
       username: friend.email, // email을 username으로 사용
