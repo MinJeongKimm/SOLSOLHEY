@@ -448,9 +448,20 @@ const findMyRank = () => {
       myRank.value = null;
     }
   } else {
-    // 전국 랭킹에서 내 순위 찾기 (아직 구현되지 않음)
-    // TODO: 전국 랭킹 데이터가 로드되면 내 순위 찾기
-    myRank.value = null;
+    // 전국 랭킹에서 내 순위 찾기
+    if (nationalRankings.value) {
+      const myEntry = nationalRankings.value.entries.find(entry => 
+        entry.ownerNickname === currentUser.value.nickname
+      );
+      
+      if (myEntry) {
+        myRank.value = myEntry.rank;
+      } else {
+        myRank.value = 0; // 랭킹에 등록되지 않음
+      }
+    } else {
+      myRank.value = null;
+    }
   }
 };
 
