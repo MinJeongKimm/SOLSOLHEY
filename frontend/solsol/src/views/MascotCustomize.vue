@@ -403,6 +403,11 @@ const previewBackgroundStyle = computed(() => {
   return style;
 });
 
+// 표준화 유틸: 서버에서 오는 타입/카테고리의 대소문자 혼동을 방지
+function normalizeType(val: unknown): string {
+  return (val ?? '').toString().toLowerCase();
+}
+
 async function saveBackground() {
   try {
     await updateMascotBackground({ backgroundColor: bgColor.value, patternType: bgPattern.value });
@@ -432,8 +437,8 @@ const itemCategories = [
 const filteredItems = computed(() => {
   const target = selectedCategory.value; // 'head' | 'clothing' | 'accessory' | 'background'
   return items.value.filter((item: any) => {
-    const cat = (item.category || '').toString().toLowerCase();
-    const typ = (item.type || '').toString().toLowerCase(); // EQUIP/BACKGROUND 등
+    const cat = normalizeType(item.category);
+    const typ = normalizeType(item.type); // EQUIP/BACKGROUND 등
     const isOwned = item.owned === true || item.isOwned === true;
     if (!isOwned) return false;
     if (target === 'background') {
@@ -452,10 +457,10 @@ const equippedItems = computed(() => {
 
 // 배경 아이템/전경 아이템 분리 (레이어링 제어)
 const backgroundEquippedItems = computed(() =>
-  equippedItemsList.value.filter(e => e.item?.type === 'background')
+  equippedItemsList.value.filter(e => normalizeType(e.item?.type) === 'background')
 );
 const foregroundEquippedItems = computed(() =>
-  equippedItemsList.value.filter(e => e.item?.type !== 'background')
+  equippedItemsList.value.filter(e => normalizeType(e.item?.type) !== 'background')
 );
 
 // 더 많은 아이템을 장착할 수 있는지 확인
@@ -1127,7 +1132,7 @@ function getEquippedItemImage(itemType: 'head' | 'clothing' | 'accessory' | 'bac
   
   // equippedItem 문자열에서 해당 타입의 아이템 찾기
   const equippedItem = items.value.find(item => 
-    item.type === itemType && 
+    normalizeType(item.type) === itemType && 
     currentMascot.value!.equippedItem!.includes(item.name)
   );
   
@@ -1140,7 +1145,7 @@ function getEquippedItemName(itemType: 'head' | 'clothing' | 'accessory' | 'back
   
   // equippedItem 문자열에서 해당 타입의 아이템 찾기
   const equippedItem = items.value.find(item => 
-    item.type === itemType && 
+    normalizeType(item.type) === itemType && 
     currentMascot.value!.equippedItem!.includes(item.name)
   );
   

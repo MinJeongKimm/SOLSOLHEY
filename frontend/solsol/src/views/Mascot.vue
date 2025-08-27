@@ -43,14 +43,7 @@
             class="w-full h-80 rounded-xl shadow-lg relative overflow-hidden flex items-center justify-center"
             :style="roomBackgroundStyle"
           >
-            <!-- 배경 이미지 (크기 조정) -->
-            <!-- 08.27 배경 임시로 삭제해둠  by 민정-->
-            <!-- <img 
-              src="/backgrounds/base/bg_blue.png" 
-              alt="방 배경" 
-              class="w-3/4 h-3/4 object-contain"
-            /> -->
-            
+         
             <!-- 마스코트 -->
             <div class="absolute inset-0 flex items-center justify-center">
               <!-- 공통 래퍼에 플로팅 애니메이션을 적용해 완전 동기화 -->
