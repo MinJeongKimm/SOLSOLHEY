@@ -45,10 +45,8 @@ public interface RankingService {
      */
     boolean hasReachedDailyVoteLimit(Long voterId, Vote.VoteType voteType);
 
-    /**
-     * 중복 투표 확인
-     */
-    boolean hasAlreadyVoted(Long voterId, Long mascotId);
+    // 투표 타입별로 중복 투표 체크하므로 이 메서드는 더 이상 사용하지 않음
+    // boolean hasAlreadyVoted(Long voterId, Long mascotId);
 
     /**
      * 멱등키 중복 확인

@@ -39,10 +39,10 @@ public class RankingEntryServiceImpl implements RankingEntryService {
     @Override
     @Transactional
     public EntryResponse createEntry(Long userId, CreateEntryRequest request) {
-        // 사용자당 최대 3개 제한 체크
-        long currentEntryCount = getUserEntryCount(userId);
+        // 랭킹 타입별로 최대 3개 제한 체크
+        long currentEntryCount = getUserEntryCountByType(userId, request.rankingType());
         if (currentEntryCount >= MAX_ENTRIES_PER_USER) {
-            throw new BusinessException("사용자당 최대 3개까지만 참가할 수 있습니다.");
+            throw new BusinessException("해당 랭킹 타입에 최대 3개까지만 참가할 수 있습니다.");
         }
 
         // 마스코트 스냅샷 ID가 있는 경우에만 중복 체크
@@ -133,6 +133,11 @@ public class RankingEntryServiceImpl implements RankingEntryService {
     @Override
     public long getUserEntryCount(Long userId) {
         return rankingEntryRepository.countByUserId(userId);
+    }
+
+    @Override
+    public long getUserEntryCountByType(Long userId, String rankingType) {
+        return rankingEntryRepository.countByUserIdAndRankingType(userId, rankingType);
     }
 
     @Override

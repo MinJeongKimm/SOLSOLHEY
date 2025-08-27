@@ -30,6 +30,12 @@ public interface RankingEntryRepository extends JpaRepository<RankingEntry, Long
     long countByUserId(@Param("userId") Long userId);
 
     /**
+     * 사용자의 특정 타입 참가 개수 조회
+     */
+    @Query("SELECT COUNT(re) FROM RankingEntry re WHERE re.userId = :userId AND re.rankingType = :rankingType")
+    long countByUserIdAndRankingType(@Param("userId") Long userId, @Param("rankingType") String rankingType);
+
+    /**
      * 특정 마스코트 스냅샷이 이미 참가되어 있는지 확인
      */
     @Query("SELECT COUNT(re) > 0 FROM RankingEntry re WHERE re.mascotSnapshotId = :mascotSnapshotId")

@@ -64,6 +64,9 @@ export interface EntryResponse {
   title: string;
   description?: string;
   createdAt: string;
+  imageUrl?: string; // 등록 시 업로드한 이미지 URL
+  mascotId?: number; // 마스코트 ID
+  rankingType?: string; // 랭킹 타입 (CAMPUS/NATIONAL)
 }
 
 export interface LeaderboardResponse {

@@ -55,6 +55,15 @@ public interface RankingEntryService {
     long getUserEntryCount(Long userId);
 
     /**
+     * 사용자의 특정 타입 참가 개수 조회
+     * 
+     * @param userId 사용자 ID
+     * @param rankingType 랭킹 타입 ("NATIONAL" 또는 "CAMPUS")
+     * @return 참가 개수
+     */
+    long getUserEntryCountByType(Long userId, String rankingType);
+
+    /**
      * 사용자의 특정 타입 참가 목록 조회
      * 
      * @param userId 사용자 ID
