@@ -435,8 +435,18 @@ const itemCategories = [
 // 필터링된 아이템 목록 (보유한 아이템만)
 // ShopController.getItemsWithOwnership → ItemResponse(category, owned) 기준으로 필터링
 const filteredItems = computed(() => {
-  const targetCategory = selectedCategory.value; // 'head' | 'clothing' | 'accessory' | 'background'
-  return items.value.filter((item: any) => item.category === targetCategory && item.owned === true);
+  const target = selectedCategory.value; // 'head' | 'clothing' | 'accessory' | 'background'
+  return items.value.filter((item: any) => {
+    const cat = (item.category || '').toString().toLowerCase();
+    const typ = (item.type || '').toString().toLowerCase(); // EQUIP/BACKGROUND 등
+    const isOwned = item.owned === true || item.isOwned === true;
+    if (!isOwned) return false;
+    if (target === 'background') {
+      // 일부 응답이 category 대신 type으로 BACKGROUND만 내려오는 경우도 허용
+      return cat === 'background' || typ === 'background';
+    }
+    return cat === target;
+  });
 });
 
 // 장착된 아이템들의 상태 목록 (다중 아이템 지원)
