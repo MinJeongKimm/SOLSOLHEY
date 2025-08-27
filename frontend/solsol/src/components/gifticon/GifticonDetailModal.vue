@@ -59,7 +59,16 @@ const redeemLabel = computed(() => {
   return '사용하기';
 });
 
-function formatDate(iso?: string) { return iso ? new Date(iso).toLocaleString() : ''; }
+function formatDate(iso?: string) {
+  if (!iso) return '';
+  // 우선 안전하게 날짜 부분만 슬라이스
+  if (iso.length >= 19) {
+    // 2025-08-27T12:34:56 => 2025-08-27 12:34:56
+    return iso.slice(0, 10) + ' ' + iso.slice(11, 19);
+  }
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : d.toLocaleString();
+}
 function onImgError(e: Event) { (e.target as HTMLImageElement).src = '/items/gifticon_default.png'; }
 
 async function redeem() {
@@ -78,4 +87,3 @@ async function redeem() {
 </script>
 
 <style scoped></style>
-

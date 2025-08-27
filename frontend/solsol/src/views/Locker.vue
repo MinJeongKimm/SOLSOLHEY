@@ -85,7 +85,15 @@ function statusLabel(s: PurchasedGifticon['status']): string {
 function statusClass(s: PurchasedGifticon['status']) {
   return s === 'ACTIVE' ? 'bg-green-100 text-green-700' : s === 'REDEEMED' ? 'bg-gray-100 text-gray-600' : 'bg-red-100 text-red-600';
 }
-function formatDate(iso?: string) { return iso ? new Date(iso).toLocaleDateString() : ''; }
+function formatDate(iso?: string) {
+  if (!iso) return '';
+  // Safari 등 일부 브라우저의 Date 파싱 이슈 방지: 단순 YYYY-MM-DD 슬라이스로 표시
+  // 형식 예: 2025-08-27T12:34:56 -> 2025-08-27
+  const ymd = iso.length >= 10 ? iso.slice(0, 10) : '';
+  if (ymd) return ymd;
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString();
+}
 
 async function loadList() {
   loading.value = true; error.value = '';
