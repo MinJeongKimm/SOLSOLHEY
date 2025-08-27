@@ -45,67 +45,26 @@
         </nav>
       </div>
 
-      <!-- 내 순위 섹션 (탭 아래, 고정 위치) -->
+      <!-- 랭킹 참가 슬롯 섹션 -->
       <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6 border-2 border-blue-200">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-              <span class="text-white text-xl">👤</span>
-            </div>
-            <div>
-              <h2 class="text-lg font-bold text-gray-800">
-                {{ activeTab === 'campus' ? '교내' : '전국' }} 내 순위
-              </h2>
-              <!-- 마스코트가 있는 경우 -->
-              <div v-if="hasMascot" class="flex items-center space-x-2">
-                <span class="text-2xl font-bold text-blue-600">{{ myRank || '계산 중...' }}위</span>
-              </div>
-              <!-- 마스코트가 없는 경우 -->
-              <div v-else class="flex items-center space-x-2">
-                <span class="text-lg text-gray-600">마스코트가 없습니다</span>
-              </div>
-              
-              <!-- 추가 정보 표시 -->
-              <div v-if="hasMascot" class="mt-2 space-y-1">
-                <!-- 교내 랭킹일 때 학교 정보와 정렬 기준 표시 -->
-                <div v-if="activeTab === 'campus'" class="flex items-center space-x-4 text-sm text-gray-600">
-                  <span v-if="currentUser?.campus" class="flex items-center space-x-1">
-                    <span class="text-gray-500">🏫</span>
-                    <span>{{ currentUser.campus }}</span>
-                  </span>
-                  <span class="flex items-center space-x-1">
-                    <span class="text-gray-500">📊</span>
-                    <span>{{ getSortDisplayName(campusFilters.sort) }} • {{ getPeriodDisplayName(campusFilters.period) }}</span>
-                  </span>
-                </div>
-                <!-- 전국 랭킹일 때 정렬 기준만 표시 -->
-                <div v-else class="flex items-center space-x-1 text-sm text-gray-600">
-                  <span class="text-gray-500">📊</span>
-                  <span>{{ getSortDisplayName(nationalFilters.sort) }} • {{ getPeriodDisplayName(nationalFilters.period) }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 마스코트가 없는 경우 마스코트 생성 안내 -->
-          <div v-if="!hasMascot">
-            <router-link
-              to="/mascot-create"
-              class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg"
-            >
-              마스코트 만들기
-            </router-link>
-          </div>
+        <div class="mb-4">
+          <h2 class="text-lg font-bold text-gray-800 mb-2">랭킹 참가 슬롯</h2>
+          <p class="text-sm text-gray-600">마스코트를 랭킹에 등록하여 다른 사용자들과 경쟁해보세요!</p>
         </div>
         
-        <!-- 마스코트가 없는 경우 안내 메시지 -->
-        <div v-if="!hasMascot" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <div class="flex items-center space-x-2">
-            <span class="text-blue-600">💡</span>
-            <span class="text-blue-700 text-sm">
-              {{ activeTab === 'campus' ? '교내' : '전국' }} 랭킹에서 내 순위를 확인하려면 마스코트를 생성하세요! 마스코트를 만들면 자동으로 랭킹에 참가됩니다.
-            </span>
-          </div>
+        <!-- 3개 슬롯 가로 배치 -->
+        <div class="grid grid-cols-3 gap-4 max-w-4xl mx-auto">
+          <RankingSlot
+            v-for="(slot, index) in rankingSlots"
+            :key="index"
+            :entry="slot.entry"
+            :is-active="slot.isActive"
+            :mascot-image-url="slot.mascotImageUrl"
+            :vote-count="slot.voteCount"
+            :rank="slot.rank"
+            @slot-click="handleSlotClick(index)"
+            @delete="handleSlotDelete"
+          />
         </div>
       </div>
 
@@ -394,6 +353,16 @@
         </div>
       </div>
     </div>
+
+    <!-- 랭킹 등록 모달 -->
+    <RankingEntryModal
+      v-if="showRankingModal && currentMascot"
+      :mascot-name="currentMascot.name"
+      :mascot-image-url="currentMascot.imageUrl"
+      :mascot-snapshot-id="currentMascot.snapshotId"
+      @close="showRankingModal = false"
+      @submit="handleRankingSubmit"
+    />
   </div>
 </template>
 
@@ -408,10 +377,20 @@ import {
   voteForNational,
   getUserCampusVotedMascotIds,
   getUserNationalVotedMascotIds,
+  getUserEntries,
+  createRankingEntry,
+  deleteRankingEntry,
+  getCurrentUserMascotSnapshot,
+  getCurrentUserMascot,
+  composeMascotImage,
   type RankingResponse,
-  type VoteRequest
+  type VoteRequest,
+  type EntryResponse,
+  type CreateEntryRequest
 } from '../api/ranking';
-import { bootstrapAuth, auth, getMascot } from '../api/index';
+import { bootstrapAuth, auth, getMascot, getMascotCustomization, getShopItems } from '../api/index';
+import RankingSlot from '../components/RankingSlot.vue';
+import RankingEntryModal from '../components/RankingEntryModal.vue';
 
 // Router 인스턴스
 const router = useRouter();
@@ -428,6 +407,18 @@ const myRank = ref<number | null>(null);
 const hasMascot = ref<boolean>(false);
 const votedMascots = ref<Set<number>>(new Set()); // 교내 랭킹 투표한 마스코트 ID들
 const nationalVotedMascots = ref<Set<number>>(new Set()); // 전국 랭킹 투표한 마스코트 ID들
+
+// 랭킹 슬롯 관련 상태
+const rankingSlots = ref([
+  { entry: null as EntryResponse | null, isActive: true, mascotImageUrl: '', voteCount: 0, rank: 0 },
+  { entry: null as EntryResponse | null, isActive: false, mascotImageUrl: '', voteCount: 0, rank: 0 },
+  { entry: null as EntryResponse | null, isActive: false, mascotImageUrl: '', voteCount: 0, rank: 0 }
+]);
+
+const showRankingModal = ref(false);
+const selectedSlotIndex = ref(-1);
+const currentMascot = ref<{ name: string; imageUrl: string; snapshotId: number } | null>(null);
+const loadingRanking = ref(false);
 
 // 필터 설정
 const campusFilters = ref({
@@ -708,6 +699,155 @@ watch(activeTab, async (newTab) => {
   }
 }, { immediate: true }); // immediate: true로 설정하여 컴포넌트 마운트 시 첫 번째 탭 로드
 
+// 랭킹 슬롯 관련 함수들
+async function loadRankingEntries() {
+  try {
+    loadingRanking.value = true;
+    const entries = await getUserEntries();
+    
+    // 슬롯에 엔트리 할당
+    rankingSlots.value.forEach((slot, index) => {
+      if (index < entries.length) {
+        slot.entry = entries[index];
+        slot.isActive = false; // 등록된 슬롯은 비활성화
+      }
+    });
+    
+    // 다음 슬롯 활성화
+    updateSlotActivation();
+    
+    // 등록된 슬롯의 실시간 마스코트 이미지 업데이트
+    await updateSlotMascotImages();
+    
+  } catch (error) {
+    console.error('랭킹 엔트리 로드 실패:', error);
+  } finally {
+    loadingRanking.value = false;
+  }
+}
+
+function updateSlotActivation() {
+  const registeredCount = rankingSlots.value.filter(slot => slot.entry !== null).length;
+  
+  rankingSlots.value.forEach((slot, index) => {
+    if (index === 0) {
+      slot.isActive = registeredCount === 0; // 첫 번째 슬롯은 등록된 것이 없을 때만 활성화
+    } else if (index === 1) {
+      slot.isActive = registeredCount >= 1 && registeredCount < 3; // 두 번째 슬롯은 1개 이상 등록되었을 때 활성화
+    } else if (index === 2) {
+      slot.isActive = registeredCount >= 2 && registeredCount < 3; // 세 번째 슬롯은 2개 이상 등록되었을 때 활성화
+    }
+  });
+}
+
+async function handleSlotClick(slotIndex: number) {
+  if (!rankingSlots.value[slotIndex].isActive) return;
+  
+  try {
+    // 현재 마스코트 정보와 커스터마이징, 상점 아이템 로드
+    const [mascot, customization, shopItems] = await Promise.all([
+      getCurrentUserMascot(),
+      getMascotCustomization(),
+      getShopItems()
+    ]);
+    
+    if (!mascot) {
+      alert('마스코트 정보를 불러올 수 없습니다.');
+      return;
+    }
+    
+    // 실시간 마스코트 이미지 합성
+    const realtimeImageUrl = await composeMascotImage(mascot, customization, shopItems);
+    
+    currentMascot.value = {
+      name: mascot.name,
+      imageUrl: realtimeImageUrl,
+      snapshotId: 0 // 실시간 이미지이므로 0으로 설정
+    };
+    
+    selectedSlotIndex.value = slotIndex;
+    showRankingModal.value = true;
+    
+  } catch (error) {
+    console.error('마스코트 정보 로드 실패:', error);
+    alert('마스코트 정보를 불러올 수 없습니다.');
+  }
+}
+
+async function handleRankingSubmit(data: CreateEntryRequest) {
+  try {
+    const newEntry = await createRankingEntry(data);
+    
+    // 슬롯에 새 엔트리 할당
+    rankingSlots.value[selectedSlotIndex.value].entry = newEntry;
+    rankingSlots.value[selectedSlotIndex.value].mascotImageUrl = currentMascot.value?.imageUrl || '';
+    
+    // 슬롯 활성화 상태 업데이트
+    updateSlotActivation();
+    
+    // 모달 닫기
+    showRankingModal.value = false;
+    selectedSlotIndex.value = -1;
+    currentMascot.value = null;
+    
+    alert('랭킹 참가가 완료되었습니다!');
+    
+  } catch (error) {
+    console.error('랭킹 참가 실패:', error);
+    alert('랭킹 참가에 실패했습니다.');
+  }
+}
+
+// 등록된 슬롯의 실시간 마스코트 이미지 업데이트
+async function updateSlotMascotImages() {
+  try {
+    for (let i = 0; i < rankingSlots.value.length; i++) {
+      const slot = rankingSlots.value[i];
+      if (slot.entry) {
+        // 등록된 슬롯의 경우 실시간 마스코트 이미지 생성
+        const [mascot, customization, shopItems] = await Promise.all([
+          getCurrentUserMascot(),
+          getMascotCustomization(),
+          getShopItems()
+        ]);
+        
+        if (mascot) {
+          const realtimeImageUrl = await composeMascotImage(mascot, customization, shopItems);
+          slot.mascotImageUrl = realtimeImageUrl;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('슬롯 마스코트 이미지 업데이트 실패:', error);
+  }
+}
+
+async function handleSlotDelete(entryId: number) {
+  if (!confirm('정말로 랭킹 참가를 취소하시겠습니까?')) return;
+  
+  try {
+    await deleteRankingEntry(entryId);
+    
+    // 슬롯에서 엔트리 제거
+    const slotIndex = rankingSlots.value.findIndex(slot => slot.entry?.entryId === entryId);
+    if (slotIndex !== -1) {
+      rankingSlots.value[slotIndex].entry = null;
+      rankingSlots.value[slotIndex].mascotImageUrl = '';
+      rankingSlots.value[slotIndex].voteCount = 0;
+      rankingSlots.value[slotIndex].rank = 0;
+    }
+    
+    // 슬롯 활성화 상태 업데이트
+    updateSlotActivation();
+    
+    alert('랭킹 참가가 취소되었습니다.');
+    
+  } catch (error) {
+    console.error('랭킹 참가 취소 실패:', error);
+    alert('랭킹 참가 취소에 실패했습니다.');
+  }
+}
+
 // 컴포넌트 마운트 시 인증 확인 후 랭킹 로드
 onMounted(async () => {
   try {
@@ -734,8 +874,8 @@ onMounted(async () => {
     const nationalVotedMascotIds = await getUserNationalVotedMascotIds();
     nationalVotedMascots.value = new Set(nationalVotedMascotIds);
 
-    // 5. 랭킹 데이터 로드 (탭 변경 시 로드되므로 여기서는 필요 없음)
-    // await loadCampusRankings(); 
+    // 5. 랭킹 엔트리 로드
+    await loadRankingEntries();
     
   } catch (error) {
     console.error('랭킹 페이지 초기화 실패:', error);

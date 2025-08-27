@@ -79,7 +79,11 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   }
 
   const doFetch = async () => {
-    const res = await fetch(`${API_BASE}${path}`, {
+    // 절대 URL인지 확인 (http:// 또는 https://로 시작하는지)
+    const isAbsoluteUrl = path.startsWith('http://') || path.startsWith('https://');
+    const fullUrl = isAbsoluteUrl ? path : `${API_BASE}${path}`;
+    
+    const res = await fetch(fullUrl, {
       credentials: 'include',
       ...init,
       headers,
