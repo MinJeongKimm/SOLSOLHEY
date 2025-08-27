@@ -24,7 +24,8 @@ import type {
   OrderRequest,
   OrderResponse,
   UserItem,
-  ApiResponse
+  ApiResponse,
+  MascotBackgroundUpdateRequest
 } from '../types/api';
 import { ApiError } from '../types/api';
 import router from '../router';
@@ -276,6 +277,18 @@ export async function updateMascot(data: UpdateMascotRequest): Promise<Mascot> {
   const m = mascot.transformBackendResponse(res);
   if (!m) throw new Error('마스코트 수정에 실패했습니다.');
   
+  return m;
+}
+
+// 배경 커스터마이징 저장
+export async function updateMascotBackground(data: MascotBackgroundUpdateRequest): Promise<Mascot> {
+  const res = await apiRequest<any>('/mascot/background', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+
+  const m = mascot.transformBackendResponse(res);
+  if (!m) throw new Error('배경 설정 저장에 실패했습니다.');
   return m;
 }
 

@@ -24,6 +24,31 @@
 
       <!-- 마스코트 미리보기 영역 -->
       <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 mb-6">
+        <!-- 배경 커스터마이징 UI -->
+        <div class="mb-4 bg-white bg-opacity-80 rounded-lg p-3 flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-700">배경색</span>
+            <input type="color" v-model="bgColor" class="w-8 h-8 rounded cursor-pointer border" />
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-700">패턴</span>
+            <button 
+              class="px-2 py-1 rounded text-xs border"
+              :class="bgPattern === 'none' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'"
+              @click="bgPattern = 'none'">없음</button>
+            <button 
+              class="px-2 py-1 rounded text-xs border"
+              :class="bgPattern === 'dots' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'"
+              @click="bgPattern = 'dots'">도트</button>
+            <button 
+              class="px-2 py-1 rounded text-xs border"
+              :class="bgPattern === 'stripes' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'"
+              @click="bgPattern = 'stripes'">스트라이프</button>
+          </div>
+          <div class="ml-auto">
+            <button @click="saveBackground" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">배경 저장</button>
+          </div>
+        </div>
         <!-- 모바일 도움말 -->
         <div v-if="isMobileDevice" class="mb-4 p-3 bg-blue-100 rounded-lg text-sm text-blue-800">
           <div class="flex items-center space-x-2 mb-1">
@@ -42,7 +67,7 @@
         
         <div 
           class="relative h-64 rounded-xl overflow-hidden flex items-center justify-center"
-          style="background: linear-gradient(135deg, #bfdbfe 0%, #ddd6fe 100%)"
+          :style="previewBackgroundStyle"
         >
           <!-- 커스터마이즈 배경 -->
           <img 
@@ -294,7 +319,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { getMascot, getShopItems, handleApiError, getMascotCustomization, saveMascotCustomization } from '../api/index';
+import { getMascot, getShopItems, handleApiError, getMascotCustomization, saveMascotCustomization, updateMascotBackground } from '../api/index';
 import DraggableItem from '../components/DraggableItem.vue';
 import { mascotTypes } from '../data/mockData';
 import type { Item, Mascot } from '../types/api';
@@ -346,6 +371,35 @@ const mascotRect = ref<DOMRect | null>(null);
 // 토스트 알림
 const showToast = ref(false);
 const toastMessage = ref('');
+
+// 배경 커스터마이징 상태
+const bgColor = ref<string>('#ffffff');
+const bgPattern = ref<'dots' | 'stripes' | 'none'>('none');
+
+const previewBackgroundStyle = computed(() => {
+  const style: Record<string, string> = {
+    backgroundColor: bgColor.value || '#ffffff',
+  };
+  if (bgPattern.value === 'dots') {
+    style.backgroundImage = 'radial-gradient(circle, rgba(0,0,0,0.12) 1px, transparent 1px)';
+    style.backgroundSize = '12px 12px';
+  } else if (bgPattern.value === 'stripes') {
+    style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(0,0,0,0.08) 0 10px, transparent 10px 20px)';
+  } else {
+    style.backgroundImage = 'none';
+  }
+  return style;
+});
+
+async function saveBackground() {
+  try {
+    await updateMascotBackground({ backgroundColor: bgColor.value, patternType: bgPattern.value });
+    showToastMessage('배경 설정이 저장되었습니다!');
+  } catch (e) {
+    const msg = handleApiError(e);
+    showToastMessage(`배경 저장 실패: ${msg}`);
+  }
+}
 
 // 아이템 카테고리
 const itemCategories = [
@@ -1079,6 +1133,13 @@ async function loadMascotData() {
     if (mascotData) {
       currentMascot.value = mascotData;
       console.log('마스코트 데이터 로드됨:', mascotData);
+      // 배경 커스터마이징 초기값 적용
+      if (mascotData.backgroundColor) {
+        bgColor.value = mascotData.backgroundColor as string;
+      }
+      if (mascotData.backgroundPattern) {
+        bgPattern.value = mascotData.backgroundPattern as any;
+      }
       
       // 기존 장착된 아이템들 로드 (호환성)
       loadEquippedItemsFromMascot();
