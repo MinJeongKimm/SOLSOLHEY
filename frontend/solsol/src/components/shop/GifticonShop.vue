@@ -152,6 +152,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { getGifticons, createOrder } from '../../api/index';
 import type { Gifticon, ShopItem } from '../../types/api';
 import PurchaseDialog from './PurchaseDialog.vue';
@@ -183,6 +184,7 @@ const sortOrder = ref<'default' | 'price-low' | 'price-high'>('default');
 // 구매 다이얼로그 관련
 const showPurchaseDialog = ref(false);
 const selectedGifticon = ref<Gifticon | null>(null);
+const router = useRouter();
 
 // 카테고리별 기프티콘 필터링
 const filteredGifticons = computed(() => {
@@ -262,12 +264,13 @@ async function handlePurchase(item: Gifticon | ShopItem, quantity: number) {
     };
     
     await createOrder(orderData);
-    
     // 구매 성공 후 처리
     closePurchaseDialog();
-    
     // 포인트 업데이트 (부모 컴포넌트에서 처리)
     emit('points-updated');
+    // 보관함 이동 팝업
+    const go = window.confirm('구매가 완료되었습니다. 보관함으로 이동하시겠습니까?');
+    if (go) router.push('/locker');
     
   } catch (err: any) {
     console.error('기프티콘 구매 실패:', err);

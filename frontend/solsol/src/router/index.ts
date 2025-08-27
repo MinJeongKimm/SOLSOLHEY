@@ -9,6 +9,7 @@ import MascotCustomize from '../views/MascotCustomize.vue'
 import FriendList from '../views/FriendList.vue'
 import FriendAdd from '../views/FriendAdd.vue'
 import Shop from '../views/Shop.vue'
+import Locker from '../views/Locker.vue'
 import Ranking from '../views/Ranking.vue'
 import Attendance from '../views/Attendance.vue'
 import { auth } from '../api/index'
@@ -68,6 +69,11 @@ const routes = [
   { 
     path: '/shop', 
     component: Shop, 
+    meta: { requiresAuth: true }
+  },
+  { 
+    path: '/locker', 
+    component: Locker, 
     meta: { requiresAuth: true }
   },
   { 

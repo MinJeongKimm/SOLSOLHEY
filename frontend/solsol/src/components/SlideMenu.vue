@@ -61,6 +61,19 @@
           <span>출석체크</span>
         </router-link>
 
+        <!-- 보관함 -->
+        <router-link 
+          to="/locker" 
+          @click="closeMenu"
+          class="flex items-center space-x-3 p-3 rounded-lg text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+          :class="{ 'bg-blue-50 text-blue-600': $route.path === '/locker' }"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V7a2 2 0 00-2-2H6a2 2 0 00-2 2v6m16 0v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4m16 0H4" />
+          </svg>
+          <span>보관함</span>
+        </router-link>
+
         <!-- 친구 -->
         <router-link 
           to="/friend" 

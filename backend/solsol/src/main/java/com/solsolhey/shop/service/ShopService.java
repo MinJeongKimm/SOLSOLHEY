@@ -4,6 +4,8 @@ import com.solsolhey.shop.dto.GifticonResponse;
 import com.solsolhey.shop.dto.ItemResponse;
 import com.solsolhey.shop.dto.OrderRequest;
 import com.solsolhey.shop.dto.OrderResponse;
+import com.solsolhey.shop.dto.PurchasedGifticonDetailResponse;
+import com.solsolhey.shop.dto.PurchasedGifticonResponse;
 
 import java.util.List;
 
@@ -45,5 +47,14 @@ public interface ShopService {
      * @return 사용 결과 메시지
      */
     String redeemGifticon(Long userId, Long gifticonId);
-}
 
+    /**
+     * 사용자가 구매한 기프티콘 목록 조회 (보관함)
+     */
+    List<PurchasedGifticonResponse> getPurchasedGifticons(Long userId);
+
+    /**
+     * 사용자가 구매한 기프티콘 상세 조회
+     */
+    PurchasedGifticonDetailResponse getPurchasedGifticon(Long userId, Long id);
+}
