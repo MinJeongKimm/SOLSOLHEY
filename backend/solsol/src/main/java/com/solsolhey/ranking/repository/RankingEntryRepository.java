@@ -1,7 +1,6 @@
 package com.solsolhey.ranking.repository;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,20 +42,8 @@ public interface RankingEntryRepository extends JpaRepository<RankingEntry, Long
     boolean existsByUserIdAndMascotSnapshotId(@Param("userId") Long userId, @Param("mascotSnapshotId") Long mascotSnapshotId);
 
     /**
-     * 전체 랭킹 보드 조회 (점수 내림차순, 최신순)
+     * 전체 랭킹 보드 조회 (생성일 내림차순)
      */
-    @Query("SELECT re FROM RankingEntry re ORDER BY re.score DESC, re.createdAt ASC")
-    Page<RankingEntry> findAllOrderByScoreDescAndCreatedAtAsc(Pageable pageable);
-
-    /**
-     * 특정 점수 이상의 참가 목록 조회
-     */
-    @Query("SELECT re FROM RankingEntry re WHERE re.score >= :minScore ORDER BY re.score DESC, re.createdAt ASC")
-    Page<RankingEntry> findByScoreGreaterThanEqualOrderByScoreDesc(@Param("minScore") Integer minScore, Pageable pageable);
-
-    /**
-     * 사용자별 최고 점수 참가 조회
-     */
-    @Query("SELECT re FROM RankingEntry re WHERE re.userId = :userId ORDER BY re.score DESC LIMIT 1")
-    Optional<RankingEntry> findTopByUserIdOrderByScoreDesc(@Param("userId") Long userId);
+    @Query("SELECT re FROM RankingEntry re ORDER BY re.createdAt DESC")
+    Page<RankingEntry> findAllOrderByCreatedAtDesc(Pageable pageable);
 }

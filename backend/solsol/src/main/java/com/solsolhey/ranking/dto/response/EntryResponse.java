@@ -11,11 +11,9 @@ public record EntryResponse(
     Long entryId,
     Long userId,
     Long mascotSnapshotId,
-    Integer score,
     String title,
     String description,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    LocalDateTime createdAt
 ) {
     
     /**
@@ -26,11 +24,9 @@ public record EntryResponse(
             entry.getEntryId(),
             entry.getUserId(),
             entry.getMascotSnapshotId(),
-            entry.getScore(),
             entry.getTitle(),
             entry.getDescription(),
-            entry.getCreatedAt(),
-            entry.getUpdatedAt()
+            entry.getCreatedAt()
         );
     }
 }

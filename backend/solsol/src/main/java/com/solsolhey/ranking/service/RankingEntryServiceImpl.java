@@ -51,7 +51,6 @@ public class RankingEntryServiceImpl implements RankingEntryService {
         RankingEntry entry = RankingEntry.builder()
             .userId(userId)
             .mascotSnapshotId(request.mascotSnapshotId())
-            .score(request.score())
             .title(request.title())
             .description(request.description())
             .build();
@@ -84,7 +83,7 @@ public class RankingEntryServiceImpl implements RankingEntryService {
 
     @Override
     public LeaderboardResponse getLeaderboard(Pageable pageable) {
-        Page<RankingEntry> entryPage = rankingEntryRepository.findAllOrderByScoreDescAndCreatedAtAsc(pageable);
+        Page<RankingEntry> entryPage = rankingEntryRepository.findAllOrderByCreatedAtDesc(pageable);
         
         // 순위 계산 및 설정
         List<LeaderboardResponse.LeaderboardEntry> entries = entryPage.getContent().stream()
@@ -93,7 +92,8 @@ public class RankingEntryServiceImpl implements RankingEntryService {
                 // 순위 계산 (페이지 기반)
                 int rank = (int) (entryPage.getNumber() * entryPage.getSize()) + 
                            entryPage.getContent().indexOf(entry) + 1;
-                return leaderboardEntry.withRank(rank);
+                // 투표수는 0으로 설정 (실제로는 Vote 테이블에서 계산해야 함)
+                return leaderboardEntry.withRankAndVoteCount(rank, 0);
             })
             .collect(Collectors.toList());
 

@@ -1,7 +1,6 @@
 package com.solsolhey.ranking.dto.request;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -28,10 +27,6 @@ public record CreateEntryRequest(
     public CreateEntryRequest {
         if (mascotSnapshotId == null || mascotSnapshotId <= 0) {
             throw new IllegalArgumentException("마스코트 스냅샷 ID는 0보다 큰 값이어야 합니다");
-        }
-        
-        if (score == null || score < 0 || score > 10000) {
-            throw new IllegalArgumentException("랭킹 점수는 0 이상 10000 이하여야 합니다");
         }
         
         if (title == null || title.trim().isEmpty()) {

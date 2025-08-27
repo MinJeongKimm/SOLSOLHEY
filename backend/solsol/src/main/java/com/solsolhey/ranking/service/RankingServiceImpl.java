@@ -23,6 +23,7 @@ import com.solsolhey.ranking.dto.response.RankingResponse;
 import com.solsolhey.ranking.dto.response.VoteResponse;
 import com.solsolhey.ranking.entity.Vote;
 import com.solsolhey.ranking.repository.VoteRepository;
+import com.solsolhey.ranking.repository.RankingEntryRepository;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.user.repository.UserRepository;
 
@@ -41,6 +42,7 @@ public class RankingServiceImpl implements RankingService {
     private final VoteRepository voteRepository;
     private final UserRepository userRepository;
     private final MascotRepository mascotRepository;
+    private final RankingEntryRepository rankingEntryRepository;
 
     // 일일 투표 제한 (교내: 10회, 전국: 5회)
     private static final int DAILY_CAMPUS_VOTE_LIMIT = 10;

@@ -43,11 +43,11 @@ public record LeaderboardResponse(
         Long entryId,
         Long userId,
         Long mascotSnapshotId,
-        Integer score,
         String title,
         String description,
         String createdAt,
-        int rank
+        int rank,
+        long voteCount
     ) {
         
         /**
@@ -58,27 +58,27 @@ public record LeaderboardResponse(
                 entry.getEntryId(),
                 entry.getUserId(),
                 entry.getMascotSnapshotId(),
-                entry.getScore(),
                 entry.getTitle(),
                 entry.getDescription(),
                 entry.getCreatedAt().toString(),
-                0 // rank는 서비스에서 계산
+                0, // rank는 서비스에서 계산
+                0  // voteCount는 서비스에서 계산
             );
         }
         
         /**
-         * 순위 설정
+         * 순위와 투표수 설정
          */
-        public LeaderboardEntry withRank(int rank) {
+        public LeaderboardEntry withRankAndVoteCount(int rank, long voteCount) {
             return new LeaderboardEntry(
                 this.entryId,
                 this.userId,
                 this.mascotSnapshotId,
-                this.score,
                 this.title,
                 this.description,
                 this.createdAt,
-                rank
+                rank,
+                voteCount
             );
         }
     }
