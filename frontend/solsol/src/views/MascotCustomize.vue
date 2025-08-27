@@ -55,7 +55,7 @@
         >
           <!-- 배경 커스터마이징 토글 아이콘 (좌하단) -->
           <button
-            class="absolute bottom-2 left-2 z-20 w-9 h-9 rounded-full shadow bg-white/90 hover:bg-white flex items-center justify-center border border-gray-200"
+            class="absolute bottom-2 left-2 z-50 w-9 h-9 rounded-full shadow bg-white/90 hover:bg-white flex items-center justify-center border border-gray-200 pointer-events-auto"
             title="배경 커스터마이징"
             @click.stop="toggleBgPanel"
           >
