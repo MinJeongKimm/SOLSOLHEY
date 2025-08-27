@@ -256,6 +256,7 @@ public class ShopServiceImpl implements ShopService {
 
             // 4단계: 사용자 보관함에 기프티콘 저장 (바코드/만료 포함)
             GifticonMeta meta = getGifticonMeta(request.getSku());
+            LocalDateTime purchasedAt = savedOrder.getCreatedAt() != null ? savedOrder.getCreatedAt() : LocalDateTime.now();
             UserGifticon gifticon = UserGifticon.builder()
                     .userId(userId)
                     .sku(request.getSku())
@@ -263,7 +264,7 @@ public class ShopServiceImpl implements ShopService {
                     .imageUrl(meta.imageUrl)
                     .barcode(generateBarcode())
                     .status(UserGifticon.Status.ACTIVE)
-                    .expiresAt(LocalDateTime.now().plusDays(90))
+                    .expiresAt(purchasedAt.plusYears(1))
                     .build();
             userGifticonRepository.save(gifticon);
             log.info("보관함 기프티콘 생성 - userId={}, sku={}, gifticonId={}", userId, request.getSku(), gifticon.getId());
