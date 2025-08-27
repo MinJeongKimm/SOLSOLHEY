@@ -24,6 +24,7 @@ import com.solsolhey.friend.repository.FriendInteractionRepository;
 import com.solsolhey.friend.repository.FriendRepository;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.user.repository.UserRepository;
+import com.solsolhey.exp.service.ExpDailyCounterService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class FriendServiceImpl implements FriendService {
     private final FriendRepository friendRepository;
     private final FriendInteractionRepository friendInteractionRepository;
     private final UserRepository userRepository;
+    private final ExpDailyCounterService expDailyCounterService;
 
     @Override
     public FriendResponse sendFriendRequest(User user, FriendAddRequest request) {
@@ -203,6 +205,18 @@ public class FriendServiceImpl implements FriendService {
                 .build();
 
         FriendInteraction savedInteraction = friendInteractionRepository.save(interaction);
+        try {
+            // 방문자(발신자): active 규칙(1~3회 +3, 이후 +1)
+            expDailyCounterService.awardFriendInteractionExpActive(user);
+        } catch (Exception e) {
+            log.warn("친구 Active EXP 적립 실패: userId={}, err={}", user.getUserId(), e.getMessage());
+        }
+        try {
+            // 피방문자(수신자): passive 규칙(+1, 무제한)
+            expDailyCounterService.awardFriendInteractionExpPassive(toUser);
+        } catch (Exception e) {
+            log.warn("친구 Passive EXP 적립 실패: toUserId={}, err={}", toUser.getUserId(), e.getMessage());
+        }
         
         return FriendInteractionResponse.from(savedInteraction);
     }

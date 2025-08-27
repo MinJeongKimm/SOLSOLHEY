@@ -23,7 +23,7 @@ const route = useRoute();
 
 // 인증이 필요한 페이지에서만 Header 표시
 const showHeader = computed(() => {
-  const authPages = ['/challenge', '/mascot', '/friend', '/ranking', '/attendance'];
+  const authPages = ['/challenge', '/mascot', '/friend', '/ranking', '/attendance', '/shop'];
   return authPages.includes(route.path);
 });
 </script>
