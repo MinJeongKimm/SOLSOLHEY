@@ -3,8 +3,6 @@ package com.solsolhey.ranking.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -52,7 +50,8 @@ public class RankingController {
             @Parameter(description = "정렬 기준 (votes_desc, trending, newest)") @RequestParam(defaultValue = "votes_desc") String sort,
             @Parameter(description = "집계 기간 (daily, weekly, monthly, all)") @RequestParam(defaultValue = "weekly") String period,
             @Parameter(description = "페이지 번호") @RequestParam(defaultValue = "0") Integer page,
-            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") Integer size) {
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "20") Integer size,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.solsolhey.auth.dto.response.CustomUserDetails userDetails) {
 
         try {
             // 요청 검증
@@ -62,7 +61,7 @@ public class RankingController {
             }
 
             CampusRankingRequest request = new CampusRankingRequest(campusId, sort, period, page, size);
-            String userCampus = getCurrentUserCampus();
+            String userCampus = userDetails.getUser().getCampus();
 
             RankingResponse response = rankingService.getCampusRankings(request, userCampus);
             return ResponseEntity.ok(ApiResponse.success("교내 랭킹 조회 완료", response));
@@ -124,7 +123,8 @@ public class RankingController {
     public ResponseEntity<ApiResponse<VoteResponse>> voteForCampus(
             @Parameter(description = "투표 대상 마스코트 ID") @PathVariable Long mascotId,
             @Valid @RequestBody VoteRequest request,
-            BindingResult bindingResult) {
+            BindingResult bindingResult,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.solsolhey.auth.dto.response.CustomUserDetails userDetails) {
 
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getFieldErrors().stream()
@@ -136,8 +136,8 @@ public class RankingController {
         }
 
         try {
-            Long voterId = getCurrentUserId();
-            String userCampus = getCurrentUserCampus();
+            Long voterId = userDetails.getUser().getUserId();
+            String userCampus = userDetails.getUser().getCampus();
 
             VoteResponse response = rankingService.voteForCampus(mascotId, request, voterId, userCampus);
             
@@ -176,7 +176,8 @@ public class RankingController {
     public ResponseEntity<ApiResponse<VoteResponse>> voteForNational(
             @Parameter(description = "투표 대상 마스코트 ID") @PathVariable Long mascotId,
             @Valid @RequestBody VoteRequest request,
-            BindingResult bindingResult) {
+            BindingResult bindingResult,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.solsolhey.auth.dto.response.CustomUserDetails userDetails) {
 
         if (bindingResult.hasErrors()) {
             String errorMessage = bindingResult.getFieldErrors().stream()
@@ -188,7 +189,7 @@ public class RankingController {
         }
 
         try {
-            Long voterId = getCurrentUserId();
+            Long voterId = userDetails.getUser().getUserId();
             VoteResponse response = rankingService.voteForNational(mascotId, request, voterId);
             
             if (response.getSuccess()) {
@@ -214,32 +215,4 @@ public class RankingController {
         }
     }
 
-    // === Private Helper Methods ===
-
-    /**
-     * 현재 인증된 사용자 ID 조회
-     */
-    private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalStateException("인증되지 않은 사용자입니다.");
-        }
-
-        // JWT 토큰에서 사용자 ID 추출 (실제 구현에 따라 달라질 수 있음)
-        try {
-            return Long.parseLong(authentication.getName());
-        } catch (NumberFormatException e) {
-            throw new IllegalStateException("유효하지 않은 사용자 ID입니다.");
-        }
-    }
-
-    /**
-     * 현재 사용자의 캠퍼스 정보 조회
-     */
-    private String getCurrentUserCampus() {
-        // 실제로는 사용자 서비스를 통해 캠퍼스 정보를 조회해야 함
-        // 임시로 기본값 반환
-        return "기본캠퍼스";
-    }
 }
