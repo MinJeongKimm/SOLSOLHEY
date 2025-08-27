@@ -1,6 +1,8 @@
 package com.solsolhey.friend.service;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -17,11 +19,15 @@ import com.solsolhey.friend.dto.response.FriendInteractionResponse;
 import com.solsolhey.friend.dto.response.FriendResponse;
 import com.solsolhey.friend.dto.response.FriendSearchResponse;
 import com.solsolhey.friend.dto.response.FriendStatsResponse;
+import com.solsolhey.friend.dto.response.FriendHomeResponse;
 import com.solsolhey.friend.entity.Friend;
 import com.solsolhey.friend.entity.Friend.FriendshipStatus;
 import com.solsolhey.friend.entity.FriendInteraction;
+import com.solsolhey.friend.entity.FriendInteraction.InteractionType;
 import com.solsolhey.friend.repository.FriendInteractionRepository;
 import com.solsolhey.friend.repository.FriendRepository;
+import com.solsolhey.mascot.dto.view.MascotViewResponse;
+import com.solsolhey.mascot.service.MascotViewService;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.user.repository.UserRepository;
 import com.solsolhey.exp.service.ExpDailyCounterService;
@@ -38,10 +44,13 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 public class FriendServiceImpl implements FriendService {
 
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+
     private final FriendRepository friendRepository;
     private final FriendInteractionRepository friendInteractionRepository;
     private final UserRepository userRepository;
     private final ExpDailyCounterService expDailyCounterService;
+    private final MascotViewService mascotViewService;
 
     @Override
     public FriendResponse sendFriendRequest(User user, FriendAddRequest request) {
@@ -197,6 +206,23 @@ public class FriendServiceImpl implements FriendService {
             throw new BusinessException("친구 관계가 아닌 사용자에게는 상호작용을 보낼 수 없습니다.");
         }
 
+        // LIKE에 한하여 핑퐁 제한 적용: allowedMax = min(30, 1 + receivedToday)
+        if (request.interactionType() == InteractionType.LIKE) {
+            LocalDate today = LocalDate.now(KST);
+            LocalDateTime startOfDay = today.atStartOfDay();
+            LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+
+            long sentToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                    user, toUser, InteractionType.LIKE, startOfDay, endOfDay);
+            long receivedToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                    toUser, user, InteractionType.LIKE, startOfDay, endOfDay);
+
+            long allowedMax = Math.min(30, 1 + receivedToday);
+            if (sentToday >= allowedMax) {
+                throw new BusinessException("오늘은 더 이상 해당 친구에게 좋아요를 보낼 수 없습니다.");
+            }
+        }
+
         FriendInteraction interaction = FriendInteraction.builder()
                 .fromUser(user)
                 .toUser(toUser)
@@ -245,5 +271,56 @@ public class FriendServiceImpl implements FriendService {
         }
 
         interaction.markAsRead();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FriendHomeResponse getFriendHome(User viewer, Long friendId) {
+        User owner = userRepository.findById(friendId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+
+        boolean self = viewer.getUserId().equals(owner.getUserId());
+        boolean isFriend = self || friendRepository.existsMutualFriendship(viewer, owner);
+        if (!isFriend) {
+            throw new BusinessException("친구 관계가 아닌 사용자입니다.");
+        }
+
+        // Mascot view summary
+        MascotViewResponse view = mascotViewService.getView(viewer.getUserId(), owner.getUserId());
+
+        // Lifetime like count to owner (from anyone)
+        long lifetimeLikes = friendInteractionRepository
+                .countByToUserAndInteractionType(owner, InteractionType.LIKE);
+
+        // Today window (KST)
+        LocalDate today = LocalDate.now(KST);
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+
+        long sentToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                viewer, owner, InteractionType.LIKE, startOfDay, endOfDay);
+        long receivedToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                owner, viewer, InteractionType.LIKE, startOfDay, endOfDay);
+
+        int allowedMax = (int) Math.min(30, 1 + receivedToday);
+        int remaining = Math.max(0, allowedMax - (int) sentToday);
+        boolean canLikeNow = remaining > 0;
+
+        return FriendHomeResponse.builder()
+                .ownerId(view.getOwner().getId())
+                .nickname(view.getOwner().getNickname())
+                .level(view.getOwner().getLevel())
+                .likeCount(lifetimeLikes)
+                .likeSentToday((int) sentToday)
+                .likeReceivedToday((int) receivedToday)
+                .likeAllowedMax(allowedMax)
+                .likeRemainingToday(remaining)
+                .canLikeNow(canLikeNow)
+                .viewMode(view.getViewMode())
+                .permissions(view.getPermissions())
+                .mascot(view.getMascot())
+                .isFriend(isFriend)
+                .isOwner(self)
+                .build();
     }
 }
