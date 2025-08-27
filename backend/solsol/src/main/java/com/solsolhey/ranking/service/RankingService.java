@@ -77,4 +77,14 @@ public interface RankingService {
      * 사용자의 전국 랭킹 투표 히스토리 조회 (투표한 엔트리 ID 목록)
      */
     List<Long> getUserVotedEntryIdsForNational(Long voterId);
+
+    /**
+     * 여러 엔트리에 대한 투표 가능 여부를 한 번에 조회 (교내 랭킹)
+     */
+    java.util.Map<Long, Boolean> getVoteableStatusForCampusEntries(Long voterId, List<Long> entryIds);
+
+    /**
+     * 여러 엔트리에 대한 투표 가능 여부를 한 번에 조회 (전국 랭킹)
+     */
+    java.util.Map<Long, Boolean> getVoteableStatusForNationalEntries(Long voterId, List<Long> entryIds);
 }

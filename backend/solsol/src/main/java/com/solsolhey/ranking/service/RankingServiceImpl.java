@@ -273,6 +273,52 @@ public class RankingServiceImpl implements RankingService {
                 .orElseThrow(() -> new BusinessException("존재하지 않는 마스코트입니다."));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Map<Long, Boolean> getVoteableStatusForCampusEntries(Long voterId, List<Long> entryIds) {
+        log.info("교내 랭킹 엔트리들에 대한 투표 가능 여부 조회 시작 - voterId: {}, entryIds: {}", voterId, entryIds);
+        
+        java.util.Map<Long, Boolean> result = new java.util.HashMap<>();
+        
+        if (entryIds == null || entryIds.isEmpty()) {
+            log.info("엔트리 ID 목록이 비어있습니다.");
+            return result;
+        }
+        
+        // 각 엔트리에 대해 투표 가능 여부 확인
+        for (Long entryId : entryIds) {
+            boolean canVote = canVote(voterId, entryId, Vote.VoteType.CAMPUS);
+            result.put(entryId, canVote);
+            log.debug("엔트리 {} 투표 가능 여부: {}", entryId, canVote);
+        }
+        
+        log.info("교내 랭킹 엔트리들에 대한 투표 가능 여부 조회 완료 - 결과: {}", result);
+        return result;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Map<Long, Boolean> getVoteableStatusForNationalEntries(Long voterId, List<Long> entryIds) {
+        log.info("전국 랭킹 엔트리들에 대한 투표 가능 여부 조회 시작 - voterId: {}, entryIds: {}", voterId, entryIds);
+        
+        java.util.Map<Long, Boolean> result = new java.util.HashMap<>();
+        
+        if (entryIds == null || entryIds.isEmpty()) {
+            log.info("엔트리 ID 목록이 비어있습니다.");
+            return result;
+        }
+        
+        // 각 엔트리에 대해 투표 가능 여부 확인
+        for (Long entryId : entryIds) {
+            boolean canVote = canVote(voterId, entryId, Vote.VoteType.NATIONAL);
+            result.put(entryId, canVote);
+            log.debug("엔트리 {} 투표 가능 여부: {}", entryId, canVote);
+        }
+        
+        log.info("전국 랭킹 엔트리들에 대한 투표 가능 여부 조회 완료 - 결과: {}", result);
+        return result;
+    }
+
     // === Private Helper Methods ===
 
     private VoteResponse processVote(Long entryId, Long voterId, VoteRequest request, Vote.VoteType voteType) {

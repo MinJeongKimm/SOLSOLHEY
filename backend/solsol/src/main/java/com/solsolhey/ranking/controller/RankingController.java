@@ -303,4 +303,70 @@ public class RankingController {
         }
     }
 
+    /**
+     * 교내 랭킹 엔트리들에 대한 투표 가능 여부 조회
+     */
+    @PostMapping("/campus/voteable-status")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "교내 랭킹 엔트리들 투표 가능 여부 조회", description = "여러 엔트리에 대한 투표 가능 여부를 한 번에 조회합니다")
+    public ResponseEntity<ApiResponse<java.util.Map<Long, Boolean>>> getCampusVoteableStatus(
+            @RequestBody List<Long> entryIds,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.solsolhey.auth.dto.response.CustomUserDetails userDetails) {
+        try {
+            Long userId = userDetails.getUser().getUserId();
+            
+            if (entryIds == null || entryIds.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.<java.util.Map<Long, Boolean>>badRequest("엔트리 ID 목록이 비어있습니다."));
+            }
+            
+            if (entryIds.size() > 100) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.<java.util.Map<Long, Boolean>>badRequest("한 번에 조회할 수 있는 엔트리 수는 100개를 초과할 수 없습니다."));
+            }
+            
+            java.util.Map<Long, Boolean> voteableStatus = rankingService.getVoteableStatusForCampusEntries(userId, entryIds);
+            
+            return ResponseEntity.ok(ApiResponse.success("교내 랭킹 엔트리들 투표 가능 여부 조회 완료", voteableStatus));
+            
+        } catch (Exception e) {
+            log.error("교내 랭킹 엔트리들 투표 가능 여부 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.<java.util.Map<Long, Boolean>>internalServerError("투표 가능 여부 조회에 실패했습니다."));
+        }
+    }
+
+    /**
+     * 전국 랭킹 엔트리들에 대한 투표 가능 여부 조회
+     */
+    @PostMapping("/national/voteable-status")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "전국 랭킹 엔트리들 투표 가능 여부 조회", description = "여러 엔트리에 대한 투표 가능 여부를 한 번에 조회합니다")
+    public ResponseEntity<ApiResponse<java.util.Map<Long, Boolean>>> getNationalVoteableStatus(
+            @RequestBody List<Long> entryIds,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.solsolhey.auth.dto.response.CustomUserDetails userDetails) {
+        try {
+            Long userId = userDetails.getUser().getUserId();
+            
+            if (entryIds == null || entryIds.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.<java.util.Map<Long, Boolean>>badRequest("엔트리 ID 목록이 비어있습니다."));
+            }
+            
+            if (entryIds.size() > 100) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.<java.util.Map<Long, Boolean>>badRequest("한 번에 조회할 수 있는 엔트리 수는 100개를 초과할 수 없습니다."));
+            }
+            
+            java.util.Map<Long, Boolean> voteableStatus = rankingService.getVoteableStatusForNationalEntries(userId, entryIds);
+            
+            return ResponseEntity.ok(ApiResponse.success("전국 랭킹 엔트리들 투표 가능 여부 조회 완료", voteableStatus));
+            
+        } catch (Exception e) {
+            log.error("전국 랭킹 엔트리들 투표 가능 여부 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.<java.util.Map<Long, Boolean>>internalServerError("투표 가능 여부 조회에 실패했습니다."));
+        }
+    }
+
 }

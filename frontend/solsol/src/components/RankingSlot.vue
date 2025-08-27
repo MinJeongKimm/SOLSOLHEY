@@ -85,7 +85,7 @@ import { computed } from 'vue';
 import type { EntryResponse } from '../api/ranking';
 
 interface Props {
-  entry?: EntryResponse;
+  entry?: EntryResponse | null;
   isActive: boolean;
   mascotImageUrl?: string;
   voteCount?: number;

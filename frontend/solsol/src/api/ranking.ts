@@ -4,11 +4,17 @@ import type { ApiResponse, UserResponse } from '../types/api';
 
 // 랭킹 관련 타입 정의 (마스코트 기반)
 export interface RankingEntry {
+  entryId: number;
   rank: number;
   mascotId: number;
+  mascotSnapshotId: number;
   ownerNickname: string;
+  mascotName: string;
+  entryTitle: string;
   votes: number;
   backgroundId: string;
+  imageUrl: string;
+  entryImageUrl: string;
   school?: {
     id: number | null;
     name: string;
@@ -554,6 +560,44 @@ export async function getUserNationalVotedEntryIds(): Promise<number[]> {
       throw new Error((res as any)?.message || '전국 랭킹 투표한 엔트리 ID 조회 실패');
     }
     return res.data as number[];
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    throw error;
+  }
+}
+
+// 교내 랭킹 엔트리들에 대한 투표 가능 여부 조회
+export async function getCampusVoteableStatus(entryIds: number[]): Promise<Record<number, boolean>> {
+  try {
+    const res = await apiRequest<ApiResponse<Record<number, boolean>>>('/rankings/campus/voteable-status', {
+      method: 'POST',
+      body: JSON.stringify(entryIds),
+    });
+    if (!res || (res as any).success === false || !res.data) {
+      throw new Error((res as any)?.message || '교내 랭킹 투표 가능 여부 조회 실패');
+    }
+    return res.data as Record<number, boolean>;
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    throw error;
+  }
+}
+
+// 전국 랭킹 엔트리들에 대한 투표 가능 여부 조회
+export async function getNationalVoteableStatus(entryIds: number[]): Promise<Record<number, boolean>> {
+  try {
+    const res = await apiRequest<ApiResponse<Record<number, boolean>>>('/rankings/national/voteable-status', {
+      method: 'POST',
+      body: JSON.stringify(entryIds),
+    });
+    if (!res || (res as any).success === false || !res.data) {
+      throw new Error((res as any)?.message || '전국 랭킹 투표 가능 여부 조회 실료');
+    }
+    return res.data as Record<number, boolean>;
   } catch (error: any) {
     if (error?.status === 401 || error?.status === 403) {
       throw new Error('로그인이 필요합니다.');
