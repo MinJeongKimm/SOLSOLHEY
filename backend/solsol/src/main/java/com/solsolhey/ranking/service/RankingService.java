@@ -28,17 +28,17 @@ public interface RankingService {
     /**
      * 교내 랭킹 투표
      */
-    VoteResponse voteForCampus(Long mascotId, VoteRequest request, Long voterId, String userCampus);
+    VoteResponse voteForCampus(Long entryId, VoteRequest request, Long voterId, String userCampus);
 
     /**
      * 전국 랭킹 투표
      */
-    VoteResponse voteForNational(Long mascotId, VoteRequest request, Long voterId);
+    VoteResponse voteForNational(Long entryId, VoteRequest request, Long voterId);
 
     /**
      * 투표 가능 여부 확인
      */
-    boolean canVote(Long voterId, Long mascotId, Vote.VoteType voteType);
+    boolean canVote(Long voterId, Long entryId, Vote.VoteType voteType);
 
     /**
      * 일일 투표 한도 확인

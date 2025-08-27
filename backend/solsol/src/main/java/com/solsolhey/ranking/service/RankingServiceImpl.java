@@ -138,11 +138,11 @@ public class RankingServiceImpl implements RankingService {
     }
 
     @Override
-    public VoteResponse voteForCampus(Long mascotId, VoteRequest request, Long voterId, String userCampus) {
-        log.info("교내 투표 요청 - mascotId: {}, voterId: {}, campus: {}", mascotId, voterId, userCampus);
+    public VoteResponse voteForCampus(Long entryId, VoteRequest request, Long voterId, String userCampus) {
+        log.info("교내 투표 요청 - entryId: {}, voterId: {}, campus: {}", entryId, voterId, userCampus);
 
         // 기본 유효성 검사
-        if (!canVote(voterId, mascotId, Vote.VoteType.CAMPUS)) {
+        if (!canVote(voterId, entryId, Vote.VoteType.CAMPUS)) {
             return VoteResponse.failure("투표할 수 없는 상태입니다.");
         }
 
@@ -156,7 +156,10 @@ public class RankingServiceImpl implements RankingService {
             return VoteResponse.failure("중복 요청이 감지되었습니다.", request.getIdempotencyKey());
         }
 
-        Mascot mascot = getMascotById(mascotId);
+        // RankingEntry에서 마스코트 정보 가져오기
+        RankingEntry rankingEntry = rankingEntryRepository.findById(entryId)
+            .orElseThrow(() -> new BusinessException("랭킹 엔트리를 찾을 수 없습니다."));
+        Mascot mascot = getMascotById(rankingEntry.getMascotId());
         
         // 캠퍼스 권한 확인
         User mascotOwner = getUserById(mascot.getUserId());
@@ -165,15 +168,15 @@ public class RankingServiceImpl implements RankingService {
         }
 
         // 투표 처리
-        return processVote(mascotId, voterId, request, Vote.VoteType.CAMPUS);
+        return processVote(entryId, voterId, request, Vote.VoteType.CAMPUS);
     }
 
     @Override
-    public VoteResponse voteForNational(Long mascotId, VoteRequest request, Long voterId) {
-        log.info("전국 투표 요청 - mascotId: {}, voterId: {}", mascotId, voterId);
+    public VoteResponse voteForNational(Long entryId, VoteRequest request, Long voterId) {
+        log.info("전국 투표 요청 - entryId: {}, voterId: {}", entryId, voterId);
 
         // 기본 유효성 검사
-        if (!canVote(voterId, mascotId, Vote.VoteType.NATIONAL)) {
+        if (!canVote(voterId, entryId, Vote.VoteType.NATIONAL)) {
             return VoteResponse.failure("투표할 수 없는 상태입니다.");
         }
 
@@ -188,56 +191,54 @@ public class RankingServiceImpl implements RankingService {
         }
 
         // 투표 처리
-        return processVote(mascotId, voterId, request, Vote.VoteType.NATIONAL);
+        return processVote(entryId, voterId, request, Vote.VoteType.NATIONAL);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public boolean canVote(Long voterId, Long mascotId, Vote.VoteType voteType) {
-        log.info("투표 가능 여부 체크 시작 - voterId: {}, mascotId: {}, voteType: {}", voterId, mascotId, voteType);
+    public boolean canVote(Long voterId, Long entryId, Vote.VoteType voteType) {
+        log.info("투표 가능 여부 체크 시작 - voterId: {}, entryId: {}, voteType: {}", voterId, entryId, voteType);
         
-        // 투표 타입별로 중복 투표 확인 (교내/전국은 별개로 처리)
-        boolean alreadyVoted = voteRepository.existsByVoterIdAndMascotIdAndVoteType(voterId, mascotId, voteType);
+        // 투표 타입별로 중복 투표 확인 (엔트리별로 처리)
+        boolean alreadyVoted = voteRepository.existsByVoterIdAndEntryIdAndVoteType(voterId, entryId, voteType);
         log.info("이미 투표했는지 확인 - alreadyVoted: {}", alreadyVoted);
         if (alreadyVoted) {
-            log.info("이미 투표한 마스코트입니다 - voterId: {}, mascotId: {}, voteType: {}", voterId, mascotId, voteType);
+            log.info("이미 투표한 엔트리입니다 - voterId: {}, entryId: {}, voteType: {}", voterId, entryId, voteType);
             return false;
         }
 
+        // RankingEntry가 존재하는지 확인 (랭킹에 참가한 엔트리만 투표 가능)
+        boolean hasRankingEntry = rankingEntryRepository.existsById(entryId);
+        log.info("랭킹 엔트리 존재 여부 확인 - hasRankingEntry: {}", hasRankingEntry);
+        if (!hasRankingEntry) {
+            log.info("랭킹에 참가하지 않은 엔트리입니다 - entryId: {}", entryId);
+            return false;
+        }
+        
+        // RankingEntry에서 마스코트 정보 가져오기
+        RankingEntry rankingEntry = rankingEntryRepository.findById(entryId)
+            .orElseThrow(() -> new BusinessException("랭킹 엔트리를 찾을 수 없습니다."));
+        
         // 자기 자신의 마스코트인지 확인
-        Mascot mascot = getMascotById(mascotId);
+        Mascot mascot = getMascotById(rankingEntry.getMascotId());
         boolean isOwnMascot = mascot.getUserId().equals(voterId);
         log.info("자기 자신의 마스코트인지 확인 - isOwnMascot: {}", isOwnMascot);
         if (isOwnMascot) {
-            log.info("자기 자신의 마스코트에는 투표할 수 없습니다 - voterId: {}, mascotId: {}", voterId, mascotId);
-            return false;
-        }
-
-        // RankingEntry가 존재하는지 확인 (랭킹에 참가한 마스코트만 투표 가능)
-        boolean hasRankingEntry = rankingEntryRepository.existsByMascotId(mascotId);
-        log.info("랭킹 엔트리 존재 여부 확인 - hasRankingEntry: {}", hasRankingEntry);
-        if (!hasRankingEntry) {
-            log.info("랭킹에 참가하지 않은 마스코트입니다 - mascotId: {}", mascotId);
+            log.info("자기 자신의 마스코트에는 투표할 수 없습니다 - voterId: {}, entryId: {}", voterId, entryId);
             return false;
         }
         
-        // 해당 투표 타입의 RankingEntry가 존재하는지 확인
-        boolean hasCorrectRankingType = false;
-        if (voteType == Vote.VoteType.CAMPUS) {
-            hasCorrectRankingType = rankingEntryRepository.existsByMascotIdAndRankingType(mascotId, "CAMPUS");
-            log.info("교내 랭킹 타입 존재 여부 확인 - hasCorrectRankingType: {}", hasCorrectRankingType);
-        } else if (voteType == Vote.VoteType.NATIONAL) {
-            hasCorrectRankingType = rankingEntryRepository.existsByMascotIdAndRankingType(mascotId, "NATIONAL");
-            log.info("전국 랭킹 타입 존재 여부 확인 - hasCorrectRankingType: {}", hasCorrectRankingType);
-        }
+        // 해당 투표 타입의 RankingEntry가 맞는지 확인
+        boolean hasCorrectRankingType = rankingEntry.getRankingType().equals(voteType.name());
+        log.info("랭킹 타입 일치 여부 확인 - hasCorrectRankingType: {}", hasCorrectRankingType);
         
         if (!hasCorrectRankingType) {
-            log.info("해당 랭킹 타입에 참가하지 않은 마스코트입니다 - mascotId: {}, voteType: {}", mascotId, voteType);
+            log.info("해당 랭킹 타입에 참가하지 않은 엔트리입니다 - entryId: {}, voteType: {}", entryId, voteType);
             return false;
         }
 
-        log.info("투표 가능합니다 - voterId: {}, mascotId: {}, voteType: {}", voterId, mascotId, voteType);
-        return true; // 마스코트가 존재하고 랭킹에 참가했으면 투표 가능
+        log.info("투표 가능합니다 - voterId: {}, entryId: {}, voteType: {}", voterId, entryId, voteType);
+        return true; // 엔트리가 존재하고 랭킹에 참가했으면 투표 가능
     }
 
     @Override
@@ -274,12 +275,18 @@ public class RankingServiceImpl implements RankingService {
 
     // === Private Helper Methods ===
 
-    private VoteResponse processVote(Long mascotId, Long voterId, VoteRequest request, Vote.VoteType voteType) {
+    private VoteResponse processVote(Long entryId, Long voterId, VoteRequest request, Vote.VoteType voteType) {
         try {
-            log.info("투표 처리 시작 - mascotId: {}, voterId: {}, voteType: {}", mascotId, voterId, voteType);
+            log.info("투표 처리 시작 - entryId: {}, voterId: {}, voteType: {}", entryId, voterId, voteType);
+            
+            // RankingEntry에서 마스코트 ID 가져오기
+            RankingEntry rankingEntry = rankingEntryRepository.findById(entryId)
+                .orElseThrow(() -> new BusinessException("랭킹 엔트리를 찾을 수 없습니다."));
+            Long mascotId = rankingEntry.getMascotId();
             
             // 투표 생성
             Vote vote = Vote.builder()
+                    .entryId(entryId)
                     .mascotId(mascotId)
                     .voterId(voterId)
                     .voteType(voteType)
@@ -318,9 +325,9 @@ public class RankingServiceImpl implements RankingService {
         }
     }
 
-    private long getVoteCount(Long mascotId, Vote.VoteType voteType) {
-        long count = voteRepository.countByMascotIdAndVoteType(mascotId, voteType);
-        log.info("투표 수 조회 - mascotId: {}, voteType: {}, count: {}", mascotId, voteType, count);
+    private long getVoteCount(Long entryId, Vote.VoteType voteType) {
+        long count = voteRepository.countByEntryIdAndVoteType(entryId, voteType);
+        log.info("투표 수 조회 - entryId: {}, voteType: {}, count: {}", entryId, voteType, count);
         return count;
     }
 
@@ -346,7 +353,7 @@ public class RankingServiceImpl implements RankingService {
             RankingEntry entry = sortedEntries.get(i);
             Mascot mascot = getMascotById(entry.getMascotId());
             User owner = getUserById(mascot.getUserId());
-            long voteCount = getVoteCount(mascot.getId(), Vote.VoteType.CAMPUS);
+            long voteCount = getVoteCount(entry.getEntryId(), Vote.VoteType.CAMPUS);
             
             // 새로 등록한 엔트리(이미지 업로드)인지 확인
             if (entry.getImageUrl() != null && entry.getImageUrl().startsWith("http://localhost:8080/uploads/ranking/")) {
