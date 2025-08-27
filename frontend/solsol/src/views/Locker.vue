@@ -9,7 +9,11 @@
           </svg>
         </button>
         <h1 class="text-xl font-bold text-gray-800">보관함</h1>
-        <div class="w-8"></div>
+        <button @click="goShop" class="p-2 rounded-lg hover:bg-gray-100 transition-colors" title="상점">
+          <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M5 7l1.5 11.5A2 2 0 0 0 8.5 21h7a2 2 0 0 0 2-1.5L19 7M10 11v6M14 11v6M9 7l1-3h4l1 3" />
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -70,6 +74,7 @@ const detailOpen = ref(false);
 const detail = ref<PurchasedGifticonDetail | null>(null);
 
 function goBack() { router.back(); }
+function goShop() { router.push({ path: '/shop', query: { tab: 'gifticons' } }); }
 function onImgError(e: Event) { (e.target as HTMLImageElement).src = '/items/gifticon_default.png'; }
 
 function statusLabel(s: PurchasedGifticon['status']): string {
@@ -107,4 +112,3 @@ onMounted(loadList);
 <style scoped>
 .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 </style>
-
