@@ -90,21 +90,14 @@
               />
             </div>
             
-            <!-- 레이어 1: 배경 아이템 (마스코트 뒤) -->
-            <div class="absolute inset-0 z-0">
-              <DraggableItem
+            <!-- 레이어 1: 배경 아이템 (마스코트 뒤, 캔버스 전체 채움) -->
+            <div class="absolute inset-0 z-0 overflow-hidden">
+              <img
                 v-for="bg in backgroundEquippedItems"
                 :key="bg.id"
-                :item="bg.item"
-                :position="getAbsolutePosition(bg)"
-                :scale="bg.scale"
-                :rotation="bg.rotation"
-                :is-selected="selectedItemId === bg.id"
-                :container-bounds="canvasBounds"
-                @update:position="updateItemPosition(bg.id, $event)"
-                @update:scale="updateItemScale(bg.id, $event)"
-                @update:rotation="updateItemRotation(bg.id, $event)"
-                @select="selectItem(bg.id)"
+                :src="bg.item.imageUrl"
+                :alt="bg.item.name"
+                class="absolute inset-0 w-full h-full object-cover pointer-events-none"
               />
             </div>
 
