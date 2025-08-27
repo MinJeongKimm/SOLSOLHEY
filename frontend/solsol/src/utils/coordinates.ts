@@ -245,3 +245,33 @@ export function constrainMascotRelativePosition(
     y: Math.max(halfHeightRatio, Math.min(1 - halfHeightRatio, relative.y)),
   };
 }
+
+/**
+ * 느슨한 제약: 자유도를 높이기 위해 완전 가시 대신 부분 가시/가장자리 밖 일부 허용
+ * - scaleDown: 반지름 비율을 축소(0..1). 1이면 엄격, 0.6이면 40% 더 자유
+ * - outside  : 가장자리 밖으로 허용할 비율(0..0.5 권장)
+ */
+export function constrainMascotRelativePositionLoose(
+  relative: RelativePosition,
+  itemSize: { width: number; height: number },
+  mascotRect: DOMRect,
+  opts?: { scaleDown?: number; outside?: number }
+): RelativePosition {
+  if (!mascotRect || mascotRect.width === 0 || mascotRect.height === 0) return relative;
+
+  const scaleDown = opts?.scaleDown ?? 0.6;
+  const outside = opts?.outside ?? 0.1;
+
+  const halfWR = (itemSize.width / 2) / mascotRect.width;
+  const halfHR = (itemSize.height / 2) / mascotRect.height;
+
+  const minX = Math.max(-outside, halfWR * scaleDown);
+  const maxX = Math.min(1 + outside, 1 - halfWR * scaleDown);
+  const minY = Math.max(-outside, halfHR * scaleDown);
+  const maxY = Math.min(1 + outside, 1 - halfHR * scaleDown);
+
+  return {
+    x: Math.max(minX, Math.min(maxX, relative.x)),
+    y: Math.max(minY, Math.min(maxY, relative.y)),
+  };
+}

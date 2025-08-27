@@ -30,6 +30,7 @@ import com.solsolhey.shop.repository.UserItemRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +43,7 @@ public class MascotServiceImpl implements MascotService {
     private final UserBackgroundRepository userBackgroundRepository;
     private final ItemRepository itemRepository;
     private final UserItemRepository userItemRepository;
+    private final ObjectMapper objectMapper;
     
     @Override
     @Transactional
@@ -289,5 +291,57 @@ public class MascotServiceImpl implements MascotService {
         // 현재는 단순히 false 반환
         // 추후 마스코트의 equippedItem 필드와 비교하는 로직 구현 필요
         return false;
+    }
+
+    // === 커스터마이징 레이아웃 저장/조회 ===
+    @Override
+    public com.solsolhey.mascot.dto.MascotCustomizationDto getCustomization(Long userId) {
+        Mascot mascot = mascotRepository.findByUserId(userId)
+                .orElseThrow(() -> new MascotNotFoundException(userId));
+
+        String json = mascot.getEquippedLayout();
+        if (json == null || json.isBlank()) {
+            return com.solsolhey.mascot.dto.MascotCustomizationDto.builder()
+                    .version("v1")
+                    .equippedItems(java.util.List.of())
+                    .build();
+        }
+        try {
+            return objectMapper.readValue(json, com.solsolhey.mascot.dto.MascotCustomizationDto.class);
+        } catch (Exception e) {
+            log.warn("커스터마이징 JSON 파싱 실패, 빈 레이아웃 반환: {}", e.getMessage());
+            return com.solsolhey.mascot.dto.MascotCustomizationDto.builder()
+                    .version("v1")
+                    .equippedItems(java.util.List.of())
+                    .build();
+        }
+    }
+
+    @Override
+    @Transactional
+    public com.solsolhey.mascot.dto.MascotCustomizationDto saveCustomization(Long userId, com.solsolhey.mascot.dto.MascotCustomizationDto dto) {
+        Mascot mascot = mascotRepository.findByUserId(userId)
+                .orElseThrow(() -> new MascotNotFoundException(userId));
+
+        // 간단 검증
+        if (dto.getEquippedItems() != null) {
+            for (var it : dto.getEquippedItems()) {
+                if (it.getRelativePosition() == null) continue;
+                Double x = it.getRelativePosition().getX();
+                Double y = it.getRelativePosition().getY();
+                if (x == null || y == null || x.isNaN() || y.isNaN()) {
+                    throw new IllegalArgumentException("좌표 값이 유효하지 않습니다.");
+                }
+            }
+        }
+
+        try {
+            String json = objectMapper.writeValueAsString(dto);
+            mascot.updateEquippedLayout(json);
+            mascotRepository.save(mascot);
+            return dto;
+        } catch (Exception e) {
+            throw new RuntimeException("커스터마이징 저장 실패", e);
+        }
     }
 }
