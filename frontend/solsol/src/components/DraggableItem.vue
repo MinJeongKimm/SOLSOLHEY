@@ -1,13 +1,14 @@
 <template>
   <div
     ref="itemElement"
-    class="absolute cursor-move select-none"
+    class="absolute cursor-move select-none draggable-item"
     style="touch-action: none;"
     :style="itemStyle"
     @mousedown="handleMouseDown"
     @touchstart="handleTouchStart"
     @touchmove="handleTouchMove"
     @touchend="handleTouchEnd"
+    @click.stop
   >
     <img
       :src="item.imageUrl"
@@ -198,6 +199,8 @@ function handleMouseUp() {
 
 // 터치 시작
 function handleTouchStart(e: TouchEvent) {
+  // 캔버스 선택 해제 핸들러로 버블링 방지
+  try { e.stopPropagation(); } catch {}
   e.preventDefault();
   e.stopPropagation();
   
