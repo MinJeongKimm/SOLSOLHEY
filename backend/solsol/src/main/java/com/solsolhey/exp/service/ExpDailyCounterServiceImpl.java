@@ -42,7 +42,8 @@ public class ExpDailyCounterServiceImpl implements ExpDailyCounterService {
             amount += 5;
             counter.markAttendanceAwarded();
         }
-        if (consecutiveDays >= 7 && !Boolean.TRUE.equals(counter.getAttendanceStreak7Awarded())) {
+        // 7연속 보너스: 정확히 7의 배수일에만 지급(7, 14, 21, ...)
+        if (consecutiveDays % 7 == 0 && !Boolean.TRUE.equals(counter.getAttendanceStreak7Awarded())) {
             amount += 20;
             counter.markStreak7Awarded();
         }

@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.solsolhey.exp.service.ExpDailyCounterService;
-import com.solsolhey.point.dto.response.PointTransactionResponse;
 import com.solsolhey.point.service.PointService;
 import com.solsolhey.user.dto.AttendanceRecordDto;
 import com.solsolhey.user.entity.Attendance;
@@ -42,7 +41,7 @@ public class AttendanceServiceImpl implements AttendanceService {
             // 이미 출석한 경우: 연속 일수는 최신 기록 기준, EXP 재적립 없음
             Attendance latest = attendanceRepository.findTopByUserOrderByAttendanceDateDesc(user).orElse(null);
             int consecutive = latest != null ? latest.getConsecutiveDays() : 1;
-            return new AttendanceResult(true, consecutive, latest != null ? latest.getPointReward() : 0, null);
+            return new AttendanceResult(true, consecutive, 0, null);
         }
 
         // 오늘 출석 처리(연속 일수 계산)
@@ -70,8 +69,8 @@ public class AttendanceServiceImpl implements AttendanceService {
             log.warn("동시성으로 인한 출석 중복 저장: userId={}", user.getUserId());
         }
 
-        // 포인트 지급(일일 보너스 중복 방지 로직 내장)
-        PointTransactionResponse tx = pointService.giveDailyBonus(user);
+        // 포인트 지급 없음 (정책 변경)
+        int pointReward = 0;
 
         // EXP 적립 (일일 카운터)
         var awardedOpt = expDailyCounterService.awardAttendanceExp(user, consecutive);
@@ -79,7 +78,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .map(a -> new ExpAwardedView(a.amount(), a.type(), a.category(), a.totalExp(), a.level()))
                 .orElse(null);
 
-        return new AttendanceResult(true, consecutive, tx.pointAmount(), awardedView);
+        return new AttendanceResult(true, consecutive, pointReward, awardedView);
     }
 
     @Override
