@@ -1,21 +1,21 @@
 <template>
-  <div class="ranking-slot">
+  <div class="ranking-slot relative">
     <!-- 빈 슬롯 (등록되지 않은 상태) -->
     <div 
       v-if="!entry" 
       @click="$emit('slot-click')"
       :class="[
-        'empty-slot cursor-pointer transition-all duration-300 hover:scale-105',
+        'empty-slot cursor-pointer transition-all duration-300 hover:scale-105 p-4 sm:p-6',
         isActive ? 'bg-blue-50 border-blue-300 hover:bg-blue-100' : 'bg-gray-50 border-gray-200'
       ]"
     >
-      <div class="flex flex-col items-center justify-center h-full p-4">
-        <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-3">
-          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div class="flex flex-col items-center justify-center h-full">
+        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full flex items-center justify-center mb-3">
+          <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
         </div>
-        <p class="text-sm text-gray-500 text-center">
+        <p class="text-xs sm:text-sm text-gray-500 text-center">
           {{ isActive ? '클릭하여 랭킹에 참가' : '' }}
         </p>
       </div>
@@ -24,7 +24,7 @@
     <!-- 등록된 슬롯 (참가 완료 상태) -->
     <div 
       v-else 
-      class="filled-slot bg-white border-2 border-green-200 shadow-md"
+      class="filled-slot bg-white border-2 border-green-200 shadow-md p-4 sm:p-6"
     >
       <!-- 삭제 아이콘 -->
       <div class="absolute top-2 right-2">
@@ -44,30 +44,30 @@
         <img 
           :src="mascotImageUrl" 
           :alt="entry.title"
-          class="w-20 h-20 object-cover rounded-lg mx-auto border-2 border-gray-200"
+          class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg mx-auto border-2 border-gray-200"
           @error="handleImageError"
         />
       </div>
 
       <!-- 제목 -->
-      <h3 class="text-sm font-medium text-gray-800 text-center mb-2 px-2 line-clamp-2">
+      <h3 class="text-xs sm:text-sm font-medium text-gray-800 text-center mb-2 px-2 line-clamp-2">
         {{ entry.title }}
       </h3>
 
       <!-- 순위와 득표수 -->
       <div class="stats-container text-center">
-        <div class="flex items-center justify-center space-x-3 mb-2">
-          <div class="flex items-center space-x-1">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+          <div class="flex items-center justify-center space-x-1">
             <svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>
-            <span class="text-sm font-medium text-gray-700">{{ rank }}위</span>
+            <span class="text-xs sm:text-sm font-medium text-gray-700">{{ rank }}위</span>
           </div>
-          <div class="flex items-center space-x-1">
+          <div class="flex items-center justify-center space-x-1">
             <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
-            <span class="text-sm font-medium text-gray-700">{{ voteCount }}표</span>
+            <span class="text-xs sm:text-sm font-medium text-gray-700">{{ voteCount }}표</span>
           </div>
         </div>
         

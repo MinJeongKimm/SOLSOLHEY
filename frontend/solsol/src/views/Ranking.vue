@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100 p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-6xl mx-auto p-8">
+  <div class="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100 p-2 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
       <!-- 헤더 -->
-      <div class="flex items-center mb-8 relative">
-        <!-- 뒤로가기 버튼 (왼쪽) -->
+      <div class="flex flex-col sm:flex-row items-center mb-6 sm:mb-8 relative">
+        <!-- 뒤로가기 버튼 (모바일에서는 상단, 데스크톱에서는 왼쪽) -->
         <router-link 
           to="/mascot" 
-          class="p-2 text-purple-500 hover:text-purple-700 transition-colors rounded-full hover:bg-purple-50 absolute left-0"
+          class="p-2 text-purple-500 hover:text-purple-700 transition-colors rounded-full hover:bg-purple-50 absolute left-0 top-0 sm:relative sm:left-auto sm:top-auto"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -14,19 +14,19 @@
         </router-link>
         
         <!-- 제목 (가운데) -->
-        <h1 class="text-2xl font-bold text-gray-800 text-center w-full">Ranking</h1>
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-800 text-center w-full mt-8 sm:mt-0">Ranking</h1>
       </div>
 
       <!-- 탭 네비게이션 -->
-      <div class="border-b border-gray-200 mb-8">
-        <nav class="-mb-px flex space-x-8 justify-center">
+      <div class="border-b border-gray-200 mb-6 sm:mb-8">
+        <nav class="-mb-px flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-8 justify-center">
           <button
             @click="activeTab = 'campus'"
             :class="[
               activeTab === 'campus'
                 ? 'border-purple-500 text-purple-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
+              'whitespace-nowrap py-2 px-1 border-b-2 sm:border-b-2 border-l-2 sm:border-l-0 font-medium text-sm'
             ]"
           >
             교내 랭킹
@@ -37,7 +37,7 @@
               activeTab === 'national'
                 ? 'border-purple-500 text-purple-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm'
+              'whitespace-nowrap py-2 px-1 border-b-2 sm:border-b-2 border-l-2 sm:border-l-0 font-medium text-sm'
             ]"
           >
             전국 랭킹
@@ -46,76 +46,174 @@
       </div>
 
       <!-- 전국 랭킹 참가 슬롯 섹션 -->
-      <div v-if="activeTab === 'national'" class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6 border-2 border-blue-200">
+      <div v-if="activeTab === 'national'" class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 sm:p-6 mb-6 border-2 border-blue-200">
         <div class="mb-4">
-          <h2 class="text-lg font-bold text-gray-800 mb-2">전국 랭킹 참가 슬롯</h2>
-          <p class="text-sm text-gray-600">마스코트를 전국 랭킹에 등록하여 다른 사용자들과 경쟁해보세요!</p>
+          <h2 class="text-base sm:text-lg font-bold text-gray-800 mb-2">전국 랭킹 참가 슬롯</h2>
+          <p class="text-xs sm:text-sm text-gray-600">마스코트를 전국 랭킹에 등록하여 다른 사용자들과 경쟁해보세요!</p>
         </div>
         
-        <!-- 3개 슬롯 가로 배치 -->
-        <div class="grid grid-cols-3 gap-4 max-w-4xl mx-auto">
-          <RankingSlot
+        <!-- 슬롯 슬라이드 컨테이너 -->
+        <div class="relative">
+          <!-- 이전 버튼 -->
+          <button 
+            @click="slideToPrevious('national')"
+            class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800 rounded-full p-2 shadow-lg transition-all duration-200"
+            :class="{ 'opacity-50 cursor-not-allowed': currentSlideIndex.national === 0 }"
+            :disabled="currentSlideIndex.national === 0"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+
+          <!-- 슬롯 슬라이드 -->
+          <div 
+            ref="nationalSlotsContainer"
+            class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide transition-transform duration-300 ease-in-out"
+            @touchstart="handleTouchStart"
+            @touchmove="handleTouchMove"
+            @touchend="handleTouchEnd"
+          >
+            <div class="flex space-x-4 min-w-full">
+              <div 
+                v-for="(slot, index) in nationalRankingSlots" 
+                :key="index"
+                class="snap-start flex-shrink-0 w-full"
+              >
+                <RankingSlot
+                  :entry="slot.entry"
+                  :is-active="slot.isActive"
+                  :mascot-image-url="slot.mascotImageUrl"
+                  :vote-count="slot.voteCount"
+                  :rank="slot.rank"
+                  @slot-click="handleSlotClick(index)"
+                  @delete="handleSlotDelete"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 다음 버튼 -->
+          <button 
+            @click="slideToNext('national')"
+            class="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800 rounded-full p-2 shadow-lg transition-all duration-200"
+            :class="{ 'opacity-50 cursor-not-allowed': currentSlideIndex.national === nationalRankingSlots.length - 1 }"
+            :disabled="currentSlideIndex.national === nationalRankingSlots.length - 1"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- 슬라이드 인디케이터 -->
+        <div class="flex justify-center mt-4 space-x-2">
+          <button
             v-for="(slot, index) in nationalRankingSlots"
             :key="index"
-            :entry="slot.entry"
-            :is-active="slot.isActive"
-            :mascot-image-url="slot.mascotImageUrl"
-            :vote-count="slot.voteCount"
-            :rank="slot.rank"
-            @slot-click="handleSlotClick(index)"
-            @delete="handleSlotDelete"
-          />
+            @click="slideToIndex('national', index)"
+            class="w-2 h-2 rounded-full transition-all duration-200"
+            :class="currentSlideIndex.national === index ? 'bg-blue-500 w-4' : 'bg-gray-300 hover:bg-gray-400'"
+          ></button>
         </div>
       </div>
 
       <!-- 교내 랭킹 참가 슬롯 섹션 -->
-      <div v-if="activeTab === 'campus'" class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 mb-6 border-2 border-purple-200">
+      <div v-if="activeTab === 'campus'" class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 sm:p-6 mb-6 border-2 border-purple-200">
         <div class="mb-4">
-          <h2 class="text-lg font-bold text-gray-800 mb-2">교내 랭킹 참가 슬롯</h2>
-          <p class="text-sm text-gray-600">마스코트를 교내 랭킹에 등록하여 다른 사용자들과 경쟁해보세요!</p>
+          <h2 class="text-base sm:text-lg font-bold text-gray-800 mb-2">교내 랭킹 참가 슬롯</h2>
+          <p class="text-xs sm:text-sm text-gray-600">마스코트를 교내 랭킹에 등록하여 다른 사용자들과 경쟁해보세요!</p>
         </div>
         
-        <!-- 3개 슬롯 가로 배치 -->
-        <div class="grid grid-cols-3 gap-4 max-w-4xl mx-auto">
-          <RankingSlot
+        <!-- 슬롯 슬라이드 컨테이너 -->
+        <div class="relative">
+          <!-- 이전 버튼 -->
+          <button 
+            @click="slideToPrevious('campus')"
+            class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800 rounded-full p-2 shadow-lg transition-all duration-200"
+            :class="{ 'opacity-50 cursor-not-allowed': currentSlideIndex.campus === 0 }"
+            :disabled="currentSlideIndex.campus === 0"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+
+          <!-- 슬롯 슬라이드 -->
+          <div 
+            ref="campusSlotsContainer"
+            class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide transition-transform duration-300 ease-in-out"
+            @touchstart="handleTouchStart"
+            @touchmove="handleTouchMove"
+            @touchend="handleTouchEnd"
+          >
+            <div class="flex space-x-4 min-w-full">
+              <div 
+                v-for="(slot, index) in campusRankingSlots" 
+                :key="index"
+                class="snap-start flex-shrink-0 w-full"
+              >
+                <RankingSlot
+                  :entry="slot.entry"
+                  :is-active="slot.isActive"
+                  :mascot-image-url="slot.mascotImageUrl"
+                  :vote-count="slot.voteCount"
+                  :rank="slot.rank"
+                  @slot-click="handleSlotClick(index)"
+                  @delete="handleSlotDelete"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 다음 버튼 -->
+          <button 
+            @click="slideToNext('campus')"
+            class="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 hover:bg-white text-gray-600 hover:text-gray-800 rounded-full p-2 shadow-lg transition-all duration-200"
+            :class="{ 'opacity-50 cursor-not-allowed': currentSlideIndex.campus === campusRankingSlots.length - 1 }"
+            :disabled="currentSlideIndex.campus === campusRankingSlots.length - 1"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- 슬라이드 인디케이터 -->
+        <div class="flex justify-center mt-4 space-x-2">
+          <button
             v-for="(slot, index) in campusRankingSlots"
             :key="index"
-            :entry="slot.entry"
-            :is-active="slot.isActive"
-            :mascot-image-url="slot.mascotImageUrl"
-            :vote-count="slot.voteCount"
-            :rank="slot.rank"
-            @slot-click="handleSlotClick(index)"
-            @delete="handleSlotDelete"
-          />
+            @click="slideToIndex('campus', index)"
+            class="w-2 h-2 rounded-full transition-all duration-200"
+            :class="currentSlideIndex.campus === index ? 'bg-purple-500 w-4' : 'bg-gray-300 hover:bg-gray-400'"
+          ></button>
         </div>
       </div>
 
       <!-- 교내 랭킹 -->
       <div v-if="activeTab === 'campus'" class="space-y-6">
         <!-- 교내 랭킹 필터 -->
-        <div class="flex justify-end">
-          <div class="flex items-center space-x-4">
-            <select
-              v-model="campusFilters.sort"
-              @change="loadCampusRankings"
-              class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
-            >
-              <option value="votes_desc">득표순</option>
-              <option value="newest">최신순</option>
-            </select>
-            
-            <select
-              v-model="campusFilters.period"
-              @change="loadCampusRankings"
-              class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
-            >
-              <option value="daily">일간</option>
-              <option value="weekly">주간</option>
-              <option value="monthly">월간</option>
-              <option value="all">전체</option>
-            </select>
-          </div>
+        <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
+          <select
+            v-model="campusFilters.sort"
+            @change="loadCampusRankings"
+            class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm w-full sm:w-auto"
+          >
+            <option value="votes_desc">득표순</option>
+            <option value="newest">최신순</option>
+          </select>
+          
+          <select
+            v-model="campusFilters.period"
+            @change="loadCampusRankings"
+            class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm w-full sm:w-auto"
+          >
+            <option value="daily">일간</option>
+            <option value="weekly">주간</option>
+            <option value="monthly">월간</option>
+            <option value="all">전체</option>
+          </select>
         </div>
 
         <!-- 로딩 상태 -->
@@ -154,71 +252,74 @@
             <div
             v-for="entry in campusRankings.entries"
             :key="entry.mascotId"
-            class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 hover:shadow-lg transition-all duration-200 border border-purple-100 hover:border-purple-300"
+            class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 sm:p-6 hover:shadow-lg transition-all duration-200 border border-purple-100 hover:border-purple-300"
             >
-            <div class="flex items-center space-x-4">
-              <!-- 순위 -->
-              <div class="flex-shrink-0">
-                <div
-                :class="[
-                  'w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm',
-                  entry.rank === 1 ? 'bg-yellow-500' : 
-                  entry.rank === 2 ? 'bg-gray-400' : 
-                  entry.rank === 3 ? 'bg-orange-500' : 'bg-purple-500'
-                ]"
-                  >
-                    {{ entry.rank }}
-                  </div>
-                </div>
-
-                <!-- 마스코트 이미지 (등록한 이미지 우선, 없으면 배경) -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+              <!-- 순위와 이미지 (모바일에서는 가로 배치) -->
+              <div class="flex items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
+                <!-- 순위 -->
                 <div class="flex-shrink-0">
-                  <img
-                    :src="entry.entryImageUrl || `/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
-                    :alt="`${entry.mascotName || '마스코트'} (${entry.ownerNickname})`"
-                    class="w-12 h-12 rounded-lg object-cover"
-                  />
+                  <div
+                  :class="[
+                    'w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm',
+                    entry.rank === 1 ? 'bg-yellow-500' : 
+                    entry.rank === 2 ? 'bg-gray-400' : 
+                    entry.rank === 3 ? 'bg-orange-500' : 'bg-purple-500'
+                  ]"
+                    >
+                      {{ entry.rank }}
+                    </div>
+                  </div>
+
+                  <!-- 마스코트 이미지 (등록한 이미지 우선, 없으면 배경) -->
+                  <div class="flex-shrink-0">
+                    <img
+                      :src="entry.entryImageUrl || `/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
+                      :alt="`${entry.mascotName || '마스코트'} (${entry.ownerNickname})`"
+                      class="w-12 h-12 rounded-lg object-cover"
+                    />
+                  </div>
                 </div>
 
                 <!-- 정보 -->
                 <div class="flex-1 min-w-0">
-                  <div class="flex items-center space-x-2 mb-1">
-                    <span class="text-lg font-semibold text-gray-800">
+                  <div class="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 mb-1">
+                    <span class="text-base sm:text-lg font-semibold text-gray-800">
                       {{ entry.entryTitle || entry.mascotName || '마스코트' }}
                     </span>
                     <span class="text-sm text-gray-600">({{ entry.ownerNickname }})</span>
                   </div>
-                  <div class="flex items-center space-x-4 text-sm text-gray-600">
+                  <div class="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-gray-600">
                     <span>득표: {{ entry.votes.toLocaleString() }}표</span>
                     <span v-if="entry.school?.name" class="text-gray-500">
                       학교: {{ entry.school.name }}
                     </span>
                   </div>
                 </div>
+              </div>
 
-                <!-- 투표 버튼 -->
-                <div class="flex-shrink-0">
-                                      <button
-                      @click="voteForMascot(entry.entryId)"
-                      :disabled="voting || !canVoteForMascot(entry.entryId)"
-                      class="bg-purple-500 text-white px-3 py-1.5 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                                          <span v-if="!canVoteForMascot(entry.entryId)">
-                        <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
-                        <span v-else-if="votedEntries.has(entry.entryId)">이미 투표함</span>
-                        <span v-else>투표 불가</span>
-                      </span>
-                    <span v-else>👍 투표</span>
-                  </button>
-                </div>
+              <!-- 투표 버튼 (모바일에서는 전체 너비) -->
+              <div class="flex-shrink-0 w-full sm:w-auto">
+                <button
+                  @click="voteForMascot(entry.entryId)"
+                  :disabled="voting || !canVoteForMascot(entry.entryId)"
+                  class="bg-purple-500 text-white px-3 py-2 sm:py-1.5 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
+                >
+                  <span v-if="!canVoteForMascot(entry.entryId)">
+                    <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
+                    <span v-else-if="votedEntries.has(entry.entryId)">이미 투표함</span>
+                    <span v-else>투표 불가</span>
+                  </span>
+                  <span v-else>👍 투표</span>
+                </button>
               </div>
             </div>
           </div>
 
           <!-- 페이지네이션 -->
-          <div v-if="campusRankings.total > campusRankings.size" class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-100">
-            <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-700">
+          <div v-if="campusRankings.total > campusRankings.size" class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 sm:p-6 border border-purple-100">
+            <div class="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
+              <div class="text-sm text-gray-700 text-center sm:text-left">
                 {{ (campusRankings.page * campusRankings.size) + 1 }} - 
                 {{ Math.min((campusRankings.page + 1) * campusRankings.size, campusRankings.total) }} / 
                 {{ campusRankings.total }}개
@@ -252,28 +353,26 @@
       <!-- 전국 랭킹 -->
       <div v-else class="space-y-6">
         <!-- 전국 랭킹 필터 -->
-        <div class="flex justify-end">
-          <div class="flex items-center space-x-4">
-            <select
-              v-model="nationalFilters.sort"
-              @change="loadNationalRankings"
-              class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
-            >
-              <option value="votes_desc">득표순</option>
-              <option value="newest">최신순</option>
-            </select>
-            
-            <select
-              v-model="nationalFilters.period"
-              @change="loadNationalRankings"
-              class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm"
-            >
-              <option value="daily">일간</option>
-              <option value="weekly">주간</option>
-              <option value="monthly">월간</option>
-              <option value="all">전체</option>
-            </select>
-          </div>
+        <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
+          <select
+            v-model="nationalFilters.sort"
+            @change="loadNationalRankings"
+            class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm w-full sm:w-auto"
+          >
+            <option value="votes_desc">득표순</option>
+            <option value="newest">최신순</option>
+          </select>
+          
+          <select
+            v-model="nationalFilters.period"
+            @change="loadNationalRankings"
+            class="rounded-lg border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 text-sm w-full sm:w-auto"
+          >
+            <option value="daily">일간</option>
+            <option value="weekly">주간</option>
+            <option value="monthly">월간</option>
+            <option value="all">전체</option>
+          </select>
         </div>
         
         <!-- 로딩 상태 -->
@@ -310,58 +409,61 @@
             <div
               v-for="entry in nationalRankings.entries"
               :key="entry.mascotId"
-              class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 hover:shadow-lg transition-all duration-200 border border-purple-100 hover:border-purple-300"
+              class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 sm:p-6 hover:shadow-lg transition-all duration-200 border border-purple-100 hover:border-purple-300"
             >
-              <div class="flex items-center space-x-4">
-                <!-- 순위 -->
-                <div class="flex-shrink-0">
-                  <div
-                    :class="[
-                      'w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm',
-                      entry.rank === 1 ? 'bg-yellow-500' : 
-                      entry.rank === 2 ? 'bg-gray-400' : 
-                      entry.rank === 3 ? 'bg-orange-500' : 'bg-purple-500'
-                    ]"
-                  >
-                    {{ entry.rank }}
-                  </div>
-                </div>
-
-                <!-- 마스코트 이미지 (등록한 이미지 우선, 없으면 배경) -->
-                <div class="flex-shrink-0">
-                  <img
-                    :src="entry.entryImageUrl || `/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
-                    :alt="`${entry.mascotName || '마스코트'} (${entry.ownerNickname})`"
-                    class="w-12 h-12 rounded-lg object-cover"
-                  />
-                </div>
-
-                <!-- 정보 -->
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center space-x-2 mb-1">
-                    <span class="text-lg font-semibold text-gray-800">
-                      {{ entry.entryTitle || entry.mascotName || '마스코트' }}
-                    </span>
-                    <span class="text-sm text-gray-600">({{ entry.ownerNickname }})</span>
-                  </div>
-                  <div class="flex items-center space-x-4 text-sm text-gray-600">
-                    <span>득표: {{ entry.votes.toLocaleString() }}표</span>
-                    <span v-if="entry.school?.name">학교: {{ entry.school.name }}</span>
-                  </div>
-                </div>
-
-                <!-- 투표 버튼 -->
-                <div class="flex-shrink-0">
-                                      <button
-                      @click="voteForNationalMascot(entry.entryId)"
-                      :disabled="voting || !canVoteForMascot(entry.entryId)"
-                      class="bg-purple-500 text-white px-3 py-1.5 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                <!-- 순위와 이미지 (모바일에서는 가로 배치) -->
+                <div class="flex items-center space-x-3 sm:space-x-4 w-full sm:w-auto">
+                  <!-- 순위 -->
+                  <div class="flex-shrink-0">
+                    <div
+                      :class="[
+                        'w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm',
+                        entry.rank === 1 ? 'bg-yellow-500' : 
+                        entry.rank === 2 ? 'bg-gray-400' : 
+                        entry.rank === 3 ? 'bg-orange-500' : 'bg-purple-500'
+                      ]"
                     >
-                                          <span v-if="!canVoteForMascot(entry.entryId)">
-                        <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
-                        <span v-else-if="nationalVotedEntries.has(entry.entryId)">투표 불가</span>
-                        <span v-else>투표 불가</span>
+                      {{ entry.rank }}
+                    </div>
+                  </div>
+
+                  <!-- 마스코트 이미지 (등록한 이미지 우선, 없으면 배경) -->
+                  <div class="flex-shrink-0">
+                    <img
+                      :src="entry.entryImageUrl || `/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
+                      :alt="`${entry.mascotName || '마스코트'} (${entry.ownerNickname})`"
+                      class="w-12 h-12 rounded-lg object-cover"
+                    />
+                  </div>
+
+                  <!-- 정보 -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2 mb-1">
+                      <span class="text-base sm:text-lg font-semibold text-gray-800">
+                        {{ entry.entryTitle || entry.mascotName || '마스코트' }}
                       </span>
+                      <span class="text-sm text-gray-600">({{ entry.ownerNickname }})</span>
+                    </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-gray-600">
+                      <span>득표: {{ entry.votes.toLocaleString() }}표</span>
+                      <span v-if="entry.school?.name">학교: {{ entry.school.name }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 투표 버튼 (모바일에서는 전체 너비) -->
+                <div class="flex-shrink-0 w-full sm:w-auto">
+                  <button
+                    @click="voteForMascot(entry.entryId)"
+                    :disabled="voting || !canVoteForMascot(entry.entryId)"
+                    class="bg-purple-500 text-white px-3 py-2 sm:py-1.5 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
+                  >
+                    <span v-if="!canVoteForMascot(entry.entryId)">
+                      <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
+                      <span v-else-if="nationalVotedEntries.has(entry.entryId)">이미 투표함</span>
+                      <span v-else>투표 불가</span>
+                    </span>
                     <span v-else>👍 투표</span>
                   </button>
                 </div>
@@ -467,6 +569,20 @@ const nationalFilters = ref({
   size: 10,
   page: 0
 });
+
+// 슬라이드 관련 상태
+const currentSlideIndex = ref({
+  national: 0,
+  campus: 0
+});
+
+// 슬라이드 컨테이너 ref
+const nationalSlotsContainer = ref<HTMLElement | null>(null);
+const campusSlotsContainer = ref<HTMLElement | null>(null);
+
+// 터치 관련 상태
+const touchStartX = ref(0);
+const touchEndX = ref(0);
 
 // 마스코트 존재 여부 확인
 const checkMascotExists = async () => {
@@ -1289,6 +1405,91 @@ async function handleSlotDelete(entryId: number) {
   }
 }
 
+// 슬라이드 이동 함수
+const slideToPrevious = (type: 'national' | 'campus') => {
+  if (type === 'national' && nationalSlotsContainer.value) {
+    if (currentSlideIndex.value.national > 0) {
+      currentSlideIndex.value.national = currentSlideIndex.value.national - 1;
+      const container = nationalSlotsContainer.value;
+      const slotWidth = container.offsetWidth;
+      container.scrollTo({ left: slotWidth * currentSlideIndex.value.national, behavior: 'smooth' });
+    }
+  } else if (type === 'campus' && campusSlotsContainer.value) {
+    if (currentSlideIndex.value.campus > 0) {
+      currentSlideIndex.value.campus = currentSlideIndex.value.campus - 1;
+      const container = campusSlotsContainer.value;
+      const slotWidth = container.offsetWidth;
+      container.scrollTo({ left: slotWidth * currentSlideIndex.value.campus, behavior: 'smooth' });
+    }
+  }
+};
+
+const slideToNext = (type: 'national' | 'campus') => {
+  if (type === 'national' && nationalSlotsContainer.value) {
+    if (currentSlideIndex.value.national < nationalRankingSlots.value.length - 1) {
+      currentSlideIndex.value.national = currentSlideIndex.value.national + 1;
+      const container = nationalSlotsContainer.value;
+      const slotWidth = container.offsetWidth;
+      container.scrollTo({ left: slotWidth * currentSlideIndex.value.national, behavior: 'smooth' });
+    }
+  } else if (type === 'campus' && campusSlotsContainer.value) {
+    if (currentSlideIndex.value.campus < campusRankingSlots.value.length - 1) {
+      currentSlideIndex.value.campus = currentSlideIndex.value.campus + 1;
+      const container = campusSlotsContainer.value;
+      const slotWidth = container.offsetWidth;
+      container.scrollTo({ left: slotWidth * currentSlideIndex.value.campus, behavior: 'smooth' });
+    }
+  }
+};
+
+const slideToIndex = (type: 'national' | 'campus', index: number) => {
+  if (type === 'national' && nationalSlotsContainer.value) {
+    if (index >= 0 && index < nationalRankingSlots.value.length) {
+      currentSlideIndex.value.national = index;
+      const container = nationalSlotsContainer.value;
+      const slotWidth = container.offsetWidth;
+      container.scrollTo({ left: slotWidth * index, behavior: 'smooth' });
+    }
+  } else if (type === 'campus' && campusSlotsContainer.value) {
+    if (index >= 0 && index < campusRankingSlots.value.length) {
+      currentSlideIndex.value.campus = index;
+      const container = campusSlotsContainer.value;
+      const slotWidth = container.offsetWidth;
+      container.scrollTo({ left: slotWidth * index, behavior: 'smooth' });
+    }
+  }
+};
+
+// 터치 이벤트 핸들러
+const handleTouchStart = (e: TouchEvent) => {
+  touchStartX.value = e.changedTouches[0].screenX;
+};
+
+const handleTouchMove = (e: TouchEvent) => {
+  touchEndX.value = e.changedTouches[0].screenX;
+};
+
+const handleTouchEnd = () => {
+  const swipeThreshold = 50; // 스와이프 임계값
+  const slideDirection = touchEndX.value - touchStartX.value;
+
+  if (slideDirection > swipeThreshold) {
+    // 오른쪽으로 스와이프 - 이전 슬롯
+    if (activeTab.value === 'national') {
+      slideToPrevious('national');
+    } else if (activeTab.value === 'campus') {
+      slideToPrevious('campus');
+    }
+  } else if (slideDirection < -swipeThreshold) {
+    // 왼쪽으로 스와이프 - 다음 슬롯
+    if (activeTab.value === 'national') {
+      slideToNext('national');
+    } else if (activeTab.value === 'campus') {
+      slideToNext('campus');
+    }
+  }
+};
+
 // 컴포넌트 마운트 시 인증 확인 후 랭킹 로드
 onMounted(async () => {
   try {
@@ -1340,5 +1541,29 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* 추가 스타일이 필요한 경우 여기에 작성 */
+/* 스크롤바 숨기기 */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* 슬롯 슬라이드 애니메이션 */
+.slot-slide-enter-active,
+.slot-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slot-slide-enter-from {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.slot-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-100%);
+}
 </style>
