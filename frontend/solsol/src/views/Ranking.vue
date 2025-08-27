@@ -369,16 +369,17 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { 
-  getCampusRankings, 
+import {
+  getCampusRankings,
   getNationalRankings,
-  getCurrentUser, 
+  getCurrentUser,
   voteForCampus,
   voteForNational,
   getUserCampusVotedMascotIds,
   getUserNationalVotedMascotIds,
   getUserEntries,
   createRankingEntry,
+  createRankingEntryWithImage,
   deleteRankingEntry,
   getCurrentUserMascotSnapshot,
   getCurrentUserMascot,
@@ -776,11 +777,53 @@ async function handleSlotClick(slotIndex: number) {
 
 async function handleRankingSubmit(data: CreateEntryRequest) {
   try {
-    const newEntry = await createRankingEntry(data);
+    // 현재 마스코트 상태로 이미지 생성
+    const [mascot, customization, shopItems] = await Promise.all([
+      getCurrentUserMascot(),
+      getMascotCustomization(),
+      getShopItems()
+    ]);
+    
+    if (!mascot) {
+      alert('마스코트 정보를 불러올 수 없습니다.');
+      return;
+    }
+    
+    // 실시간 마스코트 이미지 생성
+    const realtimeImageUrl = await composeMascotImage(mascot, customization, shopItems);
+    
+    // Canvas를 Blob으로 변환
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas context unavailable');
+    
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = realtimeImageUrl;
+    });
+    
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Canvas toBlob failed')), 'image/png');
+    });
+    
+    // 이미지와 함께 랭킹 등록
+    const newEntry = await createRankingEntryWithImage(data.title, data.description || '', blob);
+    
+    console.log('새로 생성된 엔트리:', newEntry);
+    console.log('엔트리의 이미지 URL:', newEntry.imageUrl);
     
     // 슬롯에 새 엔트리 할당
     rankingSlots.value[selectedSlotIndex.value].entry = newEntry;
-    rankingSlots.value[selectedSlotIndex.value].mascotImageUrl = currentMascot.value?.imageUrl || '';
+    rankingSlots.value[selectedSlotIndex.value].mascotImageUrl = newEntry.imageUrl || '';
+    
+    console.log('슬롯에 설정된 이미지 URL:', rankingSlots.value[selectedSlotIndex.value].mascotImageUrl);
     
     // 슬롯 활성화 상태 업데이트
     updateSlotActivation();
@@ -798,23 +841,18 @@ async function handleRankingSubmit(data: CreateEntryRequest) {
   }
 }
 
-// 등록된 슬롯의 실시간 마스코트 이미지 업데이트
+// 등록된 슬롯의 저장된 마스코트 이미지 업데이트
 async function updateSlotMascotImages() {
   try {
+    console.log('슬롯 마스코트 이미지 업데이트 시작');
     for (let i = 0; i < rankingSlots.value.length; i++) {
       const slot = rankingSlots.value[i];
       if (slot.entry) {
-        // 등록된 슬롯의 경우 실시간 마스코트 이미지 생성
-        const [mascot, customization, shopItems] = await Promise.all([
-          getCurrentUserMascot(),
-          getMascotCustomization(),
-          getShopItems()
-        ]);
-        
-        if (mascot) {
-          const realtimeImageUrl = await composeMascotImage(mascot, customization, shopItems);
-          slot.mascotImageUrl = realtimeImageUrl;
-        }
+        console.log(`슬롯 ${i} 엔트리:`, slot.entry);
+        console.log(`슬롯 ${i} 이미지 URL:`, slot.entry.imageUrl);
+        // 등록된 슬롯의 경우 저장된 이미지 URL 사용
+        slot.mascotImageUrl = slot.entry.imageUrl || '';
+        console.log(`슬롯 ${i} 설정된 이미지 URL:`, slot.mascotImageUrl);
       }
     }
   } catch (error) {

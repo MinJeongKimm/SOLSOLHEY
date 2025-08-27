@@ -41,11 +41,11 @@ public class RankingEntry extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @NotNull(message = "마스코트 스냅샷 ID는 필수입니다")
-    @Column(name = "mascot_snapshot_id", nullable = false)
-    private Long mascotSnapshotId;
+    @Column(name = "mascot_snapshot_id")
+    private Long mascotSnapshotId = 0L; // 기본값 0으로 설정
 
-
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
 
     @NotBlank(message = "참가 제목은 필수입니다")
     @Size(min = 1, max = 100, message = "참가 제목은 1자 이상 100자 이하여야 합니다")
@@ -57,11 +57,12 @@ public class RankingEntry extends BaseEntity {
     private String description;
 
     @Builder
-    public RankingEntry(Long userId, Long mascotSnapshotId, String title, String description) {
+    public RankingEntry(Long userId, Long mascotSnapshotId, String title, String description, String imageUrl) {
         this.userId = userId;
         this.mascotSnapshotId = mascotSnapshotId;
         this.title = title;
         this.description = description;
+        this.imageUrl = imageUrl;
     }
 
     /**

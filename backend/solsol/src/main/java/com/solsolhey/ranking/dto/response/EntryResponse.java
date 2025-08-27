@@ -10,9 +10,10 @@ import com.solsolhey.ranking.entity.RankingEntry;
 public record EntryResponse(
     Long entryId,
     Long userId,
-    Long mascotSnapshotId,
+    Long mascotSnapshotId, // null 가능
     String title,
     String description,
+    String imageUrl,
     LocalDateTime createdAt
 ) {
     
@@ -26,6 +27,7 @@ public record EntryResponse(
             entry.getMascotSnapshotId(),
             entry.getTitle(),
             entry.getDescription(),
+            entry.getImageUrl(),
             entry.getCreatedAt()
         );
     }

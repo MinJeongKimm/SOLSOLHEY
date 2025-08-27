@@ -1,6 +1,11 @@
 package com.solsolhey.ranking.service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.solsolhey.common.exception.BusinessException;
 import com.solsolhey.ranking.dto.request.CreateEntryRequest;
@@ -37,14 +43,17 @@ public class RankingEntryServiceImpl implements RankingEntryService {
             throw new BusinessException("사용자당 최대 3개까지만 참가할 수 있습니다.");
         }
 
-        // 마스코트 스냅샷 중복 참가 체크
-        if (isMascotSnapshotAlreadyParticipated(request.mascotSnapshotId())) {
-            throw new BusinessException("이미 다른 사용자가 참가한 마스코트 스냅샷입니다.");
-        }
+        // 마스코트 스냅샷 ID가 0이 아닌 경우에만 중복 체크
+        if (request.mascotSnapshotId() != null && request.mascotSnapshotId() > 0) {
+            // 마스코트 스냅샷 중복 참가 체크
+            if (isMascotSnapshotAlreadyParticipated(request.mascotSnapshotId())) {
+                throw new BusinessException("이미 다른 사용자가 참가한 마스코트 스냅샷입니다.");
+            }
 
-        // 사용자가 해당 마스코트 스냅샷을 이미 참가했는지 체크
-        if (hasUserParticipatedWithSnapshot(userId, request.mascotSnapshotId())) {
-            throw new BusinessException("이미 참가한 마스코트 스냅샷입니다.");
+            // 사용자가 해당 마스코트 스냅샷을 이미 참가했는지 체크
+            if (hasUserParticipatedWithSnapshot(userId, request.mascotSnapshotId())) {
+                throw new BusinessException("이미 참가한 마스코트 스냅샷입니다.");
+            }
         }
 
         // RankingEntry 생성 및 저장
@@ -53,6 +62,7 @@ public class RankingEntryServiceImpl implements RankingEntryService {
             .mascotSnapshotId(request.mascotSnapshotId())
             .title(request.title())
             .description(request.description())
+            .imageUrl(request.imageUrl())
             .build();
 
         RankingEntry savedEntry = rankingEntryRepository.save(entry);
@@ -121,5 +131,35 @@ public class RankingEntryServiceImpl implements RankingEntryService {
     @Override
     public boolean hasUserParticipatedWithSnapshot(Long userId, Long mascotSnapshotId) {
         return rankingEntryRepository.existsByUserIdAndMascotSnapshotId(userId, mascotSnapshotId);
+    }
+
+    @Override
+    public String uploadMascotImage(MultipartFile mascotImage) {
+        try {
+            // 업로드 디렉토리 설정
+            String uploadDir = "uploads/ranking";
+            Path uploadPath = Paths.get(uploadDir);
+            
+            // 디렉토리가 없으면 생성
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            
+            // 고유한 파일명 생성
+            String originalFilename = mascotImage.getOriginalFilename();
+            String fileExtension = originalFilename != null ? 
+                originalFilename.substring(originalFilename.lastIndexOf(".")) : ".png";
+            String filename = "mascot_" + UUID.randomUUID().toString() + fileExtension;
+            
+            // 파일 저장
+            Path filePath = uploadPath.resolve(filename);
+            Files.copy(mascotImage.getInputStream(), filePath);
+            
+            // URL 반환 (절대 경로)
+            return "http://localhost:8080/uploads/ranking/" + filename;
+            
+        } catch (IOException e) {
+            throw new BusinessException("이미지 업로드에 실패했습니다: " + e.getMessage());
+        }
     }
 }

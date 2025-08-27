@@ -113,6 +113,57 @@ export async function createRankingEntry(request: CreateEntryRequest): Promise<E
   return response.data;
 }
 
+// 쿠키에서 값을 가져오는 헬퍼 함수
+function getCookie(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
+
+// 랭킹 참가 등록 (이미지 포함)
+export async function createRankingEntryWithImage(
+  title: string, 
+  description: string, 
+  mascotImageBlob: Blob
+): Promise<EntryResponse> {
+  try {
+    // FormData 생성
+    const formData = new FormData();
+    formData.append('title', title);
+    if (description) {
+      formData.append('description', description);
+    }
+    formData.append('mascotImage', mascotImageBlob, 'mascot_ranking.png');
+
+    // CSRF 토큰 가져오기
+    const csrfToken = getCookie('XSRF-TOKEN');
+    
+    // 이미지 업로드 API 호출
+    const response = await fetch('http://localhost:8080/api/ranking/entries/with-image', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'X-XSRF-TOKEN': csrfToken || '',
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || '랭킹 참가 등록에 실패했습니다.');
+    }
+
+    const result = await response.json();
+    if (!result.data) throw new Error('응답 데이터가 없습니다.');
+    
+    return result.data;
+  } catch (error) {
+    console.error('랭킹 참가 등록 실패:', error);
+    throw error;
+  }
+}
+
 // 사용자 참가 목록 조회
 export async function getUserEntries(): Promise<EntryResponse[]> {
   const response = await apiRequest<ApiResponse<EntryResponse[]>>('http://localhost:8080/api/ranking/entries/user');

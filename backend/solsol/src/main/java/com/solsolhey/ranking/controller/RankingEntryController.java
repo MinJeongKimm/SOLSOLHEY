@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.solsolhey.auth.dto.response.CustomUserDetails;
 import com.solsolhey.common.response.ApiResponse;
@@ -34,6 +35,33 @@ public class RankingEntryController {
 
     @Autowired
     private RankingEntryService rankingEntryService;
+
+    /**
+     * 랭킹 참가 등록 (이미지 포함)
+     */
+    @PostMapping("/with-image")
+    public ResponseEntity<ApiResponse<EntryResponse>> createEntryWithImage(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestParam("title") String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam("mascotImage") MultipartFile mascotImage) {
+        try {
+            Long userId = userDetails.getUserId();
+            
+            // 이미지 업로드 및 URL 생성
+            String imageUrl = rankingEntryService.uploadMascotImage(mascotImage);
+            
+            // CreateEntryRequest 생성 (mascotSnapshotId는 0L로 설정, 이미지 업로드 방식이므로)
+            CreateEntryRequest request = new CreateEntryRequest(0L, title, description, imageUrl);
+            
+            EntryResponse response = rankingEntryService.createEntry(userId, request);
+            
+            return ResponseEntity.ok(ApiResponse.success("랭킹 참가가 성공적으로 등록되었습니다.", response));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.badRequest("랭킹 참가 등록에 실패했습니다: " + e.getMessage()));
+        }
+    }
 
     /**
      * 랭킹 참가 등록

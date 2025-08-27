@@ -70,5 +70,13 @@ public interface RankingEntryService {
      * @return 참가 여부
      */
     boolean hasUserParticipatedWithSnapshot(Long userId, Long mascotSnapshotId);
+
+    /**
+     * 마스코트 이미지 업로드
+     * 
+     * @param mascotImage 업로드할 마스코트 이미지
+     * @return 업로드된 이미지 URL
+     */
+    String uploadMascotImage(org.springframework.web.multipart.MultipartFile mascotImage);
 }
 
