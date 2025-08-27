@@ -59,11 +59,30 @@
               <!-- 마스코트가 있는 경우 -->
               <div v-if="hasMascot" class="flex items-center space-x-2">
                 <span class="text-2xl font-bold text-blue-600">{{ myRank || '계산 중...' }}위</span>
-                <span class="text-sm text-gray-600">• {{ myRank === 1 ? '🥇' : myRank === 2 ? '🥈' : myRank === 3 ? '🥉' : '🏅' }}</span>
               </div>
               <!-- 마스코트가 없는 경우 -->
               <div v-else class="flex items-center space-x-2">
                 <span class="text-lg text-gray-600">마스코트가 없습니다</span>
+              </div>
+              
+              <!-- 추가 정보 표시 -->
+              <div v-if="hasMascot" class="mt-2 space-y-1">
+                <!-- 교내 랭킹일 때 학교 정보와 정렬 기준 표시 -->
+                <div v-if="activeTab === 'campus'" class="flex items-center space-x-4 text-sm text-gray-600">
+                  <span v-if="currentUser?.campus" class="flex items-center space-x-1">
+                    <span class="text-gray-500">🏫</span>
+                    <span>{{ currentUser.campus }}</span>
+                  </span>
+                  <span class="flex items-center space-x-1">
+                    <span class="text-gray-500">📊</span>
+                    <span>{{ getSortDisplayName(campusFilters.sort) }} • {{ getPeriodDisplayName(campusFilters.period) }}</span>
+                  </span>
+                </div>
+                <!-- 전국 랭킹일 때 정렬 기준만 표시 -->
+                <div v-else class="flex items-center space-x-1 text-sm text-gray-600">
+                  <span class="text-gray-500">📊</span>
+                  <span>{{ getSortDisplayName(nationalFilters.sort) }} • {{ getPeriodDisplayName(nationalFilters.period) }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -77,8 +96,6 @@
               마스코트 만들기
             </router-link>
           </div>
-          
-
         </div>
         
         <!-- 마스코트가 없는 경우 안내 메시지 -->
@@ -504,6 +521,36 @@ const updateVoteStatus = (mascotId: number) => {
     votedMascots.value.add(mascotId);
   } else {
     nationalVotedMascots.value.add(mascotId);
+  }
+};
+
+// 정렬 기준을 사용자 친화적인 텍스트로 변환
+const getSortDisplayName = (sort: string) => {
+  switch (sort) {
+    case 'votes_desc':
+      return '득표순';
+    case 'newest':
+      return '최신순';
+    case 'trending':
+      return '트렌딩순';
+    default:
+      return '득표순';
+  }
+};
+
+// 기간을 사용자 친화적인 텍스트로 변환
+const getPeriodDisplayName = (period: string) => {
+  switch (period) {
+    case 'daily':
+      return '일간';
+    case 'weekly':
+      return '주간';
+    case 'monthly':
+      return '월간';
+    case 'all':
+      return '전체';
+    default:
+      return '주간';
   }
 };
 
