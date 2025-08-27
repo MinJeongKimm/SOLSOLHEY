@@ -90,21 +90,44 @@
               />
             </div>
             
-            <!-- 드래그 가능한 장착된 아이템들 -->
-            <DraggableItem
-              v-for="(equippedItem, index) in equippedItems"
-              :key="equippedItem.id"
-              :item="equippedItem.item"
-              :position="getAbsolutePosition(equippedItem)"
-              :scale="equippedItem.scale"
-              :rotation="equippedItem.rotation"
-              :is-selected="selectedItemId === equippedItem.id"
-              :container-bounds="canvasBounds"
-              @update:position="updateItemPosition(equippedItem.id, $event)"
-              @update:scale="updateItemScale(equippedItem.id, $event)"
-              @update:rotation="updateItemRotation(equippedItem.id, $event)"
-              @select="selectItem(equippedItem.id)"
-            />
+            <!-- 레이어 1: 배경 아이템 (마스코트 뒤) -->
+            <div class="absolute inset-0 z-0">
+              <DraggableItem
+                v-for="bg in backgroundEquippedItems"
+                :key="bg.id"
+                :item="bg.item"
+                :position="getAbsolutePosition(bg)"
+                :scale="bg.scale"
+                :rotation="bg.rotation"
+                :is-selected="selectedItemId === bg.id"
+                :container-bounds="canvasBounds"
+                @update:position="updateItemPosition(bg.id, $event)"
+                @update:scale="updateItemScale(bg.id, $event)"
+                @update:rotation="updateItemRotation(bg.id, $event)"
+                @select="selectItem(bg.id)"
+              />
+            </div>
+
+            <!-- 레이어 2: 마스코트 (중간) -->
+            <!-- 이미 위에서 마스코트 이미지를 렌더링 중이므로 이 블록은 유지 -->
+
+            <!-- 레이어 3: 전경 아이템 (마스코트 앞) -->
+            <div class="absolute inset-0 z-20">
+              <DraggableItem
+                v-for="fg in foregroundEquippedItems"
+                :key="fg.id"
+                :item="fg.item"
+                :position="getAbsolutePosition(fg)"
+                :scale="fg.scale"
+                :rotation="fg.rotation"
+                :is-selected="selectedItemId === fg.id"
+                :container-bounds="canvasBounds"
+                @update:position="updateItemPosition(fg.id, $event)"
+                @update:scale="updateItemScale(fg.id, $event)"
+                @update:rotation="updateItemRotation(fg.id, $event)"
+                @select="selectItem(fg.id)"
+              />
+            </div>
           </div>
           
           <!-- 마스코트 이름 -->
@@ -423,6 +446,14 @@ const equippedItems = computed(() => {
   // 새로운 다중 아이템 시스템에서는 equippedItemsList를 직접 사용
   return equippedItemsList.value;
 });
+
+// 배경 아이템/전경 아이템 분리 (레이어링 제어)
+const backgroundEquippedItems = computed(() =>
+  equippedItemsList.value.filter(e => e.item?.type === 'background')
+);
+const foregroundEquippedItems = computed(() =>
+  equippedItemsList.value.filter(e => e.item?.type !== 'background')
+);
 
 // 더 많은 아이템을 장착할 수 있는지 확인
 const canEquipMoreItems = computed(() => {
