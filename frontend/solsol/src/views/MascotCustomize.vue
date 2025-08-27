@@ -47,21 +47,7 @@
           </div>
           <!-- 저장 버튼 제거: 메인 저장에 통합됨 -->
         </div>
-        <!-- 모바일 도움말 -->
-        <div v-if="isMobileDevice" class="mb-4 p-3 bg-blue-100 rounded-lg text-sm text-blue-800">
-          <div class="flex items-center space-x-2 mb-1">
-            <span>📱</span>
-            <span class="font-medium">터치 조작법</span>
-          </div>
-          <div class="text-xs space-y-1">
-            <div>• 한 손가락으로 드래그하여 아이템 이동</div>
-            <div>• 두 손가락으로 핀치하여 크기 조절</div>
-            <div>• 두 손가락으로 비틀어서 회전</div>
-            <div>• 짧게 탭하여 아이템 선택/해제</div>
-            <div>• 마스코트는 항상 중앙에 고정됨</div>
-            <div>• 같은 아이템 중복 장착 가능 (최대 10개)</div>
-          </div>
-        </div>
+        <!-- 모바일 도움말 제거 -->
         
         <div 
           class="relative h-64 rounded-xl overflow-hidden flex items-center justify-center"
