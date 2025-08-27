@@ -3,6 +3,8 @@ package com.solsolhey.ranking.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -11,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.solsolhey.common.exception.BusinessException;
 import com.solsolhey.mascot.domain.Mascot;
+import com.solsolhey.mascot.domain.MascotSnapshot;
 import com.solsolhey.mascot.repository.MascotRepository;
+import com.solsolhey.mascot.repository.MascotSnapshotRepository;
 import com.solsolhey.ranking.dto.request.CampusRankingRequest;
 import com.solsolhey.ranking.dto.request.NationalRankingRequest;
 import com.solsolhey.ranking.dto.request.VoteRequest;
@@ -41,6 +45,7 @@ public class RankingServiceImpl implements RankingService {
     private final VoteRepository voteRepository;
     private final UserRepository userRepository;
     private final MascotRepository mascotRepository;
+    private final MascotSnapshotRepository mascotSnapshotRepository;
     private final RankingEntryRepository rankingEntryRepository;
 
     // 일일 투표 제한 (교내: 10회, 전국: 5회)
@@ -287,6 +292,22 @@ public class RankingServiceImpl implements RankingService {
             });
         }
         
+        // 마스코트 ID 목록을 추출하여 스냅샷을 일괄 조회
+        List<Long> mascotIds = sortedMascots.stream()
+            .map(Mascot::getId)
+            .collect(Collectors.toList());
+        
+        // 마스코트 ID별로 스냅샷을 조회 (가장 최근 스냅샷 사용)
+        Map<Long, MascotSnapshot> snapshotMap = mascotSnapshotRepository.findByMascotIdIn(mascotIds)
+            .stream()
+            .collect(Collectors.groupingBy(
+                MascotSnapshot::getMascotId,
+                Collectors.collectingAndThen(
+                    Collectors.maxBy((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt())),
+                    opt -> opt.orElse(null)
+                )
+            ));
+        
         // 정렬된 순서대로 RankingEntryResponse 생성
         List<RankingEntryResponse> rankedEntries = new ArrayList<>();
         for (int i = 0; i < sortedMascots.size(); i++) {
@@ -294,9 +315,17 @@ public class RankingServiceImpl implements RankingService {
             User owner = getUserById(mascot.getUserId());
             long voteCount = getVoteCount(mascot.getId(), Vote.VoteType.CAMPUS);
             
+            // 스냅샷이 없는 경우 기본 마스코트 정보만 사용
+            MascotSnapshot snapshot = snapshotMap.get(mascot.getId());
+            if (snapshot == null) {
+                log.warn("마스코트 ID {}에 대한 스냅샷을 찾을 수 없습니다.", mascot.getId());
+                continue; // 스냅샷이 없는 마스코트는 건너뛰기
+            }
+            
             RankingEntryResponse rankedEntry = RankingEntryResponse.fromCampus(
                 mascot,
-                i + 1, // 실제 순위
+                snapshot,
+                Integer.valueOf(i + 1), // 실제 순위
                 owner.getNickname(),
                 voteCount
             );
@@ -322,6 +351,22 @@ public class RankingServiceImpl implements RankingService {
             });
         }
         
+        // 마스코트 ID 목록을 추출하여 스냅샷을 일괄 조회
+        List<Long> mascotIds = sortedMascots.stream()
+            .map(Mascot::getId)
+            .collect(Collectors.toList());
+        
+        // 마스코트 ID별로 스냅샷을 조회 (가장 최근 스냅샷 사용)
+        Map<Long, MascotSnapshot> snapshotMap = mascotSnapshotRepository.findByMascotIdIn(mascotIds)
+            .stream()
+            .collect(Collectors.groupingBy(
+                MascotSnapshot::getMascotId,
+                Collectors.collectingAndThen(
+                    Collectors.maxBy((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt())),
+                    opt -> opt.orElse(null)
+                )
+            ));
+        
         // 정렬된 순서대로 RankingEntryResponse 생성
         List<RankingEntryResponse> rankedEntries = new ArrayList<>();
         for (int i = 0; i < sortedMascots.size(); i++) {
@@ -329,9 +374,17 @@ public class RankingServiceImpl implements RankingService {
             User owner = getUserById(mascot.getUserId());
             long voteCount = getVoteCount(mascot.getId(), Vote.VoteType.NATIONAL);
             
+            // 스냅샷이 없는 경우 기본 마스코트 정보만 사용
+            MascotSnapshot snapshot = snapshotMap.get(mascot.getId());
+            if (snapshot == null) {
+                log.warn("마스코트 ID {}에 대한 스냅샷을 찾을 수 없습니다.", mascot.getId());
+                continue; // 스냅샷이 없는 마스코트는 건너뛰기
+            }
+            
             RankingEntryResponse rankedEntry = RankingEntryResponse.fromNational(
                 mascot,
-                i + 1, // 실제 순위
+                snapshot,
+                Integer.valueOf(i + 1), // 실제 순위
                 owner.getNickname(),
                 owner.getCampus(),
                 null, // schoolId는 null로 설정
