@@ -54,20 +54,20 @@
         {{ entry.title }}
       </h3>
 
-      <!-- 득표수와 순위 -->
+      <!-- 순위와 득표수 -->
       <div class="stats-container text-center">
         <div class="flex items-center justify-center space-x-3 mb-2">
           <div class="flex items-center space-x-1">
             <svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
             </svg>
-            <span class="text-sm font-medium text-gray-700">{{ voteCount }}</span>
+            <span class="text-sm font-medium text-gray-700">{{ rank }}위</span>
           </div>
           <div class="flex items-center space-x-1">
             <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
-            <span class="text-sm font-medium text-gray-700">{{ rank }}</span>
+            <span class="text-sm font-medium text-gray-700">{{ voteCount }}표</span>
           </div>
         </div>
         
@@ -108,16 +108,50 @@ const handleImageError = (event: Event) => {
 
 // 날짜 포맷팅
 const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  if (diffDays === 1) return '오늘';
-  if (diffDays === 2) return '어제';
-  if (diffDays <= 7) return `${diffDays - 1}일 전`;
-  
-  return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+  try {
+    let date: Date;
+    
+    // Java LocalDateTime 배열 형태 처리 (예: [2025, 8, 27, 21, 12, 14, 323184000])
+    if (Array.isArray(dateString)) {
+      const [year, month, day, hour, minute, second, nano] = dateString;
+      // Java의 월은 0부터 시작하므로 -1, 나노초는 밀리초로 변환
+      date = new Date(year, month - 1, day, hour, minute, second, Math.floor(nano / 1000000));
+    }
+    // ISO 형식 (2024-01-15T10:30:00.000Z)
+    else if (typeof dateString === 'string' && dateString.includes('T')) {
+      date = new Date(dateString);
+    } 
+    // 타임스탬프 형식 (1705297800000)
+    else if (typeof dateString === 'string' && /^\d+$/.test(dateString)) {
+      date = new Date(parseInt(dateString));
+    }
+    // 일반 날짜 형식 (2024-01-15)
+    else if (typeof dateString === 'string') {
+      date = new Date(dateString);
+    }
+    // 기타 경우
+    else {
+      date = new Date(dateString);
+    }
+    
+    // 유효한 날짜인지 확인
+    if (isNaN(date.getTime())) {
+      return '날짜 없음';
+    }
+    
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return '오늘';
+    if (diffDays === 2) return '어제';
+    if (diffDays <= 7) return `${diffDays - 1}일 전`;
+    
+    return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+  } catch (error) {
+    console.error('날짜 포맷팅 오류:', error, dateString);
+    return '날짜 오류';
+  }
 };
 </script>
 

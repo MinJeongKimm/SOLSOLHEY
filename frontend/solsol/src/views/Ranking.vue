@@ -725,6 +725,7 @@ watch(activeTab, async (newTab) => {
     }
     await loadCampusRankings();
     await loadCampusRankingEntries(); // 교내 랭킹 슬롯 로드
+    await updateCampusSlotRankingInfo(); // 교내 랭킹 슬롯 정보 업데이트
   } else {
     // 전국 랭킹 탭으로 변경 시 전국 랭킹 투표 히스토리 로드
     try {
@@ -735,6 +736,7 @@ watch(activeTab, async (newTab) => {
     }
     await loadNationalRankings();
     await loadNationalRankingEntries(); // 전국 랭킹 슬롯 로드
+    await updateNationalSlotRankingInfo(); // 전국 랭킹 슬롯 정보 업데이트
   }
 }, { immediate: true }); // immediate: true로 설정하여 컴포넌트 마운트 시 첫 번째 탭 로드
 
@@ -757,6 +759,9 @@ async function loadNationalRankingEntries() {
     
     // 등록된 슬롯의 저장된 마스코트 이미지 업데이트
     await updateNationalSlotMascotImages();
+    
+    // 등록된 슬롯의 실제 랭킹 정보 업데이트 (득표수, 순위)
+    await updateNationalSlotRankingInfo();
     
   } catch (error) {
     console.error('전국 랭킹 엔트리 로드 실패:', error);
@@ -783,6 +788,9 @@ async function loadCampusRankingEntries() {
     
     // 등록된 슬롯의 저장된 마스코트 이미지 업데이트
     await updateCampusSlotMascotImages();
+    
+    // 등록된 슬롯의 실제 랭킹 정보 업데이트 (득표수, 순위)
+    await updateCampusSlotRankingInfo();
     
   } catch (error) {
     console.error('교내 랭킹 엔트리 로드 실패:', error);
@@ -919,6 +927,15 @@ async function handleRankingSubmit(data: CreateEntryRequest) {
     // 슬롯 활성화 상태 업데이트
     updateSlotActivation();
     
+    // 랭킹 목록 새로고침 (득표수, 순위 업데이트를 위해)
+    if (activeTab.value === 'national') {
+      await loadNationalRankings();
+      await updateNationalSlotRankingInfo();
+    } else {
+      await loadCampusRankings();
+      await updateCampusSlotRankingInfo();
+    }
+    
     // 모달 닫기
     showRankingModal.value = false;
     selectedSlotIndex.value = -1;
@@ -951,6 +968,43 @@ async function updateNationalSlotMascotImages() {
   }
 }
 
+// 전국 랭킹 슬롯의 실제 랭킹 정보 업데이트 (득표수, 순위)
+async function updateNationalSlotRankingInfo() {
+  try {
+    console.log('전국 랭킹 슬롯 랭킹 정보 업데이트 시작');
+    
+    // 전국 랭킹 데이터가 로드되어 있는지 확인
+    if (!nationalRankings.value) {
+      await loadNationalRankings();
+    }
+    
+    for (let i = 0; i < nationalRankingSlots.value.length; i++) {
+      const slot = nationalRankingSlots.value[i];
+      if (slot.entry && nationalRankings.value) {
+        // 실제 랭킹 데이터에서 해당 마스코트의 정보 찾기
+        const rankingEntry = nationalRankings.value.entries.find(entry => 
+          entry.mascotId === slot.entry!.mascotId
+        );
+        
+        if (rankingEntry) {
+          slot.voteCount = rankingEntry.votes;
+          slot.rank = rankingEntry.rank;
+          console.log(`전국 슬롯 ${i} 랭킹 정보 업데이트:`, { 
+            voteCount: slot.voteCount, 
+            rank: slot.rank 
+          });
+        } else {
+          // 랭킹에 등록되지 않은 경우 기본값 설정
+          slot.voteCount = 0;
+          slot.rank = 0;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('전국 슬롯 랭킹 정보 업데이트 실패:', error);
+  }
+}
+
 async function updateCampusSlotMascotImages() {
   try {
     console.log('교내 랭킹 슬롯 마스코트 이미지 업데이트 시작');
@@ -966,6 +1020,43 @@ async function updateCampusSlotMascotImages() {
     }
   } catch (error) {
     console.error('교내 슬롯 마스코트 이미지 업데이트 실패:', error);
+  }
+}
+
+// 교내 랭킹 슬롯의 실제 랭킹 정보 업데이트 (득표수, 순위)
+async function updateCampusSlotRankingInfo() {
+  try {
+    console.log('교내 랭킹 슬롯 랭킹 정보 업데이트 시작');
+    
+    // 교내 랭킹 데이터가 로드되어 있는지 확인
+    if (!campusRankings.value) {
+      await loadCampusRankings();
+    }
+    
+    for (let i = 0; i < campusRankingSlots.value.length; i++) {
+      const slot = campusRankingSlots.value[i];
+      if (slot.entry && campusRankings.value) {
+        // 실제 랭킹 데이터에서 해당 마스코트의 정보 찾기
+        const rankingEntry = campusRankings.value.entries.find(entry => 
+          entry.mascotId === slot.entry!.mascotId
+        );
+        
+        if (rankingEntry) {
+          slot.voteCount = rankingEntry.votes;
+          slot.rank = rankingEntry.rank;
+          console.log(`교내 슬롯 ${i} 랭킹 정보 업데이트:`, { 
+            voteCount: slot.voteCount, 
+            rank: slot.rank 
+          });
+        } else {
+          // 랭킹에 등록되지 않은 경우 기본값 설정
+          slot.voteCount = 0;
+          slot.rank = 0;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('교내 슬롯 랭킹 정보 업데이트 실패:', error);
   }
 }
 
