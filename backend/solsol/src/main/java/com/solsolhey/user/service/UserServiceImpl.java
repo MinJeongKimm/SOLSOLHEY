@@ -120,7 +120,6 @@ public class UserServiceImpl implements UserService {
     private UserResponse convertToUserResponse(User user) {
         return new UserResponse(
             user.getUserId(),
-            user.getUsername(),
             user.getEmail(),
             user.getNickname(),
             user.getCampus(),
