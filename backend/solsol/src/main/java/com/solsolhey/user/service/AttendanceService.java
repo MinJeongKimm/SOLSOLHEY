@@ -14,6 +14,7 @@ public interface AttendanceService {
      */
     AttendanceResult checkInToday(User user);
 
-    record AttendanceResult(boolean attended, int consecutiveDays, int expReward, int pointReward) {}
+    record ExpAwardedView(Integer amount, String type, String category, Integer totalExp, Integer level) {}
+    record AttendanceResult(boolean attended, int consecutiveDays, int pointReward, ExpAwardedView expAwarded) {}
 }
 

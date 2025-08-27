@@ -31,6 +31,7 @@ public class ChallengeServiceImpl implements ChallengeService {
     private final UserChallengeRepository userChallengeRepository;
     private final ChallengeCategoryRepository categoryRepository;
     private final PointService pointService;
+    private final com.solsolhey.exp.service.ExpDailyCounterService expDailyCounterService;
 
     /**
      * 챌린지 목록 조회
@@ -145,6 +146,15 @@ public class ChallengeServiceImpl implements ChallengeService {
         userChallenge.start();
         
         UserChallenge savedUserChallenge = userChallengeRepository.save(userChallenge);
+
+        // EXP: 챌린지 참여 카테고리 1일 1회 +5 (마스코트 존재 시)
+        try {
+            if (challenge.getCategory() != null) {
+                expDailyCounterService.awardChallengeCategoryExp(user, challenge.getCategory().getCategoryName());
+            }
+        } catch (Exception e) {
+            log.warn("챌린지 카테고리 EXP 적립 실패: userId={}, challengeId={}, err={}", user.getUserId(), challengeId, e.getMessage());
+        }
 
         log.info("챌린지 참여 완료: challengeId={}, userId={}, userChallengeId={}", 
                 challengeId, user.getUserId(), savedUserChallenge.getUserChallengeId());

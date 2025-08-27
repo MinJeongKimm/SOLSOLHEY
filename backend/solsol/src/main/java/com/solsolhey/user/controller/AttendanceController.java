@@ -43,13 +43,21 @@ public class AttendanceController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         try {
             var result = attendanceService.checkInToday(userDetails.getUser());
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    ApiResponse.success("출석 완료", Map.of(
-                            "attended", result.attended(),
-                            "consecutiveDays", result.consecutiveDays(),
-                            "expReward", result.expReward(),
-                            "pointReward", result.pointReward()
-                    )));
+            var resp = new java.util.HashMap<String, Object>();
+            resp.put("attended", result.attended());
+            resp.put("consecutiveDays", result.consecutiveDays());
+            resp.put("pointReward", result.pointReward());
+            if (result.expAwarded() != null) {
+                resp.put("expAwarded", Map.of(
+                        "amount", result.expAwarded().amount(),
+                        "type", result.expAwarded().type(),
+                        "category", result.expAwarded().category(),
+                        "totalExp", result.expAwarded().totalExp(),
+                        "level", result.expAwarded().level()
+                ));
+            }
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("출석 완료", resp));
         } catch (Exception e) {
             log.error("출석 처리 실패", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

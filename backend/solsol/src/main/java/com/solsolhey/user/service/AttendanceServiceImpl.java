@@ -1,6 +1,7 @@
 package com.solsolhey.user.service;
 
 import com.solsolhey.point.service.PointService;
+import com.solsolhey.exp.service.ExpDailyCounterService;
 import com.solsolhey.point.dto.response.PointTransactionResponse;
 import com.solsolhey.point.entity.PointTransaction.ReferenceType;
 import com.solsolhey.user.entity.Attendance;
@@ -23,6 +24,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final PointService pointService;
+    private final ExpDailyCounterService expDailyCounterService;
 
     @Override
     @Transactional(readOnly = true)
@@ -38,7 +40,8 @@ public class AttendanceServiceImpl implements AttendanceService {
             log.info("이미 오늘 출석함: userId={}", user.getUserId());
             Attendance latest = attendanceRepository.findTopByUserOrderByAttendanceDateDesc(user).orElse(null);
             int consecutive = latest != null ? latest.getConsecutiveDays() : 1;
-            return new AttendanceResult(true, consecutive, latest != null ? latest.getExpReward() : 0, latest != null ? latest.getPointReward() : 0);
+            // 이미 출석된 경우 EXP 재적립 없음 → expAwarded = null
+            return new AttendanceResult(true, consecutive, latest != null ? latest.getPointReward() : 0, null);
         }
 
         int consecutiveDays = 1;
@@ -68,7 +71,13 @@ public class AttendanceServiceImpl implements AttendanceService {
         // 포인트 지급 (일일 보너스)
         PointTransactionResponse tx = pointService.giveDailyBonus(user);
 
-        return new AttendanceResult(true, attendance.getConsecutiveDays(), attendance.getExpReward(), tx.pointAmount());
+        // EXP 적립 (일일 카운터)
+        var awardedOpt = expDailyCounterService.awardAttendanceExp(user, attendance.getConsecutiveDays());
+        ExpAwardedView awardedView = awardedOpt
+                .map(a -> new ExpAwardedView(a.amount(), a.type(), a.category(), a.totalExp(), a.level()))
+                .orElse(null);
+
+        return new AttendanceResult(true, attendance.getConsecutiveDays(), tx.pointAmount(), awardedView);
     }
 }
 
