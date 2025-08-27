@@ -125,7 +125,8 @@ function getCookie(name: string): string | null {
 export async function createRankingEntryWithImage(
   title: string, 
   description: string, 
-  mascotImageBlob: Blob
+  mascotImageBlob: Blob,
+  rankingType: string
 ): Promise<EntryResponse> {
   try {
     // FormData 생성
@@ -135,6 +136,7 @@ export async function createRankingEntryWithImage(
       formData.append('description', description);
     }
     formData.append('mascotImage', mascotImageBlob, 'mascot_ranking.png');
+    formData.append('rankingType', rankingType);
 
     // CSRF 토큰 가져오기
     const csrfToken = getCookie('XSRF-TOKEN');
@@ -167,6 +169,13 @@ export async function createRankingEntryWithImage(
 // 사용자 참가 목록 조회
 export async function getUserEntries(): Promise<EntryResponse[]> {
   const response = await apiRequest<ApiResponse<EntryResponse[]>>('http://localhost:8080/api/ranking/entries/user');
+  if (!response.data) throw new Error('응답 데이터가 없습니다.');
+  return response.data;
+}
+
+// 사용자 특정 타입 참가 목록 조회
+export async function getUserEntriesByType(rankingType: string): Promise<EntryResponse[]> {
+  const response = await apiRequest<ApiResponse<EntryResponse[]>>(`http://localhost:8080/api/ranking/entries/user/type/${rankingType}`);
   if (!response.data) throw new Error('응답 데이터가 없습니다.');
   return response.data;
 }

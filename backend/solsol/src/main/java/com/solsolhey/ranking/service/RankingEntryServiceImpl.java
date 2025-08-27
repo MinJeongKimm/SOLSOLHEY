@@ -63,6 +63,7 @@ public class RankingEntryServiceImpl implements RankingEntryService {
             .title(request.title())
             .description(request.description())
             .imageUrl(request.imageUrl())
+            .rankingType(request.rankingType())
             .build();
 
         RankingEntry savedEntry = rankingEntryRepository.save(entry);
@@ -72,6 +73,14 @@ public class RankingEntryServiceImpl implements RankingEntryService {
     @Override
     public List<EntryResponse> getUserEntries(Long userId) {
         List<RankingEntry> entries = rankingEntryRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return entries.stream()
+            .map(EntryResponse::from)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<EntryResponse> getUserEntriesByType(Long userId, String rankingType) {
+        List<RankingEntry> entries = rankingEntryRepository.findByUserIdAndRankingTypeOrderByCreatedAtDesc(userId, rankingType);
         return entries.stream()
             .map(EntryResponse::from)
             .collect(Collectors.toList());

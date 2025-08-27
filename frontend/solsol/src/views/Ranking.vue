@@ -45,17 +45,40 @@
         </nav>
       </div>
 
-      <!-- 랭킹 참가 슬롯 섹션 -->
-      <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6 border-2 border-blue-200">
+      <!-- 전국 랭킹 참가 슬롯 섹션 -->
+      <div v-if="activeTab === 'national'" class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6 border-2 border-blue-200">
         <div class="mb-4">
-          <h2 class="text-lg font-bold text-gray-800 mb-2">랭킹 참가 슬롯</h2>
-          <p class="text-sm text-gray-600">마스코트를 랭킹에 등록하여 다른 사용자들과 경쟁해보세요!</p>
+          <h2 class="text-lg font-bold text-gray-800 mb-2">전국 랭킹 참가 슬롯</h2>
+          <p class="text-sm text-gray-600">마스코트를 전국 랭킹에 등록하여 다른 사용자들과 경쟁해보세요!</p>
         </div>
         
         <!-- 3개 슬롯 가로 배치 -->
         <div class="grid grid-cols-3 gap-4 max-w-4xl mx-auto">
           <RankingSlot
-            v-for="(slot, index) in rankingSlots"
+            v-for="(slot, index) in nationalRankingSlots"
+            :key="index"
+            :entry="slot.entry"
+            :is-active="slot.isActive"
+            :mascot-image-url="slot.mascotImageUrl"
+            :vote-count="slot.voteCount"
+            :rank="slot.rank"
+            @slot-click="handleSlotClick(index)"
+            @delete="handleSlotDelete"
+          />
+        </div>
+      </div>
+
+      <!-- 교내 랭킹 참가 슬롯 섹션 -->
+      <div v-if="activeTab === 'campus'" class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 mb-6 border-2 border-purple-200">
+        <div class="mb-4">
+          <h2 class="text-lg font-bold text-gray-800 mb-2">교내 랭킹 참가 슬롯</h2>
+          <p class="text-sm text-gray-600">마스코트를 교내 랭킹에 등록하여 다른 사용자들과 경쟁해보세요!</p>
+        </div>
+        
+        <!-- 3개 슬롯 가로 배치 -->
+        <div class="grid grid-cols-3 gap-4 max-w-4xl mx-auto">
+          <RankingSlot
+            v-for="(slot, index) in campusRankingSlots"
             :key="index"
             :entry="slot.entry"
             :is-active="slot.isActive"
@@ -378,6 +401,7 @@ import {
   getUserCampusVotedMascotIds,
   getUserNationalVotedMascotIds,
   getUserEntries,
+  getUserEntriesByType,
   createRankingEntry,
   createRankingEntryWithImage,
   deleteRankingEntry,
@@ -409,8 +433,14 @@ const hasMascot = ref<boolean>(false);
 const votedMascots = ref<Set<number>>(new Set()); // 교내 랭킹 투표한 마스코트 ID들
 const nationalVotedMascots = ref<Set<number>>(new Set()); // 전국 랭킹 투표한 마스코트 ID들
 
-// 랭킹 슬롯 관련 상태
-const rankingSlots = ref([
+// 랭킹 슬롯 관련 상태 (전국/교내 분리)
+const nationalRankingSlots = ref([
+  { entry: null as EntryResponse | null, isActive: true, mascotImageUrl: '', voteCount: 0, rank: 0 },
+  { entry: null as EntryResponse | null, isActive: false, mascotImageUrl: '', voteCount: 0, rank: 0 },
+  { entry: null as EntryResponse | null, isActive: false, mascotImageUrl: '', voteCount: 0, rank: 0 }
+]);
+
+const campusRankingSlots = ref([
   { entry: null as EntryResponse | null, isActive: true, mascotImageUrl: '', voteCount: 0, rank: 0 },
   { entry: null as EntryResponse | null, isActive: false, mascotImageUrl: '', voteCount: 0, rank: 0 },
   { entry: null as EntryResponse | null, isActive: false, mascotImageUrl: '', voteCount: 0, rank: 0 }
@@ -688,6 +718,7 @@ watch(activeTab, async (newTab) => {
       console.error('교내 랭킹 투표 히스토리 로드 실패:', error);
     }
     await loadCampusRankings();
+    await loadCampusRankingEntries(); // 교내 랭킹 슬롯 로드
   } else {
     // 전국 랭킹 탭으로 변경 시 전국 랭킹 투표 히스토리 로드
     try {
@@ -697,17 +728,18 @@ watch(activeTab, async (newTab) => {
       console.error('전국 랭킹 투표 히스토리 로드 실패:', error);
     }
     await loadNationalRankings();
+    await loadNationalRankingEntries(); // 전국 랭킹 슬롯 로드
   }
 }, { immediate: true }); // immediate: true로 설정하여 컴포넌트 마운트 시 첫 번째 탭 로드
 
-// 랭킹 슬롯 관련 함수들
-async function loadRankingEntries() {
+// 랭킹 슬롯 관련 함수들 (전국/교내 분리)
+async function loadNationalRankingEntries() {
   try {
     loadingRanking.value = true;
-    const entries = await getUserEntries();
+    const entries = await getUserEntriesByType('NATIONAL');
     
-    // 슬롯에 엔트리 할당
-    rankingSlots.value.forEach((slot, index) => {
+    // 전국 랭킹 슬롯에 엔트리 할당
+    nationalRankingSlots.value.forEach((slot, index) => {
       if (index < entries.length) {
         slot.entry = entries[index];
         slot.isActive = false; // 등록된 슬롯은 비활성화
@@ -715,22 +747,62 @@ async function loadRankingEntries() {
     });
     
     // 다음 슬롯 활성화
-    updateSlotActivation();
+    updateNationalSlotActivation();
     
-    // 등록된 슬롯의 실시간 마스코트 이미지 업데이트
-    await updateSlotMascotImages();
+    // 등록된 슬롯의 저장된 마스코트 이미지 업데이트
+    await updateNationalSlotMascotImages();
     
   } catch (error) {
-    console.error('랭킹 엔트리 로드 실패:', error);
+    console.error('전국 랭킹 엔트리 로드 실패:', error);
   } finally {
     loadingRanking.value = false;
   }
 }
 
-function updateSlotActivation() {
-  const registeredCount = rankingSlots.value.filter(slot => slot.entry !== null).length;
+async function loadCampusRankingEntries() {
+  try {
+    loadingRanking.value = true;
+    const entries = await getUserEntriesByType('CAMPUS');
+    
+    // 교내 랭킹 슬롯에 엔트리 할당
+    campusRankingSlots.value.forEach((slot, index) => {
+      if (index < entries.length) {
+        slot.entry = entries[index];
+        slot.isActive = false; // 등록된 슬롯은 비활성화
+      }
+    });
+    
+    // 다음 슬롯 활성화
+    updateCampusSlotActivation();
+    
+    // 등록된 슬롯의 저장된 마스코트 이미지 업데이트
+    await updateCampusSlotMascotImages();
+    
+  } catch (error) {
+    console.error('교내 랭킹 엔트리 로드 실패:', error);
+  } finally {
+    loadingRanking.value = false;
+  }
+}
+
+function updateNationalSlotActivation() {
+  const registeredCount = nationalRankingSlots.value.filter(slot => slot.entry !== null).length;
   
-  rankingSlots.value.forEach((slot, index) => {
+  nationalRankingSlots.value.forEach((slot, index) => {
+    if (index === 0) {
+      slot.isActive = registeredCount === 0; // 첫 번째 슬롯은 등록된 것이 없을 때만 활성화
+    } else if (index === 1) {
+      slot.isActive = registeredCount >= 1 && registeredCount < 3; // 두 번째 슬롯은 1개 이상 등록되었을 때 활성화
+    } else if (index === 2) {
+      slot.isActive = registeredCount >= 2 && registeredCount < 3; // 세 번째 슬롯은 2개 이상 등록되었을 때 활성화
+    }
+  });
+}
+
+function updateCampusSlotActivation() {
+  const registeredCount = campusRankingSlots.value.filter(slot => slot.entry !== null).length;
+  
+  campusRankingSlots.value.forEach((slot, index) => {
     if (index === 0) {
       slot.isActive = registeredCount === 0; // 첫 번째 슬롯은 등록된 것이 없을 때만 활성화
     } else if (index === 1) {
@@ -742,7 +814,10 @@ function updateSlotActivation() {
 }
 
 async function handleSlotClick(slotIndex: number) {
-  if (!rankingSlots.value[slotIndex].isActive) return;
+  // 현재 활성 탭에 따라 적절한 슬롯 배열 선택
+  const currentSlots = activeTab.value === 'national' ? nationalRankingSlots : campusRankingSlots;
+  
+  if (!currentSlots.value[slotIndex].isActive) return;
   
   try {
     // 현재 마스코트 정보와 커스터마이징, 상점 아이템 로드
@@ -813,17 +888,24 @@ async function handleRankingSubmit(data: CreateEntryRequest) {
       canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Canvas toBlob failed')), 'image/png');
     });
     
+    // 현재 활성 탭에 따라 랭킹 타입 결정
+    const rankingType = activeTab.value === 'national' ? 'NATIONAL' : 'CAMPUS';
+    
     // 이미지와 함께 랭킹 등록
-    const newEntry = await createRankingEntryWithImage(data.title, data.description || '', blob);
+    const newEntry = await createRankingEntryWithImage(data.title, data.description || '', blob, rankingType);
     
     console.log('새로 생성된 엔트리:', newEntry);
     console.log('엔트리의 이미지 URL:', newEntry.imageUrl);
     
-    // 슬롯에 새 엔트리 할당
-    rankingSlots.value[selectedSlotIndex.value].entry = newEntry;
-    rankingSlots.value[selectedSlotIndex.value].mascotImageUrl = newEntry.imageUrl || '';
+    // 현재 활성 탭에 따라 적절한 슬롯 배열 선택
+    const currentSlots = activeTab.value === 'national' ? nationalRankingSlots : campusRankingSlots;
+    const updateSlotActivation = activeTab.value === 'national' ? updateNationalSlotActivation : updateCampusSlotActivation;
     
-    console.log('슬롯에 설정된 이미지 URL:', rankingSlots.value[selectedSlotIndex.value].mascotImageUrl);
+    // 슬롯에 새 엔트리 할당
+    currentSlots.value[selectedSlotIndex.value].entry = newEntry;
+    currentSlots.value[selectedSlotIndex.value].mascotImageUrl = newEntry.imageUrl || '';
+    
+    console.log('슬롯에 설정된 이미지 URL:', currentSlots.value[selectedSlotIndex.value].mascotImageUrl);
     
     // 슬롯 활성화 상태 업데이트
     updateSlotActivation();
@@ -841,22 +923,40 @@ async function handleRankingSubmit(data: CreateEntryRequest) {
   }
 }
 
-// 등록된 슬롯의 저장된 마스코트 이미지 업데이트
-async function updateSlotMascotImages() {
+// 등록된 슬롯의 저장된 마스코트 이미지 업데이트 (전국/교내 분리)
+async function updateNationalSlotMascotImages() {
   try {
-    console.log('슬롯 마스코트 이미지 업데이트 시작');
-    for (let i = 0; i < rankingSlots.value.length; i++) {
-      const slot = rankingSlots.value[i];
+    console.log('전국 랭킹 슬롯 마스코트 이미지 업데이트 시작');
+    for (let i = 0; i < nationalRankingSlots.value.length; i++) {
+      const slot = nationalRankingSlots.value[i];
       if (slot.entry) {
-        console.log(`슬롯 ${i} 엔트리:`, slot.entry);
-        console.log(`슬롯 ${i} 이미지 URL:`, slot.entry.imageUrl);
+        console.log(`전국 슬롯 ${i} 엔트리:`, slot.entry);
+        console.log(`전국 슬롯 ${i} 이미지 URL:`, slot.entry.imageUrl);
         // 등록된 슬롯의 경우 저장된 이미지 URL 사용
         slot.mascotImageUrl = slot.entry.imageUrl || '';
-        console.log(`슬롯 ${i} 설정된 이미지 URL:`, slot.mascotImageUrl);
+        console.log(`전국 슬롯 ${i} 설정된 이미지 URL:`, slot.mascotImageUrl);
       }
     }
   } catch (error) {
-    console.error('슬롯 마스코트 이미지 업데이트 실패:', error);
+    console.error('전국 슬롯 마스코트 이미지 업데이트 실패:', error);
+  }
+}
+
+async function updateCampusSlotMascotImages() {
+  try {
+    console.log('교내 랭킹 슬롯 마스코트 이미지 업데이트 시작');
+    for (let i = 0; i < campusRankingSlots.value.length; i++) {
+      const slot = campusRankingSlots.value[i];
+      if (slot.entry) {
+        console.log(`교내 슬롯 ${i} 엔트리:`, slot.entry);
+        console.log(`교내 슬롯 ${i} 이미지 URL:`, slot.entry.imageUrl);
+        // 등록된 슬롯의 경우 저장된 이미지 URL 사용
+        slot.mascotImageUrl = slot.entry.imageUrl || '';
+        console.log(`교내 슬롯 ${i} 설정된 이미지 URL:`, slot.mascotImageUrl);
+      }
+    }
+  } catch (error) {
+    console.error('교내 슬롯 마스코트 이미지 업데이트 실패:', error);
   }
 }
 
@@ -866,13 +966,17 @@ async function handleSlotDelete(entryId: number) {
   try {
     await deleteRankingEntry(entryId);
     
+    // 현재 활성 탭에 따라 적절한 슬롯 배열 선택
+    const currentSlots = activeTab.value === 'national' ? nationalRankingSlots : campusRankingSlots;
+    const updateSlotActivation = activeTab.value === 'national' ? updateNationalSlotActivation : updateCampusSlotActivation;
+    
     // 슬롯에서 엔트리 제거
-    const slotIndex = rankingSlots.value.findIndex(slot => slot.entry?.entryId === entryId);
+    const slotIndex = currentSlots.value.findIndex(slot => slot.entry?.entryId === entryId);
     if (slotIndex !== -1) {
-      rankingSlots.value[slotIndex].entry = null;
-      rankingSlots.value[slotIndex].mascotImageUrl = '';
-      rankingSlots.value[slotIndex].voteCount = 0;
-      rankingSlots.value[slotIndex].rank = 0;
+      currentSlots.value[slotIndex].entry = null;
+      currentSlots.value[slotIndex].mascotImageUrl = '';
+      currentSlots.value[slotIndex].voteCount = 0;
+      currentSlots.value[slotIndex].rank = 0;
     }
     
     // 슬롯 활성화 상태 업데이트
@@ -912,8 +1016,7 @@ onMounted(async () => {
     const nationalVotedMascotIds = await getUserNationalVotedMascotIds();
     nationalVotedMascots.value = new Set(nationalVotedMascotIds);
 
-    // 5. 랭킹 엔트리 로드
-    await loadRankingEntries();
+    // 5. 랭킹 엔트리 로드는 탭 변경 시 자동으로 로드됨
     
   } catch (error) {
     console.error('랭킹 페이지 초기화 실패:', error);

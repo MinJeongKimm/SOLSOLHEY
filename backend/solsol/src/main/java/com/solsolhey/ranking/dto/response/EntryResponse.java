@@ -14,6 +14,7 @@ public record EntryResponse(
     String title,
     String description,
     String imageUrl,
+    String rankingType,
     LocalDateTime createdAt
 ) {
     
@@ -28,6 +29,7 @@ public record EntryResponse(
             entry.getTitle(),
             entry.getDescription(),
             entry.getImageUrl(),
+            entry.getRankingType(),
             entry.getCreatedAt()
         );
     }

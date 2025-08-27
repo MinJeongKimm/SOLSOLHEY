@@ -46,4 +46,10 @@ public interface RankingEntryRepository extends JpaRepository<RankingEntry, Long
      */
     @Query("SELECT re FROM RankingEntry re ORDER BY re.createdAt DESC")
     Page<RankingEntry> findAllOrderByCreatedAtDesc(Pageable pageable);
+
+    /**
+     * 사용자의 특정 타입 참가 목록 조회 (최신순)
+     */
+    @Query("SELECT re FROM RankingEntry re WHERE re.userId = :userId AND re.rankingType = :rankingType ORDER BY re.createdAt DESC")
+    List<RankingEntry> findByUserIdAndRankingTypeOrderByCreatedAtDesc(@Param("userId") Long userId, @Param("rankingType") String rankingType);
 }

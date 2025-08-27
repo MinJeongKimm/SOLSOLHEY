@@ -44,7 +44,8 @@ public class RankingEntryController {
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam("title") String title,
             @RequestParam(value = "description", required = false) String description,
-            @RequestParam("mascotImage") MultipartFile mascotImage) {
+            @RequestParam("mascotImage") MultipartFile mascotImage,
+            @RequestParam("rankingType") String rankingType) {
         try {
             Long userId = userDetails.getUserId();
             
@@ -52,7 +53,7 @@ public class RankingEntryController {
             String imageUrl = rankingEntryService.uploadMascotImage(mascotImage);
             
             // CreateEntryRequest 생성 (mascotSnapshotId는 0L로 설정, 이미지 업로드 방식이므로)
-            CreateEntryRequest request = new CreateEntryRequest(0L, title, description, imageUrl);
+            CreateEntryRequest request = new CreateEntryRequest(0L, title, description, imageUrl, rankingType);
             
             EntryResponse response = rankingEntryService.createEntry(userId, request);
             
@@ -92,6 +93,24 @@ public class RankingEntryController {
             List<EntryResponse> entries = rankingEntryService.getUserEntries(userId);
             
             return ResponseEntity.ok(ApiResponse.success("사용자 참가 목록을 성공적으로 조회했습니다.", entries));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(ApiResponse.badRequest("참가 목록 조회에 실패했습니다: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 사용자의 특정 타입 참가 목록 조회
+     */
+    @GetMapping("/user/type/{rankingType}")
+    public ResponseEntity<ApiResponse<List<EntryResponse>>> getUserEntriesByType(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable String rankingType) {
+        try {
+            Long userId = userDetails.getUserId();
+            List<EntryResponse> entries = rankingEntryService.getUserEntriesByType(userId, rankingType);
+            
+            return ResponseEntity.ok(ApiResponse.success("사용자 " + rankingType + " 참가 목록을 성공적으로 조회했습니다.", entries));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(ApiResponse.badRequest("참가 목록 조회에 실패했습니다: " + e.getMessage()));

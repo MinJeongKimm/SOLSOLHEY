@@ -47,6 +47,9 @@ public class RankingEntry extends BaseEntity {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    @Column(name = "ranking_type", length = 20, nullable = false)
+    private String rankingType; // "NATIONAL" 또는 "CAMPUS"
+
     @NotBlank(message = "참가 제목은 필수입니다")
     @Size(min = 1, max = 100, message = "참가 제목은 1자 이상 100자 이하여야 합니다")
     @Column(name = "title", nullable = false, length = 100)
@@ -57,12 +60,13 @@ public class RankingEntry extends BaseEntity {
     private String description;
 
     @Builder
-    public RankingEntry(Long userId, Long mascotSnapshotId, String title, String description, String imageUrl) {
+    public RankingEntry(Long userId, Long mascotSnapshotId, String title, String description, String imageUrl, String rankingType) {
         this.userId = userId;
         this.mascotSnapshotId = mascotSnapshotId;
         this.title = title;
         this.description = description;
         this.imageUrl = imageUrl;
+        this.rankingType = rankingType;
     }
 
     /**

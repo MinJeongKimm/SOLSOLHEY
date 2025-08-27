@@ -18,7 +18,10 @@ public record CreateEntryRequest(
     @Size(max = 500, message = "참가 설명은 500자 이하여야 합니다")
     String description,
     
-    String imageUrl
+    String imageUrl,
+    
+    @NotBlank(message = "랭킹 타입은 필수입니다")
+    String rankingType // "NATIONAL" 또는 "CAMPUS"
 ) {
     
     /**
