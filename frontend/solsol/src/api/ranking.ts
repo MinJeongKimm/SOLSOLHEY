@@ -232,6 +232,18 @@ export async function getCurrentUserMascotSnapshot(): Promise<MascotSnapshot | n
   }
 }
 
+// 마스코트 타입에 따른 이미지 URL 생성 (이미지 공유와 동일한 로직)
+function getMascotImageUrl(type: string): string {
+  if (!type) return '/mascot/soll.png';
+  
+  const mascotTypes = ['ray', 'rino', 'pli', 'soll'];
+  if (mascotTypes.includes(type)) {
+    return `/mascot/${type}.png`;
+  }
+  
+  return '/mascot/soll.png'; // 기본값
+}
+
 // 실시간 마스코트 이미지 합성 (이미지 공유 기능과 동일한 로직)
 export async function composeMascotImage(
   mascot: any, 
@@ -240,6 +252,7 @@ export async function composeMascotImage(
 ): Promise<string> {
   try {
     console.log('마스코트 이미지 합성 시작...');
+    console.log('마스코트 타입:', mascot?.type);
     
     // 캔버스 설정
     const DPR = Math.max(1, Math.min(3, Math.floor(window.devicePixelRatio || 1)));
@@ -268,8 +281,9 @@ export async function composeMascotImage(
     const bgImg = await loadImage(bgUrl);
     ctx.drawImage(bgImg, 0, 0, canvasSize, canvasSize);
 
-    // 2. 마스코트 기본 이미지 로드 및 그리기
-    const mascotUrl = mascot?.type ? `/mascot/${mascot.type}.png` : '/mascot/soll.png';
+    // 2. 마스코트 기본 이미지 로드 및 그리기 (이미지 공유와 동일한 로직 사용)
+    const mascotUrl = getMascotImageUrl(mascot?.type);
+    console.log('마스코트 이미지 URL:', mascotUrl);
     const mascotImg = await loadImage(mascotUrl);
     const mascotBoxSize = Math.floor(canvasSize * 0.5); // 중앙 50%
     const mascotX = (canvasSize - mascotBoxSize) / 2;
@@ -312,8 +326,8 @@ export async function composeMascotImage(
     
   } catch (error) {
     console.error('마스코트 이미지 합성 실패:', error);
-    // 실패 시 기본 마스코트 이미지 반환
-    return mascot?.type ? `/mascot/${mascot.type}.png` : '/mascot/soll.png';
+    // 실패 시에도 getMascotImageUrl 함수 사용하여 올바른 이미지 반환
+    return getMascotImageUrl(mascot?.type);
   }
 }
 
@@ -344,11 +358,13 @@ export async function getCurrentUserMascot(): Promise<Mascot | null> {
       id: mascotData.id,
       userId: mascotData.userId,
       name: mascotData.name,
+      type: mascotData.type, // 마스코트 타입 추가!
       backgroundId: mascotData.backgroundId,
       createdAt: mascotData.createdAt
     };
     
     console.log('반환할 마스코트 정보:', result);
+    console.log('마스코트 타입 확인:', result.type);
     return result;
   } catch (error) {
     console.error('마스코트 정보 조회 실패:', error);
