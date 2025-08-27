@@ -4,13 +4,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.solsolhey.common.exception.BusinessException;
+import com.solsolhey.mascot.domain.Mascot;
+import com.solsolhey.mascot.repository.MascotRepository;
 import com.solsolhey.ranking.dto.request.CampusRankingRequest;
 import com.solsolhey.ranking.dto.request.NationalRankingRequest;
 import com.solsolhey.ranking.dto.request.VoteRequest;
@@ -23,8 +24,6 @@ import com.solsolhey.ranking.entity.Vote;
 import com.solsolhey.ranking.repository.VoteRepository;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.user.repository.UserRepository;
-import com.solsolhey.mascot.domain.Mascot;
-import com.solsolhey.mascot.repository.MascotRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -276,7 +275,7 @@ public class RankingServiceImpl implements RankingService {
                     User owner = getUserById(mascot.getUserId());
                     long voteCount = getVoteCount(mascot.getId(), Vote.VoteType.NATIONAL);
                     return RankingEntryResponse.fromNational(
-                        mascot, i + 1, owner.getNickname(), owner.getCampus(), owner.getUserId(), voteCount);
+                        mascot, i + 1, owner.getNickname(), owner.getCampus(), null, voteCount);
                 })
                 .sorted((a, b) -> Long.compare(b.getVotes(), a.getVotes()))
                 .toList();

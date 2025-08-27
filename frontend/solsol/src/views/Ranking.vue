@@ -78,10 +78,7 @@
             </router-link>
           </div>
           
-          <!-- 마스코트가 있는 경우 참가 완료 표시 -->
-          <div v-else class="bg-green-100 text-green-700 px-4 py-2 rounded-lg font-medium">
-            자동 참가 완료! 🎉
-          </div>
+
         </div>
         
         <!-- 마스코트가 없는 경우 안내 메시지 -->
@@ -157,20 +154,20 @@
           <!-- 랭킹 엔트리들 -->
           <div class="space-y-3">
             <div
-              v-for="entry in campusRankings.entries"
-              :key="entry.mascotId"
-              class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 hover:shadow-lg transition-all duration-200 border border-purple-100 hover:border-purple-300"
+            v-for="entry in campusRankings.entries"
+            :key="entry.mascotId"
+            class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 hover:shadow-lg transition-all duration-200 border border-purple-100 hover:border-purple-300"
             >
-              <div class="flex items-center space-x-4">
-                <!-- 순위 -->
-                <div class="flex-shrink-0">
-                  <div
-                    :class="[
-                      'w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg',
-                      entry.rank === 1 ? 'bg-yellow-500' : 
-                      entry.rank === 2 ? 'bg-gray-400' : 
-                      entry.rank === 3 ? 'bg-orange-500' : 'bg-purple-500'
-                    ]"
+            <div class="flex items-center space-x-4">
+              <!-- 순위 -->
+              <div class="flex-shrink-0">
+                <div
+                :class="[
+                  'w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg',
+                  entry.rank === 1 ? 'bg-yellow-500' : 
+                  entry.rank === 2 ? 'bg-gray-400' : 
+                  entry.rank === 3 ? 'bg-orange-500' : 'bg-purple-500'
+                ]"
                   >
                     {{ entry.rank }}
                   </div>
@@ -195,6 +192,9 @@
                   </div>
                   <div class="flex items-center space-x-4 text-sm text-gray-600">
                     <span>득표: {{ entry.votes.toLocaleString() }}표</span>
+                    <span v-if="entry.school?.name" class="text-gray-500">
+                      학교: {{ entry.school.name }}
+                    </span>
                   </div>
                 </div>
 
@@ -344,7 +344,7 @@
                   </div>
                   <div class="flex items-center space-x-4 text-sm text-gray-600">
                     <span>득표: {{ entry.votes.toLocaleString() }}표</span>
-                    <span v-if="entry.school">학교: {{ entry.school.schoolName }}</span>
+                    <span v-if="entry.school?.name">학교: {{ entry.school.name }}</span>
                   </div>
                 </div>
 
@@ -473,6 +473,9 @@ const loadCampusRankings = async () => {
       campusFilters.value.size
     );
     
+    console.log('교내 랭킹 API 응답:', response);
+    console.log('교내 랭킹 entries:', response.entries);
+    
     campusRankings.value = response;
     findMyRank(); // 랭킹 로드 후 내 순위 갱신
   } catch (err: any) {
@@ -502,6 +505,9 @@ const loadNationalRankings = async () => {
       nationalFilters.value.page,
       nationalFilters.value.size
     );
+    
+    console.log('전국 랭킹 API 응답:', response);
+    console.log('전국 랭킹 entries:', response.entries);
     
     nationalRankings.value = response;
     findMyRank(); // 랭킹 로드 후 내 순위 갱신

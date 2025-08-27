@@ -10,8 +10,8 @@ export interface RankingEntry {
   votes: number;
   backgroundId: string;
   school?: {
-    schoolId: number;
-    schoolName: string;
+    id: number | null;
+    name: string;
   };
 }
 
