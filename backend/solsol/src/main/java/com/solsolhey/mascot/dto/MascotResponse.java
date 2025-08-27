@@ -23,6 +23,8 @@ public class MascotResponse {
     private Integer level;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    // 최근 저장된 꾸미기 스냅샷 (필요 시 사용)
+    private String snapshotImage;
     
     // Entity -> DTO 변환 팩토리 메서드
     public static MascotResponse from(Mascot mascot) {
@@ -36,6 +38,7 @@ public class MascotResponse {
                 .level(mascot.getLevel())
                 .createdAt(mascot.getCreatedAt())
                 .updatedAt(mascot.getUpdatedAt())
+                .snapshotImage(mascot.getSnapshotImage())
                 .build();
     }
 }

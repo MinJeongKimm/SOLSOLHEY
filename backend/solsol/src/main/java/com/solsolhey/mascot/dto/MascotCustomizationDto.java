@@ -18,6 +18,10 @@ public class MascotCustomizationDto {
     @NotNull
     private List<Item> equippedItems;
 
+    // 선택: 저장 시 클라이언트에서 생성한 스냅샷(Data URL)
+    // 조회 시에는 null로 내려보내도 무방
+    private String snapshotImageDataUrl;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -44,4 +48,3 @@ public class MascotCustomizationDto {
         private Double y;
     }
 }
-

@@ -98,4 +98,7 @@ public interface MascotService {
     // === 커스터마이징 레이아웃 저장/조회 ===
     com.solsolhey.mascot.dto.MascotCustomizationDto getCustomization(Long userId);
     com.solsolhey.mascot.dto.MascotCustomizationDto saveCustomization(Long userId, com.solsolhey.mascot.dto.MascotCustomizationDto dto);
+
+    // 스냅샷 이력 조회
+    java.util.List<com.solsolhey.mascot.dto.MascotSnapshotResponse> getSnapshotHistory(Long userId);
 }
