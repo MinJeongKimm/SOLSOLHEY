@@ -18,5 +18,11 @@ public interface MascotSnapshotRepository extends JpaRepository<MascotSnapshot, 
      */
     @Query("SELECT ms FROM MascotSnapshot ms WHERE ms.mascotId IN :mascotIds")
     List<MascotSnapshot> findByMascotIdIn(@Param("mascotIds") List<Long> mascotIds);
+
+    /**
+     * 특정 마스코트 ID의 스냅샷을 생성일 기준 내림차순으로 조회
+     */
+    @Query("SELECT ms FROM MascotSnapshot ms WHERE ms.mascotId = :mascotId ORDER BY ms.createdAt DESC")
+    List<MascotSnapshot> findByMascotIdOrderByCreatedAtDesc(@Param("mascotId") Long mascotId);
 }
 

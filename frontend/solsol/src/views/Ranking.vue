@@ -184,7 +184,7 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center space-x-2 mb-1">
                     <span class="text-lg font-semibold text-gray-800">
-                      {{ entry.mascotName || '마스코트' }}
+                      {{ entry.entryTitle || entry.mascotName || '마스코트' }}
                     </span>
                     <span class="text-sm text-gray-600">({{ entry.ownerNickname }})</span>
                   </div>
@@ -340,7 +340,7 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center space-x-2 mb-1">
                     <span class="text-lg font-semibold text-gray-800">
-                      {{ entry.mascotName || '마스코트' }}
+                      {{ entry.entryTitle || entry.mascotName || '마스코트' }}
                     </span>
                     <span class="text-sm text-gray-600">({{ entry.ownerNickname }})</span>
                   </div>

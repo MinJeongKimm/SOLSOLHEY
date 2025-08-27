@@ -70,4 +70,10 @@ public interface RankingEntryRepository extends JpaRepository<RankingEntry, Long
      */
     @Query("SELECT re FROM RankingEntry re WHERE re.mascotId IN :mascotIds AND re.rankingType = :rankingType ORDER BY re.createdAt DESC")
     List<RankingEntry> findByMascotIdInAndRankingType(@Param("mascotIds") List<Long> mascotIds, @Param("rankingType") String rankingType);
+
+    /**
+     * 랭킹 타입별로 RankingEntry 조회 (최신순)
+     */
+    @Query("SELECT re FROM RankingEntry re WHERE re.rankingType = :rankingType ORDER BY re.createdAt DESC")
+    List<RankingEntry> findByRankingTypeOrderByCreatedAtDesc(@Param("rankingType") String rankingType);
 }

@@ -18,6 +18,7 @@ public class RankingEntryResponse {
     private final Long mascotSnapshotId;     // 마스코트 스냅샷 ID
     private final String ownerNickname;      // 소유자 표시명
     private final String mascotName;         // 마스코트 이름
+    private final String entryTitle;         // 랭킹 등록 시 설정한 제목 (우선순위)
     private final Long votes;                // 득표 수
     private final String backgroundId;       // 배경 ID (썸네일 대신)
     private final String imageUrl;           // 마스코트 스냅샷 이미지 URL (우선순위: RankingEntry > MascotSnapshot)
@@ -35,6 +36,7 @@ public class RankingEntryResponse {
                 .mascotSnapshotId(snapshot.getId())
                 .ownerNickname(ownerNickname)
                 .mascotName(mascot.getName())
+                .entryTitle(null) // 기본값
                 .votes(voteCount)
                 .backgroundId(mascot.getBackgroundId())
                 .imageUrl(snapshot.getImageUrl())
@@ -63,13 +65,14 @@ public class RankingEntryResponse {
      */
     public static RankingEntryResponse fromWithEntry(Mascot mascot, MascotSnapshot snapshot, Integer rank, 
                                                    String ownerNickname, String schoolName, Long schoolId, Long voteCount,
-                                                   String entryImageUrl) {
+                                                   String entryImageUrl, String entryTitle) {
         return RankingEntryResponse.builder()
                 .rank(rank)
                 .mascotId(mascot.getId())
                 .mascotSnapshotId(snapshot.getId())
                 .ownerNickname(ownerNickname)
                 .mascotName(mascot.getName())
+                .entryTitle(entryTitle)
                 .votes(voteCount)
                 .backgroundId(mascot.getBackgroundId())
                 .imageUrl(snapshot.getImageUrl())
