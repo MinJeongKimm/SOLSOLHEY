@@ -68,7 +68,7 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     @Query("SELECT COUNT(v) FROM Vote v " +
            "WHERE v.voterId = :voterId " +
            "AND v.voteType = :voteType " +
-           "AND DATE(v.createdAt) = DATE(:date)")
+           "AND CAST(v.createdAt AS DATE) = CAST(:date AS DATE)")
     Long countDailyVotesByVoter(
             @Param("voterId") Long voterId,
             @Param("voteType") Vote.VoteType voteType,
@@ -148,7 +148,7 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
      */
     @Query("SELECT HOUR(v.createdAt) as hour, COUNT(v) as voteCount FROM Vote v " +
            "WHERE v.voteType = :voteType " +
-           "AND DATE(v.createdAt) = DATE(:date) " +
+           "AND CAST(v.createdAt AS DATE) = CAST(:date AS DATE) " +
            "GROUP BY HOUR(v.createdAt) " +
            "ORDER BY hour")
     List<Object[]> findVoteTrendsByHour(
