@@ -79,7 +79,7 @@
             <!-- 중앙 고정 마스코트 이미지 -->
             <div 
               ref="mascotRef"
-              class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32"
+              class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 z-10"
             >
               <img 
                 :src="currentMascot ? getMascotImageUrl(currentMascot.type) : '/mascot/soll.png'" 
