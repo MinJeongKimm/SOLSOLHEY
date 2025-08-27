@@ -304,7 +304,7 @@ import {
   toAbsoluteFromMascot,
   toAbsolutePosition,
   toRelativeToMascot,
-  constrainMascotRelativePosition,
+  constrainMascotRelativePositionLoose,
   type RelativePosition
 } from '../utils/coordinates';
 
@@ -655,11 +655,12 @@ function getAbsolutePosition(equippedItem: EquippedItemState): { x: number; y: n
     y: browserAbsoluteCenter.y - canvasRect.top - half
   };
 
-  // 화면 밖으로 나가는 경우를 방지하기 위해 컨테이너 크기로 클램프
-  const maxX = Math.max(0, canvasRect.width - itemSize);
-  const maxY = Math.max(0, canvasRect.height - itemSize);
-  containerRelativePos.x = Math.max(0, Math.min(maxX, containerRelativePos.x));
-  containerRelativePos.y = Math.max(0, Math.min(maxY, containerRelativePos.y));
+  // 화면 밖 일부 허용(자유도↑): 아이템 크기의 10% 만큼 바깥 허용
+  const allowOutsidePx = 0.1 * itemSize;
+  const maxX = Math.max(-allowOutsidePx, canvasRect.width - itemSize + allowOutsidePx);
+  const maxY = Math.max(-allowOutsidePx, canvasRect.height - itemSize + allowOutsidePx);
+  containerRelativePos.x = Math.max(-allowOutsidePx, Math.min(maxX, containerRelativePos.x));
+  containerRelativePos.y = Math.max(-allowOutsidePx, Math.min(maxY, containerRelativePos.y));
   
   // 계산 결과를 캐시에 저장
   positionCache.set(cacheKey, {
@@ -778,9 +779,10 @@ function updateItemPosition(itemId: string, position: { x: number; y: number }) 
   // 브라우저 절대 좌표(중심)를 마스코트 기준 상대 좌표로 변환
   let newRelativePosition = toRelativeToMascot(absoluteCenter, usedMascotRect);
 
-  // 마스코트 기준으로 아이템이 영역을 벗어나지 않도록 제약 (반응형에서도 안정적 위치 유지)
+  // 마스코트 기준으로 아이템이 영역을 과도하게 벗어나지 않도록 느슨한 제약 적용 (전 타입 공통 옵션)
   const itemSizePx = { width: BASE_ITEM_SIZE * (state.scale || 1), height: BASE_ITEM_SIZE * (state.scale || 1) };
-  newRelativePosition = constrainMascotRelativePosition(newRelativePosition, itemSizePx, usedMascotRect);
+  const looseOpts = { scaleDown: 0.05, outside: 0.4};
+  newRelativePosition = constrainMascotRelativePositionLoose(newRelativePosition, itemSizePx, usedMascotRect, looseOpts);
   
   // 위치 변경이 실제로 있는지 확인 (미세한 변화 무시)
   const oldPos = state.relativePosition;
