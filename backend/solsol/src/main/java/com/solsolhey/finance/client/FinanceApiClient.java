@@ -4,9 +4,12 @@ import com.solsolhey.finance.config.FinanceApiProperties;
 import com.solsolhey.finance.dto.request.ExchangeEstimateRequest;
 import com.solsolhey.finance.dto.request.ExchangeRateRequest;
 import com.solsolhey.finance.dto.request.TransactionHistoryListRequest;
+import com.solsolhey.finance.dto.request.MemberCreateRequest;
+import com.solsolhey.finance.dto.request.MemberSearchRequest;
 import com.solsolhey.finance.dto.response.ExternalExchangeEstimateResponse;
 import com.solsolhey.finance.dto.response.ExternalExchangeRateResponse;
 import com.solsolhey.finance.dto.response.ExternalTransactionHistoryResponse;
+import com.solsolhey.finance.dto.response.MemberResponse;
 import com.solsolhey.finance.exception.ExternalApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +56,57 @@ public class FinanceApiClient {
                 .doOnSuccess(response -> log.info("환율 전체 조회 API 호출 성공"));
     }
 
+    /**
+     * 금융 사용자 생성 (회원가입)
+     */
+    public Mono<MemberResponse> createMember(String financeEmail) {
+        String url = properties.getMemberBaseUrl() + "/member/"; // absolute URL
+        MemberCreateRequest request = new MemberCreateRequest(properties.getApiKey(), financeEmail);
+        log.info("금융 회원 생성 API 호출: {} ({})", url, maskEmail(financeEmail));
+        return WebClient.create()
+                .post()
+                .uri(url)
+                .bodyValue(request)
+                .exchangeToMono(clientResponse -> {
+                    if (clientResponse.statusCode().isError()) {
+                        return clientResponse.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .flatMap(body -> {
+                                    String msg = String.format("외부 API 오류(%s): %s", clientResponse.statusCode().value(), body);
+                                    log.error(msg);
+                                    return Mono.error(new ExternalApiException("금융 회원 생성 실패: " + msg));
+                                });
+                    }
+                    return clientResponse.bodyToMono(MemberResponse.class);
+                })
+                .doOnSuccess(res -> log.info("금융 회원 생성 성공: userKey={} ({}).", maskKey(res.getUserKey()), maskEmail(financeEmail)));
+    }
+
+    /**
+     * 금융 사용자 조회 (중복 시 userKey 회수)
+     */
+    public Mono<MemberResponse> searchMember(String financeEmail) {
+        String url = properties.getMemberBaseUrl() + "/member/search"; // absolute URL
+        MemberSearchRequest request = new MemberSearchRequest(financeEmail, properties.getApiKey());
+        log.info("금융 회원 조회 API 호출: {} ({})", url, maskEmail(financeEmail));
+        return WebClient.create()
+                .post()
+                .uri(url)
+                .bodyValue(request)
+                .exchangeToMono(clientResponse -> {
+                    if (clientResponse.statusCode().isError()) {
+                        return clientResponse.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .flatMap(body -> {
+                                    String msg = String.format("외부 API 오류(%s): %s", clientResponse.statusCode().value(), body);
+                                    log.error(msg);
+                                    return Mono.error(new ExternalApiException("금융 회원 조회 실패: " + msg));
+                                });
+                    }
+                    return clientResponse.bodyToMono(MemberResponse.class);
+                })
+                .doOnSuccess(res -> log.info("금융 회원 조회 성공: userKey={} ({}).", maskKey(res.getUserKey()), maskEmail(financeEmail)));
+    }
 
     public Mono<ExternalExchangeEstimateResponse> estimateExchange(String currency, String exchangeCurrency, String amount) {
         String url = "/exchange/estimate";
@@ -195,6 +249,13 @@ public class FinanceApiClient {
         int n = key.length();
         if (n <= 8) return "****";
         return key.substring(0, 4) + "****" + key.substring(n - 4);
+    }
+
+    private String maskEmail(String email) {
+        if (email == null) return "(null)";
+        int at = email.indexOf('@');
+        if (at <= 1) return "*" + email.substring(Math.max(0, at));
+        return email.charAt(0) + "****" + email.substring(at);
     }
 
     /**

@@ -55,6 +55,9 @@ public class User extends BaseEntity {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "finance_user_key", length = 100, unique = true)
+    private String financeUserKey;
+
     @Builder
     public User(String email, String passwordHash, 
                 String nickname, String campus) {

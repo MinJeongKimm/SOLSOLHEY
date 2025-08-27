@@ -35,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     /**
      * 회원가입
@@ -61,6 +62,13 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
         log.info("회원가입 완료: userId={}, email={}, nickname={}", 
                 savedUser.getUserId(), savedUser.getEmail(), savedUser.getNickname());
+
+        // 커밋 후 금융 사용자 생성 트리거 이벤트 발행 (옵션 B)
+        try {
+            eventPublisher.publishEvent(new com.solsolhey.auth.event.UserRegisteredEvent(savedUser.getUserId()));
+        } catch (Exception e) {
+            log.warn("금융 사용자 생성 이벤트 발행 실패(userId={}): {}", savedUser.getUserId(), e.getMessage());
+        }
 
         return SignUpResponse.success("회원가입이 완료되었습니다.", savedUser.getUserId(), savedUser.getEmail());
     }

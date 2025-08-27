@@ -75,4 +75,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // username 포함 검색은 사용하지 않습니다. 필요 시 닉네임/이메일 기준으로 별도 구현.
     
+    /**
+     * finance_user_key 미부여 사용자 중 상위 N명 조회 (재시도용)
+     */
+    java.util.List<User> findTop100ByFinanceUserKeyIsNullAndIsActiveTrueOrderByCreatedAtAsc();
+    
 }
