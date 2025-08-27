@@ -36,48 +36,53 @@
 
       <!-- 마스코트가 있는 경우 메인 영역 -->
       <div v-else class="space-y-4">
-        <!-- 메인 캔버스: 방 배경 + 마스코트 -->
+        <!-- 메인 캔버스: 방 배경 + 레이어링(배경/마스코트/전경) -->
         <div class="relative">
-          <!-- 방 배경 -->
+          <!-- 방 배경 컨테이너 -->
           <div 
-            class="w-full h-80 rounded-xl shadow-lg relative overflow-hidden flex items-center justify-center"
+            class="w-full h-80 rounded-xl shadow-lg relative overflow-hidden"
             :style="roomBackgroundStyle"
           >
-         
-            <!-- 마스코트 -->
-            <div class="absolute inset-0 flex items-center justify-center">
-              <!-- 공통 래퍼에 플로팅 애니메이션을 적용해 완전 동기화 -->
+            <!-- 레이어 1: 배경 아이템 (마스코트 뒤, 캔버스 전체 채움) -->
+            <div class="absolute inset-0 z-0 overflow-hidden">
+              <img
+                v-for="bg in backgroundEquippedItems"
+                :key="bg.key"
+                :src="bg.src"
+                alt="배경 아이템"
+                class="absolute inset-0 w-full h-full object-cover pointer-events-none"
+              />
+            </div>
+
+            <!-- 레이어 2: 마스코트 (중간) -->
+            <div class="absolute inset-0 z-10 flex items-center justify-center">
               <div class="relative animate-float">
-                <!-- 마스코트 이미지 (크기 키움) -->
                 <img 
                   :src="getMascotImageUrl(currentMascot.type)" 
                   :alt="currentMascot.name" 
                   class="w-32 h-32 object-contain"
                   @error="handleImageError"
                 />
-                
-                <!-- 장착된 아이템들 (서버 커스터마이징 기반 렌더) -->
-                <!-- 플로팅은 부모에 적용되어 자식과 완전 동기화됨 -->
-                <div class="absolute inset-0">
-                  <img
-                    v-for="ri in resolvedItems"
-                    :key="ri.key"
-                    :src="ri.src"
-                    class="absolute object-contain pointer-events-none"
-                    :style="{
-                      left: ri.leftPct + '%',
-                      top: ri.topPct + '%',
-                      width: ri.sizePx + 'px',
-                      height: ri.sizePx + 'px',
-                      transform: `translate(-50%, -50%) rotate(${ri.rotation}deg)`,
-                    }"
-                  />
-
-                  
-                </div>
               </div>
             </div>
-            
+
+            <!-- 레이어 3: 전경 아이템 (마스코트 앞) -->
+            <div class="absolute inset-0 z-20 animate-float">
+              <img
+                v-for="ri in foregroundEquippedItems"
+                :key="ri.key"
+                :src="ri.src"
+                class="absolute object-contain pointer-events-none"
+                :style="{
+                  left: ri.leftPct + '%',
+                  top: ri.topPct + '%',
+                  width: ri.sizePx + 'px',
+                  height: ri.sizePx + 'px',
+                  transform: `translate(-50%, -50%) rotate(${ri.rotation}deg)`,
+                }"
+              />
+            </div>
+
             <!-- 마스코트 이름 -->
             <div class="absolute top-3 left-3">
               <div class="bg-white bg-opacity-90 px-2 py-1 rounded-full">
@@ -285,12 +290,18 @@ const customization = ref<MascotCustomization | null>(null);
 const shopItems = ref<ShopItem[]>([]);
 // 과거 폴백 제거됨
 
-// 렌더링용 파생: 서버에서 받은 커스터마이징이 있으면 이를 사용
+// 타입 표준화 유틸 (Customize.vue와 동일 컨셉)
+function normalizeType(val: unknown): string {
+  return (val ?? '').toString().toLowerCase();
+}
+
+// 렌더링용 파생: 커스터마이징 + 아이템 메타데이터 조인 후 레이어 분리
 const BASE_ITEM_SIZE = 120; // Customize.vue와 동일 기준
-const resolvedItems = computed(() => {
+const joinedItems = computed(() => {
   if (!customization.value || !customization.value.equippedItems?.length) return [] as Array<{
     key: string;
     src: string;
+    type: string;
     leftPct: number;
     topPct: number;
     sizePx: number;
@@ -301,9 +312,11 @@ const resolvedItems = computed(() => {
     .map((e, idx) => {
       const si = byId.get(e.itemId);
       if (!si) return null;
+      const t = normalizeType((si as any).type || (si as any).category);
       return {
         key: `${e.itemId}-${idx}`,
         src: si.imageUrl,
+        type: t,
         leftPct: e.relativePosition.x * 100,
         topPct: e.relativePosition.y * 100,
         sizePx: Math.max(24, BASE_ITEM_SIZE * (e.scale ?? 1)),
@@ -312,6 +325,9 @@ const resolvedItems = computed(() => {
     })
     .filter(Boolean) as any[];
 });
+
+const backgroundEquippedItems = computed(() => joinedItems.value.filter(i => i.type === 'background'));
+const foregroundEquippedItems = computed(() => joinedItems.value.filter(i => i.type !== 'background'));
 
 // 토스트 알림
 const showToast = ref(false);
