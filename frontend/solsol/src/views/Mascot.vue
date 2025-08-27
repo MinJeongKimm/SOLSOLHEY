@@ -52,16 +52,18 @@
             
             <!-- 마스코트 -->
             <div class="absolute inset-0 flex items-center justify-center">
-              <div class="relative">
+              <!-- 공통 래퍼에 플로팅 애니메이션을 적용해 완전 동기화 -->
+              <div class="relative animate-float">
                 <!-- 마스코트 이미지 (크기 키움) -->
                 <img 
                   :src="getMascotImageUrl(currentMascot.type)" 
                   :alt="currentMascot.name" 
-                  class="w-32 h-32 object-contain animate-float"
+                  class="w-32 h-32 object-contain"
                   @error="handleImageError"
                 />
                 
                 <!-- 장착된 아이템들 (서버 커스터마이징 기반 렌더) -->
+                <!-- 플로팅은 부모에 적용되어 자식과 완전 동기화됨 -->
                 <div class="absolute inset-0">
                   <img
                     v-for="ri in resolvedItems"
@@ -268,7 +270,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth, createShareImage, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareImageCreateRequest, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
+import { auth, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
 import type { ShopItem } from '../types/api';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
@@ -354,6 +356,60 @@ function handleImageError(event: Event) {
   const target = event.target as HTMLImageElement;
   target.src = '/mascot/soll.png'; // 기본 이미지로 대체
   console.error('이미지 로드 실패:', target.src);
+}
+
+// 캔버스 합성: 배경 → 마스코트 → 아이템(위치/스케일/회전)
+async function composeShareImageBlob(): Promise<Blob> {
+  // 캔버스 설정
+  const DPR = Math.max(1, Math.min(3, Math.floor(window.devicePixelRatio || 1)));
+  const canvasSize = 800; // 출력 품질
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasSize * DPR;
+  canvas.height = canvasSize * DPR;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context unavailable');
+  ctx.scale(DPR, DPR);
+  ctx.imageSmoothingEnabled = true;
+  // 배경
+  const bgUrl = '/backgrounds/base/bg_blue.png';
+  const bgImg = await loadImage(bgUrl);
+  ctx.drawImage(bgImg, 0, 0, canvasSize, canvasSize);
+
+  // 마스코트
+  const mascotUrl = currentMascot.value ? getMascotImageUrl(currentMascot.value.type) : '/mascot/soll.png';
+  const mascotImg = await loadImage(mascotUrl);
+  const mascotBoxSize = Math.floor(canvasSize * 0.5); // 중앙 50%
+  const mascotX = (canvasSize - mascotBoxSize) / 2;
+  const mascotY = (canvasSize - mascotBoxSize) / 2;
+  ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
+
+  // 아이템들(커스터마이징)
+  if (customization.value && customization.value.equippedItems?.length) {
+    const byId = new Map<number, ShopItem>(shopItems.value.map(s => [s.id, s]));
+    // UI 기준과 동일 비율 유지(아이템 기본 크기: BASE_ITEM_SIZE / UI_MASCOT_PX * mascotBoxSize)
+    const UI_MASCOT_PX = 128;
+    const baseItemSize = (BASE_ITEM_SIZE / UI_MASCOT_PX) * mascotBoxSize; // 약 0.9375 * mascotBoxSize
+
+    for (const e of customization.value.equippedItems) {
+      const si = byId.get(e.itemId);
+      if (!si) continue;
+      const img = await loadImage(si.imageUrl);
+      const centerX = mascotX + (e.relativePosition.x * mascotBoxSize);
+      const centerY = mascotY + (e.relativePosition.y * mascotBoxSize);
+      const size = Math.max(12, baseItemSize * (e.scale ?? 1));
+      const rot = (((e.rotation ?? 0) % 360) + 360) % 360;
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate((rot * Math.PI) / 180);
+      ctx.drawImage(img, -size / 2, -size / 2, size, size);
+      ctx.restore();
+    }
+  }
+
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))), 'image/png');
+  });
 }
 
 function getMascotTypeDisplay(type: string): string {
@@ -530,148 +586,35 @@ async function handleShare() {
         });
         showToastMessage('마스코트 링크를 공유했습니다!');
       }
-    } else {
+  } else {
       const message = shareImageData.value.message || '나의 마스코트와 함께한 이야기를 적어보세요!';
-      
-      console.log('이미지 공유 시도:', { message });
-      
       try {
-        // 마스코트 이미지 URL 준비 (절대 URL로 변환)
-        const mascotImageUrl = currentMascot.value 
-          ? `${window.location.origin}${getMascotImageUrl(currentMascot.value.type)}`
-          : `${window.location.origin}/mascot/soll.png`;
-        
-        console.log('백엔드 API 호출 시작:', {
-          imageUrl: mascotImageUrl,
-          imageType: ImageType.MASCOT_SHARE,
-          isPublic: true
-        });
-        
-        // 백엔드 API로 공유 이미지 생성 (새로운 ShareImageCreateRequest 구조)
-        const shareImageRequest: ShareImageCreateRequest = {
-          imageUrl: mascotImageUrl,
-          imageType: ImageType.MASCOT_SHARE,
-          originalFilename: `mascot_${currentMascot.value?.name || 'unknown'}_share.png`,
-          isPublic: true,
-          width: 320,  // 마스코트 이미지 기본 크기
-          height: 320
-        };
-        
-        const response = await createShareImage(shareImageRequest);
-        
-        console.log('백엔드 API 응답:', response);
-        
-        if (response.success) {
-          // 생성된 이미지 URL 가져오기
-          const generatedImageUrl = response.data?.imageUrl;
-          const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
-          const mascotName = currentMascot.value?.name || '마스코트';
-          const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
-          
-          try {
-            // 1. fetch와 Blob을 사용해서 원격 URL에서 File 객체 생성
-            console.log('이미지 파일 다운로드 시작:', generatedImageUrl);
-            const imageResponse = await fetch(generatedImageUrl);
-            const imageBlob = await imageResponse.blob();
-            
-            // 이미지 파일 객체 생성
-            const imageFile = new File([imageBlob], `${mascotName}_share.png`, {
-              type: imageBlob.type
-            });
-            
-            console.log('이미지 파일 생성 완료:', imageFile);
-            
-            // 2. navigator.canShare()로 파일 공유 지원 여부 확인
-            if (navigator.canShare && navigator.canShare({ files: [imageFile] })) {
-              // 3. 파일 공유 지원: title, text, url, files 모두 포함해서 공유
-              console.log('파일 공유 지원됨 - 이미지와 텍스트를 함께 공유');
-              await navigator.share({
-                title: shareTitle,
-                text: message,
-                url: `${window.location.origin}/mascot/${currentMascot.value?.id}`,
-                files: [imageFile]
-              });
-              showToastMessage('마스코트 이미지와 메시지가 함께 공유되었습니다!');
-            } else {
-              // 4. 파일 공유 미지원: title, text, url만 공유 (url은 이미지 볼 수 있는 페이지 링크)
-              console.log('파일 공유 미지원 - 텍스트와 링크로 공유');
-              const imagePageUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
-              await navigator.share({
-                title: shareTitle,
-                text: `${message}\n이미지: ${generatedImageUrl}`,
-                url: imagePageUrl
-              });
-              showToastMessage('마스코트 이미지 링크를 공유했습니다!');
-            }
-          } catch (fileError) {
-            console.error('이미지 파일 처리 실패:', fileError);
-            // 파일 처리 실패 시 기본 링크 공유로 fallback
-            const fallbackUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
-            await navigator.share({
-              title: shareTitle,
-              text: `${message}\n이미지: ${generatedImageUrl}`,
-              url: fallbackUrl
-            });
-            showToastMessage('마스코트 링크를 공유했습니다!');
-          }
-        } else {
-          showToastMessage('이미지 생성에 실패했습니다. 링크로 공유합니다.');
-          // 이미지 생성 실패 시 링크 공유로 fallback
-          const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
-          const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
-          const mascotName = currentMascot.value?.name || '마스코트';
-          const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
-          
-          await navigator.share({
-            title: shareTitle,
-            text: message,
-            url: shareUrl
-          });
-          showToastMessage('마스코트 링크를 공유했습니다!');
-        }
-      } catch (error) {
-        console.error('이미지 생성 실패:', error);
-        
-        // 더 구체적인 에러 정보 로깅
-        if (error instanceof Error) {
-          console.error('에러 타입:', error.name);
-          console.error('에러 메시지:', error.message);
-          console.error('에러 스택:', error.stack);
-        }
-        
-        // 에러 종류에 따른 메시지 표시
-        let errorMessage = '이미지 생성에 실패했습니다.';
-        if (error instanceof Error) {
-          if (error.message.includes('Failed to fetch')) {
-            errorMessage = '백엔드 서버에 연결할 수 없습니다.';
-          } else if (error.message.includes('401') || error.message.includes('토큰이 만료되었습니다')) {
-            errorMessage = '로그인이 만료되었습니다.';
-            // 토큰 만료 시 로그인 페이지로 이동
-            setTimeout(() => {
-              auth.clearAuth();
-              router.push('/');
-            }, 2000);
-          } else if (error.message.includes('404')) {
-            errorMessage = '이미지 생성 API를 찾을 수 없습니다.';
-          }
-        }
-        
-        showToastMessage(errorMessage + ' 링크로 공유합니다.');
-        
-        // 에러 발생 시 링크 공유로 fallback
-        const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
+        const blob = await composeShareImageBlob();
+        const mascotName = currentMascot.value?.name || 'mascot';
+        const file = new File([blob], `${mascotName}_share.png`, { type: blob.type || 'image/png' });
         const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
-        const mascotName = currentMascot.value?.name || '마스코트';
         const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
-        
-        await navigator.share({
-          title: shareTitle,
-          text: message,
-          url: shareUrl
-        });
-        showToastMessage('마스코트 링크를 공유했습니다!');
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ title: shareTitle, text: message, files: [file] });
+          showToastMessage('이미지로 공유했습니다!');
+        } else {
+          // 데스크톱 등: 다운로드로 폴백
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${mascotName}_share.png`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          showToastMessage('이미지를 다운로드했습니다.');
+        }
+      } catch (err) {
+        console.error('이미지 합성/공유 실패:', err);
+        showToastMessage('이미지 합성에 실패했습니다.');
       }
-    }
+  }
     closeSharePopup();
   } catch (error) {
     console.error('공유 실패:', error);
@@ -765,6 +708,18 @@ onMounted(async () => {
     handleApiError(err);
   }
 });
+</script>
+
+<script lang="ts">
+// 보조 함수: 이미지 로드
+export async function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = (e) => reject(e);
+    img.src = src;
+  });
+}
 </script>
 
 <style scoped>
