@@ -41,14 +41,15 @@
           <!-- 방 배경 -->
           <div 
             class="w-full h-80 rounded-xl shadow-lg relative overflow-hidden flex items-center justify-center"
-            style="background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%)"
+            :style="roomBackgroundStyle"
           >
             <!-- 배경 이미지 (크기 조정) -->
-            <img 
+            <!-- 08.27 배경 임시로 삭제해둠  by 민정-->
+            <!-- <img 
               src="/backgrounds/base/bg_blue.png" 
               alt="방 배경" 
               class="w-3/4 h-3/4 object-contain"
-            />
+            /> -->
             
             <!-- 마스코트 -->
             <div class="absolute inset-0 flex items-center justify-center">
@@ -298,13 +299,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, nextTick } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth, apiRequest, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
+import { auth, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
 import type { ShopItem } from '../types/api';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
-import type { Mascot } from '../types/api';
+import type { Mascot, ShopItem } from '../types/api';
 
 const router = useRouter();
 
@@ -393,6 +394,27 @@ function handleImageError(event: Event) {
   target.src = '/mascot/soll.png'; // 기본 이미지로 대체
   console.error('이미지 로드 실패:', target.src);
 }
+
+// 저장된 배경색/패턴을 뷰에 반영
+const roomBackgroundStyle = computed(() => {
+  const color = currentMascot.value?.backgroundColor;
+  const pattern = currentMascot.value?.backgroundPattern;
+  if (!color && !pattern) {
+    return { background: 'linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%)' } as Record<string, string>;
+  }
+  const style: Record<string, string> = {
+    backgroundColor: color || '#f5f7ff',
+  };
+  if (pattern === 'dots') {
+    style.backgroundImage = 'radial-gradient(circle, rgba(0,0,0,0.10) 1px, transparent 1px)';
+    style.backgroundSize = '12px 12px';
+  } else if (pattern === 'stripes') {
+    style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0 10px, transparent 10px 20px)';
+  } else {
+    style.backgroundImage = 'none';
+  }
+  return style;
+});
 
 // 캔버스 합성: 배경 → 마스코트 → 아이템(위치/스케일/회전)
 async function composeShareImageBlob(): Promise<Blob> {
