@@ -19,6 +19,8 @@ public class MascotResponse {
     private String name;
     private String type;
     private String equippedItem;
+    private String backgroundColor;
+    private String backgroundPattern;
     private Integer exp;
     private Integer level;
     private LocalDateTime createdAt;
@@ -34,6 +36,8 @@ public class MascotResponse {
                 .name(mascot.getName())
                 .type(mascot.getType())
                 .equippedItem(mascot.getEquippedItem())
+                .backgroundColor(mascot.getBackgroundColor())
+                .backgroundPattern(mascot.getBackgroundPattern())
                 .exp(mascot.getExp())
                 .level(mascot.getLevel())
                 .createdAt(mascot.getCreatedAt())

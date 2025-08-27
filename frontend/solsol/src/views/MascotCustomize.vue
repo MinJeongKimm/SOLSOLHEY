@@ -24,43 +24,62 @@
 
       <!-- 마스코트 미리보기 영역 -->
       <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-8 mb-6">
-        <!-- 모바일 도움말 -->
-        <div v-if="isMobileDevice" class="mb-4 p-3 bg-blue-100 rounded-lg text-sm text-blue-800">
-          <div class="flex items-center space-x-2 mb-1">
-            <span>📱</span>
-            <span class="font-medium">터치 조작법</span>
+        <!-- 배경 커스터마이징 UI -->
+        <div v-if="showBgPanel" class="mb-4 bg-white bg-opacity-80 rounded-lg p-3 flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-700">배경색</span>
+            <input type="color" v-model="bgColor" class="w-8 h-8 rounded cursor-pointer border" />
           </div>
-          <div class="text-xs space-y-1">
-            <div>• 한 손가락으로 드래그하여 아이템 이동</div>
-            <div>• 두 손가락으로 핀치하여 크기 조절</div>
-            <div>• 두 손가락으로 비틀어서 회전</div>
-            <div>• 짧게 탭하여 아이템 선택/해제</div>
-            <div>• 마스코트는 항상 중앙에 고정됨</div>
-            <div>• 같은 아이템 중복 장착 가능 (최대 10개)</div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-700">패턴</span>
+            <button 
+              class="px-2 py-1 rounded text-xs border"
+              :class="bgPattern === 'none' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'"
+              @click="bgPattern = 'none'">없음</button>
+            <button 
+              class="px-2 py-1 rounded text-xs border"
+              :class="bgPattern === 'dots' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'"
+              @click="bgPattern = 'dots'">도트</button>
+            <button 
+              class="px-2 py-1 rounded text-xs border"
+              :class="bgPattern === 'stripes' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'"
+              @click="bgPattern = 'stripes'">스트라이프</button>
           </div>
+          <!-- 저장 버튼 제거: 메인 저장에 통합됨 -->
         </div>
+        <!-- 모바일 도움말 제거 -->
         
         <div 
           class="relative h-64 rounded-xl overflow-hidden flex items-center justify-center"
-          style="background: linear-gradient(135deg, #bfdbfe 0%, #ddd6fe 100%)"
+          :style="previewBackgroundStyle"
         >
+          <!-- 배경 커스터마이징 토글 아이콘 (좌하단) -->
+          <button
+            class="absolute bottom-2 left-2 z-20 w-9 h-9 rounded-full shadow bg-white/90 hover:bg-white flex items-center justify-center border border-gray-200"
+            title="배경 커스터마이징"
+            @click.stop="toggleBgPanel"
+          >
+            <!-- 팔레트 아이콘 -->
+            <span class="text-lg">🎨</span>
+          </button>
           <!-- 커스터마이즈 배경 -->
-          <img 
+          <!--08.27 임시 삭제 코드 by 민정-->
+          <!-- <img 
             src="/backgrounds/base/bg_blue.png" 
             alt="꾸미기 배경" 
             class="absolute inset-0 w-full h-full object-cover"
           />
-          
+           -->
           <!-- 마스코트 + 장착된 아이템들 -->
           <div 
             ref="mascotCanvas"
-            class="absolute inset-0 flex items-center justify-center"
+            class="mascot-canvas absolute inset-0 flex items-center justify-center"
             @click="handleCanvasClick"
           >
             <!-- 중앙 고정 마스코트 이미지 -->
             <div 
               ref="mascotRef"
-              class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32"
+              class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 z-10"
             >
               <img 
                 :src="currentMascot ? getMascotImageUrl(currentMascot.type) : '/mascot/soll.png'" 
@@ -71,21 +90,37 @@
               />
             </div>
             
-            <!-- 드래그 가능한 장착된 아이템들 -->
-            <DraggableItem
-              v-for="(equippedItem, index) in equippedItems"
-              :key="equippedItem.id"
-              :item="equippedItem.item"
-              :position="getAbsolutePosition(equippedItem)"
-              :scale="equippedItem.scale"
-              :rotation="equippedItem.rotation"
-              :is-selected="selectedItemId === equippedItem.id"
-              :container-bounds="canvasBounds"
-              @update:position="updateItemPosition(equippedItem.id, $event)"
-              @update:scale="updateItemScale(equippedItem.id, $event)"
-              @update:rotation="updateItemRotation(equippedItem.id, $event)"
-              @select="selectItem(equippedItem.id)"
-            />
+            <!-- 레이어 1: 배경 아이템 (마스코트 뒤, 캔버스 전체 채움) -->
+            <div class="absolute inset-0 z-0 overflow-hidden">
+              <img
+                v-for="bg in backgroundEquippedItems"
+                :key="bg.id"
+                :src="bg.item.imageUrl"
+                :alt="bg.item.name"
+                class="absolute inset-0 w-full h-full object-cover pointer-events-none"
+              />
+            </div>
+
+            <!-- 레이어 2: 마스코트 (중간) -->
+            <!-- 이미 위에서 마스코트 이미지를 렌더링 중이므로 이 블록은 유지 -->
+
+            <!-- 레이어 3: 전경 아이템 (마스코트 앞) -->
+            <div class="absolute inset-0 z-20" ref="foregroundLayer">
+              <DraggableItem
+                v-for="fg in foregroundEquippedItems"
+                :key="fg.id"
+                :item="fg.item"
+                :position="getAbsolutePosition(fg)"
+                :scale="fg.scale"
+                :rotation="fg.rotation"
+                :is-selected="selectedItemId === fg.id"
+                :container-bounds="foregroundBounds || canvasBounds"
+                @update:position="updateItemPosition(fg.id, $event)"
+                @update:scale="updateItemScale(fg.id, $event)"
+                @update:rotation="updateItemRotation(fg.id, $event)"
+                @select="selectItem(fg.id)"
+              />
+            </div>
           </div>
           
           <!-- 마스코트 이름 -->
@@ -292,19 +327,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, onActivated, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { getMascot, getShopItems, handleApiError, getMascotCustomization, saveMascotCustomization } from '../api/index';
+import { getMascot, getMascotCustomization, getShopItems, handleApiError, saveMascotCustomization, updateMascotBackground } from '../api/index';
 import DraggableItem from '../components/DraggableItem.vue';
 import { mascotTypes } from '../data/mockData';
 import type { Item, Mascot } from '../types/api';
 import {
+  constrainMascotRelativePositionLoose,
   getContainerSize,
   getDefaultMascotRelativePosition,
   toAbsoluteFromMascot,
-  toAbsolutePosition,
   toRelativeToMascot,
-  constrainMascotRelativePositionLoose,
   type RelativePosition
 } from '../utils/coordinates';
 
@@ -324,13 +358,15 @@ const router = useRouter();
 
 // 반응형 데이터
 const currentMascot = ref<Mascot | null>(null);
-const items = ref<Item[]>([]);
+const items = ref<any[]>([]);
 const userCoins = ref(15000);
 const selectedCategory = ref<'head' | 'clothing' | 'accessory' | 'background'>('head');
 
 // 드래그 관련 상태
 const mascotCanvas = ref<HTMLElement>();
 const canvasBounds = ref<DOMRect | null>(null);
+const foregroundLayer = ref<HTMLElement>();
+const foregroundBounds = ref<DOMRect | null>(null);
 const selectedItemId = ref<string | null>(null); // 고유 ID로 변경
 const equippedItemStates = ref<Map<string, EquippedItemState>>(new Map()); // 다중 아이템 지원
 const isMobileDevice = ref(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
@@ -346,6 +382,40 @@ const mascotRect = ref<DOMRect | null>(null);
 // 토스트 알림
 const showToast = ref(false);
 const toastMessage = ref('');
+const showBgPanel = ref(false);
+
+// 배경 커스터마이징 상태
+const bgColor = ref<string>('#ffffff');
+const bgPattern = ref<'dots' | 'stripes' | 'none'>('none');
+
+const previewBackgroundStyle = computed(() => {
+  const style: Record<string, string> = {
+    backgroundColor: bgColor.value || '#ffffff',
+  };
+  if (bgPattern.value === 'dots') {
+    style.backgroundImage = 'radial-gradient(circle, rgba(0,0,0,0.12) 1px, transparent 1px)';
+    style.backgroundSize = '12px 12px';
+  } else if (bgPattern.value === 'stripes') {
+    style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(0,0,0,0.08) 0 10px, transparent 10px 20px)';
+  } else {
+    style.backgroundImage = 'none';
+  }
+  return style;
+});
+
+async function saveBackground() {
+  try {
+    await updateMascotBackground({ backgroundColor: bgColor.value, patternType: bgPattern.value });
+    showToastMessage('배경 설정이 저장되었습니다!');
+  } catch (e) {
+    const msg = handleApiError(e);
+    showToastMessage(`배경 저장 실패: ${msg}`);
+  }
+}
+
+function toggleBgPanel() {
+  showBgPanel.value = !showBgPanel.value;
+}
 
 // 아이템 카테고리
 const itemCategories = [
@@ -358,12 +428,20 @@ const itemCategories = [
 // 버튼 패널 제거: 드래그/핀치/회전 제스처만 제공
 
 // 필터링된 아이템 목록 (보유한 아이템만)
+// ShopController.getItemsWithOwnership → ItemResponse(category, owned) 기준으로 필터링
 const filteredItems = computed(() => {
-  const targetCategories =
-    selectedCategory.value === 'background'
-      ? ['base', 'sticker']
-      : [selectedCategory.value];
-  return items.value.filter(item => targetCategories.includes(item.category) && item.owned === true);
+  const target = selectedCategory.value; // 'head' | 'clothing' | 'accessory' | 'background'
+  return items.value.filter((item: any) => {
+    const cat = (item.category || '').toString().toLowerCase();
+    const typ = (item.type || '').toString().toLowerCase(); // EQUIP/BACKGROUND 등
+    const isOwned = item.owned === true || item.isOwned === true;
+    if (!isOwned) return false;
+    if (target === 'background') {
+      // 일부 응답이 category 대신 type으로 BACKGROUND만 내려오는 경우도 허용
+      return cat === 'background' || typ === 'background';
+    }
+    return cat === target;
+  });
 });
 
 // 장착된 아이템들의 상태 목록 (다중 아이템 지원)
@@ -371,6 +449,14 @@ const equippedItems = computed(() => {
   // 새로운 다중 아이템 시스템에서는 equippedItemsList를 직접 사용
   return equippedItemsList.value;
 });
+
+// 배경 아이템/전경 아이템 분리 (레이어링 제어)
+const backgroundEquippedItems = computed(() =>
+  equippedItemsList.value.filter(e => e.item?.type === 'background')
+);
+const foregroundEquippedItems = computed(() =>
+  equippedItemsList.value.filter(e => e.item?.type !== 'background')
+);
 
 // 더 많은 아이템을 장착할 수 있는지 확인
 const canEquipMoreItems = computed(() => {
@@ -482,7 +568,7 @@ async function composeSnapshotDataUrl(): Promise<string> {
   const baseItemSize = (120 /* BASE_ITEM_SIZE */ / UI_MASCOT_PX) * mascotBoxSize;
   for (const e of equippedItemsList.value) {
     try {
-      const img = await loadImage(e.item.imageUrl);
+      const img = await loadImage(e.item.imageUrl || '');
       const centerX = mascotX + (e.relativePosition.x * mascotBoxSize);
       const centerY = mascotY + (e.relativePosition.y * mascotBoxSize);
       const size = Math.max(12, baseItemSize * (e.scale ?? 1));
@@ -775,6 +861,12 @@ function updateCanvasBounds() {
       Math.abs(oldBounds.y - newBounds.y) > 8;
 
     canvasBounds.value = newBounds;
+    // 전경 레이어(z-20)의 경계도 갱신 (없으면 캔버스 경계를 사용)
+    if (foregroundLayer.value) {
+      foregroundBounds.value = foregroundLayer.value.getBoundingClientRect();
+    } else {
+      foregroundBounds.value = newBounds;
+    }
 
     if (sizeChanged || positionChanged) {
       // 의미있는 변경에만 캐시 무효화
@@ -892,10 +984,9 @@ function selectItem(itemId: string) {
 }
 
 function handleCanvasClick(e: Event) {
-  // 캔버스 빈 공간 클릭 시 아이템 선택 해제
-  if (e.target === mascotCanvas.value) {
-    selectedItemId.value = null;
-  }
+  // 캔버스 영역 클릭 시(아이템이 아닌 경우) 선택 해제
+  // DraggableItem 루트에서는 @click.stop 처리되어 이 핸들러가 호출되지 않음
+  selectedItemId.value = null;
 }
 
 // UI 개선 메소드들
@@ -962,12 +1053,14 @@ async function saveItemPositions() {
 
     console.log('커스터마이징 저장 요청:', payload);
 
-    try {
-      isSaving.value = true;
-      // 저장 직전 스냅샷 생성(Data URL)
-      const snapshot = await composeSnapshotDataUrl();
-      await saveMascotCustomization({ ...payload, snapshotImageDataUrl: snapshot });
-      showToastMessage('마스코트 커스터마이징이 서버에 저장되었습니다! 🎯✨');
+          try {
+        isSaving.value = true;
+        // 저장 직전 스냅샷 생성(Data URL)
+        const snapshot = await composeSnapshotDataUrl();
+        await saveMascotCustomization({ ...payload, snapshotImageDataUrl: snapshot });
+        // 배경도 함께 저장하여 일관된 저장 UX 제공
+        await updateMascotBackground({ backgroundColor: bgColor.value, patternType: bgPattern.value });
+        showToastMessage('마스코트 커스터마이징이 서버에 저장되었습니다! 🎯✨');
 
       // 저장 직후 한 프레임 뒤에 캔버스 바운드를 갱신하여 좌표 캐시를 안정화
       await nextTick();
@@ -1138,6 +1231,13 @@ async function loadMascotData() {
     if (mascotData) {
       currentMascot.value = mascotData;
       console.log('마스코트 데이터 로드됨:', mascotData);
+      // 배경 커스터마이징 초기값 적용
+      if (mascotData.backgroundColor) {
+        bgColor.value = mascotData.backgroundColor as string;
+      }
+      if (mascotData.backgroundPattern) {
+        bgPattern.value = mascotData.backgroundPattern as any;
+      }
       
       // 기존 장착된 아이템들 로드 (호환성)
       loadEquippedItemsFromMascot();
@@ -1163,6 +1263,13 @@ async function loadMascotData() {
 // 화면 크기 변경 감지를 위한 ResizeObserver
 let resizeObserver: ResizeObserver | null = null;
 let mascotResizeObserver: ResizeObserver | null = null;
+
+// keep-alive로 복귀했을 때 보유 아이템 최신화
+onActivated(async () => {
+  try {
+    await loadUserItems();
+  } catch {}
+});
 
 // 컴포넌트 마운트
 onMounted(async () => {
