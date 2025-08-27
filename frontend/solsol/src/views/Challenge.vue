@@ -756,20 +756,21 @@ async function completeChallenge() {
   
   updatingProgress.value = true;
   try {
-    const ch = selectedChallenge.value;
-    const cid = ch.challengeId;
-    const isFinance = ch.categoryName === 'FINANCE';
-    let payload = '챌린지 완료';
-    if (isFinance) {
-      // 금융은 조회 성공 후에만 완료 가능
-      if (!succeededFinance.value.has(cid)) {
-        alert('외부 조회를 완료한 뒤에 완료할 수 있습니다.');
-        updatingProgress.value = false;
-        return;
-      }
-      const action = inferFinanceTabByName(ch.challengeName);
-      payload = `FINANCE_${action}_SUCCESS`;
+  const ch = selectedChallenge.value;
+  const cid = ch.challengeId;
+  const isFinance = ch.categoryName === 'FINANCE';
+  const isFinanceAction = isFinance && isRecognizedFinanceAction(ch.challengeName);
+  let payload = '챌린지 완료';
+  if (isFinanceAction) {
+    // 금융은 조회 성공 후에만 완료 가능
+    if (!succeededFinance.value.has(cid)) {
+      alert('외부 조회를 완료한 뒤에 완료할 수 있습니다.');
+      updatingProgress.value = false;
+      return;
     }
+    const action = inferFinanceTabByName(ch.challengeName);
+    payload = `FINANCE_${action}_SUCCESS`;
+  }
     // 목표 진행도로 바로 완료 처리
     const response = await updateChallengeProgress(cid, {
       step: ch.targetCount,
