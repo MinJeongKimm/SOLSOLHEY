@@ -67,4 +67,14 @@ public interface RankingService {
      * 사용자의 전국 랭킹 투표 히스토리 조회 (투표한 마스코트 ID 목록)
      */
     List<Long> getUserVotedMascotIdsForNational(Long voterId);
+
+    /**
+     * 사용자의 교내 랭킹 투표 히스토리 조회 (투표한 엔트리 ID 목록)
+     */
+    List<Long> getUserVotedEntryIdsForCampus(Long voterId);
+
+    /**
+     * 사용자의 전국 랭킹 투표 히스토리 조회 (투표한 엔트리 ID 목록)
+     */
+    List<Long> getUserVotedEntryIdsForNational(Long voterId);
 }

@@ -525,3 +525,39 @@ export async function getUserNationalVotedMascotIds(): Promise<number[]> {
     throw error;
   }
 }
+
+// 사용자 교내 랭킹 투표 히스토리 조회 (투표한 엔트리 ID 목록)
+export async function getUserCampusVotedEntryIds(): Promise<number[]> {
+  try {
+    const res = await apiRequest<ApiResponse<number[]>>('/api/ranking/campus/voted-entries', {
+      method: 'GET',
+    });
+    if (!res || (res as any).success === false || !res.data) {
+      throw new Error((res as any)?.message || '교내 랭킹 투표한 엔트리 ID 조회 실패');
+    }
+    return res.data as number[];
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    throw error;
+  }
+}
+
+// 사용자 전국 랭킹 투표 히스토리 조회 (투표한 엔트리 ID 목록)
+export async function getUserNationalVotedEntryIds(): Promise<number[]> {
+  try {
+    const res = await apiRequest<ApiResponse<number[]>>('/api/ranking/national/voted-entries', {
+      method: 'GET',
+    });
+    if (!res || (res as any).success === false || !res.data) {
+      throw new Error((res as any)?.message || '전국 랭킹 투표한 엔트리 ID 조회 실패');
+    }
+    return res.data as number[];
+  } catch (error: any) {
+    if (error?.status === 401 || error?.status === 403) {
+      throw new Error('로그인이 필요합니다.');
+    }
+    throw error;
+  }
+}

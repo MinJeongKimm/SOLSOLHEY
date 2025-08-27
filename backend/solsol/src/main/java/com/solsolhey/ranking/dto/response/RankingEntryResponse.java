@@ -14,6 +14,7 @@ import lombok.Getter;
 public class RankingEntryResponse {
 
     private final Integer rank;              // 순위
+    private final Long entryId;              // 랭킹 엔트리 ID
     private final Long mascotId;             // 마스코트 ID
     private final Long mascotSnapshotId;     // 마스코트 스냅샷 ID
     private final String ownerNickname;      // 소유자 표시명
@@ -65,9 +66,10 @@ public class RankingEntryResponse {
      */
     public static RankingEntryResponse fromWithEntry(Mascot mascot, MascotSnapshot snapshot, Integer rank, 
                                                    String ownerNickname, String schoolName, Long schoolId, Long voteCount,
-                                                   String entryImageUrl, String entryTitle) {
+                                                   String entryImageUrl, String entryTitle, Long entryId) {
         return RankingEntryResponse.builder()
                 .rank(rank)
+                .entryId(entryId)
                 .mascotId(mascot.getId())
                 .mascotSnapshotId(snapshot != null ? snapshot.getId() : null)
                 .ownerNickname(ownerNickname)

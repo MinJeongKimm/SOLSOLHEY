@@ -51,3 +51,36 @@ COMMENT ON COLUMN ranking_entries.ranking_type IS '랭킹 타입 (NATIONAL/CAMPU
 COMMENT ON COLUMN ranking_entries.created_at IS '등록일시';
 COMMENT ON COLUMN ranking_entries.updated_at IS '수정일시';
 
+-- ===== 투표 시스템 생성 =====
+-- Vote 테이블 생성
+CREATE TABLE votes (
+    vote_id BIGSERIAL PRIMARY KEY,
+    entry_id BIGINT NOT NULL,
+    mascot_id BIGINT NOT NULL,
+    voter_id BIGINT NOT NULL,
+    vote_type VARCHAR(20) NOT NULL, -- CAMPUS, NATIONAL
+    weight INTEGER NOT NULL DEFAULT 1,
+    idempotency_key VARCHAR(100),
+    campus_id BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 투표 시스템 인덱스 생성
+CREATE INDEX idx_voter_entry ON votes (voter_id, entry_id);
+CREATE INDEX idx_entry_id ON votes (entry_id);
+CREATE INDEX idx_idempotency_key ON votes (idempotency_key);
+
+-- 투표 시스템 댓글 추가
+COMMENT ON TABLE votes IS '투표 기록 테이블';
+COMMENT ON COLUMN votes.vote_id IS '투표 ID (기본키)';
+COMMENT ON COLUMN votes.entry_id IS '랭킹 엔트리 ID (투표 대상)';
+COMMENT ON COLUMN votes.mascot_id IS '마스코트 ID';
+COMMENT ON COLUMN votes.voter_id IS '투표자 ID';
+COMMENT ON COLUMN votes.vote_type IS '투표 타입 (CAMPUS/NATIONAL)';
+COMMENT ON COLUMN votes.weight IS '투표 가중치';
+COMMENT ON COLUMN votes.idempotency_key IS '멱등키 (중복 투표 방지)';
+COMMENT ON COLUMN votes.campus_id IS '캠퍼스 ID';
+COMMENT ON COLUMN votes.created_at IS '투표 일시';
+COMMENT ON COLUMN votes.updated_at IS '수정 일시';
+

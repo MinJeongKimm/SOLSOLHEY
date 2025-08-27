@@ -261,4 +261,46 @@ public class RankingController {
         }
     }
 
+    /**
+     * 사용자의 교내 랭킹 투표 히스토리 조회 (투표한 엔트리 ID 목록)
+     */
+    @GetMapping("/campus/voted-entries")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "교내 랭킹 투표한 엔트리 ID 조회", description = "사용자가 교내 랭킹에 투표한 엔트리 ID 목록을 조회합니다")
+    public ResponseEntity<ApiResponse<List<Long>>> getCampusVotedEntryIds(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.solsolhey.auth.dto.response.CustomUserDetails userDetails) {
+        try {
+            Long userId = userDetails.getUser().getUserId();
+            List<Long> votedEntryIds = rankingService.getUserVotedEntryIdsForCampus(userId);
+            
+            return ResponseEntity.ok(ApiResponse.success("교내 랭킹 투표한 엔트리 ID 조회 완료", votedEntryIds));
+            
+        } catch (Exception e) {
+            log.error("교내 랭킹 투표한 엔트리 ID 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.<List<Long>>internalServerError("투표한 엔트리 ID 조회에 실패했습니다."));
+        }
+    }
+
+    /**
+     * 사용자의 전국 랭킹 투표 히스토리 조회 (투표한 엔트리 ID 목록)
+     */
+    @GetMapping("/national/voted-entries")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "전국 랭킹 투표한 엔트리 ID 조회", description = "사용자가 전국 랭킹에 투표한 엔트리 ID 목록을 조회합니다")
+    public ResponseEntity<ApiResponse<List<Long>>> getNationalVotedEntryIds(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.solsolhey.auth.dto.response.CustomUserDetails userDetails) {
+        try {
+            Long userId = userDetails.getUser().getUserId();
+            List<Long> votedEntryIds = rankingService.getUserVotedEntryIdsForNational(userId);
+            
+            return ResponseEntity.ok(ApiResponse.success("전국 랭킹 투표한 엔트리 ID 조회 완료", votedEntryIds));
+            
+        } catch (Exception e) {
+            log.error("전국 랭킹 투표한 엔트리 ID 조회 실패", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.<List<Long>>internalServerError("투표한 엔트리 ID 조회에 실패했습니다."));
+        }
+    }
+
 }

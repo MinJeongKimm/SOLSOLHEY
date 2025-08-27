@@ -198,16 +198,16 @@
 
                 <!-- 투표 버튼 -->
                 <div class="flex-shrink-0">
-                  <button
-                    @click="voteForMascot(entry.mascotId)"
-                    :disabled="voting || !canVoteForMascot(entry.mascotId)"
-                    class="bg-purple-500 text-white px-3 py-1.5 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span v-if="!canVoteForMascot(entry.mascotId)">
-                      <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
-                      <span v-else-if="votedMascots.has(entry.mascotId)">이미 투표함</span>
-                      <span v-else>투표 불가</span>
-                    </span>
+                                      <button
+                      @click="voteForMascot(entry.entryId)"
+                      :disabled="voting || !canVoteForMascot(entry.entryId)"
+                      class="bg-purple-500 text-white px-3 py-1.5 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                                          <span v-if="!canVoteForMascot(entry.entryId)">
+                        <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
+                        <span v-else-if="votedEntries.has(entry.entryId)">이미 투표함</span>
+                        <span v-else>투표 불가</span>
+                      </span>
                     <span v-else>👍 투표</span>
                   </button>
                 </div>
@@ -352,16 +352,16 @@
 
                 <!-- 투표 버튼 -->
                 <div class="flex-shrink-0">
-                  <button
-                    @click="voteForNationalMascot(entry.mascotId)"
-                    :disabled="voting || !canVoteForMascot(entry.mascotId)"
-                    class="bg-purple-500 text-white px-3 py-1.5 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <span v-if="!canVoteForMascot(entry.mascotId)">
-                      <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
-                      <span v-else-if="nationalVotedMascots.has(entry.mascotId)">투표 불가</span>
-                      <span v-else>투표 불가</span>
-                    </span>
+                                      <button
+                      @click="voteForNationalMascot(entry.entryId)"
+                      :disabled="voting || !canVoteForMascot(entry.entryId)"
+                      class="bg-purple-500 text-white px-3 py-1.5 rounded-lg hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                                          <span v-if="!canVoteForMascot(entry.entryId)">
+                        <span v-if="currentUser && entry.ownerNickname === currentUser.nickname">내 마스코트</span>
+                        <span v-else-if="nationalVotedEntries.has(entry.entryId)">투표 불가</span>
+                        <span v-else>투표 불가</span>
+                      </span>
                     <span v-else>👍 투표</span>
                   </button>
                 </div>
@@ -430,8 +430,8 @@ const nationalRankings = ref<RankingResponse | null>(null);
 const currentUser = ref<any>(null);
 const myRank = ref<number | null>(null);
 const hasMascot = ref<boolean>(false);
-const votedMascots = ref<Set<string>>(new Set()); // 교내 랭킹 투표한 사용자 닉네임들
-const nationalVotedMascots = ref<Set<string>>(new Set()); // 전국 랭킹 투표한 사용자 닉네임들
+const votedEntries = ref<Set<number>>(new Set()); // 교내 랭킹 투표한 엔트리 ID들
+const nationalVotedEntries = ref<Set<number>>(new Set()); // 전국 랭킹 투표한 엔트리 ID들
 
 // 랭킹 슬롯 관련 상태 (전국/교내 분리)
 const nationalRankingSlots = ref([
@@ -520,15 +520,24 @@ const findMyRank = () => {
 const voteableMascots = computed(() => {
   const result = new Map<number, boolean>();
   
+  console.log('voteableMascots 계산 시작');
+  console.log('currentUser:', currentUser.value);
+  console.log('campusRankings entries:', campusRankings.value?.entries);
+  console.log('nationalRankings entries:', nationalRankings.value?.entries);
+  console.log('votedEntries:', Array.from(votedEntries.value));
+  console.log('nationalVotedEntries:', Array.from(nationalVotedEntries.value));
+  
   if (!currentUser.value) return result;
   
   // 교내 랭킹 투표 가능 여부
   if (campusRankings.value?.entries) {
     campusRankings.value.entries.forEach(entry => {
       const isOwnMascot = entry.ownerNickname === currentUser.value!.nickname;
-      // 사용자별로 투표 제한 (마스코트별이 아님)
-      const alreadyVoted = votedMascots.value.has(entry.ownerNickname);
-      result.set(entry.mascotId, !isOwnMascot && !alreadyVoted);
+      // 엔트리별로 투표 제한
+      const alreadyVoted = votedEntries.value.has(entry.entryId);
+      const canVote = !isOwnMascot && !alreadyVoted;
+      result.set(entry.entryId, canVote);
+      console.log(`교내 랭킹 entryId ${entry.entryId}: isOwnMascot=${isOwnMascot}, alreadyVoted=${alreadyVoted}, canVote=${canVote}`);
     });
   }
   
@@ -536,30 +545,84 @@ const voteableMascots = computed(() => {
   if (nationalRankings.value?.entries) {
     nationalRankings.value.entries.forEach(entry => {
       const isOwnMascot = entry.ownerNickname === currentUser.value!.nickname;
-      // 사용자별로 투표 제한 (마스코트별이 아님)
-      const alreadyVoted = nationalVotedMascots.value.has(entry.ownerNickname);
-      result.set(entry.mascotId, !isOwnMascot && !alreadyVoted);
+      // 엔트리별로 투표 제한
+      const alreadyVoted = nationalVotedEntries.value.has(entry.entryId);
+      const canVote = !isOwnMascot && !alreadyVoted;
+      result.set(entry.entryId, canVote);
+      console.log(`전국 랭킹 entryId ${entry.entryId}: isOwnMascot=${isOwnMascot}, alreadyVoted=${alreadyVoted}, canVote=${canVote}`);
     });
   }
   
+  console.log('voteableMascots 최종 결과:', Object.fromEntries(result));
   return result;
 });
 
 // 투표 가능 여부 확인 (캐시된 결과 사용)
-const canVoteForMascot = (mascotId: number) => {
-  return voteableMascots.value.get(mascotId) ?? false;
+const canVoteForMascot = (entryId: number) => {
+  const canVote = voteableMascots.value.get(entryId) ?? false;
+  console.log(`투표 가능 여부 확인 - entryId: ${entryId}, canVote: ${canVote}`);
+  console.log(`votedEntries:`, Array.from(votedEntries.value));
+  console.log(`nationalVotedEntries:`, Array.from(nationalVotedEntries.value));
+  return canVote;
 };
 
-// 투표 후 상태 업데이트 (사용자별로 제한)
-const updateVoteStatus = (ownerNickname: string) => {
-  console.log('투표 상태 업데이트 시작 - ownerNickname:', ownerNickname, 'activeTab:', activeTab.value);
+// 투표 후 상태 업데이트 (엔트리별로 제한)
+const updateVoteStatus = (entryId: number) => {
+  console.log('투표 상태 업데이트 시작 - entryId:', entryId, 'activeTab:', activeTab.value);
   
   if (activeTab.value === 'campus') {
-    votedMascots.value.add(ownerNickname);
-    console.log('교내 랭킹 투표 상태 업데이트 완료 - votedMascots:', Array.from(votedMascots.value));
+    votedEntries.value.add(entryId);
+    console.log('교내 랭킹 투표 상태 업데이트 완료 - votedEntries:', Array.from(votedEntries.value));
   } else {
-    nationalVotedMascots.value.add(ownerNickname);
-    console.log('전국 랭킹 투표 상태 업데이트 완료 - nationalVotedMascots:', Array.from(nationalVotedMascots.value));
+    nationalVotedEntries.value.add(entryId);
+    console.log('전국 랭킹 투표 상태 업데이트 완료 - nationalVotedEntries:', Array.from(nationalVotedEntries.value));
+  }
+};
+
+// 랭킹 데이터 로드 후 투표 히스토리 변환
+const updateVoteHistoryAfterRankingLoad = async (rankingType: 'campus' | 'national') => {
+  try {
+    console.log(`${rankingType} 랭킹 데이터 로드 후 투표 히스토리 변환 시작`);
+    
+    if (rankingType === 'campus') {
+      // 교내 랭킹 투표 히스토리 변환
+      const votedMascotIds = await getUserCampusVotedMascotIds();
+      console.log('교내 랭킹 투표한 마스코트 ID:', votedMascotIds);
+      
+      // 마스코트 ID를 엔트리 ID로 변환
+      const votedEntryIds = new Set<number>();
+      if (campusRankings.value?.entries) {
+        votedMascotIds.forEach(mascotId => {
+          const entry = campusRankings.value!.entries.find(e => e.mascotId === mascotId);
+          if (entry && entry.entryId) {
+            votedEntryIds.add(entry.entryId);
+            console.log(`교내 랭킹 마스코트 ID ${mascotId} → 엔트리 ID ${entry.entryId}`);
+          }
+        });
+      }
+      votedEntries.value = votedEntryIds;
+      console.log('교내 랭킹 투표 히스토리 변환 완료:', Array.from(votedEntries.value));
+    } else {
+      // 전국 랭킹 투표 히스토리 변환
+      const nationalVotedMascotIds = await getUserNationalVotedMascotIds();
+      console.log('전국 랭킹 투표한 마스코트 ID:', nationalVotedMascotIds);
+      
+      // 마스코트 ID를 엔트리 ID로 변환
+      const votedEntryIds = new Set<number>();
+      if (nationalRankings.value?.entries) {
+        nationalVotedMascotIds.forEach(mascotId => {
+          const entry = nationalRankings.value!.entries.find(e => e.mascotId === mascotId);
+          if (entry && entry.entryId) {
+            votedEntryIds.add(entry.entryId);
+            console.log(`전국 랭킹 마스코트 ID ${mascotId} → 엔트리 ID ${entry.entryId}`);
+          }
+        });
+      }
+      nationalVotedEntries.value = votedEntryIds;
+      console.log('전국 랭킹 투표 히스토리 변환 완료:', Array.from(nationalVotedEntries.value));
+    }
+  } catch (error) {
+    console.error(`${rankingType} 랭킹 투표 히스토리 변환 실패:`, error);
   }
 };
 
@@ -569,33 +632,39 @@ const refreshVoteHistory = async () => {
     console.log('투표 히스토리 새로고침 시작');
     
     if (activeTab.value === 'campus') {
+      // 임시로 기존 API 사용
       const votedMascotIds = await getUserCampusVotedMascotIds();
-      // 마스코트 ID를 사용자 닉네임으로 변환
-      const votedUserNicknames = new Set<string>();
+      console.log('교내 랭킹 투표한 마스코트 ID:', votedMascotIds);
+      
+      // 마스코트 ID를 엔트리 ID로 변환
+      const votedEntryIds = new Set<number>();
       if (campusRankings.value?.entries) {
         votedMascotIds.forEach(mascotId => {
           const entry = campusRankings.value!.entries.find(e => e.mascotId === mascotId);
-          if (entry) {
-            votedUserNicknames.add(entry.ownerNickname);
+          if (entry && entry.entryId) {
+            votedEntryIds.add(entry.entryId);
           }
         });
       }
-      votedMascots.value = votedUserNicknames;
-      console.log('교내 랭킹 투표 히스토리 새로고침 완료:', Array.from(votedMascots.value));
+      votedEntries.value = votedEntryIds;
+      console.log('교내 랭킹 투표 히스토리 새로고침 완료:', Array.from(votedEntries.value));
     } else {
+      // 임시로 기존 API 사용
       const nationalVotedMascotIds = await getUserNationalVotedMascotIds();
-      // 마스코트 ID를 사용자 닉네임으로 변환
-      const votedUserNicknames = new Set<string>();
+      console.log('전국 랭킹 투표한 마스코트 ID:', nationalVotedMascotIds);
+      
+      // 마스코트 ID를 엔트리 ID로 변환
+      const votedEntryIds = new Set<number>();
       if (nationalRankings.value?.entries) {
         nationalVotedMascotIds.forEach(mascotId => {
           const entry = nationalRankings.value!.entries.find(e => e.mascotId === mascotId);
-          if (entry) {
-            votedUserNicknames.add(entry.ownerNickname);
+          if (entry && entry.entryId) {
+            votedEntryIds.add(entry.entryId);
           }
         });
       }
-      nationalVotedMascots.value = votedUserNicknames;
-      console.log('전국 랭킹 투표 히스토리 새로고침 완료:', Array.from(nationalVotedMascots.value));
+      nationalVotedEntries.value = votedEntryIds;
+      console.log('전국 랭킹 투표 히스토리 새로고침 완료:', Array.from(nationalVotedEntries.value));
     }
   } catch (error) {
     console.error('투표 히스토리 새로고침 실패:', error);
@@ -656,6 +725,9 @@ const loadCampusRankings = async () => {
     
     campusRankings.value = response;
     findMyRank(); // 랭킹 로드 후 내 순위 갱신
+    
+    // 랭킹 데이터 로드 후 투표 히스토리 변환
+    await updateVoteHistoryAfterRankingLoad('campus');
   } catch (err: any) {
     console.error('교내 랭킹 로드 실패:', err);
     error.value = err.message || '랭킹을 불러오는데 실패했습니다.';
@@ -689,6 +761,9 @@ const loadNationalRankings = async () => {
     
     nationalRankings.value = response;
     findMyRank(); // 랭킹 로드 후 내 순위 갱신
+    
+    // 랭킹 데이터 로드 후 투표 히스토리 변환
+    await updateVoteHistoryAfterRankingLoad('national');
   } catch (err: any) {
     console.error('전국 랭킹 로드 실패:', err);
     error.value = err.message || '전국 랭킹을 불러오는데 실패했습니다.';
@@ -703,29 +778,26 @@ const loadNationalRankings = async () => {
 };
 
 // 투표 처리
-const voteForMascot = async (mascotId: number) => {
+const voteForMascot = async (entryId: number) => {
   try {
-    console.log('교내 랭킹 투표 시작 - mascotId:', mascotId);
+    console.log('교내 랭킹 투표 시작 - entryId:', entryId);
     voting.value = true;
     
     // 랭킹 데이터 확인
     console.log('campusRankings.value:', campusRankings.value);
     console.log('campusRankings.entries:', campusRankings.value?.entries);
     
-    // 해당 마스코트의 소유자 닉네임 찾기
-    const entry = campusRankings.value?.entries.find(e => e.mascotId === mascotId);
+    // 해당 엔트리 찾기
+    const entry = campusRankings.value?.entries.find(e => e.entryId === entryId);
     console.log('찾은 entry:', entry);
     
     if (!entry) {
-      console.error('마스코트 정보를 찾을 수 없음 - mascotId:', mascotId);
-      error.value = '마스코트 정보를 찾을 수 없습니다.';
+      console.error('엔트리 정보를 찾을 수 없음 - entryId:', entryId);
+      error.value = '엔트리 정보를 찾을 수 없습니다.';
       return;
     }
     
     console.log('entry.ownerNickname:', entry.ownerNickname);
-    
-    // ownerNickname이 없으면 기본값 사용
-    const ownerNickname = entry.ownerNickname || `사용자_${entry.mascotId}`;
     
     const voteData: VoteRequest = {
       weight: 1, // 기본 투표 가중치
@@ -733,15 +805,17 @@ const voteForMascot = async (mascotId: number) => {
     };
     
     console.log('투표 데이터:', voteData);
-    const response = await voteForCampus(mascotId, voteData);
+    const response = await voteForCampus(entryId, voteData);
     console.log('투표 API 응답:', response);
     
     if (response.success) {
-      // 투표 성공 시 상태 업데이트 (사용자별로 제한)
-      console.log('투표 성공, 상태 업데이트 시작 - ownerNickname:', entry.ownerNickname);
-      updateVoteStatus(entry.ownerNickname);
+      // 투표 성공 시 상태 업데이트 (엔트리별로 제한)
+      console.log('투표 성공, 상태 업데이트 시작 - entryId:', entryId);
+      updateVoteStatus(entryId);
       // 투표 성공 시 랭킹 새로고침
       await loadCampusRankings();
+      // 투표 히스토리 새로고침
+      await refreshVoteHistory();
     } else {
       console.error('투표 실패 - message:', response.message);
       error.value = response.message;
@@ -755,9 +829,9 @@ const voteForMascot = async (mascotId: number) => {
 };
 
 // 전국 랭킹 투표 처리
-const voteForNationalMascot = async (mascotId: number) => {
+const voteForNationalMascot = async (entryId: number) => {
   try {
-    console.log('전국 랭킹 투표 시작 - mascotId:', mascotId);
+    console.log('전국 랭킹 투표 시작 - entryId:', entryId);
     console.log('현재 사용자 정보:', currentUser.value);
     console.log('현재 사용자 ID:', currentUser.value?.id);
     voting.value = true;
@@ -766,13 +840,13 @@ const voteForNationalMascot = async (mascotId: number) => {
     console.log('nationalRankings.value:', nationalRankings.value);
     console.log('nationalRankings.entries:', nationalRankings.value?.entries);
     
-    // 해당 마스코트의 소유자 닉네임 찾기
-    const entry = nationalRankings.value?.entries.find(e => e.mascotId === mascotId);
+    // 해당 엔트리 찾기
+    const entry = nationalRankings.value?.entries.find(e => e.entryId === entryId);
     console.log('찾은 entry:', entry);
     
     if (!entry) {
-      console.error('마스코트 정보를 찾을 수 없음 - mascotId:', mascotId);
-      error.value = '마스코트 정보를 찾을 수 없습니다.';
+      console.error('엔트리 정보를 찾을 수 없음 - entryId:', entryId);
+      error.value = '엔트리 정보를 찾을 수 없습니다.';
       return;
     }
     
@@ -783,13 +857,13 @@ const voteForNationalMascot = async (mascotId: number) => {
     };
     
     console.log('투표 데이터:', voteData);
-    const response = await voteForNational(mascotId, voteData);
+    const response = await voteForNational(entryId, voteData);
     console.log('투표 API 응답:', response);
     
     if (response.success) {
-      // 투표 성공 시 상태 업데이트 (사용자별로 제한)
-      console.log('투표 성공, 상태 업데이트 시작 - ownerNickname:', entry.ownerNickname);
-      updateVoteStatus(entry.ownerNickname);
+      // 투표 성공 시 상태 업데이트 (엔트리별로 제한)
+      console.log('투표 성공, 상태 업데이트 시작 - entryId:', entryId);
+      updateVoteStatus(entryId);
       // 투표 성공 시 랭킹 새로고침
       await loadNationalRankings();
       // 투표 히스토리 새로고침
@@ -818,17 +892,9 @@ watch(activeTab, async (newTab) => {
     // 교내 랭킹 탭으로 변경 시 교내 랭킹 투표 히스토리 로드
     try {
       const votedMascotIds = await getUserCampusVotedMascotIds();
-      // 마스코트 ID를 사용자 닉네임으로 변환
-      const votedUserNicknames = new Set<string>();
-      if (campusRankings.value?.entries) {
-        votedMascotIds.forEach(mascotId => {
-          const entry = campusRankings.value!.entries.find(e => e.mascotId === mascotId);
-          if (entry) {
-            votedUserNicknames.add(entry.ownerNickname);
-          }
-        });
-      }
-      votedMascots.value = votedUserNicknames;
+      console.log('교내 랭킹 탭 변경 시 투표한 마스코트 ID:', votedMascotIds);
+      // 마스코트 ID를 엔트리 ID로 변환은 랭킹 데이터 로드 후에 수행
+      votedEntries.value = new Set<number>();
     } catch (error) {
       console.error('교내 랭킹 투표 히스토리 로드 실패:', error);
     }
@@ -839,17 +905,9 @@ watch(activeTab, async (newTab) => {
     // 전국 랭킹 탭으로 변경 시 전국 랭킹 투표 히스토리 로드
     try {
       const nationalVotedMascotIds = await getUserNationalVotedMascotIds();
-      // 마스코트 ID를 사용자 닉네임으로 변환
-      const votedUserNicknames = new Set<string>();
-      if (nationalRankings.value?.entries) {
-        nationalVotedMascotIds.forEach(mascotId => {
-          const entry = nationalRankings.value!.entries.find(e => e.mascotId === mascotId);
-          if (entry) {
-            votedUserNicknames.add(entry.ownerNickname);
-          }
-        });
-      }
-      nationalVotedMascots.value = votedUserNicknames;
+      console.log('전국 랭킹 탭 변경 시 투표한 마스코트 ID:', nationalVotedMascotIds);
+      // 마스코트 ID를 엔트리 ID로 변환은 랭킹 데이터 로드 후에 수행
+      nationalVotedEntries.value = new Set<number>();
     } catch (error) {
       console.error('전국 랭킹 투표 히스토리 로드 실패:', error);
     }
@@ -1260,10 +1318,26 @@ onMounted(async () => {
     // 3. 마스코트 존재 여부 확인
     await checkMascotExists();
     
-    // 4. 사용자의 투표 히스토리 가져오기 (임시로 빈 Set으로 초기화)
-    // 실제 투표 히스토리는 탭 변경 시 로드됨
-    votedMascots.value = new Set<string>();
-    nationalVotedMascots.value = new Set<string>();
+    // 4. 사용자의 투표 히스토리 가져오기 (임시로 기존 API 사용)
+    try {
+      // 현재 활성 탭에 따라 투표 히스토리 로드
+      if (activeTab.value === 'campus') {
+        const votedMascotIds = await getUserCampusVotedMascotIds();
+        console.log('초기 교내 랭킹 투표한 마스코트 ID:', votedMascotIds);
+        // 마스코트 ID를 엔트리 ID로 변환은 랭킹 데이터 로드 후에 수행
+        votedEntries.value = new Set<number>();
+      } else {
+        const nationalVotedMascotIds = await getUserNationalVotedMascotIds();
+        console.log('초기 전국 랭킹 투표한 마스코트 ID:', nationalVotedMascotIds);
+        // 마스코트 ID를 엔트리 ID로 변환은 랭킹 데이터 로드 후에 수행
+        nationalVotedEntries.value = new Set<number>();
+      }
+    } catch (error) {
+      console.error('초기 투표 히스토리 로드 실패:', error);
+      // 실패 시 빈 Set으로 초기화
+      votedEntries.value = new Set<number>();
+      nationalVotedEntries.value = new Set<number>();
+    }
 
     // 5. 랭킹 엔트리 로드는 탭 변경 시 자동으로 로드됨
     

@@ -320,7 +320,7 @@ public class RankingServiceImpl implements RankingService {
             }
 
         } catch (Exception e) {
-            log.error("투표 처리 실패 - mascotId: {}, voterId: {}", mascotId, voterId, e);
+            log.error("투표 처리 실패 - entryId: {}, voterId: {}", entryId, voterId, e);
             return VoteResponse.failure("투표 처리 중 오류가 발생했습니다.");
         }
     }
@@ -341,8 +341,8 @@ public class RankingServiceImpl implements RankingService {
         } else {
             // 기본값: 득표순 (votes_desc)
             sortedEntries.sort((a, b) -> {
-                long votesA = getVoteCount(a.getMascotId(), Vote.VoteType.CAMPUS);
-                long votesB = getVoteCount(b.getMascotId(), Vote.VoteType.CAMPUS);
+                long votesA = getVoteCount(a.getEntryId(), Vote.VoteType.CAMPUS);
+                long votesB = getVoteCount(b.getEntryId(), Vote.VoteType.CAMPUS);
                 return Long.compare(votesB, votesA);
             });
         }
@@ -367,7 +367,8 @@ public class RankingServiceImpl implements RankingService {
                     null, // schoolId
                     voteCount,
                     entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
-                    entry.getTitle() // 등록 시 설정한 제목 사용
+                    entry.getTitle(), // 등록 시 설정한 제목 사용
+                    entry.getEntryId() // 랭킹 엔트리 ID
                 );
                 rankedEntries.add(rankedEntry);
             } else {
@@ -391,7 +392,8 @@ public class RankingServiceImpl implements RankingService {
                     null, // schoolId
                     voteCount,
                     entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
-                    entry.getTitle() // 등록 시 설정한 제목 사용
+                    entry.getTitle(), // 등록 시 설정한 제목 사용
+                    entry.getEntryId() // 랭킹 엔트리 ID
                 );
                 rankedEntries.add(rankedEntry);
             }
@@ -415,8 +417,8 @@ public class RankingServiceImpl implements RankingService {
         } else {
             // 기본값: 득표순 (votes_desc)
             sortedEntries.sort((a, b) -> {
-                long votesA = getVoteCount(a.getMascotId(), Vote.VoteType.NATIONAL);
-                long votesB = getVoteCount(b.getMascotId(), Vote.VoteType.NATIONAL);
+                long votesA = getVoteCount(a.getEntryId(), Vote.VoteType.NATIONAL);
+                long votesB = getVoteCount(b.getEntryId(), Vote.VoteType.NATIONAL);
                 return Long.compare(votesB, votesA);
             });
         }
@@ -427,7 +429,7 @@ public class RankingServiceImpl implements RankingService {
             RankingEntry entry = sortedEntries.get(i);
             Mascot mascot = getMascotById(entry.getMascotId());
             User owner = getUserById(mascot.getUserId());
-            long voteCount = getVoteCount(mascot.getId(), Vote.VoteType.NATIONAL);
+            long voteCount = getVoteCount(entry.getEntryId(), Vote.VoteType.NATIONAL);
             
             // 새로 등록한 엔트리(이미지 업로드)인지 확인
             if (entry.getImageUrl() != null && entry.getImageUrl().startsWith("http://localhost:8080/uploads/ranking/")) {
@@ -441,7 +443,8 @@ public class RankingServiceImpl implements RankingService {
                     null, // schoolId
                     voteCount,
                     entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
-                    entry.getTitle() // 등록 시 설정한 제목 사용
+                    entry.getTitle(), // 등록 시 설정한 제목 사용
+                    entry.getEntryId() // 랭킹 엔트리 ID
                 );
                 rankedEntries.add(rankedEntry);
             } else {
@@ -465,7 +468,8 @@ public class RankingServiceImpl implements RankingService {
                     null, // schoolId
                     voteCount,
                     entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
-                    entry.getTitle() // 등록 시 설정한 제목 사용
+                    entry.getTitle(), // 등록 시 설정한 제목 사용
+                    entry.getEntryId() // 랭킹 엔트리 ID
                 );
                 rankedEntries.add(rankedEntry);
             }
@@ -538,6 +542,58 @@ public class RankingServiceImpl implements RankingService {
             
         } catch (Exception e) {
             log.error("사용자 전국 랭킹 투표 히스토리 조회 실패 - voterId: {}", voterId, e);
+            throw new BusinessException("전국 랭킹 투표 히스토리를 조회하는데 실패했습니다.");
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> getUserVotedEntryIdsForCampus(Long voterId) {
+        log.info("사용자 교내 랭킹 투표 히스토리 조회 (엔트리 ID) - voterId: {}", voterId);
+        
+        try {
+            // 사용자가 교내 랭킹에 투표한 엔트리 ID를 가져옴 (CAMPUS 타입만)
+            List<Vote> userVotes = voteRepository.findByVoterIdAndVoteTypeOrderByCreatedAtDesc(voterId, Vote.VoteType.CAMPUS);
+            
+            // 중복 제거하여 엔트리 ID 목록 반환
+            List<Long> votedEntryIds = userVotes.stream()
+                .map(Vote::getEntryId)
+                .distinct()
+                .toList();
+            
+            log.info("사용자 교내 랭킹 투표 히스토리 조회 완료 (엔트리 ID) - voterId: {}, 투표한 엔트리 수: {}", 
+                     voterId, votedEntryIds.size());
+            
+            return votedEntryIds;
+            
+        } catch (Exception e) {
+            log.error("사용자 교내 랭킹 투표 히스토리 조회 실패 (엔트리 ID) - voterId: {}", voterId, e);
+            throw new BusinessException("교내 랭킹 투표 히스토리를 조회하는데 실패했습니다.");
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> getUserVotedEntryIdsForNational(Long voterId) {
+        log.info("사용자 전국 랭킹 투표 히스토리 조회 (엔트리 ID) - voterId: {}", voterId);
+        
+        try {
+            // 사용자가 전국 랭킹에 투표한 엔트리 ID를 가져옴 (NATIONAL 타입만)
+            List<Vote> userVotes = voteRepository.findByVoterIdAndVoteTypeOrderByCreatedAtDesc(voterId, Vote.VoteType.NATIONAL);
+            
+            // 중복 제거하여 엔트리 ID 목록 반환
+            List<Long> votedEntryIds = userVotes.stream()
+                .map(Vote::getEntryId)
+                .distinct()
+                .toList();
+            
+            log.info("사용자 전국 랭킹 투표 히스토리 조회 완료 (엔트리 ID) - voterId: {}, 투표한 엔트리 수: {}", 
+                     voterId, votedEntryIds.size());
+            
+            return votedEntryIds;
+            
+        } catch (Exception e) {
+            log.error("사용자 전국 랭킹 투표 히스토리 조회 실패 (엔트리 ID) - voterId: {}", voterId, e);
             throw new BusinessException("전국 랭킹 투표 히스토리를 조회하는데 실패했습니다.");
         }
     }
