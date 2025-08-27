@@ -42,7 +42,7 @@ public class RankingEntry extends BaseEntity {
     private Long userId;
 
     @Column(name = "mascot_snapshot_id")
-    private Long mascotSnapshotId = 0L; // 기본값 0으로 설정
+    private Long mascotSnapshotId; // null 가능
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;

@@ -52,8 +52,8 @@ public class RankingEntryController {
             // 이미지 업로드 및 URL 생성
             String imageUrl = rankingEntryService.uploadMascotImage(mascotImage);
             
-            // CreateEntryRequest 생성 (mascotSnapshotId는 0L로 설정, 이미지 업로드 방식이므로)
-            CreateEntryRequest request = new CreateEntryRequest(0L, title, description, imageUrl, rankingType);
+            // CreateEntryRequest 생성 (mascotSnapshotId는 null로 설정, 이미지 업로드 방식이므로)
+            CreateEntryRequest request = new CreateEntryRequest(null, title, description, imageUrl, rankingType);
             
             EntryResponse response = rankingEntryService.createEntry(userId, request);
             

@@ -28,7 +28,7 @@ public record CreateEntryRequest(
      * 컴팩트 생성자로 입력 데이터 검증
      */
     public CreateEntryRequest {
-        // mascotSnapshotId는 0 이상이어야 함 (0은 이미지 업로드 방식)
+        // mascotSnapshotId는 null이거나 0 이상이어야 함
         if (mascotSnapshotId != null && mascotSnapshotId < 0) {
             throw new IllegalArgumentException("마스코트 스냅샷 ID는 0 이상이어야 합니다");
         }
@@ -41,7 +41,11 @@ public record CreateEntryRequest(
             throw new IllegalArgumentException("참가 제목은 100자 이하여야 합니다");
         }
         
-        if (description != null && description.length() > 500) {
+        if (description == null || description.trim().isEmpty()) {
+            throw new IllegalArgumentException("참가 설명은 필수입니다");
+        }
+        
+        if (description.length() > 500) {
             throw new IllegalArgumentException("참가 설명은 500자 이하여야 합니다");
         }
     }

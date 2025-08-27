@@ -891,8 +891,11 @@ async function handleRankingSubmit(data: CreateEntryRequest) {
     // 현재 활성 탭에 따라 랭킹 타입 결정
     const rankingType = activeTab.value === 'national' ? 'NATIONAL' : 'CAMPUS';
     
+    // description이 필수이므로 빈 문자열 대신 기본값 설정
+    const description = data.description && data.description.trim() !== '' ? data.description : '랭킹 참가';
+    
     // 이미지와 함께 랭킹 등록
-    const newEntry = await createRankingEntryWithImage(data.title, data.description || '', blob, rankingType);
+    const newEntry = await createRankingEntryWithImage(data.title, description, blob, rankingType);
     
     console.log('새로 생성된 엔트리:', newEntry);
     console.log('엔트리의 이미지 URL:', newEntry.imageUrl);

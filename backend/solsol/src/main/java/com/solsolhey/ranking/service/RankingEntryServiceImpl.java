@@ -43,7 +43,7 @@ public class RankingEntryServiceImpl implements RankingEntryService {
             throw new BusinessException("사용자당 최대 3개까지만 참가할 수 있습니다.");
         }
 
-        // 마스코트 스냅샷 ID가 0이 아닌 경우에만 중복 체크
+        // 마스코트 스냅샷 ID가 있는 경우에만 중복 체크
         if (request.mascotSnapshotId() != null && request.mascotSnapshotId() > 0) {
             // 마스코트 스냅샷 중복 참가 체크
             if (isMascotSnapshotAlreadyParticipated(request.mascotSnapshotId())) {
