@@ -155,3 +155,8 @@ server:
       charset: ${SERVER_SERVLET_ENCODING_CHARSET:UTF-8}
       force: ${SERVER_SERVLET_ENCODING_FORCE:true}
       enabled: ${SERVER_SERVLET_ENCODING_ENABLED:true}
+
+# Media storage
+media:
+  upload-dir: ${MEDIA_UPLOAD_DIR:./uploads}
+  snapshot-max-entries: ${MEDIA_SNAPSHOT_MAX_ENTRIES:20}

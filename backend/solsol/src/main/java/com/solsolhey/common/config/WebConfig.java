@@ -6,8 +6,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 // import org.springframework.boot.web.servlet.FilterRegistrationBean;  // 임시 주석 처리
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 
 /**
  * 웹 관련 설정
@@ -31,7 +33,7 @@ public class WebConfig implements WebMvcConfigurer {
     /**
      * Rate Limiting 필터 등록 (임시 비활성화 - 디버깅용)
      * Spring Security 필터보다 먼저 실행되도록 높은 우선순위 설정
-     */
+    */
     // @Bean  // 임시로 주석 처리 - Rate Limiting으로 인한 서버 시작 문제 해결
     /*
     public FilterRegistrationBean<RateLimitingFilter> rateLimitingFilterRegistration() {
@@ -43,4 +45,16 @@ public class WebConfig implements WebMvcConfigurer {
         return registration;
     }
     */
+
+    @Autowired
+    private MediaStorageProperties mediaStorageProperties;
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String uploadDir = mediaStorageProperties.getUploadDir();
+        if (!uploadDir.endsWith("/")) uploadDir += "/";
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:" + uploadDir)
+                .setCachePeriod(3600);
+    }
 }
