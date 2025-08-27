@@ -334,7 +334,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, onActivated, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { getMascot, getMascotCustomization, getShopItems, handleApiError, saveMascotCustomization, updateMascotBackground } from '../api/index';
 import DraggableItem from '../components/DraggableItem.vue';
@@ -434,11 +434,13 @@ const itemCategories = [
 
 // 필터링된 아이템 목록 (보유한 아이템만)
 const filteredItems = computed(() => {
-  const targetCategories =
-    selectedCategory.value === 'background'
-      ? ['base', 'sticker']
-      : [selectedCategory.value];
-  return items.value.filter(item => targetCategories.includes(item.type) && item.isOwned === true);
+  const targetType = selectedCategory.value;
+  return items.value.filter((item: any) => {
+    const typeMatch = item.type === targetType;
+    // 백엔드/프런트 혼용 필드 대비: owned 또는 isOwned 둘 다 허용
+    const ownedFlag = item.owned === true || item.isOwned === true;
+    return typeMatch && ownedFlag;
+  });
 });
 
 // 장착된 아이템들의 상태 목록 (다중 아이템 지원)
@@ -1255,6 +1257,13 @@ async function loadMascotData() {
 // 화면 크기 변경 감지를 위한 ResizeObserver
 let resizeObserver: ResizeObserver | null = null;
 let mascotResizeObserver: ResizeObserver | null = null;
+
+// keep-alive로 복귀했을 때 보유 아이템 최신화
+onActivated(async () => {
+  try {
+    await loadUserItems();
+  } catch {}
+});
 
 // 컴포넌트 마운트
 onMounted(async () => {
