@@ -22,10 +22,10 @@
       <div v-if="user" class="p-4 border-b border-gray-200">
         <div class="flex items-center space-x-3">
           <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center">
-            <span class="text-white font-bold text-lg">{{ getInitial(user.nickname || user.username) }}</span>
+            <span class="text-white font-bold text-lg">{{ getInitial(user.nickname) }}</span>
           </div>
           <div>
-            <p class="font-semibold text-gray-800">{{ user.nickname || user.username }}</p>
+            <p class="font-semibold text-gray-800">{{ user.nickname }}</p>
             <p class="text-sm text-gray-500">{{ user.email || '사용자' }}</p>
           </div>
         </div>
@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { logout, auth, handleApiError } from '../api/index';
 
@@ -121,8 +121,11 @@ const router = useRouter();
 const isOpen = ref(false);
 const isLoggingOut = ref(false);
 
-// 사용자 정보
-const user = computed(() => auth.getUser());
+// 사용자 정보 (비동기 로딩)
+const user = ref<any | null>(null);
+onMounted(async () => {
+  user.value = await auth.fetchUser();
+});
 
 // 사용자 이름의 첫 글자 추출
 function getInitial(name: string): string {
