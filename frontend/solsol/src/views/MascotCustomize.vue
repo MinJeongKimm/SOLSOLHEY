@@ -433,14 +433,10 @@ const itemCategories = [
 // 버튼 패널 제거: 드래그/핀치/회전 제스처만 제공
 
 // 필터링된 아이템 목록 (보유한 아이템만)
+// ShopController.getItemsWithOwnership → ItemResponse(category, owned) 기준으로 필터링
 const filteredItems = computed(() => {
-  const targetType = selectedCategory.value;
-  return items.value.filter((item: any) => {
-    const typeMatch = item.type === targetType;
-    // 백엔드/프런트 혼용 필드 대비: owned 또는 isOwned 둘 다 허용
-    const ownedFlag = item.owned === true || item.isOwned === true;
-    return typeMatch && ownedFlag;
-  });
+  const targetCategory = selectedCategory.value; // 'head' | 'clothing' | 'accessory' | 'background'
+  return items.value.filter((item: any) => item.category === targetCategory && item.owned === true);
 });
 
 // 장착된 아이템들의 상태 목록 (다중 아이템 지원)
