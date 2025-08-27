@@ -1,6 +1,19 @@
 package com.solsolhey.ranking.controller;
 
-import com.solsolhey.common.exception.BusinessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.solsolhey.common.response.ApiResponse;
 import com.solsolhey.ranking.dto.request.CampusRankingRequest;
 import com.solsolhey.ranking.dto.request.NationalRankingRequest;
@@ -8,22 +21,13 @@ import com.solsolhey.ranking.dto.request.VoteRequest;
 import com.solsolhey.ranking.dto.response.RankingResponse;
 import com.solsolhey.ranking.dto.response.VoteResponse;
 import com.solsolhey.ranking.service.RankingService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 랭킹 API 컨트롤러 (마스코트 기반)
@@ -167,7 +171,7 @@ public class RankingController {
      * 전국 랭킹 투표
      */
     @PostMapping("/national/{mascotId}/vote")
-    @PreAuthorize("hasRole('MASTER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "전국 랭킹 투표", description = "전국 마스코트에 투표합니다")
     public ResponseEntity<ApiResponse<VoteResponse>> voteForNational(
             @Parameter(description = "투표 대상 마스코트 ID") @PathVariable Long mascotId,
