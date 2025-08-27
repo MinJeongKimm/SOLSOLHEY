@@ -185,6 +185,28 @@ public class MascotController {
             return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "마스코트 조회에 실패했습니다.");
         }
     }
+
+    /**
+     * 최근 스냅샷 목록 조회 (최대 20개)
+     */
+    @GetMapping("/snapshots")
+    public ResponseEntity<Map<String, Object>> getSnapshots(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        try {
+            Long userId = userDetails.getUserId();
+            log.info("마스코트 스냅샷 조회 API 호출 - 사용자 ID: {}", userId);
+
+            var snapshots = mascotService.getSnapshotHistory(userId);
+            Map<String, Object> result = new HashMap<>();
+            result.put("result", "SUCCESS");
+            result.put("message", "스냅샷 조회가 완료되었습니다.");
+            result.put("data", snapshots);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("스냅샷 조회 중 오류 발생", e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "스냅샷 조회에 실패했습니다.");
+        }
+    }
     
     /**
      * 마스코트 업데이트 (이름 변경, 경험치 증가)

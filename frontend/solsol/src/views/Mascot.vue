@@ -334,6 +334,8 @@ const shareImageData = ref({
   message: ''
 });
 
+// (스냅샷 모달 제거)
+
 // 공유 가능 여부 계산
 const canShare = computed(() => {
   if (shareType.value === 'link') {

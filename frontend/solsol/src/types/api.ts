@@ -111,6 +111,7 @@ export interface Mascot {
   backgroundPattern?: string; // 'dots' | 'stripes' | 'none'
   createdAt?: string;
   updatedAt?: string;
+  snapshotImage?: string; // 최근 저장된 스냅샷(Data URL 또는 URL)
 }
 
 // 배경 커스터마이징 요청

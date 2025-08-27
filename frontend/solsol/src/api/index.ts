@@ -238,6 +238,8 @@ export interface MascotCustomization {
     scale: number;
     rotation: number;
   }>;
+  // 선택: 저장 시 스냅샷(Data URL) 포함
+  snapshotImageDataUrl?: string;
 }
 
 export async function getMascotCustomization(): Promise<MascotCustomization | null> {
@@ -259,6 +261,7 @@ export async function saveMascotCustomization(payload: MascotCustomization): Pro
       scale: Math.round(e.scale * 1000) / 1000,
       rotation: Math.round((e.rotation % 360 + 360) % 360),
     })),
+    snapshotImageDataUrl: payload.snapshotImageDataUrl,
   };
 
   const res = await apiRequest<any>('/mascot/customization', {
@@ -313,6 +316,7 @@ export const mascot = {
       equippedItem: d.equippedItem ?? null,
       createdAt: d.createdAt,
       updatedAt: d.updatedAt,
+      snapshotImage: d.snapshotImage,
     };
   },
 

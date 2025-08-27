@@ -47,6 +47,12 @@ public class Mascot {
     // 마스코트 커스터마이징 레이아웃(아이템 위치/스케일/회전 등)을 JSON 문자열로 저장
     @Column(name = "equipped_layout", columnDefinition = "TEXT")
     private String equippedLayout;
+
+    // 최신 꾸미기 스냅샷 이미지(Data URL 또는 URL)
+    // 단순화를 위해 우선 Data URL(CLOB)로 저장. 운영에서는 외부 스토리지 URL 권장.
+    @jakarta.persistence.Lob
+    @Column(name = "snapshot_image")
+    private String snapshotImage;
     
     @Column(name = "background_id", length = 50)
     @Builder.Default
@@ -94,6 +100,11 @@ public class Mascot {
     // 커스터마이징 레이아웃 저장
     public void updateEquippedLayout(String layoutJson) {
         this.equippedLayout = layoutJson;
+    }
+
+    // 스냅샷 이미지 저장/업데이트
+    public void updateSnapshotImage(String snapshotImage) {
+        this.snapshotImage = snapshotImage;
     }
     
     // 이름 변경

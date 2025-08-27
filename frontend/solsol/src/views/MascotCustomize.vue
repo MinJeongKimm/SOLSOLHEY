@@ -356,7 +356,7 @@ const router = useRouter();
 
 // 반응형 데이터
 const currentMascot = ref<Mascot | null>(null);
-const items = ref<Item[]>([]);
+const items = ref<any[]>([]);
 const userCoins = ref(15000);
 const selectedCategory = ref<'head' | 'clothing' | 'accessory' | 'background'>('head');
 
@@ -429,7 +429,7 @@ const filteredItems = computed(() => {
     selectedCategory.value === 'background'
       ? ['base', 'sticker']
       : [selectedCategory.value];
-  return items.value.filter(item => targetCategories.includes(item.category) && item.owned === true);
+  return items.value.filter(item => targetCategories.includes(item.type) && item.isOwned === true);
 });
 
 // 장착된 아이템들의 상태 목록 (다중 아이템 지원)
@@ -509,6 +509,63 @@ async function loadUserItems() {
   } catch (error) {
     console.error('아이템 로드 실패:', error);
     showToastMessage('아이템 로드에 실패했습니다.');
+  }
+}
+
+// 스냅샷 합성: 배경 → 마스코트 → 아이템(위치/스케일/회전)
+async function composeSnapshotDataUrl(): Promise<string> {
+  const DPR = Math.max(1, Math.min(3, Math.floor(window.devicePixelRatio || 1)));
+  const canvasSize = 800;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvasSize * DPR;
+  canvas.height = canvasSize * DPR;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
+  ctx.scale(DPR, DPR);
+  ctx.imageSmoothingEnabled = true;
+
+  const loadImage = (src: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+
+  // 배경
+  const bgImg = await loadImage('/backgrounds/base/bg_blue.png');
+  ctx.drawImage(bgImg, 0, 0, canvasSize, canvasSize);
+
+  // 마스코트
+  const mascotUrl = currentMascot.value ? getMascotImageUrl(currentMascot.value.type) : '/mascot/soll.png';
+  const mascotImg = await loadImage(mascotUrl);
+  const mascotBoxSize = Math.floor(canvasSize * 0.5); // 중앙 50%
+  const mascotX = (canvasSize - mascotBoxSize) / 2;
+  const mascotY = (canvasSize - mascotBoxSize) / 2;
+  ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
+
+  // 아이템들
+  const UI_MASCOT_PX = 128;
+  const baseItemSize = (120 /* BASE_ITEM_SIZE */ / UI_MASCOT_PX) * mascotBoxSize;
+  for (const e of equippedItemsList.value) {
+    try {
+      const img = await loadImage(e.item.imageUrl || '');
+      const centerX = mascotX + (e.relativePosition.x * mascotBoxSize);
+      const centerY = mascotY + (e.relativePosition.y * mascotBoxSize);
+      const size = Math.max(12, baseItemSize * (e.scale ?? 1));
+      const rot = (((e.rotation ?? 0) % 360) + 360) % 360;
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate((rot * Math.PI) / 180);
+      ctx.drawImage(img, -size / 2, -size / 2, size, size);
+      ctx.restore();
+    } catch {}
+  }
+
+  // Data URL 반환 (용량을 위해 기본 PNG)
+  try {
+    return canvas.toDataURL('image/png');
+  } catch {
+    return '';
   }
 }
 
@@ -971,12 +1028,14 @@ async function saveItemPositions() {
 
     console.log('커스터마이징 저장 요청:', payload);
 
-    try {
-      isSaving.value = true;
-      await saveMascotCustomization(payload);
-      // 배경도 함께 저장하여 일관된 저장 UX 제공
-      await updateMascotBackground({ backgroundColor: bgColor.value, patternType: bgPattern.value });
-      showToastMessage('커스터마이징이 서버에 저장되었습니다! 🎯✨');
+          try {
+        isSaving.value = true;
+        // 저장 직전 스냅샷 생성(Data URL)
+        const snapshot = await composeSnapshotDataUrl();
+        await saveMascotCustomization({ ...payload, snapshotImageDataUrl: snapshot });
+        // 배경도 함께 저장하여 일관된 저장 UX 제공
+        await updateMascotBackground({ backgroundColor: bgColor.value, patternType: bgPattern.value });
+        showToastMessage('마스코트 커스터마이징이 서버에 저장되었습니다! 🎯✨');
 
       // 저장 직후 한 프레임 뒤에 캔버스 바운드를 갱신하여 좌표 캐시를 안정화
       await nextTick();

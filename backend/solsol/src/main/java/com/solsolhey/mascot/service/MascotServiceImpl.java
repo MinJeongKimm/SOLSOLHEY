@@ -45,6 +45,9 @@ public class MascotServiceImpl implements MascotService {
     private final ItemRepository itemRepository;
     private final UserItemRepository userItemRepository;
     private final ObjectMapper objectMapper;
+    private final com.solsolhey.mascot.repository.MascotSnapshotRepository mascotSnapshotRepository;
+    private final com.solsolhey.util.MediaStorageService mediaStorageService;
+    private final com.solsolhey.solsol.config.MediaStorageProperties mediaStorageProperties;
     
     @Override
     @Transactional
@@ -349,10 +352,46 @@ public class MascotServiceImpl implements MascotService {
         try {
             String json = objectMapper.writeValueAsString(dto);
             mascot.updateEquippedLayout(json);
+            // 스냅샷 이미지 저장: Data URL -> 파일시스템 -> URL 저장 (선택 입력)
+            if (dto.getSnapshotImageDataUrl() != null && !dto.getSnapshotImageDataUrl().isBlank()) {
+                String dataUrl = dto.getSnapshotImageDataUrl();
+                try {
+                    var saved = mediaStorageService.saveImageDataUrl(dataUrl, "snapshots");
+                    String url = saved.urlPath; // e.g., /uploads/snapshots/...
+                    mascot.updateSnapshotImage(url);
+                    // 이력 테이블에 저장 (최대 20개 유지)
+                    mascotSnapshotRepository.save(
+                        com.solsolhey.mascot.domain.MascotSnapshot.builder()
+                            .userId(userId)
+                            .mascotId(mascot.getId())
+                            .imageUrl(url)
+                            .build()
+                    );
+                    long cnt = mascotSnapshotRepository.countByUserId(userId);
+                    int maxEntries = Math.max(1, mediaStorageProperties.getSnapshotMaxEntries());
+                    if (cnt > maxEntries) {
+                        var olds = mascotSnapshotRepository.findByUserIdOrderByCreatedAtAsc(userId);
+                        int toDelete = (int)(cnt - maxEntries);
+                        for (int i = 0; i < toDelete && i < olds.size(); i++) {
+                            var s = olds.get(i);
+                            try { mediaStorageService.deleteUrlPath(s.getImageUrl()); } catch (Exception ignore) {}
+                            mascotSnapshotRepository.deleteById(s.getId());
+                        }
+                    }
+                } catch (Exception ex) {
+                    log.warn("스냅샷 저장 실패: userId={}", userId, ex);
+                }
+            }
             mascotRepository.save(mascot);
             return dto;
         } catch (Exception e) {
             throw new RuntimeException("커스터마이징 저장 실패", e);
         }
+    }
+
+    @Override
+    public java.util.List<com.solsolhey.mascot.dto.MascotSnapshotResponse> getSnapshotHistory(Long userId) {
+        var list = mascotSnapshotRepository.findTop20ByUserIdOrderByCreatedAtDesc(userId);
+        return list.stream().map(com.solsolhey.mascot.dto.MascotSnapshotResponse::from).toList();
     }
 }

@@ -167,3 +167,6 @@ logs/
 *.log
 # Environment variables
 backend/.env
+
+# Backend uploads (generated media; do not commit)
+backend/solsol/uploads/
