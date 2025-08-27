@@ -25,6 +25,7 @@ import com.solsolhey.mascot.dto.ApplyBackgroundResponse;
 import com.solsolhey.mascot.dto.AvailableItemResponse;
 import com.solsolhey.mascot.dto.BackgroundResponse;
 import com.solsolhey.mascot.dto.MascotCreateRequest;
+import com.solsolhey.mascot.dto.MascotBackgroundUpdateRequest;
 import com.solsolhey.mascot.dto.MascotEquipRequest;
 import com.solsolhey.mascot.dto.MascotCustomizationDto;
 import com.solsolhey.mascot.dto.MascotResponse;
@@ -96,6 +97,37 @@ public class MascotController {
         } catch (Exception e) {
             log.error("마스코트 커스터마이징 조회 중 오류 발생", e);
             return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "커스터마이징 조회에 실패했습니다.");
+        }
+    }
+
+    /**
+     * 배경 커스터마이징(색상/패턴) 저장
+     */
+    @PutMapping("/background")
+    public ResponseEntity<Map<String, Object>> updateBackgroundCustomization(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Valid @RequestBody MascotBackgroundUpdateRequest request) {
+        try {
+            Long userId = userDetails.getUserId();
+            log.info("배경 커스터마이징 저장 - 사용자 ID: {}, color: {}, pattern: {}",
+                    userId, request.getBackgroundColor(), request.getPatternType());
+
+            MascotResponse updated = mascotService.updateBackgroundCustomization(
+                    userId,
+                    request.getBackgroundColor(),
+                    request.getPatternType() == null ? "none" : request.getPatternType()
+            );
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("result", "SUCCESS");
+            result.put("message", "배경 설정이 저장되었습니다.");
+            result.put("data", updated);
+            return ResponseEntity.ok(result);
+        } catch (MascotNotFoundException e) {
+            return createErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (Exception e) {
+            log.error("배경 커스터마이징 저장 실패", e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "배경 설정 저장에 실패했습니다.");
         }
     }
 

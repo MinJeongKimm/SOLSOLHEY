@@ -14,6 +14,7 @@ import com.solsolhey.mascot.dto.ApplyBackgroundResponse;
 import com.solsolhey.mascot.dto.AvailableItemResponse;
 import com.solsolhey.mascot.dto.BackgroundResponse;
 import com.solsolhey.mascot.dto.MascotCreateRequest;
+import com.solsolhey.mascot.dto.MascotBackgroundUpdateRequest;
 import com.solsolhey.mascot.dto.MascotEquipRequest;
 import com.solsolhey.mascot.dto.MascotResponse;
 import com.solsolhey.mascot.dto.MascotUpdateRequest;
@@ -245,6 +246,16 @@ public class MascotServiceImpl implements MascotService {
                 updatedMascot.getBackgroundId(), 
                 updatedMascot.getUpdatedAt()
         );
+    }
+
+    @Override
+    @Transactional
+    public MascotResponse updateBackgroundCustomization(Long userId, String backgroundColor, String patternType) {
+        Mascot mascot = mascotRepository.findByUserId(userId)
+                .orElseThrow(() -> new MascotNotFoundException(userId));
+        mascot.updateBackgroundCustomization(backgroundColor, patternType);
+        Mascot updated = mascotRepository.save(mascot);
+        return MascotResponse.from(updated);
     }
     
     @Override

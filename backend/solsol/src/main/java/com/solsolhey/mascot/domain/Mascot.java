@@ -51,6 +51,13 @@ public class Mascot {
     @Column(name = "background_id", length = 50)
     @Builder.Default
     private String backgroundId = "bg_room_basic"; // 기본 배경
+
+    // 배경 커스터마이징: 색상(hex) 및 패턴(dots/stripes/none)
+    @Column(name = "background_color", length = 7)
+    private String backgroundColor; // 예: #ffffff
+
+    @Column(name = "background_pattern", length = 20)
+    private String backgroundPattern; // dots | stripes | none
     
     @Column(name = "exp", nullable = false)
     @Builder.Default
@@ -102,5 +109,11 @@ public class Mascot {
     // 기본 배경으로 초기화
     public void resetToDefaultBackground() {
         this.backgroundId = "bg_room_basic";
+    }
+
+    // 배경 커스터마이징 업데이트
+    public void updateBackgroundCustomization(String color, String pattern) {
+        this.backgroundColor = color;
+        this.backgroundPattern = pattern;
     }
 }
