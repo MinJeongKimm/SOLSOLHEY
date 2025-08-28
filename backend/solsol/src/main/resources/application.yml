@@ -20,9 +20,9 @@ spring:
   application:
     name: solsol
   profiles:
-    active: local
+    active: ${SPRING_PROFILES_ACTIVE:local}
   config:
-    import: 
+    import:
       - "optional:file:../.env[.properties]"
       - "optional:file:../.env"
     
