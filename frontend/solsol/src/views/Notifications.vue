@@ -13,20 +13,19 @@
       </div>
 
       <!-- 요약 -->
-      <div class="flex items-center justify-between mb-3 text-sm text-gray-600">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center mb-3 text-sm text-gray-600">
         <div>미읽음: <span class="font-semibold">{{ unread }}</span></div>
-        <div class="flex items-center space-x-2">
+        <div class="flex flex-wrap sm:justify-end gap-2">
           <button 
-            class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs hover:bg-blue-200 disabled:opacity-50"
+            class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-blue-100 text-blue-700 text-xs sm:text-sm hover:bg-blue-200 disabled:opacity-50"
             @click="markAllRead"
             :disabled="processingAll || loading"
           >모두 읽음</button>
           <button 
-            class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs hover:bg-gray-200 disabled:opacity-50"
+            class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs sm:text-sm hover:bg-gray-200 disabled:opacity-50"
             @click="clearInbox"
             :disabled="processingAll || loading"
           >알림함 비우기</button>
-          <span class="px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-xs">좋아요만 표시</span>
         </div>
       </div>
 
@@ -44,7 +43,7 @@
             <button
               v-if="!it.isRead"
               @click="markRead(it)"
-              class="px-3 py-1 rounded-lg bg-blue-500 text-white text-xs hover:bg-blue-600"
+              class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-blue-500 text-white text-xs sm:text-sm hover:bg-blue-600"
               :disabled="readingId === it.interactionId"
             >
               {{ readingId === it.interactionId ? '처리 중' : '읽음' }}
@@ -57,13 +56,13 @@
       <!-- 페이징 -->
       <div class="flex items-center justify-between mt-4 text-sm">
         <button 
-          class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+          class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
           :disabled="page === 0 || loading"
           @click="prevPage"
         >이전</button>
         <div class="text-gray-600">{{ page + 1 }} / {{ totalPages }}</div>
         <button 
-          class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+          class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
           :disabled="page + 1 >= totalPages || loading"
           @click="nextPage"
         >다음</button>
