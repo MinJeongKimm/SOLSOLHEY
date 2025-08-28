@@ -116,12 +116,17 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     return await doFetch();
   } catch (e) {
     if (e instanceof HttpError && e.status === 401) {
-      try {
-        await refreshToken();
-        return await doFetch();
-      } catch (e2) {
-        auth.clearAuth();
-        throw e2;
+      // 로그인 시도에 대한 401은 토큰 갱신을 시도하지 않고, 서버 메시지를 그대로 노출한다.
+      const isLoginEndpoint = typeof path === 'string' && path.includes('/auth/login');
+      if (!isLoginEndpoint) {
+        try {
+          await refreshToken();
+          return await doFetch();
+        } catch {
+          // 갱신 실패 시 원래의 401 오류를 그대로 던져 사용자에게 명확한 메시지를 전달한다.
+          auth.clearAuth();
+          throw e;
+        }
       }
     }
     throw e;
