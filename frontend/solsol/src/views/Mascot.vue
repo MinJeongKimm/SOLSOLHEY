@@ -491,7 +491,7 @@ async function composeShareImageBlob(): Promise<Blob> {
   // 마스코트
   const mascotUrl = currentMascot.value ? getMascotImageUrl(currentMascot.value.type) : '/mascot/soll.png';
   const mascotImg = await loadImage(mascotUrl);
-  const mascotBoxSize = Math.floor(canvasSize * 0.5); // 중앙 50%
+  const mascotBoxSize = Math.floor(canvasSize * 0.6); // 메인화면과 동일한 60% 비율
   const mascotX = (canvasSize - mascotBoxSize) / 2;
   const mascotY = (canvasSize - mascotBoxSize) / 2;
   ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
