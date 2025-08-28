@@ -49,12 +49,11 @@ import com.solsolhey.auth.jwt.JwtTokenProvider;
 @Slf4j
 public class SecurityConfig {
 
-    private final CustomUserDetailsService userDetailsService;
     private final RateLimitingFilter rateLimitingFilter;
     private final Environment environment;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, org.springframework.beans.factory.ObjectProvider<JwtAuthenticationFilter> jwtFilterProvider) throws Exception {
         log.debug("=== SecurityConfig building filter chain ===");
 
         // Optional SPA-friendly handler; prevents relying on request attribute name.
@@ -86,13 +85,19 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/attendance/**").authenticated()
                 .anyRequest().permitAll()
             )
-            // Run your custom rate limit filter early (kept as before)
-            .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
-            // JWT before UsernamePasswordAuthenticationFilter
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            // ★ Ensure XSRF-TOKEN cookie is always issued/maintained
-            .addFilterAfter(new CsrfCookieSeedFilter(), CsrfFilter.class)
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
+
+        // Run your custom rate limit filter early (kept as before)
+        http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // JWT before UsernamePasswordAuthenticationFilter (only if present)
+        JwtAuthenticationFilter jwtFilter = jwtFilterProvider.getIfAvailable();
+        if (jwtFilter != null) {
+            http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        }
+
+        // ★ Ensure XSRF-TOKEN cookie is always issued/maintained
+        http.addFilterAfter(new CsrfCookieSeedFilter(), CsrfFilter.class);
 
         return http.build();
     }
@@ -156,6 +161,7 @@ public class SecurityConfig {
      * JWT 인증 필터 빈 등록
      */
     @Bean
+    @org.springframework.context.annotation.Profile("!local")
     public JwtAuthenticationFilter jwtAuthenticationFilter(
             JwtTokenProvider jwtTokenProvider,
             CustomUserDetailsService userDetailsService,
@@ -168,6 +174,7 @@ public class SecurityConfig {
      * JwtAuthenticationFilter 자동 등록 비활성화
      */
     @Bean
+    @org.springframework.context.annotation.Profile("!local")
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(JwtAuthenticationFilter filter) {
         FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(filter);
