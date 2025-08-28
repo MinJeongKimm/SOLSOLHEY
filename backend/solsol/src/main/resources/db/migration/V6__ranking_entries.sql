@@ -1,5 +1,5 @@
 -- 랭킹 참가 기능을 위한 테이블 생성
-CREATE TABLE ranking_entries (
+CREATE TABLE IF NOT EXISTS ranking_entries (
     entry_id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL,
     mascot_id BIGINT NOT NULL, -- 마스코트 ID 추가
@@ -13,14 +13,16 @@ CREATE TABLE ranking_entries (
 );
 
 -- 인덱스 생성
-CREATE INDEX idx_user_id ON ranking_entries(user_id);
-CREATE INDEX idx_mascot_id ON ranking_entries(mascot_id);
-CREATE INDEX idx_mascot_snapshot_id ON ranking_entries(mascot_snapshot_id);
-CREATE INDEX idx_created_at ON ranking_entries(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_id ON ranking_entries(user_id);
+CREATE INDEX IF NOT EXISTS idx_mascot_id ON ranking_entries(mascot_id);
+CREATE INDEX IF NOT EXISTS idx_mascot_snapshot_id ON ranking_entries(mascot_snapshot_id);
+-- H2 (PG mode) may not support index sort order; drop DESC for cross-DB compatibility
+CREATE INDEX IF NOT EXISTS idx_created_at ON ranking_entries(created_at);
 
 -- 새로운 인덱스 (ranking_type 포함)
-CREATE INDEX idx_ranking_entries_user_type ON ranking_entries(user_id, ranking_type);
-CREATE INDEX idx_ranking_entries_type_created ON ranking_entries(ranking_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ranking_entries_user_type ON ranking_entries(user_id, ranking_type);
+-- Remove DESC for compatibility; most engines use the index both directions
+CREATE INDEX IF NOT EXISTS idx_ranking_entries_type_created ON ranking_entries(ranking_type, created_at);
 
 -- 제약사항 추가
 -- 사용자당 최대 3개 참가 제한을 위한 체크 제약 (애플리케이션에서도 검증)
@@ -53,7 +55,7 @@ COMMENT ON COLUMN ranking_entries.updated_at IS '수정일시';
 
 -- ===== 투표 시스템 생성 =====
 -- Vote 테이블 생성
-CREATE TABLE votes (
+CREATE TABLE IF NOT EXISTS votes (
     vote_id BIGSERIAL PRIMARY KEY,
     entry_id BIGINT NOT NULL,
     mascot_id BIGINT NOT NULL,
@@ -67,9 +69,9 @@ CREATE TABLE votes (
 );
 
 -- 투표 시스템 인덱스 생성
-CREATE INDEX idx_voter_entry ON votes (voter_id, entry_id);
-CREATE INDEX idx_entry_id ON votes (entry_id);
-CREATE INDEX idx_idempotency_key ON votes (idempotency_key);
+CREATE INDEX IF NOT EXISTS idx_voter_entry ON votes (voter_id, entry_id);
+CREATE INDEX IF NOT EXISTS idx_entry_id ON votes (entry_id);
+CREATE INDEX IF NOT EXISTS idx_idempotency_key ON votes (idempotency_key);
 
 -- 투표 시스템 댓글 추가
 COMMENT ON TABLE votes IS '투표 기록 테이블';
@@ -83,4 +85,3 @@ COMMENT ON COLUMN votes.idempotency_key IS '멱등키 (중복 투표 방지)';
 COMMENT ON COLUMN votes.campus_id IS '캠퍼스 ID';
 COMMENT ON COLUMN votes.created_at IS '투표 일시';
 COMMENT ON COLUMN votes.updated_at IS '수정 일시';
-

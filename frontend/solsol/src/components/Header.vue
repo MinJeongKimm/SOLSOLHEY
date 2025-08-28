@@ -12,7 +12,7 @@
           </router-link>
         </div>
 
-        <!-- 우측 메뉴 버튼 -->
+        <!-- 우측 메뉴 버튼 (기존 슬라이드 메뉴) -->
         <div class="flex items-center">
           <button
             @click="toggleSlideMenu"
@@ -29,14 +29,12 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+function toggleLeftSidebar() {
+  // no-op: left sidebar removed
+}
 
-const router = useRouter();
-
-// 슬라이드 메뉴 토글 이벤트 발생
+// 기존 슬라이드 메뉴 토글 이벤트 발생
 function toggleSlideMenu() {
-  // 부모 컴포넌트에 이벤트 전달
-  // 실제로는 emit을 사용하거나 전역 상태 관리 사용
   window.dispatchEvent(new CustomEvent('toggleSlideMenu'));
 }
 </script>
@@ -44,7 +42,4 @@ function toggleSlideMenu() {
 <style scoped>
 /* 추가 스타일이 필요한 경우 여기에 작성 */
 </style>
-
-
-
 

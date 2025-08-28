@@ -108,6 +108,7 @@
             :src="gifticon.imageUrl" 
             :alt="gifticon.name"
             class="w-full h-full object-contain"
+            :data-sku="gifticon.sku"
             @error="handleImageError"
           />
         </div>
@@ -151,8 +152,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { getGifticons, createOrder } from '../../api/index';
+import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { createOrder, getGifticons } from '../../api/index';
 import type { Gifticon, ShopItem } from '../../types/api';
 import PurchaseDialog from './PurchaseDialog.vue';
 
@@ -183,6 +185,7 @@ const sortOrder = ref<'default' | 'price-low' | 'price-high'>('default');
 // 구매 다이얼로그 관련
 const showPurchaseDialog = ref(false);
 const selectedGifticon = ref<Gifticon | null>(null);
+const router = useRouter();
 
 // 카테고리별 기프티콘 필터링
 const filteredGifticons = computed(() => {
@@ -262,12 +265,13 @@ async function handlePurchase(item: Gifticon | ShopItem, quantity: number) {
     };
     
     await createOrder(orderData);
-    
     // 구매 성공 후 처리
     closePurchaseDialog();
-    
     // 포인트 업데이트 (부모 컴포넌트에서 처리)
     emit('points-updated');
+    // 보관함 이동 팝업
+    const go = window.confirm('구매가 완료되었습니다. 보관함으로 이동하시겠습니까?');
+    if (go) router.push('/locker');
     
   } catch (err: any) {
     console.error('기프티콘 구매 실패:', err);
@@ -278,7 +282,26 @@ async function handlePurchase(item: Gifticon | ShopItem, quantity: number) {
 // 이미지 로드 에러 처리
 function handleImageError(event: Event) {
   const img = event.target as HTMLImageElement;
-  img.src = '/items/gifticon_default.png'; // 기본 이미지
+  const sku = (img.dataset.sku || '').toUpperCase();
+  // SKU별 로컬 자산으로 대체 (확실한 매핑)
+  switch (sku) {
+    case 'STARBUCKS_AMERICANO':
+      img.src = '/gifticons/originals/gifticon_iced_americano.png';
+      break;
+    case 'STARBUCKS_LATTE':
+      img.src = '/gifticons/originals/gifticon_iced_vanilla_latte.png';
+      break;
+    case 'BASKIN_ICE_CREAM':
+      img.src = '/gifticons/originals/gifticon_baskin_icecream.png';
+      break;
+    case 'GONGCHA_BROWN_SUGAR':
+      // 대체 아이콘(공통 커피 아이콘)
+      img.src = '/gifticons/originals/gifticon_gongcha_brownsugar_milktea.png';
+      break;
+    default:
+      // 최종 기본 썸네일
+      img.src = '/gifticons/thumbnails/gift_coffee.png';
+  }
 }
 
 // 기프티콘 목록 로드

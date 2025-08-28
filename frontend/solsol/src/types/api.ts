@@ -292,8 +292,12 @@ export interface ShopItem {
   price: number;
   type: string;
   imageUrl: string;
+  // 백엔드 DTO(ItemResponse)에 존재하는 필드이나 타입에서 누락되어 있어 추가
+  category?: string; // 'head' | 'clothing' | 'accessory' | 'background'
   isActive: boolean;
   owned?: boolean;
+  // 레벨 잠금 기능을 위한 필드 (백엔드 미제공 시 FE에서 임시 계산하여 채움)
+  requiredLevel?: number;
 }
 
 export interface Gifticon {
@@ -303,6 +307,21 @@ export interface Gifticon {
   price: number;
   description: string;
   sku: string;
+}
+
+// 보관함 기프티콘 목록 타입
+export interface PurchasedGifticon {
+  id: number;
+  name: string;
+  imageUrl: string;
+  status: 'ACTIVE' | 'REDEEMED' | 'EXPIRED';
+  expiresAt?: string;
+}
+
+// 보관함 기프티콘 상세 타입
+export interface PurchasedGifticonDetail extends PurchasedGifticon {
+  sku: string;
+  barcode: string;
 }
 
 export interface OrderRequest {
@@ -354,6 +373,4 @@ export interface RankingResponse {
     campusName: string;
   };
 }
-
-
 
