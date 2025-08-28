@@ -317,7 +317,7 @@ export async function composeMascotImage(
     const mascotUrl = getMascotImageUrl(mascot?.type);
     console.log('마스코트 이미지 URL:', mascotUrl);
     const mascotImg = await loadImage(mascotUrl);
-    const mascotBoxSize = Math.floor(canvasSize * 0.5); // 중앙 50%
+    const mascotBoxSize = Math.floor(canvasSize * 0.6); // 메인화면과 동일한 60% 비율
     const mascotX = (canvasSize - mascotBoxSize) / 2;
     const mascotY = (canvasSize - mascotBoxSize) / 2;
     ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
