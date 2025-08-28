@@ -15,6 +15,7 @@ import com.solsolhey.auth.dto.response.TokenResponseDto;
 import com.solsolhey.auth.jwt.JwtTokenProvider;
 import com.solsolhey.common.exception.AuthException;
 import com.solsolhey.common.exception.BusinessException;
+import org.springframework.http.HttpStatus;
 import com.solsolhey.common.response.ApiResponse;
 import com.solsolhey.solsol.common.util.UsernameGenerator;
 import com.solsolhey.user.entity.User;
@@ -48,11 +49,21 @@ public class AuthServiceImpl implements AuthService {
         // 중복 검사
         validateDuplicateUser(requestDto.getUserId());
 
+        // 닉네임 중복 검사
+        if (userRepository.existsByNickname(requestDto.getNickname())) {
+            throw new BusinessException("이미 사용중인 닉네임입니다.", HttpStatus.CONFLICT, "DUPLICATE_NICKNAME");
+        }
+
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
 
         // UsernameGenerator를 사용하여 username 생성
         String autoUsername = usernameGenerator.generateUsername(requestDto.getUserId());
+        int attempts = 0;
+        while (userRepository.existsByUsername(autoUsername) && attempts < 10) {
+            autoUsername = usernameGenerator.generateUsername(requestDto.getUserId());
+            attempts++;
+        }
 
         // 사용자 생성
         User user = User.builder()
