@@ -399,7 +399,7 @@ public class ShopServiceImpl implements ShopService {
                         .name("스타벅스 카페라떼")
                         .description("진한 에스프레소와 스팀밀크가 조화로운 부드러운 맛")
                         .price(5000)
-                        .imageUrl("https://image.istarbucks.co.kr/upload/store/skuimg/2021/04/[9200000000077]_20210415154521370.jpg")
+                        .imageUrl("/gifticons/originals/gifticon_iced_vanilla_latte.png")
                         .build(),
                 GifticonResponse.builder()
                         .sku("GONGCHA_BROWN_SUGAR")
