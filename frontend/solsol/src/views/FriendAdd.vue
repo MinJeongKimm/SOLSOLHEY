@@ -53,7 +53,6 @@
             <div>
               <h4 class="font-semibold text-gray-800">{{ user.nickname || '닉네임 없음' }}</h4>
               <p class="text-sm text-gray-600">{{ user.campus || '캠퍼스 정보 없음' }}</p>
-              <p class="text-xs text-gray-500">@{{ user.username }}</p>
             </div>
           </div>
           
@@ -64,7 +63,7 @@
             :disabled="isAdding"
             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
-            {{ isAdding ? '추가 중...' : '친구 추가' }}
+            {{ isAdding ? '추가 중' : '추가' }}
           </button>
           
           <!-- 이미 친구인 경우 -->
