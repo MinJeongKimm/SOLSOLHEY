@@ -100,7 +100,10 @@
         v-for="item in filteredItems" 
         :key="item.id"
         class="relative border-2 border-gray-200 rounded-xl p-4 transition-all cursor-pointer hover:border-gray-300 hover:shadow-md"
-        :class="item.owned ? 'opacity-60 cursor-not-allowed' : ''"
+        :class="[
+          item.owned ? 'opacity-60 cursor-not-allowed' : '',
+          isLocked(item) ? 'grayscale opacity-60' : ''
+        ]"
         @click="handleItemClick(item)"
       >
         <!-- 아이템 이미지 -->
@@ -128,12 +131,19 @@
             <span v-if="item.owned" class="text-xs font-medium px-3 py-1 rounded-full bg-gray-300 text-gray-700">
               보유중
             </span>
+            <span v-else-if="isLocked(item)" class="text-xs font-medium px-3 py-1 rounded-full bg-gray-300 text-gray-600" aria-disabled="true">
+              잠금됨
+            </span>
             <span v-else class="text-xs font-medium px-3 py-1 rounded-full bg-blue-500 text-white hover:bg-blue-600">
               구매하기
             </span>
           </div>
         </div>
 
+        <!-- 레벨 잠금 오버레이 -->
+        <div v-if="isLocked(item)" class="absolute inset-0 bg-white/60 flex items-center justify-center text-gray-700 font-semibold text-xs text-center px-3">
+          Lv.{{ getRequiredLevel(item) }} 이상 구매 가능
+        </div>
 
       </div>
     </div>
@@ -160,19 +170,24 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { getShopItems, createOrder } from '../../api/index';
+import { getShopItems, createOrder, getMascot } from '../../api/index';
 import type { ShopItem } from '../../types/api';
 import PurchaseDialog from './PurchaseDialog.vue';
 
 // Props
 interface Props {
   userPoints?: number;
+  // 상위에서 사용자 레벨을 전달할 수 있으면 사용, 없으면 내부에서 마스코트로부터 로드
+  userLevel?: number;
 }
 
 const props = defineProps<Props>();
 
 // userPoints의 기본값 설정
 const currentUserPoints = computed(() => props.userPoints ?? 0);
+// userLevel: prop 우선, 없으면 내부 로드한 레벨 사용
+const loadedUserLevel = ref<number | null>(null);
+const currentUserLevel = computed(() => props.userLevel ?? loadedUserLevel.value ?? 1);
 
 // Emits
 const emit = defineEmits<{
@@ -241,6 +256,11 @@ function isOwned(item: ShopItem): boolean {
 // 아이템 클릭 처리
 function handleItemClick(item: ShopItem) {
   if (item.owned) return; // 보유 아이템은 클릭/구매 불가
+  if (isLocked(item)) {
+    // 잠금 상태에서는 구매 다이얼로그 진입 차단
+    alert(`해당 아이템은 Lv.${getRequiredLevel(item)} 이상부터 구매할 수 있습니다.`);
+    return;
+  }
   selectedItem.value = item;
   showPurchaseDialog.value = true;
 }
@@ -290,7 +310,8 @@ async function loadItems() {
   
   try {
     const itemsData = await getShopItems();
-    items.value = itemsData;
+    // 임시 대응: 백엔드가 requiredLevel을 제공하지 않는 경우 FE에서 계산하여 채움
+    items.value = itemsData.map(it => ({ ...it, requiredLevel: getRequiredLevel(it) }));
   } catch (err: any) {
     console.error('아이템 목록 로드 실패:', err);
     error.value = '아이템 목록을 불러오는데 실패했습니다.';
@@ -299,8 +320,39 @@ async function loadItems() {
   }
 }
 
+// 레벨 잠금 계산 로직
+function getRequiredLevel(item: ShopItem): number {
+  // 1) 백엔드가 제공하면 그대로 사용
+  if (item.requiredLevel && item.requiredLevel > 0) return item.requiredLevel;
+  // 2) 임시 규칙: 카테고리/가격 기반
+  // 카테고리 우선 규칙
+  const cat = (item.category || '').toLowerCase();
+  if (cat === 'head' || cat === 'clothing') return 1;
+  if (cat === 'accessory') return 3;
+  if (cat === 'background') return 5;
+  // 가격 기반 보정(백업 규칙)
+  if (item.price >= 1000) return 8;
+  if (item.price >= 600) return 5;
+  if (item.price >= 300) return 3;
+  return 1;
+}
+
+function isLocked(item: ShopItem): boolean {
+  const req = getRequiredLevel(item);
+  return (currentUserLevel.value ?? 1) < req;
+}
+
 // 컴포넌트 마운트
 onMounted(async () => {
+  // 사용자 레벨 로드 (prop이 없을 때만)
+  if (props.userLevel == null) {
+    try {
+      const mascot = await getMascot();
+      loadedUserLevel.value = mascot?.level ?? 1;
+    } catch {
+      loadedUserLevel.value = 1;
+    }
+  }
   await loadItems();
 });
 </script>

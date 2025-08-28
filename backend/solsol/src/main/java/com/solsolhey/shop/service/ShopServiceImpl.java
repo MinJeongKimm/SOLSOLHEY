@@ -15,6 +15,7 @@ import com.solsolhey.shop.domain.Item;
 import com.solsolhey.shop.domain.Order;
 import com.solsolhey.shop.domain.UserGifticon;
 import com.solsolhey.shop.domain.UserItem;
+import com.solsolhey.mascot.repository.MascotRepository;
 import com.solsolhey.shop.dto.GifticonResponse;
 import com.solsolhey.shop.dto.ItemResponse;
 import com.solsolhey.shop.dto.OrderRequest;
@@ -41,6 +42,7 @@ public class ShopServiceImpl implements ShopService {
     private final UserGifticonRepository userGifticonRepository;
     private final PointService pointService;
     private final UserRepository userRepository;
+    private final MascotRepository mascotRepository;
     
     @Override
     public List<ItemResponse> getItems(String type) {
@@ -134,6 +136,15 @@ public class ShopServiceImpl implements ShopService {
         
         if (!item.getIsActive()) {
             throw new IllegalStateException("비활성 상품입니다: " + item.getName());
+        }
+
+        // 레벨 검증: 사용자 마스코트 레벨이 아이템 필요 레벨 이상인지 확인
+        int requiredLevel = Optional.ofNullable(item.getRequiredLevel()).orElse(1);
+        int userLevel = mascotRepository.findByUserId(userId)
+                .map(m -> Optional.ofNullable(m.getLevel()).orElse(1))
+                .orElse(1);
+        if (userLevel < requiredLevel) {
+            throw new IllegalArgumentException("Lv." + requiredLevel + " 이상부터 구매할 수 있습니다.");
         }
         
         // 수량 검증
