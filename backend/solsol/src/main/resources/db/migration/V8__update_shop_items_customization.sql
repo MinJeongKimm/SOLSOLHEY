@@ -4,8 +4,9 @@
 -- 1) UPDATE EXISTING (price/image/category)
 UPDATE shop_items
    SET price = 120,
+       type = 'EQUIP',
        image_url = '/backgrounds/stickers/bg_ssafy.png',
-       category = 'sticker',
+       category = 'accessory',
        updated_at = CURRENT_TIMESTAMP
  WHERE name = 'SSAFY 로고';
 
@@ -40,23 +41,23 @@ SELECT '파란 줄무늬 상의', null, 120, 'EQUIP', '/items/item_cloth_blue_st
  WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '파란 줄무늬 상의');
 
 INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
-SELECT '고양이 귀 모자', null, 300, 'EQUIP', '/items/item_head_yellow_cap_with_ears.png', 'clothing', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT '고양이 귀 모자', null, 300, 'EQUIP', '/items/item_head_yellow_cap_with_ears.png', 'head', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
  WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '고양이 귀 모자');
 
 INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
-SELECT '노란 모자', null, 150, 'EQUIP', '/items/item_head_yellow_cap.png', 'clothing', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT '노란 모자', null, 150, 'EQUIP', '/items/item_head_yellow_cap.png', 'head', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
  WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '노란 모자');
 
 -- 3) ADD NEW (idempotent inserts) - 배경 스티커
 INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
-SELECT '구름', null, 30, 'BACKGROUND', '/backgrounds/stickers/bg_cloud.png', 'sticker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT '구름', null, 30, 'EQUIP', '/backgrounds/stickers/bg_cloud.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
  WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '구름');
 
 INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
-SELECT '오렌지', null, 30, 'BACKGROUND', '/backgrounds/stickers/bg_orange.png', 'sticker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT '오렌지', null, 30, 'EQUIP', '/backgrounds/stickers/bg_orange.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
  WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '오렌지');
 
 INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
-SELECT '별', null, 30, 'BACKGROUND', '/backgrounds/stickers/bg_star.png', 'sticker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT '별', null, 30, 'EQUIP', '/backgrounds/stickers/bg_star.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
  WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '별');
 
