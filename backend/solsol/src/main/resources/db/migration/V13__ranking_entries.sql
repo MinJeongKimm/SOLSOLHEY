@@ -26,7 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_ranking_entries_type_created ON ranking_entries(r
 
 -- 제약사항 추가
 -- 사용자당 최대 3개 참가 제한을 위한 체크 제약 (애플리케이션에서도 검증)
-ALTER TABLE ranking_entries ADD CONSTRAINT chk_max_entries_per_user 
+ALTER TABLE ranking_entries ADD CONSTRAINT chk_max_entries_per_user_v13 
     CHECK (user_id IS NOT NULL);
 
 -- 마스코트 스냅샷 중복 참가 방지를 위한 유니크 제약 (mascot_snapshot_id가 null이 아닐 때만)
@@ -85,3 +85,4 @@ COMMENT ON COLUMN votes.idempotency_key IS '멱등키 (중복 투표 방지)';
 COMMENT ON COLUMN votes.campus_id IS '캠퍼스 ID';
 COMMENT ON COLUMN votes.created_at IS '투표 일시';
 COMMENT ON COLUMN votes.updated_at IS '수정 일시';
+

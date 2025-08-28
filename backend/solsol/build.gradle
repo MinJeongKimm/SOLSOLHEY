@@ -45,9 +45,9 @@ dependencies {
 	// Google Gemini (GenAI) 클라이언트
 	implementation 'com.google.genai:google-genai:1.0.0'
 	
-	// Lombok
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
+    // Lombok (pin version with record/@Builder support)
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
 	
 	// 개발/테스트용
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'

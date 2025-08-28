@@ -40,7 +40,10 @@ public class AuthController {
      * 회원가입
      */
     @PostMapping("/signup")
-    @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다")
+    @Operation(
+        summary = "회원가입",
+        description = "새로운 사용자를 등록합니다. 등록 후 비동기로 외부 금융 API 사용자 생성이 트리거되며, 성공 시 userKey가 내부 DB(users.finance_user_key)에 저장됩니다. 가입 응답에는 금융 키가 포함되지 않습니다."
+    )
     public ResponseEntity<ApiResponse<SignUpResponse>> signUp(
             @Valid @RequestBody SignUpRequestDto requestDto) {
         
@@ -175,7 +178,7 @@ public class AuthController {
      * 세션 확인
      */
     @GetMapping("/me")
-    @Operation(summary = "세션 확인", description = "현재 로그인한 사용자 정보를 반환합니다(인증 필요).")
+    @Operation(summary = "세션 확인", description = "현재 로그인한 사용자 정보를 반환합니다(인증 필요). username은 제거되었고 email/nickname을 제공합니다.")
     public ResponseEntity<ApiResponse<com.solsolhey.user.dto.response.UserResponse>> me(
             @org.springframework.security.core.annotation.AuthenticationPrincipal com.solsolhey.auth.dto.response.CustomUserDetails userDetails) {
         if (userDetails == null || !userDetails.isEnabled()) {
@@ -186,7 +189,6 @@ public class AuthController {
         var u = userDetails.getUser();
         var dto = new com.solsolhey.user.dto.response.UserResponse(
                 u.getUserId(),
-                u.getUsername(),
                 u.getEmail(),
                 u.getNickname(),
                 u.getCampus(),

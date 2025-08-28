@@ -24,13 +24,15 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
 
     /**
-     * 사용자명으로 UserDetails 로드
+     * principal(이메일)로 UserDetails 로드
      */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        log.debug("Loading user by username: {}", username);
+        // Spring Security의 DaoAuthenticationProvider는 전달된 principal을 여기로 넘깁니다.
+        // 우리 앱에선 principal을 이메일로 사용합니다.
+        log.debug("Loading user by email(principal): {}", username);
         
-        User user = userRepository.findByUsernameAndIsActiveTrue(username)
+        User user = userRepository.findByEmailAndIsActiveTrue(username)
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "사용자를 찾을 수 없습니다: " + username));
         

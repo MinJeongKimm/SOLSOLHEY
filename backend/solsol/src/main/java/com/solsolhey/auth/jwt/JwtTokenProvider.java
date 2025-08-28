@@ -118,13 +118,7 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * 토큰에서 사용자명 추출
-     */
-    public String getUsernameFromToken(String token) {
-        Claims claims = parseClaims(token);
-        return claims.get("username", String.class);
-    }
+    // Note: username 클레임은 사용하지 않으므로 제거되었습니다. 사용자 식별은 userId 클레임으로 처리합니다.
 
     /**
      * 토큰 타입 확인 (access/refresh)

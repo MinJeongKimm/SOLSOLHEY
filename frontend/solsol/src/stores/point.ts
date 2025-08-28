@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { getUserInfo } from '../api/index';
 import { auth } from '../api/index';
 
 export const usePointStore = defineStore('point', () => {
@@ -15,20 +14,9 @@ export const usePointStore = defineStore('point', () => {
     error.value = null;
     
     try {
-      const user = auth.getUser();
-      
-      if (user && user.userId) {
-        const userInfo = await getUserInfo(Number(user.userId));
-        
-        // 백엔드 응답 구조에 맞춰 data.totalPoints로 접근
-        if (userInfo.data && userInfo.data.totalPoints !== undefined) {
-          userPoints.value = userInfo.data.totalPoints;
-        } else {
-          userPoints.value = 0;
-        }
-      } else {
-        userPoints.value = 0;
-      }
+      // 최신 사용자 정보 동기화 후 캐시에서 포인트 읽기
+      const user: any = await auth.fetchUser();
+      userPoints.value = user?.totalPoints ?? 0;
     } catch (err: any) {
       console.error('포인트 로드 실패:', err);
       error.value = '포인트를 불러오는데 실패했습니다.';

@@ -34,11 +34,6 @@ public interface AuthService {
     void logout(String accessToken);
 
     /**
-     * 사용자명 중복 체크 (userId는 이메일 형식이므로 이메일 중복 체크)
-     */
-    boolean isUsernameExists(String username);
-
-    /**
      * 이메일 중복 체크 (userId 중복 체크와 동일)
      */
     boolean isEmailExists(String email);
