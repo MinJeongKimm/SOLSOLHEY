@@ -506,28 +506,70 @@ async function composeShareImageBlob(): Promise<Blob> {
   const mascotY = (canvasSize - mascotBoxSize) / 2;
   ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
 
-  // 아이템들(커스터마이징)
-  if (customization.value && customization.value.equippedItems?.length) {
-    const byId = new Map<number, ShopItem>(shopItems.value.map(s => [s.id, s]));
-    // 이미지 공유 시에만 아이템 크기를 줄임 (일반 화면과 구분)
-    const UI_MASCOT_PX = 128;
-    const SHARE_ITEM_SIZE = 80; // 이미지 공유용 아이템 크기 (120에서 80으로 조정)
-    const baseItemSize = (SHARE_ITEM_SIZE / UI_MASCOT_PX) * mascotBoxSize; // 약 0.625 * mascotBoxSize
+      // 아이템들을 배경/일반 아이템으로 분리하여 처리
+    if (customization.value && customization.value.equippedItems?.length) {
+      const byId = new Map<number, ShopItem>(shopItems.value.map(s => [s.id, s]));
+      
+      // 아이템을 타입별로 분리 (배경 아이템을 맨 뒤로 보내기 위해)
+      const backgroundItems: any[] = [];
+      const normalItems: any[] = [];
+      
+      for (const e of customization.value.equippedItems) {
+        const si = byId.get(e.itemId);
+        if (!si) continue;
+        
+        // 배경 아이템인지 확인 (ranking.ts와 동일한 로직)
+        if (si.type === 'BACKGROUND') {
+          backgroundItems.push({ ...e, shopItem: si });
+        } else {
+          normalItems.push({ ...e, shopItem: si });
+        }
+      }
 
-    for (const e of customization.value.equippedItems) {
-      const si = byId.get(e.itemId);
-      if (!si) continue;
-      const img = await loadImage(si.imageUrl);
-      const centerX = mascotX + (e.relativePosition.x * mascotBoxSize);
-      const centerY = mascotY + (e.relativePosition.y * mascotBoxSize);
-      const size = Math.max(12, baseItemSize * (e.scale ?? 1));
-      const rot = (((e.rotation ?? 0) % 360) + 360) % 360;
+    // 1. 배경 아이템을 먼저 그리기 (맨뒤)
+    for (const e of backgroundItems) {
+      try {
+        const img = await loadImage(e.shopItem.imageUrl);
+        
+        // 배경 아이템은 캔버스 전체를 덮도록 크기 조정
+        const bgSize = canvasSize; // 캔버스 전체 크기
+        const bgX = 0;
+        const bgY = 0;
+        
+        ctx.save();
+        ctx.drawImage(img, bgX, bgY, bgSize, bgSize);
+        ctx.restore();
+      } catch (error) {
+        console.warn('배경 아이템 이미지 로드 실패:', e.itemId, error);
+      }
+    }
 
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate((rot * Math.PI) / 180);
-      ctx.drawImage(img, -size / 2, -size / 2, size, size);
-      ctx.restore();
+    // 2. 마스코트 다시 그리기 (배경 아이템 위에)
+    ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
+
+    // 3. 일반 아이템 그리기 (마스코트 위에)
+    for (const e of normalItems) {
+      try {
+        const img = await loadImage(e.shopItem.imageUrl);
+        
+        // 이미지 공유 시에만 아이템 크기를 줄임 (일반 화면과 구분)
+        const UI_MASCOT_PX = 128;
+        const SHARE_ITEM_SIZE = 80; // 이미지 공유용 아이템 크기 (120에서 80으로 조정)
+        const baseItemSize = (SHARE_ITEM_SIZE / UI_MASCOT_PX) * mascotBoxSize; // 약 0.625 * mascotBoxSize
+        
+        const centerX = mascotX + (e.relativePosition.x * mascotBoxSize);
+        const centerY = mascotY + (e.relativePosition.y * mascotBoxSize);
+        const size = Math.max(12, baseItemSize * (e.scale ?? 1));
+        const rot = (((e.rotation ?? 0) % 360) + 360) % 360;
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate((rot * Math.PI) / 180);
+        ctx.drawImage(img, -size / 2, -size / 2, size, size);
+        ctx.restore();
+      } catch (error) {
+        console.warn('일반 아이템 이미지 로드 실패:', e.itemId, error);
+      }
     }
   }
 

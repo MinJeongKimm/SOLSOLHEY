@@ -322,19 +322,53 @@ export async function composeMascotImage(
     const mascotY = (canvasSize - mascotBoxSize) / 2;
     ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
 
-    // 3. 아이템들(커스터마이징) 실시간 합성
+    // 3. 아이템들(커스터마이징) 실시간 합성 - 배경 아이템을 맨 뒤로, 크기도 배경에 맞게 조정
     if (customization && customization.equippedItems?.length) {
       const byId = new Map<number, any>(shopItems.map(s => [s.id, s]));
       const UI_MASCOT_PX = 128;
-      const BASE_ITEM_SIZE = 120; // 기본 아이템 크기
+      const BASE_ITEM_SIZE = 80; // 랭킹용 아이템 크기 (120에서 80으로 축소)
       const baseItemSize = (BASE_ITEM_SIZE / UI_MASCOT_PX) * mascotBoxSize;
 
+      // 아이템을 타입별로 분리 (배경 아이템을 맨 뒤로 보내기 위해)
+      const backgroundItems = [];
+      const foregroundItems = [];
+      
       for (const e of customization.equippedItems) {
         const si = byId.get(e.itemId);
         if (!si) continue;
         
+        // 배경 아이템인지 확인
+        if (si.type === 'BACKGROUND') {
+          backgroundItems.push({ ...e, shopItem: si });
+        } else {
+          foregroundItems.push({ ...e, shopItem: si });
+        }
+      }
+
+      // 3-1. 배경 아이템들을 먼저 그리기 (맨 뒤 레이어)
+      for (const e of backgroundItems) {
         try {
-          const img = await loadImage(si.imageUrl);
+          const img = await loadImage(e.shopItem.imageUrl);
+          // 배경 아이템은 전체 캔버스 크기에 맞게 그리기
+          const bgSize = canvasSize; // 배경 아이템은 캔버스 전체 크기
+          const bgX = 0;
+          const bgY = 0;
+          
+          ctx.save();
+          ctx.drawImage(img, bgX, bgY, bgSize, bgSize);
+          ctx.restore();
+        } catch (error) {
+          console.warn('배경 아이템 이미지 로드 실패:', e.itemId, error);
+        }
+      }
+
+      // 3-2. 마스코트 다시 그리기 (배경 아이템 위에)
+      ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
+
+      // 3-3. 전경 아이템들을 나중에 그리기 (맨 앞 레이어)
+      for (const e of foregroundItems) {
+        try {
+          const img = await loadImage(e.shopItem.imageUrl);
           const centerX = mascotX + (e.relativePosition.x * mascotBoxSize);
           const centerY = mascotY + (e.relativePosition.y * mascotBoxSize);
           const size = Math.max(12, baseItemSize * (e.scale ?? 1));
@@ -346,7 +380,7 @@ export async function composeMascotImage(
           ctx.drawImage(img, -size / 2, -size / 2, size, size);
           ctx.restore();
         } catch (error) {
-          console.warn('아이템 이미지 로드 실패:', e.itemId, error);
+          console.warn('전경 아이템 이미지 로드 실패:', e.itemId, error);
         }
       }
     }
