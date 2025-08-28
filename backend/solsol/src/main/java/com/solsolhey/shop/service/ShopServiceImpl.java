@@ -13,16 +13,16 @@ import com.solsolhey.point.entity.PointTransaction.ReferenceType;
 import com.solsolhey.point.service.PointService;
 import com.solsolhey.shop.domain.Item;
 import com.solsolhey.shop.domain.Order;
-import com.solsolhey.shop.domain.UserItem;
 import com.solsolhey.shop.domain.UserGifticon;
+import com.solsolhey.shop.domain.UserItem;
 import com.solsolhey.shop.dto.GifticonResponse;
 import com.solsolhey.shop.dto.ItemResponse;
 import com.solsolhey.shop.dto.OrderRequest;
 import com.solsolhey.shop.dto.OrderResponse;
 import com.solsolhey.shop.repository.ItemRepository;
 import com.solsolhey.shop.repository.OrderRepository;
-import com.solsolhey.shop.repository.UserItemRepository;
 import com.solsolhey.shop.repository.UserGifticonRepository;
+import com.solsolhey.shop.repository.UserItemRepository;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.user.repository.UserRepository;
 
@@ -332,20 +332,10 @@ public class ShopServiceImpl implements ShopService {
     @Override
     public List<com.solsolhey.shop.dto.PurchasedGifticonResponse> getPurchasedGifticons(Long userId) {
         var list = userGifticonRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        // 만료 상태 업데이트 간단 체크
         var now = LocalDateTime.now();
         boolean changed = false;
         for (var g : list) {
-            if (g.getStatus() == UserGifticon.Status.ACTIVE && g.getExpiresAt() != null && g.getExpiresAt().isBefore(now)) {
-                g.setStatus(UserGifticon.Status.EXPIRED);
-                changed = true;
-            }
-            // 만료일 미설정 시 생성일 기준 1년으로 보정
-            if (g.getExpiresAt() == null) {
-                LocalDateTime base = g.getCreatedAt() != null ? g.getCreatedAt() : now;
-                g.setExpiresAt(base.plusYears(1));
-                changed = true;
-            }
+            changed |= normalizeGifticonExpiry(g, now);
         }
         if (changed) userGifticonRepository.saveAll(list);
         return list.stream().map(com.solsolhey.shop.dto.PurchasedGifticonResponse::from).collect(Collectors.toList());
@@ -355,18 +345,30 @@ public class ShopServiceImpl implements ShopService {
     public com.solsolhey.shop.dto.PurchasedGifticonDetailResponse getPurchasedGifticon(Long userId, Long id) {
         var g = userGifticonRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 기프티콘을 찾을 수 없습니다."));
-        // 만료 최신화
-        if (g.getStatus() == UserGifticon.Status.ACTIVE && g.getExpiresAt() != null && g.getExpiresAt().isBefore(LocalDateTime.now())) {
-            g.setStatus(UserGifticon.Status.EXPIRED);
-            userGifticonRepository.save(g);
-        }
-        // 만료일 보정: 누락된 경우 생성일 기준 1년으로 세팅
-        if (g.getExpiresAt() == null) {
-            LocalDateTime base = g.getCreatedAt() != null ? g.getCreatedAt() : LocalDateTime.now();
-            g.setExpiresAt(base.plusYears(1));
+        if (normalizeGifticonExpiry(g, LocalDateTime.now())) {
             userGifticonRepository.save(g);
         }
         return com.solsolhey.shop.dto.PurchasedGifticonDetailResponse.from(g);
+    }
+
+    /**
+     * 만료/만료일 보정 공통 처리
+     * - ACTIVE 상태에서 만료되었으면 EXPIRED로 변경
+     * - 만료일이 없으면 생성일 기준 1년으로 세팅
+     * @return 변경 여부
+     */
+    private boolean normalizeGifticonExpiry(UserGifticon g, LocalDateTime now) {
+        boolean changed = false;
+        if (g.getStatus() == UserGifticon.Status.ACTIVE && g.getExpiresAt() != null && g.getExpiresAt().isBefore(now)) {
+            g.setStatus(UserGifticon.Status.EXPIRED);
+            changed = true;
+        }
+        if (g.getExpiresAt() == null) {
+            LocalDateTime base = g.getCreatedAt() != null ? g.getCreatedAt() : now;
+            g.setExpiresAt(base.plusYears(1));
+            changed = true;
+        }
+        return changed;
     }
 
     private String generateBarcode() {
@@ -390,7 +392,7 @@ public class ShopServiceImpl implements ShopService {
                         .name("스타벅스 아메리카노")
                         .description("진한 에스프레소에 물을 더한 깔끔한 맛의 아메리카노")
                         .price(4500)
-                        .imageUrl("https://image.istarbucks.co.kr/upload/store/skuimg/2021/04/[9200000000038]_20210415154152024.jpg")
+                        .imageUrl("/gifticons/originals/gifticon_iced_americano.png")
                         .build(),
                 GifticonResponse.builder()
                         .sku("STARBUCKS_LATTE")

@@ -35,7 +35,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <div class="text-sm font-semibold text-gray-800 line-clamp-1">{{ g.name }}</div>
-                <div class="text-sm text-gray-500" v-if="g.expiresAt">만료: {{ formatDate(g.expiresAt) }}</div>
+                <div class="text-sm text-gray-500" v-if="g.expiresAt">만료: {{ formatYMD(g.expiresAt as any) }}</div>
               </div>
               <span class="text-xs px-2 py-1 rounded-full"
                     :class="statusClass(g.status)">{{ statusLabel(g.status) }}</span>
@@ -63,6 +63,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { formatYMD } from '../utils/date';
 import { useRouter } from 'vue-router';
 import { getPurchasedGifticons, getPurchasedGifticonDetail } from '../api/index';
 import type { PurchasedGifticon, PurchasedGifticonDetail } from '../types/api';
@@ -85,15 +86,7 @@ function statusLabel(s: PurchasedGifticon['status']): string {
 function statusClass(s: PurchasedGifticon['status']) {
   return s === 'ACTIVE' ? 'bg-green-100 text-green-700' : s === 'REDEEMED' ? 'bg-gray-100 text-gray-600' : 'bg-red-100 text-red-600';
 }
-function formatDate(iso?: string) {
-  if (!iso) return '';
-  // Safari 등 일부 브라우저의 Date 파싱 이슈 방지: 단순 YYYY-MM-DD 슬라이스로 표시
-  // 형식 예: 2025-08-27T12:34:56 -> 2025-08-27
-  const ymd = iso.length >= 10 ? iso.slice(0, 10) : '';
-  if (ymd) return ymd;
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? '' : d.toLocaleDateString();
-}
+// 날짜 포맷은 공통 유틸 사용 (YYYY.MM.DD)
 
 async function loadList() {
   loading.value = true; error.value = '';

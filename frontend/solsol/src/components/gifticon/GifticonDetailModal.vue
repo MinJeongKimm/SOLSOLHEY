@@ -17,7 +17,7 @@
         <div>
           <div class="text-base font-semibold text-gray-800">{{ gifticon.name }}</div>
           <div class="text-sm text-gray-500">SKU: {{ gifticon.sku }}</div>
-          <div class="text-sm text-gray-500" v-if="gifticon.expiresAt">만료일: {{ formatDate(gifticon.expiresAt) }}</div>
+          <div class="text-sm text-gray-500" v-if="gifticon.expiresAt">만료일: {{ formatYMD(gifticon.expiresAt as any) }}</div>
         </div>
 
         <!-- 바코드 영역: 간단한 스타일로 대체 표시 -->
@@ -43,6 +43,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { formatYMD } from '../../utils/date';
 import { redeemPurchasedGifticon } from '../../api/index';
 import type { PurchasedGifticonDetail } from '../../types/api';
 
@@ -59,16 +60,7 @@ const redeemLabel = computed(() => {
   return '사용하기';
 });
 
-function formatDate(iso?: string) {
-  if (!iso) return '';
-  // 우선 안전하게 날짜 부분만 슬라이스
-  if (iso.length >= 19) {
-    // 2025-08-27T12:34:56 => 2025-08-27 12:34:56
-    return iso.slice(0, 10) + ' ' + iso.slice(11, 19);
-  }
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? '' : d.toLocaleString();
-}
+// 날짜 포맷은 공통 유틸 사용 (YYYY.MM.DD HH:mm:ss)
 function onImgError(e: Event) { (e.target as HTMLImageElement).src = '/items/gifticon_default.png'; }
 
 async function redeem() {

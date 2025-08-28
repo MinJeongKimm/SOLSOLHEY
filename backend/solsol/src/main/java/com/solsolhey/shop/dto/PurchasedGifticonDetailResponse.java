@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Data
 @NoArgsConstructor
@@ -35,6 +36,7 @@ public class PurchasedGifticonDetailResponse {
     private String status;
 
     @Schema(description = "만료일")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime expiresAt;
 
     public static PurchasedGifticonDetailResponse from(UserGifticon g) {
@@ -49,4 +51,3 @@ public class PurchasedGifticonDetailResponse {
                 .build();
     }
 }
-
