@@ -1,12 +1,13 @@
 package com.solsolhey.mascot.dto;
 
+import java.time.LocalDateTime;
+
 import com.solsolhey.mascot.domain.Mascot;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -21,6 +22,7 @@ public class MascotResponse {
     private String equippedItem;
     private String backgroundColor;
     private String backgroundPattern;
+    private String backgroundId;
     private Integer exp;
     private Integer level;
     private LocalDateTime createdAt;
@@ -38,6 +40,7 @@ public class MascotResponse {
                 .equippedItem(mascot.getEquippedItem())
                 .backgroundColor(mascot.getBackgroundColor())
                 .backgroundPattern(mascot.getBackgroundPattern())
+                .backgroundId(mascot.getBackgroundId())
                 .exp(mascot.getExp())
                 .level(mascot.getLevel())
                 .createdAt(mascot.getCreatedAt())

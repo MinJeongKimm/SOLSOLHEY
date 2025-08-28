@@ -285,10 +285,33 @@ export async function composeMascotImage(
       });
     };
 
-    // 1. 배경 이미지 로드 및 그리기
-    const bgUrl = '/backgrounds/base/bg_blue.png';
-    const bgImg = await loadImage(bgUrl);
-    ctx.drawImage(bgImg, 0, 0, canvasSize, canvasSize);
+    // 1. 배경 생성 (꾸미기 화면과 동일한 방식)
+    console.log('마스코트 배경 정보:', {
+      backgroundColor: mascot?.backgroundColor,
+      backgroundPattern: mascot?.backgroundPattern
+    });
+    
+    // 배경색 설정
+    const bgColor = mascot?.backgroundColor || '#ffffff';
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvasSize, canvasSize);
+    
+    // 배경 패턴 그리기
+    if (mascot?.backgroundPattern === 'dots') {
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      for (let x = 6; x < canvasSize; x += 12) {
+        for (let y = 6; y < canvasSize; y += 12) {
+          ctx.beginPath();
+          ctx.arc(x, y, 1, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      }
+    } else if (mascot?.backgroundPattern === 'stripes') {
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      for (let i = 0; i < canvasSize; i += 20) {
+        ctx.fillRect(i, 0, 10, canvasSize);
+      }
+    }
 
     // 2. 마스코트 기본 이미지 로드 및 그리기 (이미지 공유와 동일한 로직 사용)
     const mascotUrl = getMascotImageUrl(mascot?.type);
@@ -369,6 +392,8 @@ export async function getCurrentUserMascot(): Promise<Mascot | null> {
       name: mascotData.name,
       type: mascotData.type, // 마스코트 타입 추가!
       backgroundId: mascotData.backgroundId,
+      backgroundColor: mascotData.backgroundColor,
+      backgroundPattern: mascotData.backgroundPattern,
       createdAt: mascotData.createdAt
     };
     
