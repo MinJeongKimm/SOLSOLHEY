@@ -22,20 +22,8 @@
         </div>
       </div>
 
-      <!-- 마스코트가 없는 경우 생성 버튼 -->
-      <div v-if="!currentMascot" class="text-center py-8">
-        <div class="text-6xl mb-4">🥚</div>
-        <p class="text-gray-600 mb-4">아직 마스코트가 없습니다</p>
-        <button 
-          @click="goToCreate"
-          class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-        >
-          마스코트 생성하기
-        </button>
-      </div>
-
-      <!-- 마스코트가 있는 경우 메인 영역 -->
-      <div v-else class="space-y-4">
+      <!-- 마스코트가 있는 경우에만 메인 영역 렌더 (없으면 라우터가 생성 페이지로 이동) -->
+      <div v-if="currentMascot" class="space-y-4">
         <!-- 메인 캔버스: 방 배경 + 레이어링(배경/마스코트/전경) -->
         <div class="relative">
           <!-- 방 배경 컨테이너 -->
@@ -567,9 +555,10 @@ function showToastMessage(message: string) {
 }
 
 // 공유 팝업 표시
-function showSharePopup() {
+async function showSharePopup() {
   // 토큰 상태 확인
-  if (!auth.isAuthenticated()) {
+  const ok = await auth.isAuthenticatedAsync();
+  if (!ok) {
     showToastMessage('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
     setTimeout(() => {
       router.push('/');
@@ -626,7 +615,8 @@ async function handleShare() {
       const message = shareLinkData.value.message || '나의 마스코트와 함께한 이야기를 적어보세요!';
       
       const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
-      const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+      const u: any = await auth.fetchUser();
+      const userNickname = u?.nickname || '나의';
       const mascotName = currentMascot.value?.name || '마스코트';
       const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
       
@@ -704,7 +694,8 @@ async function handleShare() {
         const blob = await composeShareImageBlob();
         const mascotName = currentMascot.value?.name || 'mascot';
         const file = new File([blob], `${mascotName}_share.png`, { type: blob.type || 'image/png' });
-        const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+        const u2: any = await auth.fetchUser();
+        const userNickname = u2?.nickname || '나의';
         const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {

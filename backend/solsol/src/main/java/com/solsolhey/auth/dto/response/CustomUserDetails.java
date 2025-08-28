@@ -33,7 +33,8 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return user.getUsername();
+        // Spring Security principal 문자열: 이메일 사용
+        return user.getEmail();
     }
 
     /**

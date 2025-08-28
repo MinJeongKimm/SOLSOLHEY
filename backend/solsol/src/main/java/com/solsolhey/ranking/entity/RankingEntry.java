@@ -25,7 +25,6 @@ import lombok.NoArgsConstructor;
 @Table(name = "ranking_entries", indexes = {
     @Index(name = "idx_user_id", columnList = "user_id"),
     @Index(name = "idx_mascot_snapshot_id", columnList = "mascot_snapshot_id"),
-    @Index(name = "idx_score", columnList = "score DESC"),
     @Index(name = "idx_created_at", columnList = "created_at DESC")
 })
 @Getter

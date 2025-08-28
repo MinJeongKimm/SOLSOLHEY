@@ -51,8 +51,9 @@
             
             <!-- 사용자 정보 -->
             <div>
-              <h4 class="font-semibold text-gray-800">{{ user.nickname || '닉네임 없음' }}</h4>
+              <h4 class="font-semibold text-gray-800">{{ user.nickname }}</h4>
               <p class="text-sm text-gray-600">{{ user.campus || '캠퍼스 정보 없음' }}</p>
+              <p class="text-xs text-gray-500">{{ user.email }}</p>
             </div>
           </div>
           
@@ -173,7 +174,7 @@ const addFriend = async (user: User) => {
     user.hasPendingRequest = true; // 요청 성공 시, UI를 즉시 '요청 중'으로 변경
     
     // 성공 메시지 표시
-    alert(`${user.nickname || user.username}님에게 친구 요청을 보냈습니다.`);
+    alert(`${user.nickname}님에게 친구 요청을 보냈습니다.`);
   } catch (error) {
     console.error('친구 추가 실패:', error);
     alert('친구 추가에 실패했습니다. 다시 시도해주세요.');
