@@ -499,9 +499,10 @@ async function composeShareImageBlob(): Promise<Blob> {
   // 아이템들(커스터마이징)
   if (customization.value && customization.value.equippedItems?.length) {
     const byId = new Map<number, ShopItem>(shopItems.value.map(s => [s.id, s]));
-    // UI 기준과 동일 비율 유지(아이템 기본 크기: BASE_ITEM_SIZE / UI_MASCOT_PX * mascotBoxSize)
+    // 이미지 공유 시에만 아이템 크기를 줄임 (일반 화면과 구분)
     const UI_MASCOT_PX = 128;
-    const baseItemSize = (BASE_ITEM_SIZE / UI_MASCOT_PX) * mascotBoxSize; // 약 0.9375 * mascotBoxSize
+    const SHARE_ITEM_SIZE = 80; // 이미지 공유용 아이템 크기 (120에서 80으로 조정)
+    const baseItemSize = (SHARE_ITEM_SIZE / UI_MASCOT_PX) * mascotBoxSize; // 약 0.625 * mascotBoxSize
 
     for (const e of customization.value.equippedItems) {
       const si = byId.get(e.itemId);
