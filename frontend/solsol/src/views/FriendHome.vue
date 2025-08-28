@@ -64,10 +64,7 @@
         </div>
       </div>
 
-      <!-- 토스트 -->
-      <div v-if="toast" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg shadow">
-        {{ toast }}
-      </div>
+      <!-- 전역 토스트 사용으로 로컬 토스트 제거 -->
     </div>
   </div>
 </template>
@@ -76,6 +73,7 @@
 import { onMounted, ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getFriendHome, sendLike, type FriendHomeResponse } from '../api/friend';
+import { useToastStore } from '../stores/toast';
 import { mascotTypes } from '../data/mockData';
 
 const route = useRoute();
@@ -85,7 +83,7 @@ const friendHome = ref<FriendHomeResponse | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
 const likeSending = ref(false);
-const toast = ref('');
+const toastStore = useToastStore();
 
 const friendId = computed(() => {
   const raw = route.params.id as string | undefined;
@@ -120,21 +118,15 @@ async function fetchHome() {
   }
 }
 
-function showToast(msg: string) {
-  toast.value = msg;
-  setTimeout(() => (toast.value = ''), 1800);
-}
-
 async function handleLike() {
   if (!friendHome.value?.canLikeNow || likeSending.value) return;
   likeSending.value = true;
   try {
     await sendLike(friendHome.value.ownerId);
-    showToast('좋아요를 보냈습니다!');
     await fetchHome();
   } catch (e: any) {
     const msg = e?.body?.message || e?.message || '좋아요 전송 실패';
-    showToast(msg);
+    toastStore.show(msg, 'error');
   } finally {
     likeSending.value = false;
   }
@@ -156,4 +148,3 @@ onMounted(fetchHome);
   50% { transform: translateY(-6px); }
 }
 </style>
-
