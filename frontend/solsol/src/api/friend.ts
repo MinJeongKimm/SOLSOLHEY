@@ -123,6 +123,11 @@ export const markInteractionRead = async (interactionId: number): Promise<void> 
   await apiRequest<void>(`/friends/interactions/${interactionId}/read`, { method: 'PUT' });
 };
 
+// 받은 상호작용 모두 읽음 처리
+export const markAllInteractionsRead = async (): Promise<void> => {
+  await apiRequest<void>(`/friends/interactions/read-all`, { method: 'PUT' });
+};
+
 // 미읽음 상호작용 카운트
 export const getUnreadInteractionCount = async (): Promise<number> => {
   const res = await apiRequest<{ data: number }>(`/friends/interactions/unread-count`, { method: 'GET' });

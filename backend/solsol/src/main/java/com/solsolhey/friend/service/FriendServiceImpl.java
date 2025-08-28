@@ -301,6 +301,12 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
+    public void markAllReceivedInteractionsAsRead(User user) {
+        log.debug("상호작용 모두 읽음 처리: userId={}", user.getUserId());
+        friendInteractionRepository.markAllAsReadByToUser(user);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public FriendHomeResponse getFriendHome(User viewer, Long friendId) {
         User owner = userRepository.findById(friendId)
