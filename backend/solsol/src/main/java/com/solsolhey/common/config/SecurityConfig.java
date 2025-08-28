@@ -92,7 +92,6 @@ public class SecurityConfig {
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             // ★ Ensure XSRF-TOKEN cookie is always issued/maintained
             .addFilterAfter(new CsrfCookieSeedFilter(), CsrfFilter.class)
-            .authenticationProvider(authenticationProvider())
             .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();
@@ -176,16 +175,9 @@ public class SecurityConfig {
         return registration;
     }
 
-    /**
-     * 인증 제공자
-     */
-    @Bean
-    public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
+    // Removed custom AuthenticationProvider bean to let Spring Boot auto-configure
+    // DaoAuthenticationProvider from UserDetailsService + PasswordEncoder, which
+    // avoids the InitializeUserDetailsManagerConfigurer warning.
 
     /**
      * 개발환경 여부 확인
