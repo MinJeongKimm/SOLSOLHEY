@@ -104,7 +104,7 @@
               
               <!-- 친구 삭제 버튼 -->
               <button
-                @click="showDeleteConfirm(friend)"
+                @click.stop="showDeleteConfirm(friend)"
                 :disabled="isProcessing"
                 class="text-red-500 hover:text-red-700 disabled:text-red-300 transition-colors p-1 rounded-lg hover:bg-red-50"
                 title="친구 삭제"
@@ -222,8 +222,9 @@ watch(
 );
 
 const viewFriendDetail = (friend: Friend) => {
-  console.log('친구 상세 화면으로 이동:', friend);
-  // 상세 페이지 라우팅 로직 추가 가능
+  if (friend.userId) {
+    router.push(`/friends/${friend.userId}`);
+  }
 };
 
 // 삭제 확인 팝업 표시

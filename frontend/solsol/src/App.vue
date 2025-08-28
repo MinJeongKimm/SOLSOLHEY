@@ -10,6 +10,9 @@
     <main :class="{ 'pt-16': showHeader }">
       <router-view />
     </main>
+
+    <!-- Global Toasts -->
+    <ToastContainer />
   </div>
 </template>
 
@@ -18,6 +21,7 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import Header from './components/Header.vue';
 import SlideMenu from './components/SlideMenu.vue';
+import ToastContainer from './components/ToastContainer.vue';
 
 const route = useRoute();
 

@@ -2,6 +2,7 @@ package com.solsolhey.friend.dto.response;
 
 import com.solsolhey.friend.entity.FriendInteraction;
 import com.solsolhey.friend.entity.FriendInteraction.InteractionType;
+import com.solsolhey.exp.service.ExpDailyCounterService;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
@@ -19,7 +20,8 @@ public record FriendInteractionResponse(
     InteractionType interactionType,
     String message,
     Boolean isRead,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    ExpDailyCounterService.ExpAwarded expAwarded
 ) {
     public static FriendInteractionResponse from(FriendInteraction interaction) {
         return FriendInteractionResponse.builder()
@@ -32,6 +34,7 @@ public record FriendInteractionResponse(
                 .message(interaction.getMessage())
                 .isRead(interaction.getIsRead())
                 .createdAt(interaction.getCreatedAt())
+                .expAwarded(null)
                 .build();
     }
 }
