@@ -37,6 +37,9 @@ public class ItemResponse {
     
     @Schema(description = "보유 여부", example = "true")
     private Boolean owned;
+
+    @Schema(description = "구매에 필요한 최소 레벨", example = "3")
+    private Integer requiredLevel;
     
     public static ItemResponse from(Item item) {
         return ItemResponse.builder()
@@ -48,6 +51,7 @@ public class ItemResponse {
                 .category(item.getCategory())
                 .imageUrl(item.getImageUrl())
                 .owned(false) // 기본값: 보유하지 않음
+                .requiredLevel(item.getRequiredLevel())
                 .build();
     }
     
@@ -57,7 +61,7 @@ public class ItemResponse {
     public static ItemResponse fromWithOwnership(Item item, Boolean owned) {
         ItemResponse response = from(item);
         response.setOwned(owned);
+        response.setRequiredLevel(item.getRequiredLevel());
         return response;
     }
 }
-
