@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -245,9 +246,10 @@ public class FriendServiceImpl implements FriendService {
                 .build();
 
         FriendInteraction savedInteraction = friendInteractionRepository.save(interaction);
+        Optional<ExpDailyCounterService.ExpAwarded> activeAwarded = Optional.empty();
         try {
             // 방문자(발신자): active 규칙(1~3회 +3, 이후 +1)
-            expDailyCounterService.awardFriendInteractionExpActive(user);
+            activeAwarded = expDailyCounterService.awardFriendInteractionExpActive(user);
         } catch (Exception e) {
             log.warn("친구 Active EXP 적립 실패: userId={}, err={}", user.getUserId(), e.getMessage());
         }
@@ -258,7 +260,18 @@ public class FriendServiceImpl implements FriendService {
             log.warn("친구 Passive EXP 적립 실패: toUserId={}, err={}", toUser.getUserId(), e.getMessage());
         }
         
-        return FriendInteractionResponse.from(savedInteraction);
+        return FriendInteractionResponse.builder()
+                .interactionId(savedInteraction.getInteractionId())
+                .fromUserId(savedInteraction.getFromUser().getUserId())
+                .fromUserNickname(savedInteraction.getFromUser().getNickname())
+                .toUserId(savedInteraction.getToUser().getUserId())
+                .toUserNickname(savedInteraction.getToUser().getNickname())
+                .interactionType(savedInteraction.getInteractionType())
+                .message(savedInteraction.getMessage())
+                .isRead(savedInteraction.getIsRead())
+                .createdAt(savedInteraction.getCreatedAt())
+                .expAwarded(activeAwarded.orElse(null))
+                .build();
     }
 
     @Override

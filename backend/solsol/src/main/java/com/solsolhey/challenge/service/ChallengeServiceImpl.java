@@ -148,9 +148,10 @@ public class ChallengeServiceImpl implements ChallengeService {
         UserChallenge savedUserChallenge = userChallengeRepository.save(userChallenge);
 
         // EXP: 챌린지 참여 카테고리 1일 1회 +5 (마스코트 존재 시)
+        java.util.Optional<com.solsolhey.exp.service.ExpDailyCounterService.ExpAwarded> catAwarded = java.util.Optional.empty();
         try {
             if (challenge.getCategory() != null) {
-                expDailyCounterService.awardChallengeCategoryExp(user, challenge.getCategory().getCategoryName());
+                catAwarded = expDailyCounterService.awardChallengeCategoryExp(user, challenge.getCategory().getCategoryName());
             }
         } catch (Exception e) {
             log.warn("챌린지 카테고리 EXP 적립 실패: userId={}, challengeId={}, err={}", user.getUserId(), challengeId, e.getMessage());
@@ -159,7 +160,14 @@ public class ChallengeServiceImpl implements ChallengeService {
         log.info("챌린지 참여 완료: challengeId={}, userId={}, userChallengeId={}", 
                 challengeId, user.getUserId(), savedUserChallenge.getUserChallengeId());
 
-        return ChallengeJoinResponseDto.success(savedUserChallenge);
+        return ChallengeJoinResponseDto.builder()
+                .success(true)
+                .message("챌린지 참여가 완료되었습니다.")
+                .userChallengeId(savedUserChallenge.getUserChallengeId())
+                .status(savedUserChallenge.getStatus().name())
+                .userChallenge(UserChallengeDto.from(savedUserChallenge))
+                .expAwarded(catAwarded.orElse(null))
+                .build();
     }
 
     /**
