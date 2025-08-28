@@ -466,10 +466,27 @@ async function composeShareImageBlob(): Promise<Blob> {
   if (!ctx) throw new Error('Canvas context unavailable');
   ctx.scale(DPR, DPR);
   ctx.imageSmoothingEnabled = true;
-  // 배경
-  const bgUrl = '/backgrounds/base/bg_blue.png';
-  const bgImg = await loadImage(bgUrl);
-  ctx.drawImage(bgImg, 0, 0, canvasSize, canvasSize);
+  // 배경 생성 (꾸미기 화면과 동일한 방식)
+  const bgColor = currentMascot.value?.backgroundColor || '#ffffff';
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvasSize, canvasSize);
+  
+  // 배경 패턴 그리기
+  if (currentMascot.value?.backgroundPattern === 'dots') {
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    for (let x = 6; x < canvasSize; x += 12) {
+      for (let y = 6; y < canvasSize; y += 12) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+  } else if (currentMascot.value?.backgroundPattern === 'stripes') {
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    for (let i = 0; i < canvasSize; i += 20) {
+      ctx.fillRect(i, 0, 10, canvasSize);
+    }
+  }
 
   // 마스코트
   const mascotUrl = currentMascot.value ? getMascotImageUrl(currentMascot.value.type) : '/mascot/soll.png';
