@@ -305,6 +305,21 @@ export interface Gifticon {
   sku: string;
 }
 
+// 보관함 기프티콘 목록 타입
+export interface PurchasedGifticon {
+  id: number;
+  name: string;
+  imageUrl: string;
+  status: 'ACTIVE' | 'REDEEMED' | 'EXPIRED';
+  expiresAt?: string;
+}
+
+// 보관함 기프티콘 상세 타입
+export interface PurchasedGifticonDetail extends PurchasedGifticon {
+  sku: string;
+  barcode: string;
+}
+
 export interface OrderRequest {
   type: 'ITEM' | 'GIFTICON';
   itemId?: number;
@@ -354,6 +369,5 @@ export interface RankingResponse {
     campusName: string;
   };
 }
-
 
 

@@ -79,12 +79,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { usePointStore } from '../stores/point';
 import ItemShop from '../components/shop/ItemShop.vue';
 import GifticonShop from '../components/shop/GifticonShop.vue';
 
 const router = useRouter();
+const route = useRoute();
 const pointStore = usePointStore();
 
 // 반응형 데이터
@@ -112,6 +113,11 @@ onMounted(async () => {
     isLoading.value = true;
     // 포인트 스토어에서 포인트 로드
     await pointStore.loadPoints();
+    // 쿼리 파라미터로 탭 제어 (?tab=gifticons)
+    const tab = String(route.query.tab || '').toLowerCase();
+    if (tab === 'gifticons') {
+      activeTab.value = 'gifticons';
+    }
   } catch (err) {
     console.error('포인트 로드 실패:', err);
   } finally {

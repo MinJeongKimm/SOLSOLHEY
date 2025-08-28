@@ -612,6 +612,24 @@ export async function getUserItems(): Promise<UserItem[]> {
   });
 }
 
+// 보관함 기프티콘 API
+import type { PurchasedGifticon, PurchasedGifticonDetail } from '../types/api';
+
+export async function getPurchasedGifticons(): Promise<PurchasedGifticon[]> {
+  const res = await apiRequest<any>('/shop/gifticons/purchased', { method: 'GET' });
+  return (res && res.data) ? (res.data as PurchasedGifticon[]) : [];
+}
+
+export async function getPurchasedGifticonDetail(id: number): Promise<PurchasedGifticonDetail> {
+  const res = await apiRequest<any>(`/shop/gifticons/purchased/${id}`, { method: 'GET' });
+  return (res && res.data) ? (res.data as PurchasedGifticonDetail) : ({} as PurchasedGifticonDetail);
+}
+
+export async function redeemPurchasedGifticon(id: number): Promise<string> {
+  const res = await apiRequest<any>(`/shop/gifticons/${id}/redeem`, { method: 'POST' });
+  return (res && res.message) ? (res.message as string) : '사용 처리되었습니다.';
+}
+
 // 금융 관련 API 함수들
 // 환율 전체 조회
 export async function getAllExchangeRates(): Promise<any> {
