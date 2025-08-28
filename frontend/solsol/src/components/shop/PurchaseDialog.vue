@@ -27,6 +27,7 @@
               :src="item.imageUrl" 
               :alt="item.name"
               class="w-full h-full object-contain"
+              :data-sku="(item as any).sku || ''"
               @error="handleImageError"
             />
           </div>
@@ -122,8 +123,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import type { ShopItem, Gifticon } from '../../types/api';
+import { computed, ref, watch } from 'vue';
+import type { Gifticon, ShopItem } from '../../types/api';
 
 // Props
 interface Props {
@@ -178,9 +179,26 @@ function decreaseQuantity() {
 function handleImageError(event: Event) {
   const img = event.target as HTMLImageElement;
   if (props.isGifticon) {
-    img.src = '/items/gifticon_default.png';
+    const sku = (img.dataset.sku || '').toUpperCase();
+    switch (sku) {
+      case 'STARBUCKS_AMERICANO':
+        img.src = '/gifticons/originals/gifticon_iced_americano.png';
+        break;
+      case 'STARBUCKS_LATTE':
+        img.src = '/gifticons/originals/gifticon_iced_vanilla_latte.png';
+        break;
+      case 'BASKIN_ICE_CREAM':
+        img.src = '/gifticons/originals/gifticon_icecream.png';
+        break;
+      case 'GONGCHA_BROWN_SUGAR':
+        img.src = '/gifticons/originals/gifticon_gongcha_brownsugar_milktea.png';
+        break;
+      default:
+        img.src = '/gifticons/thumbnails/gift_coffee.png';
+    }
   } else {
-    img.src = '/items/item_default.png';
+    // 일반 아이템의 경우 기본 아이템 이미지가 없으면 그냥 로고성 자산으로 대체하지 않고 유지
+    img.src = '/items/item_head_blue_cap.png';
   }
 }
 
@@ -222,4 +240,3 @@ watch(() => props.isOpen, (newValue) => {
   overflow: hidden;
 }
 </style>
-

@@ -6,6 +6,8 @@ import com.solsolhey.shop.dto.ItemResponse;
 import com.solsolhey.shop.dto.OrderRequest;
 import com.solsolhey.shop.dto.OrderResponse;
 import com.solsolhey.shop.service.ShopService;
+import com.solsolhey.shop.dto.PurchasedGifticonResponse;
+import com.solsolhey.shop.dto.PurchasedGifticonDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -124,8 +126,45 @@ public class ShopController {
             return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "기프티콘 목록 조회에 실패했습니다.");
         }
     }
+
+    @Operation(summary = "보관함 기프티콘 목록", description = "사용자가 구매한 기프티콘 목록을 조회합니다")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "401", description = "인증 필요"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @GetMapping("/gifticons/purchased")
+    public ResponseEntity<Map<String, Object>> getPurchasedGifticons(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = userDetails.getUserId();
+        List<PurchasedGifticonResponse> list = shopService.getPurchasedGifticons(userId);
+        Map<String, Object> result = new HashMap<>();
+        result.put("result", "SUCCESS");
+        result.put("message", "구매한 기프티콘 목록 조회 완료");
+        result.put("data", list);
+        return ResponseEntity.ok(result);
+    }
+
+    @Operation(summary = "보관함 기프티콘 상세", description = "보관함의 기프티콘 상세/바코드를 조회합니다")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "404", description = "없음"),
+            @ApiResponse(responseCode = "401", description = "인증 필요")
+    })
+    @GetMapping("/gifticons/purchased/{id}")
+    public ResponseEntity<Map<String, Object>> getPurchasedGifticon(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long id) {
+        Long userId = userDetails.getUserId();
+        PurchasedGifticonDetailResponse detail = shopService.getPurchasedGifticon(userId, id);
+        Map<String, Object> result = new HashMap<>();
+        result.put("result", "SUCCESS");
+        result.put("message", "보관함 기프티콘 조회 완료");
+        result.put("data", detail);
+        return ResponseEntity.ok(result);
+    }
     
-    @Operation(summary = "기프티콘 사용", description = "구매한 기프티콘을 사용합니다 (Mock)")
+    @Operation(summary = "기프티콘 사용", description = "보관함 기프티콘을 사용 처리합니다")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "사용 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),

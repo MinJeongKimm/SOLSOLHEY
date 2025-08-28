@@ -11,6 +11,7 @@ import FriendAdd from '../views/FriendAdd.vue'
 import FriendHome from '../views/FriendHome.vue'
 import Notifications from '../views/Notifications.vue'
 import Shop from '../views/Shop.vue'
+import Locker from '../views/Locker.vue'
 import Ranking from '../views/Ranking.vue'
 import Attendance from '../views/Attendance.vue'
 import { auth } from '../api/index'
@@ -80,6 +81,11 @@ const routes = [
   { 
     path: '/shop', 
     component: Shop, 
+    meta: { requiresAuth: true }
+  },
+  { 
+    path: '/locker', 
+    component: Locker, 
     meta: { requiresAuth: true }
   },
   { 

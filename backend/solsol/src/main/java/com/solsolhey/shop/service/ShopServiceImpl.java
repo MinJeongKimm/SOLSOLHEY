@@ -1,5 +1,6 @@
 package com.solsolhey.shop.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -12,6 +13,7 @@ import com.solsolhey.point.entity.PointTransaction.ReferenceType;
 import com.solsolhey.point.service.PointService;
 import com.solsolhey.shop.domain.Item;
 import com.solsolhey.shop.domain.Order;
+import com.solsolhey.shop.domain.UserGifticon;
 import com.solsolhey.shop.domain.UserItem;
 import com.solsolhey.shop.dto.GifticonResponse;
 import com.solsolhey.shop.dto.ItemResponse;
@@ -19,6 +21,7 @@ import com.solsolhey.shop.dto.OrderRequest;
 import com.solsolhey.shop.dto.OrderResponse;
 import com.solsolhey.shop.repository.ItemRepository;
 import com.solsolhey.shop.repository.OrderRepository;
+import com.solsolhey.shop.repository.UserGifticonRepository;
 import com.solsolhey.shop.repository.UserItemRepository;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.user.repository.UserRepository;
@@ -35,6 +38,7 @@ public class ShopServiceImpl implements ShopService {
     private final ItemRepository itemRepository;
     private final OrderRepository orderRepository;
     private final UserItemRepository userItemRepository;
+    private final UserGifticonRepository userGifticonRepository;
     private final PointService pointService;
     private final UserRepository userRepository;
     
@@ -249,6 +253,21 @@ public class ShopServiceImpl implements ShopService {
             savedOrder.setStatus(Order.OrderStatus.COMPLETED);
             orderRepository.save(savedOrder);
             log.info("기프티콘 주문 상태 업데이트 완료 - 주문 ID: {}, 상태: COMPLETED", savedOrder.getId());
+
+            // 4단계: 사용자 보관함에 기프티콘 저장 (바코드/만료 포함)
+            GifticonMeta meta = getGifticonMeta(request.getSku());
+            LocalDateTime purchasedAt = savedOrder.getCreatedAt() != null ? savedOrder.getCreatedAt() : LocalDateTime.now();
+            UserGifticon gifticon = UserGifticon.builder()
+                    .userId(userId)
+                    .sku(request.getSku())
+                    .name(meta.name)
+                    .imageUrl(meta.imageUrl)
+                    .barcode(generateBarcode())
+                    .status(UserGifticon.Status.ACTIVE)
+                    .expiresAt(purchasedAt.plusYears(1))
+                    .build();
+            userGifticonRepository.save(gifticon);
+            log.info("보관함 기프티콘 생성 - userId={}, sku={}, gifticonId={}", userId, request.getSku(), gifticon.getId());
             
         } catch (RuntimeException e) {
             // 4단계: 포인트 차감 실패 시 주문 상태를 CANCELLED로 변경 후 원래 예외를 그대로 전파
@@ -269,58 +288,29 @@ public class ShopServiceImpl implements ShopService {
     @Override
     public List<GifticonResponse> getGifticons() {
         log.info("기프티콘 목록 조회 (Mock)");
-        
-        // Mock 데이터 반환
-        return List.of(
-                GifticonResponse.builder()
-                        .sku("STARBUCKS_AMERICANO")
-                        .name("스타벅스 아메리카노")
-                        .description("진한 에스프레소에 물을 더한 깔끔한 맛의 아메리카노")
-                        .price(4500)
-                        .imageUrl("https://image.istarbucks.co.kr/upload/store/skuimg/2021/04/[9200000000038]_20210415154152024.jpg")
-                        .build(),
-                GifticonResponse.builder()
-                        .sku("STARBUCKS_LATTE")
-                        .name("스타벅스 카페라떼")
-                        .description("진한 에스프레소와 스팀밀크가 조화로운 부드러운 맛")
-                        .price(5000)
-                        .imageUrl("https://image.istarbucks.co.kr/upload/store/skuimg/2021/04/[9200000000077]_20210415154521370.jpg")
-                        .build(),
-                GifticonResponse.builder()
-                        .sku("GONGCHA_BROWN_SUGAR")
-                        .name("공차 흑당 밀크티")
-                        .description("진한 흑당 시럽과 부드러운 밀크티의 조화")
-                        .price(5500)
-                        .imageUrl("https://www.gong-cha.co.kr/upload/menu/2019090614265920190906142659.png")
-                        .build(),
-                GifticonResponse.builder()
-                        .sku("BASKIN_ICE_CREAM")
-                        .name("배스킨라빈스 아이스크림")
-                        .description("다양한 맛의 프리미엄 아이스크림")
-                        .price(3000)
-                        .imageUrl("https://www.baskinrobbins.co.kr/upload/product/1635216951063_top.png")
-                        .build()
-        );
+        return getGifticonCatalog();
     }
     
     @Override
     @Transactional
     public String redeemGifticon(Long userId, Long gifticonId) {
         log.info("기프티콘 사용 요청 - 사용자: {}, 기프티콘 ID: {}", userId, gifticonId);
-        
-        // Mock 처리 (실제로는 주문 내역에서 기프티콘 조회 및 사용 처리)
-        if (gifticonId == null || gifticonId <= 0) {
-            throw new IllegalArgumentException("유효하지 않은 기프티콘 ID입니다.");
+        var gifticon = userGifticonRepository.findByIdAndUserId(gifticonId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 기프티콘을 찾을 수 없습니다."));
+
+        // 만료 체크
+        if (gifticon.getExpiresAt() != null && gifticon.getExpiresAt().isBefore(LocalDateTime.now())) {
+            gifticon.setStatus(UserGifticon.Status.EXPIRED);
+            userGifticonRepository.save(gifticon);
+            throw new IllegalArgumentException("만료된 기프티콘입니다.");
         }
-        
-        // TODO: 실제 기프티콘 사용 로직 구현
-        // 1. 사용자가 해당 기프티콘을 구매했는지 확인
-        // 2. 이미 사용된 기프티콘인지 확인
-        // 3. 기프티콘 사용 처리
-        // 4. 외부 API 호출 (실제 기프티콘 발급)
-        
-        log.info("기프티콘 사용 완료 - 사용자: {}, 기프티콘 ID: {}", userId, gifticonId);
-        return "기프티콘이 성공적으로 사용되었습니다. 사용 내역은 마이페이지에서 확인하실 수 있습니다.";
+        if (gifticon.getStatus() == UserGifticon.Status.REDEEMED) {
+            throw new IllegalArgumentException("이미 사용된 기프티콘입니다.");
+        }
+        gifticon.setStatus(UserGifticon.Status.REDEEMED);
+        userGifticonRepository.save(gifticon);
+        log.info("기프티콘 사용 완료 - 사용자: {}, 보관함ID: {}", userId, gifticonId);
+        return "기프티콘 사용이 완료되었습니다.";
     }
     
     /**
@@ -338,4 +328,95 @@ public class ShopServiceImpl implements ShopService {
             }
         };
     }
+
+    @Override
+    public List<com.solsolhey.shop.dto.PurchasedGifticonResponse> getPurchasedGifticons(Long userId) {
+        var list = userGifticonRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        var now = LocalDateTime.now();
+        boolean changed = false;
+        for (var g : list) {
+            changed |= normalizeGifticonExpiry(g, now);
+        }
+        if (changed) userGifticonRepository.saveAll(list);
+        return list.stream().map(com.solsolhey.shop.dto.PurchasedGifticonResponse::from).collect(Collectors.toList());
+    }
+
+    @Override
+    public com.solsolhey.shop.dto.PurchasedGifticonDetailResponse getPurchasedGifticon(Long userId, Long id) {
+        var g = userGifticonRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 기프티콘을 찾을 수 없습니다."));
+        if (normalizeGifticonExpiry(g, LocalDateTime.now())) {
+            userGifticonRepository.save(g);
+        }
+        return com.solsolhey.shop.dto.PurchasedGifticonDetailResponse.from(g);
+    }
+
+    /**
+     * 만료/만료일 보정 공통 처리
+     * - ACTIVE 상태에서 만료되었으면 EXPIRED로 변경
+     * - 만료일이 없으면 생성일 기준 1년으로 세팅
+     * @return 변경 여부
+     */
+    private boolean normalizeGifticonExpiry(UserGifticon g, LocalDateTime now) {
+        boolean changed = false;
+        if (g.getStatus() == UserGifticon.Status.ACTIVE && g.getExpiresAt() != null && g.getExpiresAt().isBefore(now)) {
+            g.setStatus(UserGifticon.Status.EXPIRED);
+            changed = true;
+        }
+        if (g.getExpiresAt() == null) {
+            LocalDateTime base = g.getCreatedAt() != null ? g.getCreatedAt() : now;
+            g.setExpiresAt(base.plusYears(1));
+            changed = true;
+        }
+        return changed;
+    }
+
+    private String generateBarcode() {
+        // 간단한 12자리 코드 생성 (실서비스는 외부 발급/규격 필요)
+        String ts = String.valueOf(System.currentTimeMillis());
+        return ts.substring(ts.length() - 12);
+    }
+
+    private GifticonMeta getGifticonMeta(String sku) {
+        return getGifticonCatalog().stream()
+                .filter(g -> g.getSku().equalsIgnoreCase(sku))
+                .findFirst()
+                .map(g -> new GifticonMeta(g.getName(), g.getImageUrl()))
+                .orElseThrow(() -> new IllegalArgumentException("지원하지 않는 기프티콘입니다: " + sku));
+    }
+
+    private List<GifticonResponse> getGifticonCatalog() {
+        return List.of(
+                GifticonResponse.builder()
+                        .sku("STARBUCKS_AMERICANO")
+                        .name("스타벅스 아메리카노")
+                        .description("진한 에스프레소에 물을 더한 깔끔한 맛의 아메리카노")
+                        .price(4500)
+                        .imageUrl("/gifticons/originals/gifticon_iced_americano.png")
+                        .build(),
+                GifticonResponse.builder()
+                        .sku("STARBUCKS_LATTE")
+                        .name("스타벅스 카페라떼")
+                        .description("진한 에스프레소와 스팀밀크가 조화로운 부드러운 맛")
+                        .price(5000)
+                        .imageUrl("/gifticons/originals/gifticon_iced_vanilla_latte.png")
+                        .build(),
+                GifticonResponse.builder()
+                        .sku("GONGCHA_BROWN_SUGAR")
+                        .name("공차 흑당 밀크티")
+                        .description("진한 흑당 시럽과 부드러운 밀크티의 조화")
+                        .price(5500)
+                        .imageUrl("/gifticons/originals/gifticon_gongcha_brownsugar_milktea.png")
+                        .build(),
+                GifticonResponse.builder()
+                        .sku("BASKIN_ICE_CREAM")
+                        .name("배스킨라빈스 아이스크림")
+                        .description("다양한 맛의 프리미엄 아이스크림")
+                        .price(3000)
+                        .imageUrl("/gifticons/originals/gifticon_baskin_icecream.png")
+                        .build()
+        );
+    }
+
+    private record GifticonMeta(String name, String imageUrl) {}
 }
