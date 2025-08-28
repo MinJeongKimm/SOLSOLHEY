@@ -35,7 +35,7 @@
             <div class="flex items-center justify-between">
               <div>
                 <div class="text-sm font-semibold text-gray-800 line-clamp-1">{{ g.name }}</div>
-                <div class="text-xs text-gray-500" v-if="g.expiresAt">만료: {{ formatDate(g.expiresAt) }}</div>
+                <div class="text-sm text-gray-500" v-if="g.expiresAt">만료: {{ formatDate(g.expiresAt) }}</div>
               </div>
               <span class="text-xs px-2 py-1 rounded-full"
                     :class="statusClass(g.status)">{{ statusLabel(g.status) }}</span>

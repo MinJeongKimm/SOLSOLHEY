@@ -334,12 +334,20 @@ public class ShopServiceImpl implements ShopService {
         var list = userGifticonRepository.findByUserIdOrderByCreatedAtDesc(userId);
         // 만료 상태 업데이트 간단 체크
         var now = LocalDateTime.now();
-        list.stream()
-                .filter(g -> g.getStatus() == UserGifticon.Status.ACTIVE && g.getExpiresAt() != null && g.getExpiresAt().isBefore(now))
-                .forEach(g -> g.setStatus(UserGifticon.Status.EXPIRED));
-        if (!list.isEmpty()) {
-            userGifticonRepository.saveAll(list);
+        boolean changed = false;
+        for (var g : list) {
+            if (g.getStatus() == UserGifticon.Status.ACTIVE && g.getExpiresAt() != null && g.getExpiresAt().isBefore(now)) {
+                g.setStatus(UserGifticon.Status.EXPIRED);
+                changed = true;
+            }
+            // 만료일 미설정 시 생성일 기준 1년으로 보정
+            if (g.getExpiresAt() == null) {
+                LocalDateTime base = g.getCreatedAt() != null ? g.getCreatedAt() : now;
+                g.setExpiresAt(base.plusYears(1));
+                changed = true;
+            }
         }
+        if (changed) userGifticonRepository.saveAll(list);
         return list.stream().map(com.solsolhey.shop.dto.PurchasedGifticonResponse::from).collect(Collectors.toList());
     }
 
