@@ -42,9 +42,9 @@ dependencies {
 	
 	// 환경변수는 Spring Boot에서 자동으로 .env 파일을 인식합니다
 	
-	// Lombok
-	compileOnly 'org.projectlombok:lombok'
-	annotationProcessor 'org.projectlombok:lombok'
+    // Lombok (pin version with record/@Builder support)
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
 	
 	// 개발/테스트용
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'

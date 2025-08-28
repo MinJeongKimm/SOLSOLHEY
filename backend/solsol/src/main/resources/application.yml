@@ -2,6 +2,7 @@
 finance:
   api:
     base-url: ${FINANCE_API_BASE_URL:https://finopenapi.ssafy.io/ssafy/api/v1/edu}
+    member-base-url: ${FINANCE_API_MEMBER_BASE_URL:https://finopenapi.ssafy.io/ssafy/api/v1}
     timeout: ${FINANCE_API_TIMEOUT:10}
     api-key: ${FINANCE_API_KEY}
 
@@ -19,9 +20,9 @@ spring:
   application:
     name: solsol
   profiles:
-    active: local
+    active: ${SPRING_PROFILES_ACTIVE:local}
   config:
-    import: 
+    import:
       - "optional:file:../.env[.properties]"
       - "optional:file:../.env"
     
@@ -63,8 +64,14 @@ spring:
   config:
     activate:
       on-profile: dev
+    import:
+      - "optional:file:.env[.properties]"
+      - "optional:file:.env"
+      - "optional:file:../.env[.properties]"
+      - "optional:file:../.env"
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:solsol}
+    # Prefer explicit JDBC URL if provided; fallback to composed values
+    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:solsol}}}
     username: ${DB_USER:solsol}
     password: ${DB_PASSWORD:solsol123}
     driver-class-name: org.postgresql.Driver
@@ -93,9 +100,10 @@ spring:
     activate:
       on-profile: prod
   datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
-    username: ${DB_USER}
-    password: ${DB_PASSWORD}
+    # In prod we expect env vars; also allow SPRING_DATASOURCE_URL/DATABASE_URL
+    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}}}
+    username: ${DB_USER:${DATABASE_USERNAME:}}
+    password: ${DB_PASSWORD:${DATABASE_PASSWORD:}}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

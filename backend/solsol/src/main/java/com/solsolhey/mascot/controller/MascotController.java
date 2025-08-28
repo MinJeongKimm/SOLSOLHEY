@@ -246,6 +246,7 @@ public class MascotController {
             @Valid @RequestBody MascotEquipRequest request) {
         
         try {
+            if (userDetails == null) return createErrorResponse(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
             Long userId = userDetails.getUserId();
             log.info("마스코트 아이템 장착 API 호출 - 사용자 ID: {}", userId);
             
@@ -274,6 +275,7 @@ public class MascotController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         
         try {
+            if (userDetails == null) return createErrorResponse(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
             Long userId = userDetails.getUserId();
             log.info("마스코트 삭제 API 호출 - 사용자 ID: {}", userId);
             
@@ -392,6 +394,7 @@ public class MascotController {
             @PathVariable Long mascotId) {
         
         try {
+            if (userDetails == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             Long userId = userDetails.getUserId();
             log.info("마스코트 배경 해제 API 호출 - 사용자 ID: {}, 마스코트 ID: {}", userId, mascotId);
             
@@ -421,6 +424,7 @@ public class MascotController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         
         try {
+            if (userDetails == null) return createErrorResponse(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
             Long userId = userDetails.getUserId();
             log.info("사용 가능한 아이템 조회 API 호출 - 사용자 ID: {}", userId);
             

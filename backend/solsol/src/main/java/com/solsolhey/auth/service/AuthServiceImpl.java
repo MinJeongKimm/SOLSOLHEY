@@ -17,7 +17,6 @@ import com.solsolhey.common.exception.AuthException;
 import com.solsolhey.common.exception.BusinessException;
 import org.springframework.http.HttpStatus;
 import com.solsolhey.common.response.ApiResponse;
-import com.solsolhey.solsol.common.util.UsernameGenerator;
 import com.solsolhey.user.entity.User;
 import com.solsolhey.user.repository.UserRepository;
 
@@ -37,7 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthenticationManager authenticationManager;
-    private final UsernameGenerator usernameGenerator;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     /**
      * 회원가입
@@ -48,6 +47,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 중복 검사
         validateDuplicateUser(requestDto.getUserId());
+        validateDuplicateNickname(requestDto.getNickname());
 
         // 닉네임 중복 검사
         if (userRepository.existsByNickname(requestDto.getNickname())) {
@@ -56,18 +56,8 @@ public class AuthServiceImpl implements AuthService {
 
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
-
-        // UsernameGenerator를 사용하여 username 생성
-        String autoUsername = usernameGenerator.generateUsername(requestDto.getUserId());
-        int attempts = 0;
-        while (userRepository.existsByUsername(autoUsername) && attempts < 10) {
-            autoUsername = usernameGenerator.generateUsername(requestDto.getUserId());
-            attempts++;
-        }
-
         // 사용자 생성
         User user = User.builder()
-                .username(autoUsername)           // 자동 생성된 username
                 .email(requestDto.getUserId())    // userId를 email로 사용
                 .passwordHash(encodedPassword)
                 .nickname(requestDto.getNickname())
@@ -75,10 +65,17 @@ public class AuthServiceImpl implements AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
-        log.info("회원가입 완료: userId={}, username={}, nickname={}", 
-                savedUser.getUserId(), savedUser.getUsername(), savedUser.getNickname());
+        log.info("회원가입 완료: userId={}, email={}, nickname={}", 
+                savedUser.getUserId(), savedUser.getEmail(), savedUser.getNickname());
 
-        return SignUpResponse.success("회원가입이 완료되었습니다.", savedUser.getUserId());
+        // 커밋 후 금융 사용자 생성 트리거 이벤트 발행 (옵션 B)
+        try {
+            eventPublisher.publishEvent(new com.solsolhey.auth.event.UserRegisteredEvent(savedUser.getUserId()));
+        } catch (Exception e) {
+            log.warn("금융 사용자 생성 이벤트 발행 실패(userId={}): {}", savedUser.getUserId(), e.getMessage());
+        }
+
+        return SignUpResponse.success("회원가입이 완료되었습니다.", savedUser.getUserId(), savedUser.getEmail());
     }
 
     /**
@@ -96,7 +93,7 @@ public class AuthServiceImpl implements AuthService {
             // 인증 수행
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            user.getUsername(),
+                            requestDto.userId(), // principal: 이메일
                             requestDto.password()
                     )
             );
@@ -104,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
             // Access Token 생성
             String accessToken = jwtTokenProvider.createAccessToken(user.getUserId());
             
-            log.info("로그인 완료: userId={}, username={}", user.getUserId(), user.getUsername());
+            log.info("로그인 완료: userId={}, email={}", user.getUserId(), user.getEmail());
             
             LoginSuccessDto loginData = new LoginSuccessDto(accessToken, user.getUserId());
             return ApiResponse.success("로그인 되었습니다.", loginData);
@@ -179,15 +176,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 사용자명 중복 체크 (userId는 이메일 형식이므로 이메일 중복 체크)
-     */
-    @Override
-    @Transactional(readOnly = true)
-    public boolean isUsernameExists(String username) {
-        return userRepository.existsByEmail(username);
-    }
-
-    /**
      * 이메일 중복 체크 (userId 중복 체크와 동일)
      */
     @Override
@@ -202,6 +190,15 @@ public class AuthServiceImpl implements AuthService {
     private void validateDuplicateUser(String userId) {
         if (userRepository.existsByEmail(userId)) {
             throw new BusinessException("이미 사용중인 아이디입니다.");
+        }
+    }
+
+    /**
+     * 닉네임 중복 사용자 검증
+     */
+    private void validateDuplicateNickname(String nickname) {
+        if (userRepository.existsByNickname(nickname)) {
+            throw new BusinessException("이미 사용중인 닉네임입니다.");
         }
     }
 
