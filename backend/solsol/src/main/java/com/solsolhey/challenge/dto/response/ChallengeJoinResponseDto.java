@@ -1,6 +1,7 @@
 package com.solsolhey.challenge.dto.response;
 
 import com.solsolhey.challenge.entity.UserChallenge;
+import com.solsolhey.exp.service.ExpDailyCounterService;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,6 +21,7 @@ public class ChallengeJoinResponseDto {
     private Long userChallengeId;
     private String status;
     private UserChallengeDto userChallenge;
+    private ExpDailyCounterService.ExpAwarded expAwarded; // nullable
 
     public static ChallengeJoinResponseDto success(UserChallenge userChallenge) {
         return ChallengeJoinResponseDto.builder()

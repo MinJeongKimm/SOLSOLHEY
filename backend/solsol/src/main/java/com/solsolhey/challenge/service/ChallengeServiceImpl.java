@@ -148,9 +148,10 @@ public class ChallengeServiceImpl implements ChallengeService {
         UserChallenge savedUserChallenge = userChallengeRepository.save(userChallenge);
 
         // EXP: 챌린지 참여 카테고리 1일 1회 +5 (마스코트 존재 시)
+        java.util.Optional<com.solsolhey.exp.service.ExpDailyCounterService.ExpAwarded> catAwarded = java.util.Optional.empty();
         try {
             if (challenge.getCategory() != null) {
-                expDailyCounterService.awardChallengeCategoryExp(user, challenge.getCategory().getCategoryName());
+                catAwarded = expDailyCounterService.awardChallengeCategoryExp(user, challenge.getCategory().getCategoryName());
             }
         } catch (Exception e) {
             log.warn("챌린지 카테고리 EXP 적립 실패: userId={}, challengeId={}, err={}", user.getUserId(), challengeId, e.getMessage());
@@ -159,7 +160,14 @@ public class ChallengeServiceImpl implements ChallengeService {
         log.info("챌린지 참여 완료: challengeId={}, userId={}, userChallengeId={}", 
                 challengeId, user.getUserId(), savedUserChallenge.getUserChallengeId());
 
-        return ChallengeJoinResponseDto.success(savedUserChallenge);
+        return ChallengeJoinResponseDto.builder()
+                .success(true)
+                .message("챌린지 참여가 완료되었습니다.")
+                .userChallengeId(savedUserChallenge.getUserChallengeId())
+                .status(savedUserChallenge.getStatus().name())
+                .userChallenge(UserChallengeDto.from(savedUserChallenge))
+                .expAwarded(catAwarded.orElse(null))
+                .build();
     }
 
     /**
@@ -183,15 +191,15 @@ public class ChallengeServiceImpl implements ChallengeService {
 
         boolean wasCompleted = userChallenge.isCompleted();
 
-        // 진행도 업데이트 (FINANCE 카테고리 방어 로직)
+        // 진행도 업데이트 (FINANCE 카테고리 방어 로직) — 실제 금융 API 액션으로 인식되는 경우만 제한
         boolean isFinance = challenge.getCategory().getCategoryName() == ChallengeCategory.CategoryType.FINANCE;
-        if (isFinance) {
+        if (isFinance && isFinanceActionChallenge(challenge)) {
             String payload = request.getPayload();
             boolean validFinanceSuccess = payload != null && payload.startsWith("FINANCE_") && payload.endsWith("_SUCCESS");
             if (!validFinanceSuccess) {
-                log.warn("금융 챌린지 진행도 갱신 무시: payload 누락/무효. challengeId={}, userId={}, step={}, payload={}",
+                log.warn("금융 API형 챌린지 진행도 갱신 무시: payload 누락/무효. challengeId={}, userId={}, step={}, payload={}",
                         challengeId, user.getUserId(), request.getStepValue(), payload);
-                return ChallengeProgressResponseDto.failure("금융 챌린지는 외부 API 성공 후에만 완료할 수 있습니다.");
+                return ChallengeProgressResponseDto.failure("외부 조회를 완료한 뒤에 완료할 수 있습니다.");
             }
         }
 
@@ -221,6 +229,14 @@ public class ChallengeServiceImpl implements ChallengeService {
                 savedUserChallenge.getTargetCount(), savedUserChallenge.isCompleted());
 
         return ChallengeProgressResponseDto.success(savedUserChallenge);
+    }
+
+    private boolean isFinanceActionChallenge(Challenge challenge) {
+        String name = challenge.getChallengeName() != null ? challenge.getChallengeName().toLowerCase() : "";
+        return name.contains("환율 전체") || name.contains("전체 환율") || name.contains("환율전체")
+                || name.contains("환율 확인") || name.contains("단건") || name.contains("환율확인")
+                || name.contains("환전") || name.contains("예상") || name.contains("환전예상")
+                || name.contains("거래내역");
     }
 
     /**

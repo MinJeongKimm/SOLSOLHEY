@@ -459,9 +459,16 @@ async function loadChallenges() {
 
 // 챌린지 선택
 function selectChallenge(challenge: Challenge) {
-  // 금융 + 보류중이면 '처음 화면(미참여)'처럼 보이도록 복제 객체로 표시
+  // 금융 챌린지는 외부 조회 성공 전에는 항상 '참여' 단계로 보이도록 처리
+  // - 보류 중(pending) 이거나
+  // - 재로그인 등으로 로컬 상태가 사라졌더라도 서버 상태가 미완료라면
+  //   상세 화면에서는 '참여' 버튼이 보이게 한다.
   let ch: Challenge = challenge;
-  if (challenge.categoryName === 'FINANCE' && pendingFinance.value.has(challenge.challengeId) && challenge.userStatus !== 'COMPLETED') {
+  const isFinance = challenge.categoryName === 'FINANCE';
+  const notCompleted = challenge.userStatus !== 'COMPLETED';
+  const isPending = pendingFinance.value.has(challenge.challengeId);
+  const notSucceeded = !succeededFinance.value.has(challenge.challengeId);
+  if (isFinance && notCompleted && (isPending || notSucceeded)) {
     ch = { ...challenge, isJoined: false, userStatus: 'NOT_JOINED' } as any;
   }
   selectedChallenge.value = ch;
@@ -658,8 +665,10 @@ async function joinSelectedChallenge() {
   try {
     const cid = selectedChallenge.value.challengeId;
     const isFinance = selectedChallenge.value.categoryName === 'FINANCE';
-    // 보류 중인 금융 챌린지라면 재참여 API 호출 없이 바로 팝업만 열기
-    if (isFinance && pendingFinance.value.has(cid)) {
+    // 보류 중이거나(로컬) 이미 서버에서 참여 상태인 금융 챌린지는 재참여 API를 건너뛰고 모달만 연다
+    const original = challenges.value.find(c => c.challengeId === cid);
+    const alreadyJoinedOnServer = !!original?.isJoined;
+    if (isFinance && (pendingFinance.value.has(cid) || alreadyJoinedOnServer)) {
       const joined = selectedChallenge.value;
       selectedChallenge.value = null;
       openFinanceModalFor(joined);
@@ -756,20 +765,21 @@ async function completeChallenge() {
   
   updatingProgress.value = true;
   try {
-    const ch = selectedChallenge.value;
-    const cid = ch.challengeId;
-    const isFinance = ch.categoryName === 'FINANCE';
-    let payload = '챌린지 완료';
-    if (isFinance) {
-      // 금융은 조회 성공 후에만 완료 가능
-      if (!succeededFinance.value.has(cid)) {
-        alert('외부 조회를 완료한 뒤에 완료할 수 있습니다.');
-        updatingProgress.value = false;
-        return;
-      }
-      const action = inferFinanceTabByName(ch.challengeName);
-      payload = `FINANCE_${action}_SUCCESS`;
+  const ch = selectedChallenge.value;
+  const cid = ch.challengeId;
+  const isFinance = ch.categoryName === 'FINANCE';
+  const isFinanceAction = isFinance && isRecognizedFinanceAction(ch.challengeName);
+  let payload = '챌린지 완료';
+  if (isFinanceAction) {
+    // 금융은 조회 성공 후에만 완료 가능
+    if (!succeededFinance.value.has(cid)) {
+      alert('외부 조회를 완료한 뒤에 완료할 수 있습니다.');
+      updatingProgress.value = false;
+      return;
     }
+    const action = inferFinanceTabByName(ch.challengeName);
+    payload = `FINANCE_${action}_SUCCESS`;
+  }
     // 목표 진행도로 바로 완료 처리
     const response = await updateChallengeProgress(cid, {
       step: ch.targetCount,

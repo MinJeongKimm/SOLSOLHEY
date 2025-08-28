@@ -62,7 +62,7 @@
                   ref="mascotEl"
                   :src="getMascotImageUrl(currentMascot.type)" 
                   :alt="currentMascot.name" 
-                  class="w-32 h-32 object-contain"
+                  class="w-48 h-48 object-contain"
                   @load="updateRects"
                   @error="handleImageError"
                 />

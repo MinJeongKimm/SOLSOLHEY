@@ -29,6 +29,7 @@ import type {
 } from '../types/api';
 import { ApiError } from '../types/api';
 import router from '../router';
+import { useToastStore } from '../stores/toast';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
@@ -80,7 +81,11 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   }
 
   const doFetch = async () => {
-    const res = await fetch(`${API_BASE}${path}`, {
+    // 절대 URL인지 확인 (http:// 또는 https://로 시작하는지)
+    const isAbsoluteUrl = path.startsWith('http://') || path.startsWith('https://');
+    const fullUrl = isAbsoluteUrl ? path : `${API_BASE}${path}`;
+    
+    const res = await fetch(fullUrl, {
       credentials: 'include',
       ...init,
       headers,
@@ -88,6 +93,22 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     const text = await res.text();
     const data = text ? JSON.parse(text) : undefined;
     if (!res.ok) throw new HttpError(res.status, data);
+    try {
+      const payload: any = (data as any) ?? {};
+      const exp = payload?.data?.expAwarded ?? payload?.expAwarded;
+      if (exp && typeof exp.amount === 'number') {
+        const toast = useToastStore();
+        const type = exp?.type as string | undefined;
+        const category = exp?.category as string | undefined;
+        const amount = exp?.amount as number;
+        const level = exp?.level as number | undefined;
+        const suffix = [type, category].filter(Boolean).join('/');
+        const levelTag = level ? ` · Lv.${level}` : '';
+        toast.show(`EXP +${amount}${suffix ? ` (${suffix})` : ''}${levelTag}`, 'success');
+      }
+    } catch {
+      // ignore toast parse/store errors
+    }
     return data as T;
   };
 
@@ -95,12 +116,17 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     return await doFetch();
   } catch (e) {
     if (e instanceof HttpError && e.status === 401) {
-      try {
-        await refreshToken();
-        return await doFetch();
-      } catch (e2) {
-        auth.clearAuth();
-        throw e2;
+      // 로그인 시도에 대한 401은 토큰 갱신을 시도하지 않고, 서버 메시지를 그대로 노출한다.
+      const isLoginEndpoint = typeof path === 'string' && path.includes('/auth/login');
+      if (!isLoginEndpoint) {
+        try {
+          await refreshToken();
+          return await doFetch();
+        } catch {
+          // 갱신 실패 시 원래의 401 오류를 그대로 던져 사용자에게 명확한 메시지를 전달한다.
+          auth.clearAuth();
+          throw e;
+        }
       }
     }
     throw e;
@@ -578,6 +604,24 @@ export async function getUserItems(): Promise<UserItem[]> {
   return apiRequest<UserItem[]>('/shop/user-items', {
     method: 'GET',
   });
+}
+
+// 보관함 기프티콘 API
+import type { PurchasedGifticon, PurchasedGifticonDetail } from '../types/api';
+
+export async function getPurchasedGifticons(): Promise<PurchasedGifticon[]> {
+  const res = await apiRequest<any>('/shop/gifticons/purchased', { method: 'GET' });
+  return (res && res.data) ? (res.data as PurchasedGifticon[]) : [];
+}
+
+export async function getPurchasedGifticonDetail(id: number): Promise<PurchasedGifticonDetail> {
+  const res = await apiRequest<any>(`/shop/gifticons/purchased/${id}`, { method: 'GET' });
+  return (res && res.data) ? (res.data as PurchasedGifticonDetail) : ({} as PurchasedGifticonDetail);
+}
+
+export async function redeemPurchasedGifticon(id: number): Promise<string> {
+  const res = await apiRequest<any>(`/shop/gifticons/${id}/redeem`, { method: 'POST' });
+  return (res && res.message) ? (res.message as string) : '사용 처리되었습니다.';
 }
 
 // 금융 관련 API 함수들
