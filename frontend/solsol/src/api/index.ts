@@ -205,9 +205,11 @@ export async function getMascot(): Promise<Mascot | null> {
     const res = await apiRequest<any>('/mascot', {
       method: 'GET',
     });
-    
     return mascot.transformBackendResponse(res);
-  } catch (e) {
+  } catch (e: any) {
+    // Treat 404 as "no mascot yet" for both our HttpError and legacy ApiError types
+    const status = (e && typeof e === 'object' && 'status' in e) ? (e as any).status : undefined;
+    if (status === 404) return null;
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
   }

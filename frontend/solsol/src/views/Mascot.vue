@@ -22,20 +22,8 @@
         </div>
       </div>
 
-      <!-- 마스코트가 없는 경우 생성 버튼 -->
-      <div v-if="!currentMascot" class="text-center py-8">
-        <div class="text-6xl mb-4">🥚</div>
-        <p class="text-gray-600 mb-4">아직 마스코트가 없습니다</p>
-        <button 
-          @click="goToCreate"
-          class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-        >
-          마스코트 생성하기
-        </button>
-      </div>
-
-      <!-- 마스코트가 있는 경우 메인 영역 -->
-      <div v-else class="space-y-4">
+      <!-- 마스코트가 있는 경우에만 메인 영역 렌더 (없으면 라우터가 생성 페이지로 이동) -->
+      <div v-if="currentMascot" class="space-y-4">
         <!-- 메인 캔버스: 방 배경 + 레이어링(배경/마스코트/전경) -->
         <div class="relative">
           <!-- 방 배경 컨테이너 -->
