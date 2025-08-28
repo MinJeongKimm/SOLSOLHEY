@@ -45,7 +45,7 @@
             :style="roomBackgroundStyle"
           >
             <!-- 레이어 1: 배경 아이템 (마스코트 뒤, 캔버스 전체 채움) -->
-            <div class="absolute inset-0 z-0 overflow-hidden">
+            <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
               <img
                 v-for="bg in backgroundEquippedItems"
                 :key="bg.key"
@@ -70,7 +70,7 @@
             </div>
 
             <!-- 레이어 3: 전경 아이템 (마스코트 앞) -->
-            <div class="absolute inset-0 z-20 animate-float">
+            <div class="absolute inset-0 z-20 animate-float pointer-events-none">
               <img
                 v-for="ri in foregroundEquippedItems"
                 :key="ri.key"
@@ -88,7 +88,7 @@
             </div>
             
             <!-- 공유 버튼 -->
-            <div class="absolute top-3 right-3">
+            <div class="absolute top-3 right-3 z-50 pointer-events-auto">
               <button 
                 @click="showSharePopup"
                 class="bg-white bg-opacity-90 p-1 rounded-lg hover:bg-opacity-100 transition-all flex items-center justify-center w-8 h-8"

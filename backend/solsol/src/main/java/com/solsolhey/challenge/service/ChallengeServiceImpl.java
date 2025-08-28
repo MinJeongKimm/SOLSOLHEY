@@ -191,7 +191,18 @@ public class ChallengeServiceImpl implements ChallengeService {
 
         boolean wasCompleted = userChallenge.isCompleted();
 
-        // 진행도 업데이트
+        // 진행도 업데이트 (FINANCE 카테고리 방어 로직) — 실제 금융 API 액션으로 인식되는 경우만 제한
+        boolean isFinance = challenge.getCategory().getCategoryName() == ChallengeCategory.CategoryType.FINANCE;
+        if (isFinance && isFinanceActionChallenge(challenge)) {
+            String payload = request.getPayload();
+            boolean validFinanceSuccess = payload != null && payload.startsWith("FINANCE_") && payload.endsWith("_SUCCESS");
+            if (!validFinanceSuccess) {
+                log.warn("금융 API형 챌린지 진행도 갱신 무시: payload 누락/무효. challengeId={}, userId={}, step={}, payload={}",
+                        challengeId, user.getUserId(), request.getStepValue(), payload);
+                return ChallengeProgressResponseDto.failure("외부 조회를 완료한 뒤에 완료할 수 있습니다.");
+            }
+        }
+
         userChallenge.updateProgress(request.getStepValue());
         
         // 추가 데이터가 있으면 업데이트
@@ -218,6 +229,14 @@ public class ChallengeServiceImpl implements ChallengeService {
                 savedUserChallenge.getTargetCount(), savedUserChallenge.isCompleted());
 
         return ChallengeProgressResponseDto.success(savedUserChallenge);
+    }
+
+    private boolean isFinanceActionChallenge(Challenge challenge) {
+        String name = challenge.getChallengeName() != null ? challenge.getChallengeName().toLowerCase() : "";
+        return name.contains("환율 전체") || name.contains("전체 환율") || name.contains("환율전체")
+                || name.contains("환율 확인") || name.contains("단건") || name.contains("환율확인")
+                || name.contains("환전") || name.contains("예상") || name.contains("환전예상")
+                || name.contains("거래내역");
     }
 
     /**

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Signup from '../views/Signup.vue'
 import Challenge from '../views/Challenge.vue'
+import FinanceAction from '../views/FinanceAction.vue'
 import Mascot from '../views/Mascot.vue'
 import MascotCreate from '../views/MascotCreate.vue'
 import MascotCustomize from '../views/MascotCustomize.vue'
@@ -34,6 +35,11 @@ const routes = [
   { 
     path: '/challenge', 
     component: Challenge,
+    meta: { requiresAuth: true }
+  },
+  { 
+    path: '/challenge/finance/:challengeId', 
+    component: FinanceAction,
     meta: { requiresAuth: true }
   },
   { 

@@ -345,6 +345,18 @@
         </div>
       </div>
     </div>
+
+    <!-- 금융 API 팝업 -->
+    <FinanceApiModal
+      :visible="showFinanceModal"
+      :title="financeModalTitle"
+      :defaultTab="financeDefaultTab"
+      :onlyTab="financeDefaultTab"
+      :challengeId="financeChallengeId"
+      :targetCount="financeTargetCount"
+      @close="closeFinanceModal"
+      @succeeded="onFinanceSucceeded"
+    />
   </div>
 </template>
 
@@ -355,6 +367,7 @@ import { getChallenges, joinChallenge, updateChallengeProgress } from '../api/in
 import { usePointStore } from '../stores/point';
 import type { Challenge } from '../types/api';
 import Dropdown from '../components/Dropdown.vue';
+import FinanceApiModal from '../components/FinanceApiModal.vue';
 
 const router = useRouter();
 const pointStore = usePointStore();
@@ -421,6 +434,8 @@ const filteredChallenges = computed(() => {
   });
 });
 
+// 완료 버튼은 기존 로직 유지
+
 // 라우터 함수
 function goBack() {
   router.back();
@@ -444,7 +459,12 @@ async function loadChallenges() {
 
 // 챌린지 선택
 function selectChallenge(challenge: Challenge) {
-  selectedChallenge.value = challenge;
+  // 금융 + 보류중이면 '처음 화면(미참여)'처럼 보이도록 복제 객체로 표시
+  let ch: Challenge = challenge;
+  if (challenge.categoryName === 'FINANCE' && pendingFinance.value.has(challenge.challengeId) && challenge.userStatus !== 'COMPLETED') {
+    ch = { ...challenge, isJoined: false, userStatus: 'NOT_JOINED' } as any;
+  }
+  selectedChallenge.value = ch;
   
   // 진행도 초기화
   if (challenge.isJoined) {
@@ -496,6 +516,88 @@ async function loadChallengeProgress(challengeId: number) {
     isCompleted.value = false;
     rewardPoints.value = 0;
     progressStep.value = null;
+  }
+}
+
+// 금융 팝업 상태 및 유틸
+type FinanceTab = 'EXCHANGE_RATES' | 'SINGLE_RATE' | 'ESTIMATE' | 'TX_HISTORY';
+const showFinanceModal = ref(false);
+const financeModalTitle = ref('');
+const financeDefaultTab = ref<FinanceTab>('EXCHANGE_RATES');
+const financeChallengeId = ref<number | null>(null);
+const financeTargetCount = ref<number | null>(null);
+// 금융 챌린지 '참여 후 외부 액션 미수행' 상태를 로컬로 관리
+const pendingFinance = ref<Set<number>>(new Set());
+// 금융 챌린지 액션 성공 후(아직 완료 버튼 미누름) 상태
+const succeededFinance = ref<Set<number>>(new Set());
+
+function inferFinanceTabByName(name: string): FinanceTab {
+  const n = (name || '').toLowerCase();
+  if (n.includes('환율 전체') || n.includes('전체 환율') || n.includes('환율전체')) return 'EXCHANGE_RATES';
+  if (n.includes('환율 확인') || n.includes('단건') || n.includes('환율확인')) return 'SINGLE_RATE';
+  if (n.includes('환전') || n.includes('예상') || n.includes('환전예상')) return 'ESTIMATE';
+  if (n.includes('거래내역')) return 'TX_HISTORY';
+  return 'EXCHANGE_RATES';
+}
+
+function isRecognizedFinanceAction(name: string): boolean {
+  const n = (name || '').toLowerCase();
+  return (
+    n.includes('환율 전체') || n.includes('전체 환율') || n.includes('환율전체') ||
+    n.includes('환율 확인') || n.includes('단건') || n.includes('환율확인') ||
+    n.includes('환전') || n.includes('예상') || n.includes('환전예상') ||
+    n.includes('거래내역')
+  );
+}
+
+function openFinanceModalFor(ch: Challenge) {
+  financeModalTitle.value = ch.challengeName;
+  financeDefaultTab.value = inferFinanceTabByName(ch.challengeName);
+  financeChallengeId.value = ch.challengeId;
+  financeTargetCount.value = ch.targetCount || 1;
+  showFinanceModal.value = true;
+}
+
+function onFinanceCompleted() {
+  if (financeChallengeId.value != null) {
+    pendingFinance.value.delete(financeChallengeId.value);
+  }
+  showFinanceModal.value = false;
+  loadChallenges();
+}
+
+function closeFinanceModal() {
+  showFinanceModal.value = false;
+  // 닫기 시: 보류 중이면 '처음 화면'으로, 성공이면 '완료하기 버튼' 화면으로
+  if (financeChallengeId.value != null && pendingFinance.value.has(financeChallengeId.value)) {
+    const id = financeChallengeId.value;
+    const found = challenges.value.find(c => c.challengeId === id);
+    if (found) {
+      const ch: Challenge = { ...found, isJoined: false, userStatus: 'NOT_JOINED' } as any;
+      selectedChallenge.value = ch;
+    }
+  } else if (financeChallengeId.value != null && succeededFinance.value.has(financeChallengeId.value)) {
+    const id = financeChallengeId.value;
+    const found = challenges.value.find(c => c.challengeId === id);
+    if (found) {
+      // 참여중 + 미완료 상태로 상세 모달 열기 → '챌린지 완료하기' 버튼 노출
+      const ch: Challenge = { ...found, isJoined: true, userStatus: 'IN_PROGRESS' } as any;
+      selectedChallenge.value = ch;
+      // 진행도 초기화 표시
+      currentProgress.value = 0;
+      isCompleted.value = false;
+      rewardPoints.value = 0;
+      progressStep.value = null;
+    }
+  }
+  // 목록도 동기화
+  loadChallenges();
+}
+
+function onFinanceSucceeded() {
+  if (financeChallengeId.value != null) {
+    pendingFinance.value.delete(financeChallengeId.value);
+    succeededFinance.value.add(financeChallengeId.value);
   }
 }
 
@@ -554,17 +656,40 @@ async function joinSelectedChallenge() {
   if (!selectedChallenge.value) return;
   
   try {
-    await joinChallenge(selectedChallenge.value.challengeId);
+    const cid = selectedChallenge.value.challengeId;
+    const isFinance = selectedChallenge.value.categoryName === 'FINANCE';
+    // 보류 중인 금융 챌린지라면 재참여 API 호출 없이 바로 팝업만 열기
+    if (isFinance && pendingFinance.value.has(cid)) {
+      const joined = selectedChallenge.value;
+      selectedChallenge.value = null;
+      openFinanceModalFor(joined);
+      return;
+    }
+
+    await joinChallenge(cid);
     
     // 참여 상태 업데이트
     selectedChallenge.value.isJoined = true;
     // 목록에도 즉시 반영
     syncChallengeStatusInList(selectedChallenge.value.challengeId, { isJoined: true });
+    // 진행도 초기화 및 로드 (비금융의 경우 유지)
+    if (!isFinance) {
+      await loadChallengeProgress(cid);
+    }
     
-    // 진행도 초기화 및 로드
-    await loadChallengeProgress(selectedChallenge.value.challengeId);
-    // 목록은 백그라운드로 갱신(모달은 유지하여 사용자 확인 용이)
-    await loadChallenges();
+    // 모달 닫기 및 다음 동작
+    const joined = selectedChallenge.value;
+    selectedChallenge.value = null;
+
+    if (isFinance && joined && isRecognizedFinanceAction(joined.challengeName)) {
+      // 금융은 외부 액션 성공 전까지 로컬로 보류 처리하여 다음에 눌렀을 때 '처음 화면'으로 보이게 함
+      pendingFinance.value.add(joined.challengeId);
+      // 금융 챌린지는 팝업으로 진행
+      openFinanceModalFor(joined);
+    } else {
+      // 비금융은 목록 새로고침 유지
+      await loadChallenges();
+    }
     
   } catch (err: any) {
     console.error('챌린지 참여 실패:', err);
@@ -631,10 +756,25 @@ async function completeChallenge() {
   
   updatingProgress.value = true;
   try {
+  const ch = selectedChallenge.value;
+  const cid = ch.challengeId;
+  const isFinance = ch.categoryName === 'FINANCE';
+  const isFinanceAction = isFinance && isRecognizedFinanceAction(ch.challengeName);
+  let payload = '챌린지 완료';
+  if (isFinanceAction) {
+    // 금융은 조회 성공 후에만 완료 가능
+    if (!succeededFinance.value.has(cid)) {
+      alert('외부 조회를 완료한 뒤에 완료할 수 있습니다.');
+      updatingProgress.value = false;
+      return;
+    }
+    const action = inferFinanceTabByName(ch.challengeName);
+    payload = `FINANCE_${action}_SUCCESS`;
+  }
     // 목표 진행도로 바로 완료 처리
-    const response = await updateChallengeProgress(selectedChallenge.value.challengeId, {
-      step: selectedChallenge.value.targetCount,
-      payload: '챌린지 완료'
+    const response = await updateChallengeProgress(cid, {
+      step: ch.targetCount,
+      payload,
     });
     
     if (response.success && response.userChallenge) {
