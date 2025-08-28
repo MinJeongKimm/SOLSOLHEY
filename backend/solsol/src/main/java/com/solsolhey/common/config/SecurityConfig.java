@@ -78,8 +78,7 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/health", "/actuator/**", "/api/v1/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/mascot/view").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/v1/mascot").authenticated()
+                .requestMatchers("/api/v1/mascot/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/friends/requests").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/attendance").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/v1/attendance/**").authenticated()
@@ -161,7 +160,6 @@ public class SecurityConfig {
      * JWT 인증 필터 빈 등록
      */
     @Bean
-    @org.springframework.context.annotation.Profile("!local")
     public JwtAuthenticationFilter jwtAuthenticationFilter(
             JwtTokenProvider jwtTokenProvider,
             CustomUserDetailsService userDetailsService,
@@ -174,7 +172,6 @@ public class SecurityConfig {
      * JwtAuthenticationFilter 자동 등록 비활성화
      */
     @Bean
-    @org.springframework.context.annotation.Profile("!local")
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(JwtAuthenticationFilter filter) {
         FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(filter);
