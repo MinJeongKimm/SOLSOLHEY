@@ -21,8 +21,8 @@ import lombok.NoArgsConstructor;
  */
 @Entity
 @Table(name = "votes", indexes = {
-    @Index(name = "idx_voter_mascot", columnList = "voter_id, mascot_id"),
-    @Index(name = "idx_mascot_id", columnList = "mascot_id"),
+    @Index(name = "idx_voter_entry", columnList = "voter_id, entry_id"),
+    @Index(name = "idx_entry_id", columnList = "entry_id"),
     @Index(name = "idx_idempotency_key", columnList = "idempotency_key")
 })
 @Getter
@@ -33,6 +33,9 @@ public class Vote extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "vote_id")
     private Long voteId;
+
+    @Column(name = "entry_id", nullable = false)
+    private Long entryId;
 
     @Column(name = "mascot_id", nullable = false)
     private Long mascotId;
@@ -61,8 +64,9 @@ public class Vote extends BaseEntity {
     }
 
     @Builder
-    public Vote(Long mascotId, Long voterId, VoteType voteType,
+    public Vote(Long entryId, Long mascotId, Long voterId, VoteType voteType,
                 Integer weight, String idempotencyKey, Long campusId) {
+        this.entryId = entryId;
         this.mascotId = mascotId;
         this.voterId = voterId;
         this.voteType = voteType;
