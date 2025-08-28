@@ -42,6 +42,10 @@ public class Item {
     
     @Column(name = "category", nullable = false, length = 50)
     private String category; // "head", "clothing", "accessory", "background"
+
+    @Column(name = "required_level", nullable = false)
+    @Builder.Default
+    private Integer requiredLevel = 1;
     
     @Column(name = "is_active", nullable = false)
     @Builder.Default
@@ -70,4 +74,3 @@ public class Item {
         }
     }
 }
-
