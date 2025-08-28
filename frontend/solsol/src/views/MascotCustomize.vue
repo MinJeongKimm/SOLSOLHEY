@@ -15,11 +15,6 @@
           <h1 class="text-xl font-bold text-gray-800">Customize</h1>
         </div>
         
-        <!-- 우측: 포인트 -->
-        <div class="flex items-center space-x-2">
-          <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5" />
-          <span class="font-bold text-orange-600">{{ userCoins }}P</span>
-        </div>
       </div>
 
       <!-- 마스코트 미리보기 영역 -->
@@ -79,7 +74,7 @@
             <!-- 중앙 고정 마스코트 이미지 -->
             <div 
               ref="mascotRef"
-              class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 z-10"
+              class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-48 z-10"
             >
               <img 
                 :src="currentMascot ? getMascotImageUrl(currentMascot.type) : '/mascot/soll.png'" 
@@ -359,7 +354,7 @@ const router = useRouter();
 // 반응형 데이터
 const currentMascot = ref<Mascot | null>(null);
 const items = ref<any[]>([]);
-const userCoins = ref(15000);
+// 우측 상단 코인 표시 제거에 따라 사용하지 않음
 const selectedCategory = ref<'head' | 'clothing' | 'accessory' | 'background'>('head');
 
 // 드래그 관련 상태

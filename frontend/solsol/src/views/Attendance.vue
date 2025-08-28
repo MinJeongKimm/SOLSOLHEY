@@ -142,6 +142,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { apiRequest } from '../api/index';
+import { useToastStore } from '../stores/toast';
 import { auth } from '../api/index';
 
 const router = useRouter();
@@ -334,12 +335,7 @@ async function checkAttendance() {
       const todayString = getLocalDateString(today);
       attendanceRecords.value.add(todayString);
       
-      // EXP는 expAwarded 존재 시에만 알림 노출(로컬 가산 금지)
-      if (expAwarded && typeof expAwarded.amount === 'number') {
-        alert(`출석체크 완료! +${expAwarded.amount}XP 획득! (연속 ${newConsecutiveDays}일)`);
-      } else {
-        alert(`출석체크 완료! (연속 ${newConsecutiveDays}일)`);
-      }
+      // EXP 토스트는 apiRequest 인터셉터에서 자동 표출됨. 별도 성공 알림은 생략해 중복을 줄임.
     } else {
       throw new Error('출석체크 응답이 올바르지 않습니다.');
     }
@@ -358,7 +354,8 @@ async function checkAttendance() {
       }
     }
     
-    alert(errorMessage);
+    const toast = useToastStore();
+    toast.show(errorMessage, 'error');
   }
 }
 
