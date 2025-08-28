@@ -482,9 +482,19 @@ async function composeShareImageBlob(): Promise<Blob> {
       }
     }
   } else if (currentMascot.value?.backgroundPattern === 'stripes') {
+    // 꾸미기 화면과 동일하게 반대 대각선 방향으로 스트라이프 그리기
     ctx.fillStyle = 'rgba(0,0,0,0.08)';
-    for (let i = 0; i < canvasSize; i += 20) {
-      ctx.fillRect(i, 0, 10, canvasSize);
+    const stripeWidth = 10;
+    const stripeGap = 20;
+    
+    // 반대 대각선 방향으로 스트라이프 그리기 (-45도, 오른쪽 위에서 왼쪽 아래)
+    // 전체 캔버스를 완전히 덮도록 범위 확장
+    for (let offset = -canvasSize * 1.5; offset < canvasSize * 2.5; offset += stripeGap) {
+      ctx.save();
+      ctx.translate(offset, 0);
+      ctx.rotate(-Math.PI / 4); // -45도 회전 (반대 대각선)
+      ctx.fillRect(0, -canvasSize * 1.5, stripeWidth, canvasSize * 3);
+      ctx.restore();
     }
   }
 
