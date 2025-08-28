@@ -266,4 +266,23 @@ public class FriendController {
             throw e;
         }
     }
+
+    /**
+     * 친구 홈 데이터 조회 (레벨/마스코트 요약 + 좋아요 상태)
+     */
+    @GetMapping("/{friendId}/home")
+    @Operation(summary = "친구 홈 조회", description = "친구 홈 화면에 필요한 요약 데이터(레벨, 좋아요 누적/오늘 상태 등)를 반환합니다")
+    public ResponseEntity<ApiResponse<FriendHomeResponse>> getFriendHome(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long friendId
+    ) {
+        try {
+            log.info("친구 홈 조회 API 호출: viewerId={}, friendId={}", userDetails.getUserId(), friendId);
+            FriendHomeResponse body = friendService.getFriendHome(userDetails.getUser(), friendId);
+            return ResponseEntity.ok(ApiResponse.success("친구 홈 데이터를 조회했습니다.", body));
+        } catch (Exception e) {
+            log.error("친구 홈 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
 }

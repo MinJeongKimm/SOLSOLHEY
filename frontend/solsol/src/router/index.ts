@@ -8,6 +8,8 @@ import MascotCreate from '../views/MascotCreate.vue'
 import MascotCustomize from '../views/MascotCustomize.vue'
 import FriendList from '../views/FriendList.vue'
 import FriendAdd from '../views/FriendAdd.vue'
+import FriendHome from '../views/FriendHome.vue'
+import Notifications from '../views/Notifications.vue'
 import Shop from '../views/Shop.vue'
 import Ranking from '../views/Ranking.vue'
 import Attendance from '../views/Attendance.vue'
@@ -60,9 +62,19 @@ const routes = [
     component: FriendList,
     meta: { requiresAuth: true }
   },
-    { 
+  { 
+    path: '/friends/:id', 
+    component: FriendHome,
+    meta: { requiresAuth: true }
+  },
+  { 
     path: '/friend/add', 
     component: FriendAdd, 
+    meta: { requiresAuth: true }
+  },
+  { 
+    path: '/notifications', 
+    component: Notifications, 
     meta: { requiresAuth: true }
   },
   { 

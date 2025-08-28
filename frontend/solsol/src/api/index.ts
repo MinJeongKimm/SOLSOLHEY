@@ -29,6 +29,7 @@ import type {
 } from '../types/api';
 import { ApiError } from '../types/api';
 import router from '../router';
+import { useToastStore } from '../stores/toast';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
@@ -92,6 +93,22 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     const text = await res.text();
     const data = text ? JSON.parse(text) : undefined;
     if (!res.ok) throw new HttpError(res.status, data);
+    try {
+      const payload: any = (data as any) ?? {};
+      const exp = payload?.data?.expAwarded ?? payload?.expAwarded;
+      if (exp && typeof exp.amount === 'number') {
+        const toast = useToastStore();
+        const type = exp?.type as string | undefined;
+        const category = exp?.category as string | undefined;
+        const amount = exp?.amount as number;
+        const level = exp?.level as number | undefined;
+        const suffix = [type, category].filter(Boolean).join('/');
+        const levelTag = level ? ` · Lv.${level}` : '';
+        toast.show(`EXP +${amount}${suffix ? ` (${suffix})` : ''}${levelTag}`, 'success');
+      }
+    } catch {
+      // ignore toast parse/store errors
+    }
     return data as T;
   };
 
