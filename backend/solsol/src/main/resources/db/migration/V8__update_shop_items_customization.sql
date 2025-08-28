@@ -61,3 +61,64 @@ INSERT INTO shop_items (name, description, price, type, image_url, category, is_
 SELECT '별', null, 30, 'EQUIP', '/backgrounds/stickers/bg_star.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
  WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '별');
 
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '말풍선v1', null, 70, 'EQUIP', '/backgrounds/stickers/bg_stickers_v1.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '말풍선v1');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '말풍선v2', null, 70, 'EQUIP', '/backgrounds/stickers/bg_stickers_v2.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '말풍선v2');
+
+ INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '말풍선v3', null, 40, 'EQUIP', '/backgrounds/stickers/bg_stickers_v3.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '말풍선v3');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '말풍선v4', null, 40, 'EQUIP', '/backgrounds/stickers/bg_stickers_v4.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '말풍선v4');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '말풍선v5', null, 50, 'EQUIP', '/backgrounds/stickers/bg_stickers_v5.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '말풍선v5');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '말풍선v6', null, 30, 'EQUIP', '/backgrounds/stickers/bg_stickers_v6.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '말풍선v6');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '말풍선v7', null, 50, 'EQUIP', '/backgrounds/stickers/bg_stickers_v7.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '말풍선v7');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '말풍선v8', null, 60, 'EQUIP', '/backgrounds/stickers/bg_stickers_v8.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '말풍선v8');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '말풍선v9', null, 50, 'EQUIP', '/backgrounds/stickers/bg_stickers_v9.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+ WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '말풍선v9');
+
+
+-- 4) ADD NEW (idempotent inserts) - 배경
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '배경v1', null, 50, 'BACKGROUND', '/backgrounds/base/bg_v1.jpg', 'base', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '배경v1');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '배경v2', null, 50, 'BACKGROUND', '/backgrounds/base/bg_v2.jpg', 'base', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '배경v2');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '배경v3', null, 50, 'BACKGROUND', '/backgrounds/base/bg_v3.jpg', 'base', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '배경v3');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '배경v4', null, 50, 'BACKGROUND', '/backgrounds/base/bg_v4.jpg', 'base', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '배경v4');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '배경v5', null, 50, 'BACKGROUND', '/backgrounds/base/bg_v5.jpg', 'base', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '배경v5');
+
+INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
+SELECT '배경v6', null, 50, 'BACKGROUND', '/backgrounds/base/bg_v6.jpg', 'base', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '배경v6');
