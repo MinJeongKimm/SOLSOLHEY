@@ -1,0 +1,368 @@
+package com.solsolhey.friend.service;
+
+import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.LocalTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.solsolhey.common.exception.BusinessException;
+import com.solsolhey.common.exception.EntityNotFoundException;
+import com.solsolhey.friend.dto.request.FriendAddRequest;
+import com.solsolhey.friend.dto.request.FriendInteractionRequest;
+import com.solsolhey.friend.dto.response.FriendInteractionResponse;
+import com.solsolhey.friend.dto.response.FriendResponse;
+import com.solsolhey.friend.dto.response.FriendSearchResponse;
+import com.solsolhey.friend.dto.response.FriendStatsResponse;
+import com.solsolhey.friend.dto.response.FriendHomeResponse;
+import com.solsolhey.friend.entity.Friend;
+import com.solsolhey.friend.entity.Friend.FriendshipStatus;
+import com.solsolhey.friend.entity.FriendInteraction;
+import com.solsolhey.friend.entity.FriendInteraction.InteractionType;
+import com.solsolhey.friend.repository.FriendInteractionRepository;
+import com.solsolhey.friend.repository.FriendRepository;
+import com.solsolhey.mascot.dto.view.MascotViewResponse;
+import com.solsolhey.mascot.service.MascotViewService;
+import com.solsolhey.user.entity.User;
+import com.solsolhey.user.repository.UserRepository;
+import com.solsolhey.exp.service.ExpDailyCounterService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 친구 관리 서비스 구현체
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional
+public class FriendServiceImpl implements FriendService {
+
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+
+    private final FriendRepository friendRepository;
+    private final FriendInteractionRepository friendInteractionRepository;
+    private final UserRepository userRepository;
+    private final ExpDailyCounterService expDailyCounterService;
+    private final MascotViewService mascotViewService;
+
+    @Override
+    public FriendResponse sendFriendRequest(User user, FriendAddRequest request) {
+        log.debug("친구 요청 보내기: userId={}, friendUserId={}", user.getUserId(), request.friendUserId());
+
+        User friendUser = userRepository.findById(request.friendUserId())
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+
+        if (user.getUserId().equals(friendUser.getUserId())) {
+            throw new BusinessException("자기 자신에게는 친구 요청을 보낼 수 없습니다.");
+        }
+
+        // 이미 친구 관계가 있는지 확인
+        if (friendRepository.findFriendshipBetween(user, friendUser).isPresent()) {
+            throw new BusinessException("이미 친구 요청이 존재합니다.");
+        }
+
+        Friend friend = Friend.builder()
+                .user(user)
+                .friendUser(friendUser)
+                .status(FriendshipStatus.PENDING)
+                .build();
+
+        Friend savedFriend = friendRepository.save(friend);
+        
+        return FriendResponse.from(savedFriend, false);
+    }
+
+    @Override
+    public FriendResponse acceptFriendRequest(User user, Long friendId) {
+        log.debug("친구 요청 수락: userId={}, friendId={}", user.getUserId(), friendId);
+
+        Friend friend = friendRepository.findById(friendId)
+                .orElseThrow(() -> new EntityNotFoundException("친구 요청을 찾을 수 없습니다."));
+
+        if (!friend.getFriendUser().getUserId().equals(user.getUserId())) {
+            throw new BusinessException("친구 요청을 수락할 권한이 없습니다.");
+        }
+
+        if (friend.getStatus() != FriendshipStatus.PENDING) {
+            throw new BusinessException("대기 중인 친구 요청이 아닙니다.");
+        }
+
+        friend.accept();
+        return FriendResponse.from(friend, true);
+    }
+
+    @Override
+    public void rejectFriendRequest(User user, Long friendId) {
+        log.debug("친구 요청 거절: userId={}, friendId={}", user.getUserId(), friendId);
+
+        Friend friend = friendRepository.findById(friendId)
+                .orElseThrow(() -> new EntityNotFoundException("친구 요청을 찾을 수 없습니다."));
+
+        if (!friend.getFriendUser().getUserId().equals(user.getUserId())) {
+            throw new BusinessException("친구 요청을 거절할 권한이 없습니다.");
+        }
+
+        friend.reject();
+    }
+
+    @Override
+    public void removeFriend(User user, Long friendId) {
+        log.debug("친구 삭제: userId={}, friendId={}", user.getUserId(), friendId);
+
+        Friend friend = friendRepository.findById(friendId)
+                .orElseThrow(() -> new EntityNotFoundException("친구 관계를 찾을 수 없습니다."));
+
+        if (!friend.getUser().getUserId().equals(user.getUserId()) && 
+            !friend.getFriendUser().getUserId().equals(user.getUserId())) {
+            throw new BusinessException("친구를 삭제할 권한이 없습니다.");
+        }
+
+        friendRepository.delete(friend);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FriendResponse> getFriends(User user, Pageable pageable) {
+        Page<Friend> friends = friendRepository.findAcceptedFriends(user, FriendshipStatus.ACCEPTED, pageable);
+        return friends.map(friend -> {
+            boolean isRequestReceivedByMe = friend.getFriendUser().getUserId().equals(user.getUserId());
+            return FriendResponse.from(friend, isRequestReceivedByMe);
+        });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FriendResponse> getPendingFriendRequests(User user, Pageable pageable) {
+        Page<Friend> requests = friendRepository.findByFriendUserAndStatus(user, FriendshipStatus.PENDING, pageable);
+        return requests.map(friend -> FriendResponse.from(friend, true));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FriendResponse> getSentFriendRequests(User user, Pageable pageable) {
+        Page<Friend> requests = friendRepository.findByUserAndStatus(user, FriendshipStatus.PENDING, pageable);
+        return requests.map(friend -> FriendResponse.from(friend, false));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FriendSearchResponse> searchFriends(User user, String keyword) {
+        log.debug("친구 검색: userId={}, keyword={}", user.getUserId(), keyword);
+        
+        List<User> users = userRepository.findByNickname(keyword);
+        
+        return users.stream()
+                .filter(u -> !u.getUserId().equals(user.getUserId()))
+                .map(u -> {
+                    boolean isAlreadyFriend = friendRepository.existsMutualFriendship(user, u);
+                    boolean hasPendingRequest = friendRepository.findFriendshipBetween(user, u)
+                            .map(f -> f.getStatus() == FriendshipStatus.PENDING)
+                            .orElse(false);
+                    
+                    return FriendSearchResponse.from(u, isAlreadyFriend, hasPendingRequest);
+                })
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FriendStatsResponse getFriendStats(User user) {
+        Long totalFriends = friendRepository.countFriendsByUser(user);
+        
+        Long pendingRequests = (long) friendRepository.findByFriendUserAndStatus(
+                user, FriendshipStatus.PENDING, Pageable.unpaged()).getContent().size();
+        
+        Long sentRequests = (long) friendRepository.findByUserAndStatus(
+                user, FriendshipStatus.PENDING, Pageable.unpaged()).getContent().size();
+        
+        Long unreadInteractions = friendInteractionRepository.countUnreadByToUser(user);
+        
+        LocalDateTime startOfDay = LocalDateTime.of(LocalDateTime.now().toLocalDate(), LocalTime.MIN);
+        LocalDateTime endOfDay = LocalDateTime.of(LocalDateTime.now().toLocalDate(), LocalTime.MAX);
+        Long todayInteractions = friendInteractionRepository.countTodayInteractionsByToUser(
+                user, startOfDay, endOfDay);
+
+        return FriendStatsResponse.of(totalFriends, pendingRequests, sentRequests, 
+                                    unreadInteractions, todayInteractions);
+    }
+
+    @Override
+    public FriendInteractionResponse sendInteraction(User user, FriendInteractionRequest request) {
+        log.debug("상호작용 보내기: userId={}, toUserId={}, type={}", 
+                 user.getUserId(), request.toUserId(), request.interactionType());
+
+        User toUser = userRepository.findById(request.toUserId())
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+
+        // 친구 관계 확인
+        if (!friendRepository.existsMutualFriendship(user, toUser)) {
+            throw new BusinessException("친구 관계가 아닌 사용자에게는 상호작용을 보낼 수 없습니다.");
+        }
+
+        // LIKE 핑퐁 제한(순서 기반):
+        // - 기본 1회(오늘 U->V 보낸 적 없으면 1회)
+        // - 이미 오늘 보냈다면, 내 마지막 발신 시각 이후에 상대(V->U)로부터 받은 내역이 있을 때만 추가 1회 허용
+        if (request.interactionType() == InteractionType.LIKE) {
+            LocalDate today = LocalDate.now(KST);
+            LocalDateTime startOfDay = today.atStartOfDay();
+            LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+
+            long sentToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                    user, toUser, InteractionType.LIKE, startOfDay, endOfDay);
+            boolean allowed;
+            if (sentToday == 0) {
+                allowed = true; // 기본 1회
+            } else {
+                LocalDateTime lastSentAt = friendInteractionRepository
+                        .findMaxCreatedAtDirectionalByTypeAndCreatedAtBetween(
+                                user, toUser, InteractionType.LIKE, startOfDay, endOfDay);
+                if (lastSentAt == null) {
+                    allowed = false;
+                } else {
+                    LocalDateTime afterLastSent = lastSentAt.plusNanos(1);
+                    long receivedAfter = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                            toUser, user, InteractionType.LIKE, afterLastSent, endOfDay);
+                    allowed = receivedAfter >= 1;
+                }
+            }
+            if (!allowed) {
+                throw new BusinessException("오늘은 더 이상 해당 친구에게 좋아요를 보낼 수 없습니다.");
+            }
+        }
+
+        FriendInteraction interaction = FriendInteraction.builder()
+                .fromUser(user)
+                .toUser(toUser)
+                .interactionType(request.interactionType())
+                .message(request.message())
+                .build();
+
+        FriendInteraction savedInteraction = friendInteractionRepository.save(interaction);
+        Optional<ExpDailyCounterService.ExpAwarded> activeAwarded = Optional.empty();
+        try {
+            // 방문자(발신자): active 규칙(1~3회 +3, 이후 +1)
+            activeAwarded = expDailyCounterService.awardFriendInteractionExpActive(user);
+        } catch (Exception e) {
+            log.warn("친구 Active EXP 적립 실패: userId={}, err={}", user.getUserId(), e.getMessage());
+        }
+        try {
+            // 피방문자(수신자): passive 규칙(+1, 무제한)
+            expDailyCounterService.awardFriendInteractionExpPassive(toUser);
+        } catch (Exception e) {
+            log.warn("친구 Passive EXP 적립 실패: toUserId={}, err={}", toUser.getUserId(), e.getMessage());
+        }
+        
+        return FriendInteractionResponse.builder()
+                .interactionId(savedInteraction.getInteractionId())
+                .fromUserId(savedInteraction.getFromUser().getUserId())
+                .fromUserNickname(savedInteraction.getFromUser().getNickname())
+                .toUserId(savedInteraction.getToUser().getUserId())
+                .toUserNickname(savedInteraction.getToUser().getNickname())
+                .interactionType(savedInteraction.getInteractionType())
+                .message(savedInteraction.getMessage())
+                .isRead(savedInteraction.getIsRead())
+                .createdAt(savedInteraction.getCreatedAt())
+                .expAwarded(activeAwarded.orElse(null))
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<FriendInteractionResponse> getReceivedInteractions(User user, Pageable pageable) {
+        Page<FriendInteraction> interactions = friendInteractionRepository
+                .findByToUserOrderByCreatedAtDesc(user, pageable);
+        return interactions.map(FriendInteractionResponse::from);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Long getUnreadInteractionCount(User user) {
+        return friendInteractionRepository.countUnreadByToUser(user);
+    }
+
+    @Override
+    public void markInteractionAsRead(User user, Long interactionId) {
+        FriendInteraction interaction = friendInteractionRepository.findById(interactionId)
+                .orElseThrow(() -> new EntityNotFoundException("상호작용을 찾을 수 없습니다."));
+
+        if (!interaction.getToUser().getUserId().equals(user.getUserId())) {
+            throw new BusinessException("상호작용을 읽을 권한이 없습니다.");
+        }
+
+        interaction.markAsRead();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public FriendHomeResponse getFriendHome(User viewer, Long friendId) {
+        User owner = userRepository.findById(friendId)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+
+        boolean self = viewer.getUserId().equals(owner.getUserId());
+        boolean isFriend = self || friendRepository.existsMutualFriendship(viewer, owner);
+        if (!isFriend) {
+            throw new BusinessException("친구 관계가 아닌 사용자입니다.");
+        }
+
+        // Mascot view summary
+        MascotViewResponse view = mascotViewService.getView(viewer.getUserId(), owner.getUserId());
+
+        // Lifetime like count to owner (from anyone)
+        long lifetimeLikes = friendInteractionRepository
+                .countByToUserAndInteractionType(owner, InteractionType.LIKE);
+
+        // Today window (KST)
+        LocalDate today = LocalDate.now(KST);
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+
+        long sentToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                viewer, owner, InteractionType.LIKE, startOfDay, endOfDay);
+        long receivedToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                owner, viewer, InteractionType.LIKE, startOfDay, endOfDay);
+
+        int allowedMax = 1; // 표시용: 기본 1회
+        int remaining;
+        if (sentToday == 0) {
+            remaining = 1;
+        } else {
+            LocalDateTime lastSentAt = friendInteractionRepository
+                    .findMaxCreatedAtDirectionalByTypeAndCreatedAtBetween(
+                            viewer, owner, InteractionType.LIKE, startOfDay, endOfDay);
+            if (lastSentAt == null) {
+                remaining = 0;
+            } else {
+                LocalDateTime afterLastSent = lastSentAt.plusNanos(1);
+                long receivedAfter = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                        owner, viewer, InteractionType.LIKE, afterLastSent, endOfDay);
+                remaining = receivedAfter >= 1 ? 1 : 0;
+            }
+        }
+        boolean canLikeNow = remaining > 0;
+
+        return FriendHomeResponse.builder()
+                .ownerId(view.getOwner().getId())
+                .nickname(view.getOwner().getNickname())
+                .level(view.getOwner().getLevel())
+                .likeCount(lifetimeLikes)
+                .likeSentToday((int) sentToday)
+                .likeReceivedToday((int) receivedToday)
+                .likeAllowedMax(allowedMax)
+                .likeRemainingToday(remaining)
+                .canLikeNow(canLikeNow)
+                .viewMode(view.getViewMode())
+                .permissions(view.getPermissions())
+                .mascot(view.getMascot())
+                .isFriend(isFriend)
+                .isOwner(self)
+                .build();
+    }
+}
