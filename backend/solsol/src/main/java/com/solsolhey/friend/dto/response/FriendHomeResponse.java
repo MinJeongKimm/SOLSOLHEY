@@ -16,8 +16,8 @@ public record FriendHomeResponse(
         Long likeCount,              // 누적 합
         Integer likeSentToday,       // 오늘 내가 그 친구에게 보낸 수
         Integer likeReceivedToday,   // 오늘 그 친구가 나에게 보낸 수
-        Integer likeAllowedMax,      // min(30, 1 + likeReceivedToday)
-        Integer likeRemainingToday,  // likeAllowedMax - likeSentToday (하한 0)
+        Integer likeAllowedMax,      // 고정 1 (기본 1회, 콜백 1회까지 허용하되 남은 가능은 최대 1)
+        Integer likeRemainingToday,  // clamp(1 + likeReceivedToday - likeSentToday, 0..1)
         Boolean canLikeNow,          // likeRemainingToday > 0
         ViewMode viewMode,
         Permissions permissions,
@@ -25,4 +25,3 @@ public record FriendHomeResponse(
         Boolean isFriend,
         Boolean isOwner
 ) { }
-

@@ -206,7 +206,9 @@ public class FriendServiceImpl implements FriendService {
             throw new BusinessException("친구 관계가 아닌 사용자에게는 상호작용을 보낼 수 없습니다.");
         }
 
-        // LIKE에 한하여 핑퐁 제한 적용: allowedMax = min(30, 1 + receivedToday)
+        // LIKE 핑퐁 제한(순서 기반):
+        // - 기본 1회(오늘 U->V 보낸 적 없으면 1회)
+        // - 이미 오늘 보냈다면, 내 마지막 발신 시각 이후에 상대(V->U)로부터 받은 내역이 있을 때만 추가 1회 허용
         if (request.interactionType() == InteractionType.LIKE) {
             LocalDate today = LocalDate.now(KST);
             LocalDateTime startOfDay = today.atStartOfDay();
@@ -214,11 +216,23 @@ public class FriendServiceImpl implements FriendService {
 
             long sentToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
                     user, toUser, InteractionType.LIKE, startOfDay, endOfDay);
-            long receivedToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
-                    toUser, user, InteractionType.LIKE, startOfDay, endOfDay);
-
-            long allowedMax = Math.min(30, 1 + receivedToday);
-            if (sentToday >= allowedMax) {
+            boolean allowed;
+            if (sentToday == 0) {
+                allowed = true; // 기본 1회
+            } else {
+                LocalDateTime lastSentAt = friendInteractionRepository
+                        .findMaxCreatedAtDirectionalByTypeAndCreatedAtBetween(
+                                user, toUser, InteractionType.LIKE, startOfDay, endOfDay);
+                if (lastSentAt == null) {
+                    allowed = false;
+                } else {
+                    LocalDateTime afterLastSent = lastSentAt.plusNanos(1);
+                    long receivedAfter = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                            toUser, user, InteractionType.LIKE, afterLastSent, endOfDay);
+                    allowed = receivedAfter >= 1;
+                }
+            }
+            if (!allowed) {
                 throw new BusinessException("오늘은 더 이상 해당 친구에게 좋아요를 보낼 수 없습니다.");
             }
         }
@@ -302,8 +316,23 @@ public class FriendServiceImpl implements FriendService {
         long receivedToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
                 owner, viewer, InteractionType.LIKE, startOfDay, endOfDay);
 
-        int allowedMax = (int) Math.min(30, 1 + receivedToday);
-        int remaining = Math.max(0, allowedMax - (int) sentToday);
+        int allowedMax = 1; // 표시용: 기본 1회
+        int remaining;
+        if (sentToday == 0) {
+            remaining = 1;
+        } else {
+            LocalDateTime lastSentAt = friendInteractionRepository
+                    .findMaxCreatedAtDirectionalByTypeAndCreatedAtBetween(
+                            viewer, owner, InteractionType.LIKE, startOfDay, endOfDay);
+            if (lastSentAt == null) {
+                remaining = 0;
+            } else {
+                LocalDateTime afterLastSent = lastSentAt.plusNanos(1);
+                long receivedAfter = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                        owner, viewer, InteractionType.LIKE, afterLastSent, endOfDay);
+                remaining = receivedAfter >= 1 ? 1 : 0;
+            }
+        }
         boolean canLikeNow = remaining > 0;
 
         return FriendHomeResponse.builder()

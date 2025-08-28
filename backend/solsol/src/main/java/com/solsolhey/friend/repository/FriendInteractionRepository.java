@@ -85,4 +85,15 @@ public interface FriendInteractionRepository extends JpaRepository<FriendInterac
                                                    @Param("type") InteractionType type,
                                                    @Param("start") LocalDateTime start,
                                                    @Param("end") LocalDateTime end);
+
+    /**
+     * 주어진 기간 내 from -> to 방향, 특정 타입 상호작용의 가장 최근 생성 시각 (없으면 null)
+     */
+    @Query("SELECT MAX(fi.createdAt) FROM FriendInteraction fi WHERE fi.fromUser = :from AND fi.toUser = :to " +
+           "AND fi.interactionType = :type AND fi.createdAt >= :start AND fi.createdAt < :end")
+    LocalDateTime findMaxCreatedAtDirectionalByTypeAndCreatedAtBetween(@Param("from") User from,
+                                                                       @Param("to") User to,
+                                                                       @Param("type") InteractionType type,
+                                                                       @Param("start") LocalDateTime start,
+                                                                       @Param("end") LocalDateTime end);
 }
