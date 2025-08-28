@@ -12,7 +12,13 @@
       </div>
       <div class="space-y-4">
         <div class="w-full h-40 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-          <img :src="gifticon.imageUrl" :alt="gifticon.name" class="w-full h-full object-contain" @error="onImgError" />
+          <img 
+            :src="gifticon.imageUrl" 
+            :alt="gifticon.name" 
+            class="w-full h-full object-contain" 
+            :data-sku="gifticon.sku"
+            @error="onImgError" 
+          />
         </div>
         <div>
           <div class="text-base font-semibold text-gray-800">{{ gifticon.name }}</div>
@@ -43,9 +49,9 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { formatYMD } from '../../utils/date';
 import { redeemPurchasedGifticon } from '../../api/index';
 import type { PurchasedGifticonDetail } from '../../types/api';
+import { formatYMD } from '../../utils/date';
 
 const props = defineProps<{ open: boolean; gifticon: PurchasedGifticonDetail | null }>();
 const emit = defineEmits<{ close: []; redeemed: [] }>();
@@ -61,7 +67,26 @@ const redeemLabel = computed(() => {
 });
 
 // 날짜 포맷은 공통 유틸 사용 (YYYY.MM.DD HH:mm:ss)
-function onImgError(e: Event) { (e.target as HTMLImageElement).src = '/items/gifticon_default.png'; }
+function onImgError(e: Event) {
+  const img = e.target as HTMLImageElement;
+  const sku = (img.dataset.sku || '').toUpperCase();
+  switch (sku) {
+    case 'STARBUCKS_AMERICANO':
+      img.src = '/gifticons/originals/gifticon_iced_americano.png';
+      break;
+    case 'STARBUCKS_LATTE':
+      img.src = '/gifticons/originals/gifticon_iced_vanilla_latte.png';
+      break;
+    case 'BASKIN_ICE_CREAM':
+      img.src = '/gifticons/originals/gifticon_baskin_icecream.png';
+      break;
+    case 'GONGCHA_BROWN_SUGAR':
+      img.src = '/gifticons/originals/gifticon_gongcha_brownsugar_milktea.png';
+      break;
+    default:
+      img.src = '/gifticons/thumbnails/gift_coffee.png';
+  }
+}
 
 async function redeem() {
   if (!props.gifticon || !canRedeem.value) return;

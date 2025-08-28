@@ -108,6 +108,7 @@
             :src="gifticon.imageUrl" 
             :alt="gifticon.name"
             class="w-full h-full object-contain"
+            :data-sku="gifticon.sku"
             @error="handleImageError"
           />
         </div>
@@ -151,9 +152,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { getGifticons, createOrder } from '../../api/index';
+import { createOrder, getGifticons } from '../../api/index';
 import type { Gifticon, ShopItem } from '../../types/api';
 import PurchaseDialog from './PurchaseDialog.vue';
 
@@ -281,7 +282,26 @@ async function handlePurchase(item: Gifticon | ShopItem, quantity: number) {
 // 이미지 로드 에러 처리
 function handleImageError(event: Event) {
   const img = event.target as HTMLImageElement;
-  img.src = '/items/gifticon_default.png'; // 기본 이미지
+  const sku = (img.dataset.sku || '').toUpperCase();
+  // SKU별 로컬 자산으로 대체 (확실한 매핑)
+  switch (sku) {
+    case 'STARBUCKS_AMERICANO':
+      img.src = '/gifticons/originals/gifticon_iced_americano.png';
+      break;
+    case 'STARBUCKS_LATTE':
+      img.src = '/gifticons/originals/gifticon_iced_vanilla_latte.png';
+      break;
+    case 'BASKIN_ICE_CREAM':
+      img.src = '/gifticons/originals/gifticon_baskin_icecream.png';
+      break;
+    case 'GONGCHA_BROWN_SUGAR':
+      // 대체 아이콘(공통 커피 아이콘)
+      img.src = '/gifticons/originals/gifticon_gongcha_brownsugar_milktea.png';
+      break;
+    default:
+      // 최종 기본 썸네일
+      img.src = '/gifticons/thumbnails/gift_coffee.png';
+  }
 }
 
 // 기프티콘 목록 로드

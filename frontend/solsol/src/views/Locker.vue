@@ -78,7 +78,7 @@ const detail = ref<PurchasedGifticonDetail | null>(null);
 
 function goBack() { router.back(); }
 function goShop() { router.push({ path: '/shop', query: { tab: 'gifticons' } }); }
-function onImgError(e: Event) { (e.target as HTMLImageElement).src = '/items/gifticon_default.png'; }
+function onImgError(e: Event) { (e.target as HTMLImageElement).src = '/gifticons/thumbnails/gift_coffee.png'; }
 
 function statusLabel(s: PurchasedGifticon['status']): string {
   return s === 'ACTIVE' ? '사용가능' : s === 'REDEEMED' ? '사용됨' : '만료';

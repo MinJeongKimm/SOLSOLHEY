@@ -406,14 +406,14 @@ public class ShopServiceImpl implements ShopService {
                         .name("공차 흑당 밀크티")
                         .description("진한 흑당 시럽과 부드러운 밀크티의 조화")
                         .price(5500)
-                        .imageUrl("https://www.gong-cha.co.kr/upload/menu/2019090614265920190906142659.png")
+                        .imageUrl("/gifticons/originals/gifticon_gongcha_brownsugar_milktea.png")
                         .build(),
                 GifticonResponse.builder()
                         .sku("BASKIN_ICE_CREAM")
                         .name("배스킨라빈스 아이스크림")
                         .description("다양한 맛의 프리미엄 아이스크림")
                         .price(3000)
-                        .imageUrl("https://www.baskinrobbins.co.kr/upload/product/1635216951063_top.png")
+                        .imageUrl("/gifticons/originals/gifticon_baskin_icecream.png")
                         .build()
         );
     }
