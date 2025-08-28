@@ -31,6 +31,12 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
             Long voterId, Long mascotId, Vote.VoteType voteType);
 
     /**
+     * 중복 투표 체크 (투표자 + 엔트리 + 투표 타입) - 새로운 방식
+     */
+    boolean existsByVoterIdAndEntryIdAndVoteType(
+            Long voterId, Long entryId, Vote.VoteType voteType);
+
+    /**
      * 멱등키 중복 체크
      */
     boolean existsByIdempotencyKey(String idempotencyKey);
@@ -62,6 +68,12 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
     Long sumVotesByMascotId(@Param("mascotId") Long mascotId);
 
     /**
+     * 엔트리별 총 투표 수 조회 - 새로운 방식
+     */
+    @Query("SELECT SUM(v.weight) FROM Vote v WHERE v.entryId = :entryId")
+    Long sumVotesByEntryId(@Param("entryId") Long entryId);
+
+    /**
      * 투표 타입별 총 투표 수 조회
      */
     @Query("SELECT SUM(v.weight) FROM Vote v WHERE v.voteType = :voteType")
@@ -83,6 +95,11 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
      * 마스코트별 투표 수 조회 (투표 타입별)
      */
     long countByMascotIdAndVoteType(Long mascotId, Vote.VoteType voteType);
+
+    /**
+     * 엔트리별 투표 수 조회 (투표 타입별) - 새로운 방식
+     */
+    long countByEntryIdAndVoteType(Long entryId, Vote.VoteType voteType);
 
     /**
      * 캠퍼스별 투표 수 조회
