@@ -56,6 +56,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     /**
+     * 닉네임 중복 체크
+     */
+    boolean existsByNickname(String nickname);
+
+    /**
      * 캠퍼스별 활성 사용자 수 조회
      */
     @Query("SELECT COUNT(u) FROM User u WHERE u.campus = :campus AND u.isActive = true")
