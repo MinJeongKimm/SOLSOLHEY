@@ -14,6 +14,13 @@
 FINANCE_API_KEY=your-finance-api-key
 
 # ---------------------------------------------
+# 🤖 AI (Google Gemini) 설정
+# - 아래 두 키 중 하나만 설정하세요
+# - 우선순위: GEMINI_API_KEY > GOOGLE_API_KEY
+GEMINI_API_KEY=your-gemini-api-key
+# GOOGLE_API_KEY=your-gemini-api-key
+
+# ---------------------------------------------
 # 📌 데이터베이스 설정 (PostgreSQL)
 # - 개발 환경(local) 기본값 유지 가능
 # - 비밀번호는 개별 설정 필요

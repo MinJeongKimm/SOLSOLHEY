@@ -41,6 +41,9 @@ dependencies {
 	implementation 'jakarta.annotation:jakarta.annotation-api:3.0.0'
 	
 	// 환경변수는 Spring Boot에서 자동으로 .env 파일을 인식합니다
+
+	// Google Gemini (GenAI) 클라이언트
+	implementation 'com.google.genai:google-genai:1.0.0'
 	
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'
