@@ -1,462 +1,289 @@
- org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564) ~[tomcat-embed-core-10.1.43.jar:6.0]
-        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.43.jar:6.0]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.43.jar:10.1.43]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231) ~[spring-security-web-6.4.8.jar:6.4.8]   
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at com.solsolhey.auth.jwt.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:73) ~[main/:na]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at com.solsolhey.common.security.RateLimitingFilter.doFilter(RateLimitingFilter.java:47) ~[main/:na]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107) ~[spring-security-web-6.4.8.jar:6.4.8]      
-        at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93) ~[spring-security-web-6.4.8.jar:6.4.8]       
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at com.solsolhey.common.security.CsrfCookieSeedFilter.doFilterInternal(CsrfCookieSeedFilter.java:21) ~[main/:na]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.csrf.CsrfFilter.doFilterInternal(CsrfFilter.java:117) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-6.4.8.jar:6.4.8]    
-        at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-6.4.8.jar:6.4.8]  
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$4(HandlerMappingIntrospector.java:267) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:238) ~[spring-security-config-6.4.8.jar:6.4.8]
-        at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:116) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:398) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1769) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1189) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:658) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+kjykj@gram_2 MINGW64 /c/hakathon/SOLSOLHEY/backend/solsol (chore/add-items)
+$ ./gradlew bootRun
 
-2025-08-27T15:52:35.860+09:00  WARN 30144 --- [solsol] [nio-8080-exec-7] .m.m.a.ExceptionHandlerExceptionResolver : Resolved [org.springframework.web.servlet.resource.NoResourceFoundException: No static resource favicon.ico.]
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/campus
-Hibernate: select c1_0.id,c1_0.name from campus c1_0
-2025-08-27T15:52:55.546+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.auth.controller.AuthController       : ?뚯썝媛??API ?몄텧: userId=test1@gmail.combootRun
-2025-08-27T15:52:55.548+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.auth.service.AuthServiceImpl         : ?뚯썝媛???쒕룄: userId=test1@gmail.com
-<===Hibernate: select u1_0.user_id from users u1_0 where u1_0.email=? fetch first ? rows only
-2025-08-27T15:52:55.752+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.s.common.util.UsernameGenerator      : ?앹꽦??username: test1gma69 (?먮낯 ?대 찓?? test1@gmail.com)
-<==Hibernate: insert into users (campus,created_at,email,is_active,nickname,password_hash,total_points,updated_at,username,user_id) values (?,?,?,?,?,?,?,?,?,default)
-2025-08-27T15:52:55.918+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.auth.service.AuthServiceImpl         : ?뚯썝媛???꾨즺: userId=1, username=test1gma69, nickname=源?명뵾
-<=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/campus
-Hibernate: select c1_0.id,c1_0.name from campus c1_0
-2025-08-27T15:53:20.724+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.auth.controller.AuthController       : ?뚯썝媛??API ?몄텧: userId=test2@gmail.combootRun
-2025-08-27T15:53:20.726+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.auth.service.AuthServiceImpl         : ?뚯썝媛???쒕룄: userId=test2@gmail.com
-Hibernate: select u1_0.user_id from users u1_0 where u1_0.email=? fetch first ? rows only
-<===2025-08-27T15:53:20.914+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.s.common.util.UsernameGenerator      : ?앹꽦??username: test2gma91 (?먮낯 ?대찓?? test2@gmail.com)
-Hibernate: insert into users (campus,created_at,email,is_active,nickname,password_hash,total_points,updated_at,username,user_id) values (?,?,?,?,?,?,?,?,?,default)
-2025-08-27T15:53:20.918+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.auth.service.AuthServiceImpl         : ?뚯썝媛???꾨즺: userId=2, username=test2gma91, nickname=諛뺤떥??
-2025-08-27T15:53:27.192+09:00  INFO 30144 --- [solsol] [nio-8080-exec-7] c.s.auth.controller.AuthController       : 濡쒓렇??API ?몄텧: userId=test1@gmail.com:bootRun
-2025-08-27T15:53:27.193+09:00  INFO 30144 --- [solsol] [nio-8080-exec-7] c.s.auth.service.AuthServiceImpl         : 濡쒓렇???쒕룄: userId=test1@gmail.com
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.email=? and u1_0.is_active
-<=Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.username=? and u1_0.is_active
-2025-08-27T15:53:27.698+09:00  INFO 30144 --- [solsol] [nio-8080-exec-7] c.s.auth.service.AuthServiceImpl         : 濡쒓렇???꾨즺: userId=1, username=test1gma69otRun
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/auth/me
-ACCESS_TOKEN(cookie) PRESENT, length=198
-<==Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/users/1
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/mascot
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-2025-08-27T15:53:27.999+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
-2025-08-27T15:53:28.000+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 議고쉶 ?붿껌 - ?ъ슜??ID: 1
-Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
-<====== JWT FILTER START ===
-JWT FILTER >>> POST /api/v1/mascot
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-2025-08-27T15:54:02.496+09:00  INFO 30144 --- [solsol] [nio-8080-exec-8] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 ?앹꽦 API ?몄텧 - ?ъ슜??ID: 1bootRun
-2025-08-27T15:54:02.498+09:00  INFO 30144 --- [solsol] [nio-8080-exec-8] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 ?앹꽦 ?붿껌 - ?ъ슜??ID: 1, ?대쫫: ?좎씠, ??? soll
-Hibernate: select m1_0.id from mascots m1_0 where m1_0.user_id=? fetch first ? rows only
-Hibernate: insert into mascots (background_id,created_at,equipped_item,equipped_layout,exp,level,name,snapshot_image,type,updated_at,user_id,id) values (?,?,?,?,?,?,?,?,?,?,?,default)
-2025-08-27T15:54:02.515+09:00  INFO 30144 --- [solsol] [nio-8080-exec-8] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 ?앹꽦 ?꾨즺 - ID: 1       
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/users/1
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/mascot
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-2025-08-27T15:54:04.603+09:00  INFO 30144 --- [solsol] [nio-8080-exec-3] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
-2025-08-27T15:54:04.604+09:00  INFO 30144 --- [solsol] [nio-8080-exec-3] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 議고쉶 ?붿껌 - ?ъ슜??ID: 1
-Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/mascot/customization
-ACCESS_TOKEN(cookie) PRESENT, length=198
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/shop/items
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-2025-08-27T15:54:04.637+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.shop.controller.ShopController       : ?곹뭹 紐⑸줉 議고쉶 API ?몄텧 - ?ъ슜??ID: 1, type: null
-2025-08-27T15:54:04.638+09:00  INFO 30144 --- [solsol] [nio-8080-exec-4] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 而ㅼ뒪?곕쭏?댁쭠 뒪?곕쭏? 댁쭠 ? 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
-Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
-Hibernate: select i1_0.id,i1_0.category,i1_0.created_at,i1_0.description,i1_0.image_url,i1_0.is_active,i1_0.name,i1_0.price,i1_0.type,i1_0.updated_at from shop_items i1_0 where i1_0.is_active
-2025-08-27T15:54:04.647+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.shop.service.ShopServiceImpl         : ?ъ슜??1 ?꾩껜 ?쒖꽦 ?곹뭹 議고쉶 (蹂댁 쑀 ?щ? ?ы븿): 7 媛?
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/challenges
-ACCESS_TOKEN(cookie) PRESENT, length=198
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/users/1
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-2025-08-27T15:54:07.376+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.c.controller.ChallengeController     : 梨뚮┛吏 紐⑸줉 議고쉶 ?붿껌: category=null, userId=1
-2025-08-27T15:54:07.378+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.c.service.ChallengeServiceImpl       : 梨뚮┛吏 紐⑸줉 議고쉶 ?쒕룄: category=null, userId=1
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
-<=Hibernate: select c1_0.challenge_id,c1_0.category_id,c1_0.challenge_name,c1_0.challenge_type,c1_0.created_at,c1_0.description,c1_0.difficulty,c1_0.end_date,c1_0.is_active,c1_0.reward_exp,c1_0.reward_points,c1_0.start_date,c1_0.target_count,c1_0.updated_at from challenge c1_0 where c1_0.is_active=true and (c1_0.start_date is null or c1_0.start_date<=?) and (c1_0.end_date is null or c1_0.end_date>?) order by c1_0.created_at desc
-Hibernate: select cc1_0.category_id,cc1_0.category_name,cc1_0.description,cc1_0.display_name,cc1_0.is_active from challenge_category cc1_0 where cc1_0.category_id=?
-Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=?
-Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=? and uc1_0.status='COMPLETED'
-Hibernate: select uc1_0.user_challenge_id,uc1_0.challenge_id,uc1_0.completed_at,uc1_0.progress_count,uc1_0.progress_data,uc1_0.started_at,uc1_0.status,uc1_0.target_count,uc1_0.user_id from user_challenge uc1_0 where uc1_0.user_id=? and uc1_0.challenge_id=?
-Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=?
-Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=? and uc1_0.status='COMPLETED'
-Hibernate: select uc1_0.user_challenge_id,uc1_0.challenge_id,uc1_0.completed_at,uc1_0.progress_count,uc1_0.progress_data,uc1_0.started_at,uc1_0.status,uc1_0.target_count,uc1_0.user_id from user_challenge uc1_0 where uc1_0.user_id=? and uc1_0.challenge_id=?
-Hibernate: select cc1_0.category_id,cc1_0.category_name,cc1_0.description,cc1_0.display_name,cc1_0.is_active from challenge_category cc1_0 where cc1_0.category_id=?
-Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=?
-Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=? and uc1_0.status='COMPLETED'
-Hibernate: select uc1_0.user_challenge_id,uc1_0.challenge_id,uc1_0.completed_at,uc1_0.progress_count,uc1_0.progress_data,uc1_0.started_at,uc1_0.status,uc1_0.target_count,uc1_0.user_id from user_challenge uc1_0 where uc1_0.user_id=? and uc1_0.challenge_id=?
-Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=?
-Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=? and uc1_0.status='COMPLETED'
-Hibernate: select uc1_0.user_challenge_id,uc1_0.challenge_id,uc1_0.completed_at,uc1_0.progress_count,uc1_0.progress_data,uc1_0.started_at,uc1_0.status,uc1_0.target_count,uc1_0.user_id from user_challenge uc1_0 where uc1_0.user_id=? and uc1_0.challenge_id=?
-Hibernate: select cc1_0.category_id,cc1_0.category_name,cc1_0.description,cc1_0.display_name,cc1_0.is_active from challenge_category cc1_0 where cc1_0.category_id=?
-Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=?
-Hibernate: select count(uc1_0.user_challenge_id) from user_challenge uc1_0 where uc1_0.challenge_id=? and uc1_0.status='COMPLETED'
-Hibernate: select uc1_0.user_challenge_id,uc1_0.challenge_id,uc1_0.completed_at,uc1_0.progress_count,uc1_0.progress_data,uc1_0.started_at,uc1_0.status,uc1_0.target_count,uc1_0.user_id from user_challenge uc1_0 where uc1_0.user_id=? and uc1_0.challenge_id=?
-2025-08-27T15:54:07.549+09:00  INFO 30144 --- [solsol] [io-8080-exec-10] c.s.c.service.ChallengeServiceImpl       : 梨뚮┛吏 紐⑸줉 議고쉶 ?꾨즺: count=5    
-<=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/users/1
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/mascot
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-2025-08-27T15:54:10.005+09:00  INFO 30144 --- [solsol] [nio-8080-exec-5] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
-2025-08-27T15:54:10.006+09:00  INFO 30144 --- [solsol] [nio-8080-exec-5] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 議고쉶 ?붿껌 - ?ъ슜??ID: 1
-Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
-=== JWT FILTER START ===
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/shop/items
-ACCESS_TOKEN(cookie) PRESENT, length=198
-JWT FILTER >>> GET /api/v1/mascot/customization
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-2025-08-27T15:54:10.039+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 而ㅼ뒪?곕쭏?댁쭠 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
-2025-08-27T15:54:10.040+09:00  INFO 30144 --- [solsol] [nio-8080-exec-8] c.s.shop.controller.ShopController       : ?곹뭹 紐⑸줉 議고쉶 API ?몄텧 - ?ъ슜??ID: 1, type: null
-Hibernate: select i1_0.id,i1_0.category,i1_0.created_at,i1_0.description,i1_0.image_url,i1_0.is_active,i1_0.name,i1_0.price,i1_0.type,i1_0.updated_at from shop_items_at from shop_items i1_0 where i1_0.is_active
-Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
-2025-08-27T15:54:10.046+09:00  INFO 30144 --- [solsol] [nio-8080-exec-8] c.s.shop.service.ShopServiceImpl         : ?ъ슜??1 ?꾩껜 ?쒖꽦 ?곹뭹 議고쉶 (蹂댁 쑀 ?щ? ?ы븿): 7 媛?
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/attendance/today
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select a1_0.attendance_id from attendance a1_0 where a1_0.user_id=? and a1_0.attendance_date=? fetch first ? rows only
-=== JWT FILTER START ===
-JWT FILTER >>> POST /api/v1/attendance
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select a1_0.attendance_id from attendance a1_0 where a1_0.user_id=? and a1_0.attendance_date=? fetch first ? rows only
-Hibernate: select a1_0.attendance_id,a1_0.attendance_date,a1_0.consecutive_days,a1_0.created_at,a1_0.exp_reward,a1_0.point_reward,a1_0.updated_at,a1_0.user_id from attendance a1_0 where a1_0.user_id=? order by a1_0.attendance_date desc fetch first ? rows only
-Hibernate: insert into attendance (attendance_date,consecutive_days,created_at,exp_reward,point_reward,updated_at,user_id,attendance_id) values (?,?,?,?,?,?,?,default)
-Hibernate: select pt1_0.transaction_id,pt1_0.balance_after,pt1_0.created_at,pt1_0.description,pt1_0.point_amount,pt1_0.reference_id,pt1_0.reference_type,pt1_0.transaction_type,pt1_0.updated_at,pt1_0.user_id from point_transactions pt1_0 where pt1_0.user_id=? and pt1_0.created_at between ? and ? order by pt1_0.created_at desc
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
-Hibernate: insert into point_transactions (balance_after,created_at,description,point_amount,reference_id,reference_type,transaction_type,updated_at,user_id,transaction_id) values (?,?,?,?,?,?,?,?,?,default)
-Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
-Hibernate: select edc1_0.counter_id,edc1_0.attendance_awarded,edc1_0.attendance_streak7_awarded,edc1_0.cat_academic_awarded,edc1_0.cat_event_awarded,edc1_0.cat_finance_awarded,edc1_0.cat_social_awarded,edc1_0.counter_date,edc1_0.created_at,edc1_0.friend_active_award_count,edc1_0.friend_passive_award_count,edc1_0.updated_at,edc1_0.user_id from exp_daily_counter edc1_0 where edc1_0.user_id=? and edc1_0.counter_date=? for update
-Hibernate: insert into exp_daily_counter (attendance_awarded,attendance_streak7_awarded,cat_academic_awarded,cat_event_awarded,cat_finance_awarded,cat_social_awarded,counter_date,created_at,friend_active_award_count,friend_passive_award_count,updated_at,user_id,counter_id) values (?,?,?,?,?,?,?,?,?,?,?,?,default)
-Hibernate: update users set campus=?,email=?,is_active=?,nickname=?,password_hash=?,total_points=?,updated_at=?,username=? where user_id=?
-Hibernate: update mascots set background_id=?,equipped_item=?,equipped_layout=?,exp=?,level=?,name=?,snapshot_image=?,type=?,updated_at=?,user_id=? where id=?
-Hibernate: update exp_daily_counter set attendance_awarded=?,attendance_streak7_awarded=?,cat_academic_awarded=?,cat_event_awarded=?,cat_finance_awarded=?,cat_social_awarded=?,counter_date=?,friend_active_award_count=?,friend_passive_award_count=?,updated_at=?,user_id=? where counter_id=?
-2025-08-27T15:54:16.723+09:00 ERROR 30144 --- [solsol] [nio-8080-exec-4] c.s.u.controller.AttendanceController    : 異쒖꽍 泥섎━ ?ㅽ뙣
+> Task :bootRun
 
-java.lang.NullPointerException: null
-        at java.base/java.util.Objects.requireNonNull(Objects.java:209) ~[na:na]
-        at java.base/java.util.ImmutableCollections$MapN.<init>(ImmutableCollections.java:1186) ~[na:na]
-        at java.base/java.util.Map.of(Map.java:1445) ~[na:na]
-        at com.solsolhey.user.controller.AttendanceController.checkIn(AttendanceController.java:51) ~[main/:na]
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.4.8)
+
+2025-08-28T14:19:19.550+09:00  INFO 40784 --- [solsol] [  restartedMain] com.solsolhey.SolsolApplication          : Starting SolsolApplication using Java 17.0.16 with PID 40784 (C:\hakathon\SOLSOLHEY\backend\solsol\build\classes\java\main started by kjykj in C:\hakathon\SOLSOLHEY\backend\solsol)
+2025-08-28T14:19:19.554+09:00  INFO 40784 --- [solsol] [  restartedMain] com.solsolhey.SolsolApplication          : The following 1 profile is active: "local"
+2025-08-28T14:19:19.663+09:00  INFO 40784 --- [solsol] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2025-08-28T14:19:19.663+09:00  INFO 40784 --- [solsol] [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2025-08-28T14:19:22.094+09:00  INFO 40784 --- [solsol] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-08-28T14:19:22.972+09:00  INFO 40784 --- [solsol] [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 847 ms. Found 22 JPA repository interfaces.
+2025-08-28T14:19:25.385+09:00  INFO 40784 --- [solsol] [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2025-08-28T14:19:25.421+09:00  INFO 40784 --- [solsol] [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-08-28T14:19:25.422+09:00  INFO 40784 --- [solsol] [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.43]
+2025-08-28T14:19:25.593+09:00  INFO 40784 --- [solsol] [  restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-08-28T14:19:25.595+09:00  INFO 40784 --- [solsol] [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 5929 ms
+2025-08-28T14:19:25.965+09:00  INFO 40784 --- [solsol] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-08-28T14:19:30.792+09:00  INFO 40784 --- [solsol] [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn1: url=jdbc:h2:file:./.localdb/solsol user=SA
+2025-08-28T14:19:30.797+09:00  INFO 40784 --- [solsol] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-08-28T14:19:30.847+09:00  INFO 40784 --- [solsol] [  restartedMain] org.flywaydb.core.FlywayExecutor         : Database: jdbc:h2:file:./.localdb/solsol (H2 2.3)
+2025-08-28T14:19:30.860+09:00  WARN 40784 --- [solsol] [  restartedMain] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2025-08-28T14:19:30.944+09:00  INFO 40784 --- [solsol] [  restartedMain] o.f.core.internal.command.DbValidate     : Successfully validated 7 migrations (execution time 00:00.064s)
+2025-08-28T14:19:30.961+09:00  INFO 40784 --- [solsol] [  restartedMain] o.f.core.internal.command.DbMigrate      : Current version of schema "PUBLIC": 4
+2025-08-28T14:19:31.007+09:00  INFO 40784 --- [solsol] [  restartedMain] o.f.core.internal.command.DbMigrate      : Migrating schema "PUBLIC" to version "5 - seed finance challenges"
+2025-08-28T14:19:31.050+09:00  INFO 40784 --- [solsol] [  restartedMain] o.f.core.internal.command.DbMigrate      : Migrating schema "PUBLIC" to version "6 - ranking entries"
+2025-08-28T14:19:31.084+09:00 ERROR 40784 --- [solsol] [  restartedMain] o.f.core.internal.command.DbMigrate      : Migration of schema "PUBLIC" to version "6 - ranking entries" failed! Please restore backups and roll back database and code!
+2025-08-28T14:19:31.090+09:00 ERROR 40784 --- [solsol] [  restartedMain] o.s.b.web.embedded.tomcat.TomcatStarter  : Error starting Tomcat context. Exception: org.springframework.beans.factory.UnsatisfiedDependencyException. Message: Error creating bean with name 'securityConfig' defined in file [C:\hakathon\SOLSOLHEY\backend\solsol\build\classes\java\main\com\solsolhey\common\config\SecurityConfig.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'customUserDetailsService' defined in file [C:\hakathon\SOLSOLHEY\backend\solsol\build\classes\java\main\com\solsolhey\auth\service\CustomUserDetailsService.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'userRepository' defined in com.solsolhey.user.repository.UserRepository defined in @EnableJpaRepositories declared on SolsolApplication: Cannot resolve reference to bean 'jpaSharedEM_entityManagerFactory' while setting bean property 'entityManager'
+2025-08-28T14:19:31.166+09:00  INFO 40784 --- [solsol] [  restartedMain] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+2025-08-28T14:19:31.175+09:00  WARN 40784 --- [solsol] [  restartedMain] o.a.c.loader.WebappClassLoaderBase       : The web application [ROOT] appears to have started a thread named [H2 TCP Server (tcp://172.20.10.2:50104)] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.16/sun.nio.ch.Net.accept(Native Method)
+ java.base@17.0.16/sun.nio.ch.NioSocketImpl.accept(NioSocketImpl.java:760)
+ java.base@17.0.16/java.net.ServerSocket.implAccept(ServerSocket.java:675)
+ java.base@17.0.16/java.net.ServerSocket.platformImplAccept(ServerSocket.java:641)
+ java.base@17.0.16/java.net.ServerSocket.implAccept(ServerSocket.java:617)
+ java.base@17.0.16/java.net.ServerSocket.implAccept(ServerSocket.java:574)
+ java.base@17.0.16/java.net.ServerSocket.accept(ServerSocket.java:532)
+ app//org.h2.server.TcpServer.listen(TcpServer.java:259)
+ app//org.h2.tools.Server.run(Server.java:650)
+ java.base@17.0.16/java.lang.Thread.run(Thread.java:840)
+2025-08-28T14:19:31.176+09:00  WARN 40784 --- [solsol] [  restartedMain] o.a.c.loader.WebappClassLoaderBase       : The web application [ROOT] appears to have started a thread named [MVStore background writer C:/hakathon/SOLSOLHEY/backend/solsol/.localdb/solsol.mv.db] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.16/java.lang.Object.wait(Native Method)
+ app//org.h2.mvstore.FileStore$BackgroundWriterThread.run(FileStore.java:2250)
+2025-08-28T14:19:31.177+09:00  WARN 40784 --- [solsol] [  restartedMain] o.a.c.loader.WebappClassLoaderBase       : The web application [ROOT] appears to have started a thread named [HikariPool-1 housekeeper] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.16/jdk.internal.misc.Unsafe.park(Native Method)
+ java.base@17.0.16/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:252)
+ java.base@17.0.16/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.awaitNanos(AbstractQueuedSynchronizer.java:1679)
+ java.base@17.0.16/java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:1182) 
+ java.base@17.0.16/java.util.concurrent.ScheduledThreadPoolExecutor$DelayedWorkQueue.take(ScheduledThreadPoolExecutor.java:899)  
+ java.base@17.0.16/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1062)
+ java.base@17.0.16/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1122)
+ java.base@17.0.16/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+ java.base@17.0.16/java.lang.Thread.run(Thread.java:840)
+2025-08-28T14:19:31.178+09:00  WARN 40784 --- [solsol] [  restartedMain] o.a.c.loader.WebappClassLoaderBase       : The web application [ROOT] appears to have started a thread named [HikariPool-1 connection adder] but has failed to stop it. This is very likely to create a memory leak. Stack trace of thread:
+ java.base@17.0.16/java.lang.Thread.sleep(Native Method)
+ app//com.zaxxer.hikari.util.UtilityElf.quietlySleep(UtilityElf.java:53)
+ app//com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:729)
+ app//com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:703)
+ java.base@17.0.16/java.util.concurrent.FutureTask.run(FutureTask.java:264)
+ java.base@17.0.16/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+ java.base@17.0.16/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+ java.base@17.0.16/java.lang.Thread.run(Thread.java:840)
+2025-08-28T14:19:31.182+09:00  WARN 40784 --- [solsol] [  restartedMain] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Unable to start web server
+2025-08-28T14:19:31.183+09:00  INFO 40784 --- [solsol] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-08-28T14:19:31.212+09:00  INFO 40784 --- [solsol] [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2025-08-28T14:19:31.239+09:00  INFO 40784 --- [solsol] [  restartedMain] .s.b.a.l.ConditionEvaluationReportLogger : 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2025-08-28T14:19:31.327+09:00 ERROR 40784 --- [solsol] [  restartedMain] o.s.boot.SpringApplication               : Application run failed
+
+org.springframework.context.ApplicationContextException: Unable to start web server
+        at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:170) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:621) ~[spring-context-6.2.9.jar:6.2.9]
+        at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439) ~[spring-boot-3.4.8.jar:3.4.8]  
+        at org.springframework.boot.SpringApplication.run(SpringApplication.java:318) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.4.8.jar:3.4.8]
+        at com.solsolhey.SolsolApplication.main(SolsolApplication.java:19) ~[main/:na]
         at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
         at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
-        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
+        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]     
         at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
-        at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:360) ~[spring-aop-6.2.9.jar:6.2.9]
-        at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:196) ~[spring-aop-6.2.9.jar:6.2.9] 
-        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:163) ~[spring-aop-6.2.9.jar:6.2.9]
-        at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethoddInterceptor.proceed(AuthorizationManagerBeforeMethodInterceptor.java:268) ~[spring-security-core-6.4.8.jar:6.4.8]
-        at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.attemptAuthorization(AuthorizationManagerBeforeMethodInterceptor.java:263) ~[spring-security-core-6.4.8.jar:6.4.8]
-        at org.springframework.security.authorization.method.AuthorizationManagerBeforeMethodInterceptor.invoke(AuthorizationManagerBeforeMethodInterceptor.java:196) ~[spring-security-core-6.4.8.jar:6.4.8]
-        at org.springframework.security.config.annotation.method.configuration.DeferringMethodInterceptor.invoke(DeferringMethodInterceptor.java:44) ~[spring-security-config-6.4.8.jar:6.4.8]
-        at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.2.9.jar:6.2.9]
-        at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:728) ~[spring-aop-6.2.9.jar:6.2.9]       
-        at com.solsolhey.user.controller.AttendanceController$$SpringCGLIB$$0.checkIn(<generated>) ~[main/:na]
-        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:na]
-        at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77) ~[na:na]
-        at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43) ~[na:na]
-        at java.base/java.lang.reflect.Method.invoke(Method.java:569) ~[na:na]
-        at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191) ~[spring-web-6.2.9.jar:6.2.9]   
-        at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:991) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:896) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590) ~[tomcat-embed-core-10.1.43.jar:6.0]
-        at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.43.jar:6.0]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.43.jar:10.1.43]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231) ~[spring-security-web-6.4.8.jar:6.4.8]   
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at com.solsolhey.auth.jwt.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:73) ~[main/:na]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at com.solsolhey.common.security.RateLimitingFilter.doFilter(RateLimitingFilter.java:47) ~[main/:na]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107) ~[spring-security-web-6.4.8.jar:6.4.8]      
-        at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93) ~[spring-security-web-6.4.8.jar:6.4.8]       
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at com.solsolhey.common.security.CsrfCookieSeedFilter.doFilterInternal(CsrfCookieSeedFilter.java:21) ~[main/:na]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.csrf.CsrfFilter.doFilterInternal(CsrfFilter.java:131) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-6.4.8.jar:6.4.8]    
-        at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-6.4.8.jar:6.4.8]  
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.4.8.jar:6.4.8] 
-        at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191) ~[spring-security-web-6.4.8.jar:6.4.8]
-        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$4(HandlerMappingIntrospector.java:267) ~[spring-webmvc-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:238) ~[spring-security-config-6.4.8.jar:6.4.8]
-        at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:362) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:278) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.2.9.jar:6.2.9]
-        at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]      
-        at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:116) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:398) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1769) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1189) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:658) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
-        at java.base/java.lang.Thread.run(Thread.java:840) ~[na:na]
+        at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50) ~[spring-boot-devtools-3.4.8.jar:3.4.8]
+Caused by: org.springframework.boot.web.server.WebServerException: Unable to start embedded Tomcat
+        at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:147) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.<init>(TomcatWebServer.java:107) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getTomcatWebServer(TomcatServletWebServerFactory.java:517) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getWebServer(TomcatServletWebServerFactory.java:219) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.createWebServer(ServletWebServerApplicationContext.java:193) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:167) ~[spring-boot-3.4.8.jar:3.4.8]
+        ... 13 common frames omitted
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'securityConfig' defined in file [C:\hakathon\SOLSOLHEY\backend\solsol\build\classes\java\main\com\solsolhey\common\config\SecurityConfig.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'customUserDetailsService' defined in file [C:\hakathon\SOLSOLHEY\backend\solsol\build\classes\java\main\com\solsolhey\auth\service\CustomUserDetailsService.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'userRepository' defined in com.solsolhey.user.repository.UserRepository defined in @EnableJpaRepositories declared on SolsolApplication: Cannot resolve reference to bean 'jpaSharedEM_entityManagerFactory' while setting bean property 'entityManager'
+        at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1395) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1232) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:569) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:413) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1375) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1205) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:569) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:207) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.boot.web.servlet.ServletContextInitializerBeans.getOrderedBeansOfType(ServletContextInitializerBeans.java:211) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.web.servlet.ServletContextInitializerBeans.getOrderedBeansOfType(ServletContextInitializerBeans.java:202) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.web.servlet.ServletContextInitializerBeans.addServletContextInitializerBeans(ServletContextInitializerBeans.java:97) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.web.servlet.ServletContextInitializerBeans.<init>(ServletContextInitializerBeans.java:86) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.getServletContextInitializerBeans(ServletWebServerApplicationContext.java:271) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.selfInitialize(ServletWebServerApplicationContext.java:245) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.springframework.boot.web.embedded.tomcat.TomcatStarter.onStartup(TomcatStarter.java:52) ~[spring-boot-3.4.8.jar:3.4.8]
+        at org.apache.catalina.core.StandardContext.startInternal(StandardContext.java:4464) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1203) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1193) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264) ~[na:na]
+        at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:75) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145) ~[na:na]
+        at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:749) ~[tomcat-embed-core-10.1.43.jar:10.1.43] 
+        at org.apache.catalina.core.StandardHost.startInternal(StandardHost.java:772) ~[tomcat-embed-core-10.1.43.jar:10.1.43]   
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1203) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1193) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:264) ~[na:na]
+        at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:75) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145) ~[na:na]
+        at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:749) ~[tomcat-embed-core-10.1.43.jar:10.1.43] 
+        at org.apache.catalina.core.StandardEngine.startInternal(StandardEngine.java:203) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.StandardService.startInternal(StandardService.java:412) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.core.StandardServer.startInternal(StandardServer.java:870) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.apache.catalina.startup.Tomcat.start(Tomcat.java:438) ~[tomcat-embed-core-10.1.43.jar:10.1.43]
+        at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:128) ~[spring-boot-3.4.8.jar:3.4.8]
+        ... 18 common frames omitted
+Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException: Error creating bean with name 'customUserDetailsService' defined in file [C:\hakathon\SOLSOLHEY\backend\solsol\build\classes\java\main\com\solsolhey\auth\service\CustomUserDetailsService.class]: Unsatisfied dependency expressed through constructor parameter 0: Error creating bean with name 'userRepository' defined in com.solsolhey.user.repository.UserRepository defined in @EnableJpaRepositories declared on SolsolApplication: Cannot resolve reference to bean 'jpaSharedEM_entityManagerFactory' while setting bean property 'entityManager'
+        at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:804) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.ConstructorResolver.autowireConstructor(ConstructorResolver.java:240) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.autowireConstructor(AbstractAutowireCapableBeanFactory.java:1395) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1232) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:569) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.config.DependencyDescriptor.resolveCandidate(DependencyDescriptor.java:254) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1745) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1628) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791) ~[spring-beans-6.2.9.jar:6.2.9]
+        ... 67 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'userRepository' defined in com.solsolhey.user.repository.UserRepository defined in @EnableJpaRepositories declared on SolsolApplication: Cannot resolve reference to bean 'jpaSharedEM_entityManagerFactory' while setting bean property 'entityManager'
+        at org.springframework.beans.factory.support.BeanDefinitionValueResolver.resolveReference(BeanDefinitionValueResolver.java:377) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.BeanDefinitionValueResolver.resolveValueIfNecessary(BeanDefinitionValueResolver.java:135) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyPropertyValues(AbstractAutowireCapableBeanFactory.java:1725) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.populateBean(AbstractAutowireCapableBeanFactory.java:1474) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:606) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.DefaultListableBeanFactory.doResolveDependency(DefaultListableBeanFactory.java:1683) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.DefaultListableBeanFactory.resolveDependency(DefaultListableBeanFactory.java:1628) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.ConstructorResolver.resolveAutowiredArgument(ConstructorResolver.java:913) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.ConstructorResolver.createArgumentArray(ConstructorResolver.java:791) ~[spring-beans-6.2.9.jar:6.2.9]
+        ... 81 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'jpaSharedEM_entityManagerFactory': Cannot resolve reference to bean 'entityManagerFactory' while setting constructor argument
+        at org.springframework.beans.factory.support.BeanDefinitionValueResolver.resolveReference(BeanDefinitionValueResolver.java:377) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.BeanDefinitionValueResolver.resolveValueIfNecessary(BeanDefinitionValueResolver.java:135) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.ConstructorResolver.resolveConstructorArguments(ConstructorResolver.java:691) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:513) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1375) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1205) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:569) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.BeanDefinitionValueResolver.resolveReference(BeanDefinitionValueResolver.java:365) ~[spring-beans-6.2.9.jar:6.2.9]
+        ... 94 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'flywayInitializer' defined in class path resource [org/springframework/boot/autoconfigure/flyway/FlywayAutoConfiguration$FlywayConfiguration.class]: Script V6__ranking_entries.sql failed
+-------------------------------------
+SQL State  : 42S11
+Error Code : 42111
+Message    : Index "IDX_MASCOT_ID" already exists; SQL statement:
+CREATE INDEX idx_mascot_id ON ranking_entries(mascot_id) [42111-232]
+Location   : db/migration/V6__ranking_entries.sql (C:\hakathon\SOLSOLHEY\backend\solsol\build\resources\main\db\migration\V6__ranking_entries.sql)
+Line       : 17
+Statement  : Run Flyway with -X option to see the actual statement causing the problem
 
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/users/1
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/mascot
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-2025-08-27T16:02:03.428+09:00  INFO 30144 --- [solsol] [nio-8080-exec-6] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
-2025-08-27T16:02:03.429+09:00  INFO 30144 --- [solsol] [nio-8080-exec-6] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 議고쉶 ?붿껌 - ?ъ슜??ID: 1
-Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/mascot/customization
-ACCESS_TOKEN(cookie) PRESENT, length=198
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/shop/items
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_actives_active
-2025-08-27T16:02:03.454+09:00  INFO 30144 --- [solsol] [nio-8080-exec-5] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 而ㅼ뒪?곕쭏?댁쭠 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
-Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
-2025-08-27T16:02:03.457+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.shop.controller.ShopController       : ?곹뭹 紐⑸줉 議고쉶 API ?몄텧 - ?ъ슜??ID: 1, type: null
-Hibernate: select i1_0.id,i1_0.category,i1_0.created_at,i1_0.description,i1_0.image_url,i1_0.is_active,i1_0.name,i1_0.price,i1_0.type,i1_0.updated_at from shop_items i1_0 where i1_0.is_active
-2025-08-27T16:02:03.462+09:00  INFO 30144 --- [solsol] [nio-8080-exec-2] c.s.shop.service.ShopServiceImpl         : ?ъ슜??1 ?꾩껜 ?쒖꽦 ?곹뭹 議고쉶 (蹂댁 쑀 ?щ? ?ы븿): 7 媛?
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/attendance/today
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select a1_0.attendance_id from attendance a1_0 where a1_0.user_id=? and a1_0.attendance_date=? fetch first ? rows only
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/users/1
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=?
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/mascot
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-2025-08-27T16:02:15.914+09:00  INFO 30144 --- [solsol] [nio-8080-exec-3] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
-2025-08-27T16:02:15.914+09:00  INFO 30144 --- [solsol] [nio-8080-exec-3] c.s.mascot.service.MascotServiceImpl     : 留덉뒪肄뷀듃 議고쉶 ?붿껌 - ?ъ슜??ID: 1
-Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/mascot/customization
-ACCESS_TOKEN(cookie) PRESENT, length=198
-=== JWT FILTER START ===
-JWT FILTER >>> GET /api/v1/shop/items
-ACCESS_TOKEN(cookie) PRESENT, length=198
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-Hibernate: select u1_0.user_id,u1_0.campus,u1_0.created_at,u1_0.email,u1_0.is_active,u1_0.nickname,u1_0.password_hash,u1_0.total_points,u1_0.updated_at,u1_0.username from users u1_0 where u1_0.user_id=? and u1_0.is_active
-2025-08-27T16:02:15.941+09:00  INFO 30144 --- [solsol] [nio-8080-exec-4] c.s.mascot.controller.MascotController   : 留덉뒪肄뷀듃 而ㅼ뒪?곕쭏?댁쭠 議고쉶 API ?몄텧 - ?ъ슜??ID: 1
-2025-08-27T16:02:15.942+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.shop.controller.ShopController       : ?곹뭹 紐⑸줉 議고쉶 API ?몄텧 - ?ъ슜??ID: 1, type: null
-Hibernate: select m1_0.id,m1_0.background_id,m1_0.created_at,m1_0.equipped_item,m1_0.equipped_layout,m1_0.exp,m1_0.level,m1_0.name,m1_0.snapshot_image,m1_0.type,m1_0mage,m1_0.type,m1_0.updated_at,m1_0.user_id from mascots m1_0 where m1_0.user_id=?
-Hibernate: select i1_0.id,i1_0.category,i1_0.created_at,i1_0.description,i1_0.image_url,i1_0.is_active,i1_0.name,i1_0.price,i1_0.type,i1_0.updated_at from shop_items i1_0 where i1_0.is_active
-2025-08-27T16:02:15.948+09:00  INFO 30144 --- [solsol] [nio-8080-exec-9] c.s.shop.service.ShopServiceImpl         : ?ъ슜??1 ?꾩껜 ?쒖꽦 ?곹뭹 議고쉶 (蹂댁 쑀 ?щ? ?ы븿): 7 媛?
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-Hibernate: select ui1_0.id from shop_user_items ui1_0 where ui1_0.user_id=? and ui1_0.item_id=? fetch first ? rows only
-<==========---> 80% EXECUTING [15m 46s]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1826) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:607) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:315) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.BeanDefinitionValueResolver.resolveReference(BeanDefinitionValueResolver.java:365) ~[spring-beans-6.2.9.jar:6.2.9]
+        ... 106 common frames omitted
+Caused by: org.flywaydb.core.internal.exception.FlywayMigrateException: Script V6__ranking_entries.sql failed
+-------------------------------------
+SQL State  : 42S11
+Error Code : 42111
+Message    : Index "IDX_MASCOT_ID" already exists; SQL statement:
+CREATE INDEX idx_mascot_id ON ranking_entries(mascot_id) [42111-232]
+Location   : db/migration/V6__ranking_entries.sql (C:\hakathon\SOLSOLHEY\backend\solsol\build\resources\main\db\migration\V6__ranking_entries.sql)
+Line       : 17
+Statement  : Run Flyway with -X option to see the actual statement causing the problem
+
+        at org.flywaydb.core.internal.command.DbMigrate.doMigrateGroup(DbMigrate.java:399) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.command.DbMigrate.lambda$applyMigrations$1(DbMigrate.java:283) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.jdbc.TransactionalExecutionTemplate.execute(TransactionalExecutionTemplate.java:59) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.command.DbMigrate.applyMigrations(DbMigrate.java:282) ~[flyway-core-10.20.1.jar:na]        
+        at org.flywaydb.core.internal.command.DbMigrate.migrateGroup(DbMigrate.java:255) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.command.DbMigrate.lambda$migrateAll$0(DbMigrate.java:153) ~[flyway-core-10.20.1.jar:na]    
+        at org.flywaydb.core.internal.jdbc.TableLockingExecutionTemplate$1.call(TableLockingExecutionTemplate.java:40) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.jdbc.TransactionalExecutionTemplate.execute(TransactionalExecutionTemplate.java:59) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.jdbc.TableLockingExecutionTemplate.execute(TableLockingExecutionTemplate.java:35) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.database.base.Connection.lock(Connection.java:106) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory.lock(JdbcTableSchemaHistory.java:149) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.command.DbMigrate.migrateAll(DbMigrate.java:153) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.command.DbMigrate.migrate(DbMigrate.java:104) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.Flyway.lambda$migrate$1(Flyway.java:230) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.FlywayExecutor.execute(FlywayExecutor.java:213) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.Flyway.migrate(Flyway.java:176) ~[flyway-core-10.20.1.jar:na]
+        at org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer.afterPropertiesSet(FlywayMigrationInitializer.java:66) ~[spring-boot-autoconfigure-3.4.8.jar:3.4.8]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1873) ~[spring-beans-6.2.9.jar:6.2.9]
+        at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1822) ~[spring-beans-6.2.9.jar:6.2.9]
+        ... 115 common frames omitted
+Caused by: org.flywaydb.core.internal.sqlscript.FlywaySqlScriptException: Script V6__ranking_entries.sql failed
+-------------------------------------
+SQL State  : 42S11
+Error Code : 42111
+Message    : Index "IDX_MASCOT_ID" already exists; SQL statement:
+CREATE INDEX idx_mascot_id ON ranking_entries(mascot_id) [42111-232]
+Location   : db/migration/V6__ranking_entries.sql (C:\hakathon\SOLSOLHEY\backend\solsol\build\resources\main\db\migration\V6__ranking_entries.sql)
+Line       : 17
+Statement  : Run Flyway with -X option to see the actual statement causing the problem
+
+        at org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor.handleException(DefaultSqlScriptExecutor.java:256) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor.executeStatement(DefaultSqlScriptExecutor.java:217) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor.execute(DefaultSqlScriptExecutor.java:137) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.resolver.sql.SqlMigrationExecutor.executeOnce(SqlMigrationExecutor.java:75) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.resolver.sql.SqlMigrationExecutor.lambda$execute$0(SqlMigrationExecutor.java:66) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.database.DefaultExecutionStrategy.execute(DefaultExecutionStrategy.java:31) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.resolver.sql.SqlMigrationExecutor.execute(SqlMigrationExecutor.java:65) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.command.DbMigrate.doMigrateGroup(DbMigrate.java:391) ~[flyway-core-10.20.1.jar:na]
+        ... 133 common frames omitted
+Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Index "IDX_MASCOT_ID" already exists; SQL statement:
+CREATE INDEX idx_mascot_id ON ranking_entries(mascot_id) [42111-232]
+        at org.h2.message.DbException.getJdbcSQLException(DbException.java:514) ~[h2-2.3.232.jar:2.3.232]
+        at org.h2.message.DbException.getJdbcSQLException(DbException.java:489) ~[h2-2.3.232.jar:2.3.232]
+        at org.h2.message.DbException.get(DbException.java:223) ~[h2-2.3.232.jar:2.3.232]
+        at org.h2.message.DbException.get(DbException.java:199) ~[h2-2.3.232.jar:2.3.232]
+        at org.h2.command.ddl.CreateIndex.update(CreateIndex.java:76) ~[h2-2.3.232.jar:2.3.232]
+        at org.h2.command.CommandContainer.update(CommandContainer.java:139) ~[h2-2.3.232.jar:2.3.232]
+        at org.h2.command.Command.executeUpdate(Command.java:304) ~[h2-2.3.232.jar:2.3.232]
+        at org.h2.command.Command.executeUpdate(Command.java:248) ~[h2-2.3.232.jar:2.3.232]
+        at org.h2.jdbc.JdbcStatement.executeInternal(JdbcStatement.java:262) ~[h2-2.3.232.jar:2.3.232]
+        at org.h2.jdbc.JdbcStatement.execute(JdbcStatement.java:231) ~[h2-2.3.232.jar:2.3.232]
+        at com.zaxxer.hikari.pool.ProxyStatement.execute(ProxyStatement.java:94) ~[HikariCP-5.1.0.jar:na]
+        at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java) ~[HikariCP-5.1.0.jar:na]
+        at org.flywaydb.core.internal.jdbc.JdbcTemplate.executeStatement(JdbcTemplate.java:210) ~[flyway-core-10.20.1.jar:na]    
+        at org.flywaydb.core.internal.sqlscript.ParsedSqlStatement.execute(ParsedSqlStatement.java:88) ~[flyway-core-10.20.1.jar:na]
+        at org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor.executeStatement(DefaultSqlScriptExecutor.java:212) ~[flyway-core-10.20.1.jar:na]
+        ... 139 common frames omitted
