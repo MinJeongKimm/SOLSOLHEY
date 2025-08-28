@@ -1,35 +1,23 @@
 -- V7: Update customization shop catalog (soft-delete, update, add new)
 
--- 1) SOFT DELETE (hide from shop)
--- UPDATE shop_items
---    SET is_active = FALSE,
---        updated_at = CURRENT_TIMESTAMP
---  WHERE name IN (
---        '콧수염',
---        '핑크 비니'
---  );
 
--- 2) UPDATE EXISTING (price/image/category)
--- UPDATE shop_items
---    SET price = 120,
---        image_url = '/items/item_head_blue_cap_v2.png',
---        category = 'head',
---        updated_at = CURRENT_TIMESTAMP
---  WHERE name = '파랑 모자';
+-- 1) UPDATE EXISTING (price/image/category)
+UPDATE shop_items
+   SET price = 120,
+       image_url = '/backgrounds/stickers/bg_ssafy.png',
+       category = 'sticker',
+       updated_at = CURRENT_TIMESTAMP
+ WHERE name = 'SSAFY 로고';
 
--- 2-b) RENAME (display name)
--- UPDATE shop_items
---    SET name = '블루 캡',
---        updated_at = CURRENT_TIMESTAMP
---  WHERE name = '파랑 모자';
 
--- 2-c) Example tweak: adjust price of heart glasses
--- UPDATE shop_items
---    SET price = 60,
---        updated_at = CURRENT_TIMESTAMP
---  WHERE name = '하트 안경';
+UPDATE shop_items
+   SET price = 300,
+       image_url = '/backgrounds/base/bg_blue.png',
+       category = 'base',
+       updated_at = CURRENT_TIMESTAMP
+ WHERE name = '블루 배경';
 
--- 3) ADD NEW (idempotent inserts)
+-- 2) ADD NEW (idempotent inserts)
 
 INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
 SELECT '파란 안경', null, 80, 'EQUIP', '/items/item_acc_blue_glasses.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
@@ -59,16 +47,16 @@ INSERT INTO shop_items (name, description, price, type, image_url, category, is_
 SELECT '노란 모자', null, 150, 'EQUIP', '/items/item_head_yellow_cap.png', 'clothing', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
  WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '노란 모자');
 
--- 4) ADD NEW (idempotent inserts) - 배경 스티커
+-- 3) ADD NEW (idempotent inserts) - 배경 스티커
 INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
-SELECT '구름', null, 30, 'BACKGROUND', '/backgrounds/stickers/bg_cloud.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT '구름', null, 30, 'BACKGROUND', '/backgrounds/stickers/bg_cloud.png', 'sticker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
  WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '구름');
 
 INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
-SELECT '오렌지', null, 30, 'BACKGROUND', '/backgrounds/stickers/bg_orange.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT '오렌지', null, 30, 'BACKGROUND', '/backgrounds/stickers/bg_orange.png', 'sticker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
  WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '오렌지');
 
 INSERT INTO shop_items (name, description, price, type, image_url, category, is_active, created_at, updated_at)
-SELECT '별', null, 30, 'BACKGROUND', '/backgrounds/stickers/bg_star.png', 'accessory', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+SELECT '별', null, 30, 'BACKGROUND', '/backgrounds/stickers/bg_star.png', 'sticker', TRUE, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
  WHERE NOT EXISTS (SELECT 1 FROM shop_items WHERE name = '별');
 
