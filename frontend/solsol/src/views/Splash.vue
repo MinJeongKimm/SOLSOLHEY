@@ -7,7 +7,7 @@
       <!-- Title + Subtitle -->
       <section>
         <h1
-          class="text-white tracking-tight leading-none select-none flex items-baseline gap-2 justify-center title"
+          class="text-white tracking-tight leading-none select-none flex items-baseline gap-2 justify-center title reveal-title"
           :style="titleStyle"
         >
           <span class="font-brand font-semibold title-text">
@@ -23,7 +23,7 @@
             draggable="false"
           />
         </h1>
-        <p class="text-white/90 mt-3 font-medium" :class="subtitleSize">
+        <p class="text-white/90 mt-3 font-medium reveal-sub" :class="subtitleSize">
           챌린지로 쏠쏠한 리워드 <br/> 마스코트 키우기
         </p>
       </section>
@@ -33,7 +33,7 @@
         <img
           src="/mascot/shinhan_friends.png"
           alt="신한 프렌즈 마스코트"
-          class="mx-auto animate-float select-none"
+          class="mx-auto animate-float select-none reveal-mascot"
           :class="mascotSize"
           draggable="false"
         />
@@ -96,7 +96,20 @@ onMounted(async () => {
 }
 .anim-wave { animation: waveY 1.6s ease-in-out infinite; display: inline-block; }
 
+/* Staged reveal animations */
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.reveal-title { opacity: 0; animation: fadeDown 350ms ease-out forwards; animation-delay: 0ms; }
+.reveal-sub { opacity: 0; animation: fadeUp 450ms ease-out forwards; animation-delay: 120ms; }
+.reveal-mascot { opacity: 0; animation: fadeUp 600ms ease-out forwards; animation-delay: 240ms; }
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-float, .anim-wave { animation: none !important; }
+  .animate-float, .anim-wave, .reveal-title, .reveal-sub, .reveal-mascot { animation: none !important; opacity: 1 !important; }
 }
 </style>
