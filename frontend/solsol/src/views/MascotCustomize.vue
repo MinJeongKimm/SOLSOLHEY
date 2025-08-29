@@ -12,7 +12,7 @@
           >
             <img src="/icons/icon_back.png" alt="뒤로가기" class="w-5 h-5" />
           </button>
-          <h1 class="text-xl font-bold text-gray-800">Customize</h1>
+          <h1 class="text-xl font-bold text-gray-800">꾸미기</h1>
         </div>
         
       </div>
@@ -419,10 +419,10 @@ function toggleBgPanel() {
 
 // 아이템 카테고리
 const itemCategories = [
-  { id: 'head', name: 'Head', icon: '👕' },
-  { id: 'clothing', name: 'Clothing', icon: '👖' },
-  { id: 'accessory', name: 'Accessory', icon: '👓' },
-  { id: 'background', name: 'Background', icon: '🖼️' }
+  { id: 'head', name: '머리', icon: '👕' },
+  { id: 'clothing', name: '옷', icon: '👖' },
+  { id: 'accessory', name: '액세서리', icon: '👓' },
+  { id: 'background', name: '배경', icon: '🖼️' }
 ];
 
 // 버튼 패널 제거: 드래그/핀치/회전 제스처만 제공

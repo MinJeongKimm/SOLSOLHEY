@@ -23,7 +23,7 @@
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           ]"
         >
-          Head
+          머리
         </button>
         <button 
           @click="selectedCategory = 'clothing'"
@@ -34,7 +34,7 @@
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           ]"
         >
-          Clothing
+          옷
         </button>
         <button 
           @click="selectedCategory = 'accessory'"
@@ -45,7 +45,7 @@
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           ]"
         >
-          Accessory
+          액세서리
         </button>
         <button 
           @click="selectedCategory = 'background'"
@@ -56,7 +56,7 @@
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           ]"
         >
-          Background
+          배경
         </button>
       </div>
     </div>
@@ -240,10 +240,10 @@ const filteredItems = computed(() => {
 function getCategoryDisplayName(category: string): string {
   const categoryNames = {
     'all': '전체 아이템',
-    'head': 'Head 아이템',
-    'clothing': 'Clothing 아이템',
-    'accessory': 'Accessory 아이템',
-    'background': 'Background 아이템'
+    'head': '머리 아이템',
+    'clothing': '옷 아이템',
+    'accessory': '액세서리 아이템',
+    'background': '배경 아이템'
   };
   return categoryNames[category] || '아이템';
 }
