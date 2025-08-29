@@ -120,15 +120,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { searchUsers as searchUsersApi, sendFriendRequest, type User } from '../api/friend';
+import { searchUsers as searchUsersApi, sendFriendRequest, getFriendRequests, acceptFriendRequest as acceptRequest, type PendingFriendRequest, type User } from '../api/friend';
 
 const router = useRouter();
 const searchQuery = ref('');
 const searchResults = ref<User[]>([]);
 const isSearching = ref(false);
 const isAdding = ref(false);
+// 내가 받은 친구 요청 목록(수락 가능) 맵: key=userId, value=requestId(friendId)
+const receivedRequestMap = ref<Map<number, number>>(new Map());
 
 // 사용자 검색 (디바운싱 적용)
 let searchTimeout: ReturnType<typeof setTimeout>;
@@ -151,6 +153,14 @@ const performSearch = async () => {
   
   isSearching.value = true;
   try {
+    // 내가 받은 친구 요청 목록을 미리 가져와 수락 버튼을 노출할 수 있도록 함
+    try {
+      const reqs: PendingFriendRequest[] = await getFriendRequests();
+      const map = new Map<number, number>();
+      for (const r of reqs) map.set(r.userId, r.requestId);
+      receivedRequestMap.value = map;
+    } catch { /* ignore */ }
+
     const users = await searchUsersApi(searchQuery.value);
     // 백엔드에서 반환되는 친구 상태 정보를 올바르게 매핑
     searchResults.value = users.map((user: any) => ({
@@ -170,6 +180,17 @@ const performSearch = async () => {
 const addFriend = async (user: User) => {
   isAdding.value = true;
   try {
+    // 상대가 나에게 보낸 대기 요청이 있는 경우: 새 요청 대신 수락 처리로 전환
+    const reqId = receivedRequestMap.value.get(user.userId);
+    if (reqId) {
+      await acceptRequest(reqId);
+      user.isAlreadyFriend = true;
+      user.hasPendingRequest = false;
+      receivedRequestMap.value.delete(user.userId);
+      alert(`${user.nickname}님의 친구 요청을 수락했습니다.`);
+      return;
+    }
+
     await sendFriendRequest(user.userId);
     user.hasPendingRequest = true; // 요청 성공 시, UI를 즉시 '요청 중'으로 변경
     
@@ -182,4 +203,14 @@ const addFriend = async (user: User) => {
     isAdding.value = false;
   }
 };
+
+// 초기 진입 시에도 받은 요청 목록을 미리 가져와 버튼 전환이 가능하도록 처리
+onMounted(async () => {
+  try {
+    const reqs: PendingFriendRequest[] = await getFriendRequests();
+    const map = new Map<number, number>();
+    for (const r of reqs) map.set(r.userId, r.requestId);
+    receivedRequestMap.value = map;
+  } catch { /* ignore */ }
+});
 </script>
