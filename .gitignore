@@ -171,3 +171,5 @@ backend/.env
 
 # Backend uploads (generated media; do not commit)
 backend/solsol/uploads/
+# Ignore local pgAdmin state (container volume)
+backend/pgadmin/

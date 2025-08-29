@@ -20,11 +20,47 @@
       <div v-else class="space-y-4">
         <!-- 마스코트 간단 표시 -->
         <div class="relative">
-          <div class="w-full h-72 rounded-xl shadow-lg relative overflow-hidden flex items-center justify-center"
-               :style="roomBackgroundStyle">
-            <div class="relative animate-float">
-              <img :src="mascotImageUrl" :alt="friendHome?.mascot?.name || 'mascot'" class="w-44 h-44 object-contain" />
+          <div
+            ref="canvasEl"
+            class="w-full h-72 rounded-xl shadow-lg relative overflow-hidden flex items-center justify-center"
+            :style="roomBackgroundStyle"
+          >
+            <!-- 레이어 1: 배경 아이템 풀커버 -->
+            <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+              <img
+                v-for="bg in backgroundEquippedItems"
+                :key="bg.id"
+                :src="bg.imageUrl"
+                alt="배경 아이템"
+                class="absolute inset-0 w-full h-full object-cover pointer-events-none"
+              />
             </div>
+
+            <!-- 레이어 2: 마스코트 -->
+            <div class="absolute inset-0 z-10 flex items-center justify-center">
+              <div class="relative animate-float">
+                <img
+                  ref="mascotEl"
+                  :src="mascotImageUrl"
+                  :alt="friendHome?.mascot?.name || 'mascot'"
+                  class="w-44 h-44 object-contain"
+                />
+              </div>
+            </div>
+
+            <!-- 레이어 3: 전경 아이템 (간이 배치: 중앙 정렬, 약간씩 좌우 오프셋) -->
+            <div class="absolute inset-0 z-20 pointer-events-none">
+              <img
+                v-for="(it, idx) in foregroundEquippedItems"
+                :key="`${it.id}-${idx}`"
+                :src="it.imageUrl"
+                class="absolute object-contain"
+                :style="styleForSimpleItem(idx)"
+                alt="장착 아이템"
+              />
+            </div>
+
+            <!-- 마스코트 이름 -->
             <div class="absolute top-3 left-3">
               <div class="bg-white bg-opacity-90 px-2 py-1 rounded-full">
                 <span class="text-xs font-medium text-gray-800">{{ friendHome?.mascot?.name || '친구' }}</span>
@@ -75,6 +111,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { getFriendHome, sendLike, type FriendHomeResponse } from '../api/friend';
 import { useToastStore } from '../stores/toast';
 import { mascotTypes } from '../data/mockData';
+import { getShopItems } from '../api';
+import type { ShopItem } from '../types/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -84,6 +122,7 @@ const loading = ref(true);
 const error = ref<string | null>(null);
 const likeSending = ref(false);
 const toastStore = useToastStore();
+const shopItems = ref<ShopItem[]>([]);
 
 const friendId = computed(() => {
   const raw = route.params.id as string | undefined;
@@ -101,16 +140,38 @@ const mascotImageUrl = computed(() => getMascotImageUrl(friendHome.value?.mascot
 
 const roomBackgroundStyle = computed(() => {
   const bg = friendHome.value?.mascot?.backgroundId;
-  // 간단한 배경 처리(실제 배경 이미지는 프로젝트 자산 정책에 맞춰 확장 가능)
+  if (bg) {
+    return {
+      backgroundImage: `url(/backgrounds/${bg})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+    } as Record<string, string>;
+  }
   return { background: 'linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%)' } as Record<string, string>;
 });
+
+// equippedItem 문자열에 포함된 아이템 추출 (이름 기반, 간이 매칭)
+const equippedItemsByName = computed(() => {
+  const eq = friendHome.value?.mascot?.equippedItem || '';
+  if (!eq || !shopItems.value.length) return [] as ShopItem[];
+  return shopItems.value.filter(item => eq.includes(item.name));
+});
+
+const backgroundEquippedItems = computed(() => equippedItemsByName.value.filter(i => String(i.type).toLowerCase() === 'background'));
+const foregroundEquippedItems = computed(() => equippedItemsByName.value.filter(i => String(i.type).toLowerCase() !== 'background'));
 
 async function fetchHome() {
   loading.value = true;
   error.value = null;
   try {
     if (!friendId.value || Number.isNaN(friendId.value)) throw new Error('잘못된 친구 ID');
-    friendHome.value = await getFriendHome(friendId.value);
+    const [home, catalog] = await Promise.all([
+      getFriendHome(friendId.value),
+      getShopItems().catch(() => [] as ShopItem[])
+    ]);
+    friendHome.value = home;
+    shopItems.value = catalog as any;
   } catch (e: any) {
     error.value = e?.message || '불러오기 실패';
   } finally {
@@ -137,6 +198,25 @@ function goBack() {
 }
 
 onMounted(fetchHome);
+
+// 간이 전경 아이템 배치: 중앙 기준으로 좌우로 퍼뜨림
+const canvasEl = ref<HTMLElement>();
+const mascotEl = ref<HTMLElement>();
+function styleForSimpleItem(idx: number) {
+  // 기준 박스 크기와 위치
+  const baseSize = 64; // px
+  const centerX = '50%';
+  const centerY = '50%';
+  const offset = (idx - Math.floor(foregroundEquippedItems.value.length / 2)) * 28; // 좌우 간격
+  return {
+    left: `calc(${centerX} + ${offset}px)`,
+    top: centerY,
+    width: `${baseSize}px`,
+    height: `${baseSize}px`,
+    transform: 'translate(-50%, -50%)',
+    pointerEvents: 'none',
+  } as Record<string, string>;
+}
 </script>
 
 <style scoped>

@@ -70,8 +70,9 @@ export interface FriendInteraction {
   fromUserNickname: string;
   toUserId: number;
   toUserNickname: string;
-  interactionType: 'LIKE' | 'CHEER' | 'POKE' | 'MESSAGE';
+  interactionType: 'LIKE' | 'CHEER' | 'POKE' | 'MESSAGE' | 'FRIEND_REQUEST';
   message?: string;
+  referenceId?: number; // 서버 referenceId: 친구요청 등 원본 엔티티 ID
   isRead: boolean;
   createdAt: string;
 }
@@ -112,9 +113,17 @@ export const sendLike = async (toUserId: number, message?: string): Promise<void
   });
 };
 
+// 좋아요 알림에 대한 즉시 답장 (원본 읽음 처리 포함)
+export const sendLikeBack = async (interactionId: number): Promise<void> => {
+  await apiRequest<void>(`/friends/interactions/${interactionId}/like-back`, {
+    method: 'POST',
+  });
+};
+
 // 상호작용(알림) 목록 조회 (우선 LIKE만 필터링은 클라이언트에서 처리)
 export const getInteractions = async (page = 0, size = 20): Promise<PageResponse<FriendInteraction>> => {
-  const res = await apiRequest<{ data: PageResponse<FriendInteraction> }>(`/friends/interactions?page=${page}&size=${size}`, { method: 'GET' });
+  const ts = Date.now(); // 캐시 방지
+  const res = await apiRequest<{ data: PageResponse<FriendInteraction> }>(`/friends/interactions?page=${page}&size=${size}&_=${ts}`, { method: 'GET' });
   return res.data as PageResponse<FriendInteraction>;
 };
 
@@ -212,9 +221,9 @@ export async function sendFriendRequest(friendUserId: number): Promise<void> {
 }
 
 // 친구 요청 수락
-export const acceptFriendRequest = async (friendUserId: number): Promise<void> => {
+export const acceptFriendRequest = async (friendId: number): Promise<void> => {
   try {
-    await apiRequest<void>(`/friends/requests/${friendUserId}/accept`, {
+    await apiRequest<void>(`/friends/requests/${friendId}/accept`, {
       method: 'PUT',
     });
   } catch (error) {
@@ -224,9 +233,9 @@ export const acceptFriendRequest = async (friendUserId: number): Promise<void> =
 };
 
 // 친구 요청 거절
-export const rejectFriendRequest = async (friendUserId: number): Promise<void> => {
+export const rejectFriendRequest = async (friendId: number): Promise<void> => {
   try {
-    await apiRequest<void>(`/friends/requests/${friendUserId}/reject`, {
+    await apiRequest<void>(`/friends/requests/${friendId}/reject`, {
       method: 'PUT',
     });
   } catch (error) {

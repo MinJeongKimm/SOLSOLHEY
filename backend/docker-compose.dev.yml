@@ -1,0 +1,38 @@
+services:
+  solsol-api:
+    container_name: solsol-api
+    image: solsol-api:dev
+    build:
+      context: ./solsol
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./.env
+    environment:
+      # application.yml의 relaxed-* 기본값 파싱 이슈 회피
+      SERVER_TOMCAT_RELAXED_PATH_CHARS: ""
+      SERVER_TOMCAT_RELAXED_QUERY_CHARS: ""
+    volumes:
+      - ./solsol/uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    ports:
+      - "5050:80"
+    env_file:
+      - ./.env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    restart: unless-stopped

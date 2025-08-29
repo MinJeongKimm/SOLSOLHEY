@@ -12,7 +12,7 @@
 ## 🧰 기술 스택
 - **백엔드**: Spring Boot 3.4.8, Java 17, Spring Security, JPA, WebFlux, Flyway
 - **프론트엔드**: Vue 3, Vite 5, TypeScript, Vue Router, Tailwind CSS
-- **DB/인프라**: H2(local), PostgreSQL(dev/prod)
+- **DB/인프라**: H2(local), PostgreSQL(dev)
 
 ## 🗂️ 프로젝트 구조
 ```bash
@@ -38,7 +38,7 @@ SOLSOLHEY/
 ### 1) 사전 요구사항
 - Node.js 18+
 - Java 17+
-- (dev/prod) PostgreSQL
+- (dev) PostgreSQL
 
 ### 2) 환경 변수 설정 (백엔드)
 ```bash
@@ -55,7 +55,7 @@ cd SOLSOLHEY/backend/solsol
 ```
 - 프로필: 기본 `local` (H2 메모리 DB)
 - H2 Console: `http://localhost:8080/h2-console` (JDBC: `jdbc:h2:mem:testdb`, 사용자: `sa`)
-  - ⚠️ **보안**: 개발환경(`local`, `dev`)에서만 접근 가능, 운영환경(`prod`)에서는 자동 비활성화
+  - ⚠️ **보안**: 개발환경(`local`, `dev`)에서만 접근 가능
 
 ### 4) 프론트엔드 실행
 ```bash
@@ -96,7 +96,7 @@ npm run dev
   - POST `/{challengeId}/progress` (진행도 갱신)
   - GET `/my?status=` (내 챌린지)
 
-참고: **보안 강화됨** - CORS는 환경변수로 제한된 도메인만 허용. 개발환경: `localhost` 포트들, 운영환경: 실제 도메인 설정 필요.
+참고: **보안 강화됨** - CORS는 환경변수로 제한된 도메인만 허용. 개발환경: `localhost` 포트들, 배포 환경: 실제 도메인 설정 필요.
 
 ## 🛡️ 보안 기능
 
@@ -115,32 +115,30 @@ cd backend/solsol
 ## ⚙️ 프로필/설정
 - `local`: H2, `ddl-auto=update`, 콘솔 활성화
 - `dev`: PostgreSQL(`jdbc:postgresql://localhost:5432/solsol_dev`), `ddl-auto=validate`
-- `prod`: PostgreSQL(환경변수 기반), `ddl-auto=validate`
 - 로깅: `com.solsolhey=DEBUG`, WebClient DEBUG 활성
 
 ## 🔒 보안 설정
 ### 주요 보안 기능
 - **JWT 인증**: 256비트 강력한 Secret Key 사용, Access/Refresh 토큰 분리
 - **CORS 보안**: 환경별 허용 도메인 제한 (`CORS_ALLOWED_ORIGINS` 환경변수)
-- **환경별 접근 제어**: 개발용 엔드포인트(H2 Console, Swagger)는 운영환경에서 자동 비활성화
+- **환경별 접근 제어**: 개발용 엔드포인트(H2 Console, Swagger)는 배포 환경에서 자동 비활성화(구성 시)
 - **입력값 검증**: `@Valid` 기반 데이터 검증, 전역 예외 처리
 
 ### 보안 체크리스트
 ✅ JWT Secret Key를 강력한 랜덤 값으로 변경  
 ✅ CORS 허용 도메인을 운영 도메인으로 제한  
-✅ 운영환경에서 `SPRING_PROFILES_ACTIVE=prod` 설정  
 ✅ 데이터베이스 접속 정보 보안 관리  
-✅ HTTPS 설정 (운영환경)  
+✅ HTTPS 설정 (배포 환경)  
 
-### 환경별 보안 설정
+### 환경별 보안 설정 예시
 ```bash
-# 개발환경 (.env)
+# 로컬 개발환경 (.env)
 SPRING_PROFILES_ACTIVE=local  # H2 Console, Swagger 접근 가능
 CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 
-# 운영환경 (.env)
-SPRING_PROFILES_ACTIVE=prod   # H2 Console, Swagger 접근 차단
-CORS_ALLOWED_ORIGINS=https://your-production-domain.com
+# 개발/배포 환경 (.env)
+SPRING_PROFILES_ACTIVE=dev
+CORS_ALLOWED_ORIGINS=https://your-domain.com
 JWT_SECRET_KEY=<256비트-강력한-랜덤-키>
 ```
 
@@ -187,15 +185,34 @@ Remove      파일을 삭제하는 작업만 수행하는 경우
 
 ## 🆘 트러블슈팅
 ### 일반적인 문제
-- **H2 Console 404**: 프로필이 `local` 또는 `dev`인지 확인 (`prod`에서는 보안상 접근 불가)
+- **H2 Console 404**: 프로필이 `local` 또는 `dev`인지 확인
 - **401 Unauthorized**: `Authorization: Bearer <accessToken>` 헤더 확인
 - **DB 연결 실패**: `.env`의 `DB_*` 값과 `application.yml` 프로파일 확인
 - **CORS 오류**: `CORS_ALLOWED_ORIGINS` 환경변수에 프론트엔드 도메인 추가 확인
 
 ### 보안 관련 문제
 - **JWT 토큰 무효화**: Secret Key 변경 시 모든 기존 토큰이 무효됨 (정상 동작)
-- **Swagger UI 접근 불가**: 운영환경(`prod`)에서는 보안상 접근 차단됨
-- **개발용 엔드포인트 차단**: 프로필을 `local` 또는 `dev`로 변경 필요
+- **Swagger UI 접근 불가**: 배포 환경에서 제한할 수 있음(도메인/CORS/보안 설정 확인)
+  - **개발용 엔드포인트 차단**: 프로필을 `local` 또는 `dev`로 변경 필요
 
 ## 📜 라이선스
 - 해커톤 진행용 내부 프로젝트 — 라이선스는 추후 결정 예정
+
+## 🐳 Docker 개발 실행
+- 요구사항: Docker Desktop(또는 Compose v2), 네트워크 연결
+- 실행: `docker compose -f backend/docker-compose.dev.yml up -d --build`
+- 종료: `docker compose -f backend/docker-compose.dev.yml down`
+- 상태/로그:
+  - 상태: `docker compose -f backend/docker-compose.dev.yml ps`
+  - 로그: `docker compose -f backend/docker-compose.dev.yml logs -f`
+- 접속:
+  - API 헬스: `http://localhost:8080/health`
+  - pgAdmin: `http://localhost:5050` (로그인은 `backend/.env`의 `PGADMIN_DEFAULT_*` 사용)
+- 프로필/DB:
+  - `backend/.env`의 `SPRING_PROFILES_ACTIVE=dev|local`로 전환
+  - 원격 DB 사용 시 `SPRING_DATASOURCE_URL`의 Public host/port 및 `sslmode=require` 확인
+- pgAdmin 서버 등록(원격 DB 예시):
+  - Host: `.env`의 JDBC URL 호스트 (예: `yamabiko.proxy.rlwy.net`)
+  - Port: `.env`의 Public 포트 (예: `37256`)
+  - DB: `railway` | User: `.env`의 `SPRING_DATASOURCE_USERNAME` | Password: `.env`의 `SPRING_DATASOURCE_PASSWORD`
+  - SSL Mode: Require

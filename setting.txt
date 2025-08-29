@@ -17,7 +17,7 @@
 [DB/Infra]
 - DB: Postgres 16 (Docker Compose)
 - Cache: Redis 7 (Docker Compose)
-- 마이그레이션: local → ddl-auto=update, dev/prod → Flyway
+- 마이그레이션: local → ddl-auto=update, dev → Flyway
 - 테이블 네이밍: snake_case + 복수형 (users, user_challenges)
 - 공통 컬럼: id, created_at, updated_at
 
