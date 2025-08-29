@@ -82,14 +82,14 @@ public class AuthController {
             String refresh = jwtTokenProvider.createRefreshToken(Long.parseLong(userId));
 
             ResponseCookie accessC = ResponseCookie.from("ACCESS_TOKEN", access)
-                .httpOnly(true).secure(false)           // HTTPS 환경에서는 true 권장
-                .sameSite("Lax").path("/")
+                .httpOnly(true).secure(true)            // 크로스 오리진: Secure + SameSite=None 필요
+                .sameSite("None").path("/")
                 .maxAge(Duration.ofMinutes(15))
                 .build();
 
             ResponseCookie refreshC = ResponseCookie.from("REFRESH_TOKEN", refresh)
-                .httpOnly(true).secure(false)           // HTTPS 환경에서는 true 권장
-                .sameSite("Lax").path("/api/v1/auth")
+                .httpOnly(true).secure(true)
+                .sameSite("None").path("/api/v1/auth")
                 .maxAge(Duration.ofDays(14))
                 .build();
 
@@ -119,14 +119,14 @@ public class AuthController {
             log.info("로그아웃 API 호출");
             
             ResponseCookie clearAccess = ResponseCookie.from("ACCESS_TOKEN", "")
-                .httpOnly(true).secure(false)           // HTTPS 환경에서는 true 권장
-                .sameSite("Lax").path("/").maxAge(0).build();
+                .httpOnly(true).secure(true)
+                .sameSite("None").path("/").maxAge(0).build();
             ResponseCookie clearRefresh = ResponseCookie.from("REFRESH_TOKEN", "")
-                .httpOnly(true).secure(false)           // HTTPS 환경에서는 true 권장
-                .sameSite("Lax").path("/api/v1/auth").maxAge(0).build();
+                .httpOnly(true).secure(true)
+                .sameSite("None").path("/api/v1/auth").maxAge(0).build();
             ResponseCookie clearX = ResponseCookie.from("XSRF-TOKEN", "")
-                .httpOnly(false).secure(false)          // HTTPS 환경에서는 true 권장
-                .sameSite("Lax").path("/").maxAge(0).build();
+                .httpOnly(false).secure(true)
+                .sameSite("None").path("/").maxAge(0).build();
 
             return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, clearAccess.toString())
@@ -159,13 +159,13 @@ public class AuthController {
         String newRefresh = jwtTokenProvider.createRefreshToken(Long.parseLong(userId));
 
         ResponseCookie accessC = ResponseCookie.from("ACCESS_TOKEN", newAccess)
-            .httpOnly(true).secure(false)               // HTTPS 환경에서는 true 권장
-            .sameSite("Lax").path("/")
+            .httpOnly(true).secure(true)
+            .sameSite("None").path("/")
             .maxAge(Duration.ofMinutes(15)).build();
 
         ResponseCookie refreshC = ResponseCookie.from("REFRESH_TOKEN", newRefresh)
-            .httpOnly(true).secure(false)               // HTTPS 환경에서는 true 권장
-            .sameSite("Lax").path("/api/v1/auth")
+            .httpOnly(true).secure(true)
+            .sameSite("None").path("/api/v1/auth")
             .maxAge(Duration.ofDays(14)).build();
 
         // Re-issue CSRF (optional but recommended on rotation)

@@ -36,6 +36,10 @@ import { useToastStore } from '../stores/toast';
 // - 로컬 기본값: http://localhost:8080/api/v1
 export const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
+// 내부 캐시: 교차 출처 환경에서 CSRF 쿠키를 프론트 도메인에서 읽을 수 없으므로
+// 백엔드의 /health 응답 바디에 담긴 토큰을 보관한다.
+let CSRF_TOKEN_CACHE: string | undefined;
+
 // 백엔드 오리진(origin)만 필요할 때 사용 (예: /api/ranking 같이 v1 prefix가 아닌 엔드포인트)
 export function getApiOrigin(): string {
   try {
@@ -55,9 +59,26 @@ function getCookie(name: string): string | undefined {
 
 // CSRF 쿠키 시드 보장
 async function ensureCsrfCookie(): Promise<void> {
-  if (!getCookie('XSRF-TOKEN')) {
-    const origin = getApiOrigin();
-    await fetch(`${origin}/health`, { credentials: 'include' });
+  const origin = getApiOrigin();
+  if (!origin) return; // 잘못된 API_BASE일 때 조용히 스킵
+
+  try {
+    const res = await fetch(`${origin}/health`, { credentials: 'include' });
+    // 응답 바디에서 csrfToken을 추출해 캐시에 저장 (교차 출처 대응)
+    const text = await res.text();
+    if (text) {
+      try {
+        const json = JSON.parse(text);
+        const token = json?.data?.csrfToken || json?.csrfToken;
+        if (typeof token === 'string' && token.length > 0) {
+          CSRF_TOKEN_CACHE = token;
+        }
+      } catch {
+        // ignore json parse errors
+      }
+    }
+  } catch {
+    // ignore network errors here; 실제 요청 시 다시 시도
   }
 }
 
@@ -78,8 +99,11 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   }
 
   if (method !== 'GET' && method !== 'HEAD') {
-    await ensureCsrfCookie();
-    const xsrf = getCookie('XSRF-TOKEN');
+    // 1) 캐시 우선
+    if (!CSRF_TOKEN_CACHE) {
+      await ensureCsrfCookie();
+    }
+    const xsrf = CSRF_TOKEN_CACHE || getCookie('XSRF-TOKEN');
     if (!xsrf) throw new Error('Missing XSRF-TOKEN');
     headers.set('X-XSRF-TOKEN', xsrf);
   }
