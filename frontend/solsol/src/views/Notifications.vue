@@ -154,14 +154,8 @@ const visibleLikeOnly = computed(() => {
   });
 });
 
-const visibleRequests = computed(() => {
-  if (!dismissedBefore.value) return requestOnly.value;
-  const threshold = new Date(dismissedBefore.value).getTime();
-  return requestOnly.value.filter(i => {
-    const t = new Date(i.createdAt as any).getTime();
-    return Number.isFinite(t) ? t >= threshold : false;
-  });
-});
+// 친구 요청은 중요 알림으로 간주하여 '알림함 비우기' 필터를 적용하지 않음
+const visibleRequests = computed(() => requestOnly.value);
 
 function formatDate(iso: string): string {
   try {
