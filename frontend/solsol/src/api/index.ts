@@ -63,8 +63,8 @@ async function ensureCsrfCookie(): Promise<void> {
   if (!origin) return; // 잘못된 API_BASE일 때 조용히 스킵
 
   try {
+    // 항상 최신 토큰과 쿠키를 동기화하기 위해 매번 호출
     const res = await fetch(`${origin}/health`, { credentials: 'include' });
-    // 응답 바디에서 csrfToken을 추출해 캐시에 저장 (교차 출처 대응)
     const text = await res.text();
     if (text) {
       try {
@@ -99,10 +99,8 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   }
 
   if (method !== 'GET' && method !== 'HEAD') {
-    // 1) 캐시 우선
-    if (!CSRF_TOKEN_CACHE) {
-      await ensureCsrfCookie();
-    }
+    // 항상 호출해 토큰-쿠키 동기화 보장
+    await ensureCsrfCookie();
     const xsrf = CSRF_TOKEN_CACHE || getCookie('XSRF-TOKEN');
     if (!xsrf) throw new Error('Missing XSRF-TOKEN');
     headers.set('X-XSRF-TOKEN', xsrf);
