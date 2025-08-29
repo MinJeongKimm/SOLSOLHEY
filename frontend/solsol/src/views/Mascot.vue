@@ -14,11 +14,7 @@
             <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5 mr-2" />
             <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userCoins }}P</span>
           </div>
-          <!-- 좋아요 -->
-          <div class="flex items-center justify-end">
-            <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5 mr-2" />
-            <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userLikes }}</span>
-          </div>
+         
         </div>
       </div>
 
@@ -81,7 +77,7 @@
             </div>
             
             <!-- 공유 버튼 -->
-            <div class="absolute top-3 right-3 z-50 pointer-events-auto">
+            <div class="absolute top-3 right-3 z-30 pointer-events-auto">
               <button 
                 @click="showSharePopup"
                 class="bg-white bg-opacity-90 p-1 rounded-lg hover:bg-opacity-100 transition-all flex items-center justify-center w-8 h-8"
@@ -289,12 +285,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth, apiRequest, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization , getAiSpeech } from '../api/index';
 import { getFriendHome } from '../api/friend';
+import { apiRequest, auth, createShareLink, getAiSpeech, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
+import SpeechBubble from '../components/ui/SpeechBubble.vue';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
 import type { Mascot, ShopItem } from '../types/api';
-import SpeechBubble from '../components/ui/SpeechBubble.vue';
 import { toAbsoluteFromMascot } from '../utils/coordinates';
 
 const router = useRouter();
