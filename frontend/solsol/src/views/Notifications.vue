@@ -153,10 +153,39 @@ const requestOnly = computed(() => items.value.filter(i => i.interactionType ===
 const visibleLikeOnly = computed(() => likeOnly.value);
 const visibleRequests = computed(() => requestOnly.value);
 
-function formatDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString();
-  } catch { return iso; }
+function formatDate(raw: any): string {
+  if (!raw) return '';
+  // 문자열(ISO 예상)
+  if (typeof raw === 'string') {
+    const d = new Date(raw);
+    if (!Number.isNaN(d.getTime())) return d.toLocaleString();
+    // 공백 구분 포맷 대비 보정
+    const alt = new Date(raw.replace(' ', 'T'));
+    if (!Number.isNaN(alt.getTime())) return alt.toLocaleString();
+    return '';
+  }
+  // 배열 포맷([yyyy,MM,dd,HH,mm,ss]) 대응
+  if (Array.isArray(raw)) {
+    const [y, M, d, h = 0, m = 0, s = 0] = raw;
+    const dt = new Date(y, (M - 1), d, h, m, s);
+    if (!Number.isNaN(dt.getTime())) return dt.toLocaleString();
+    return '';
+  }
+  // 객체 포맷({year, monthValue|month, day|dayOfMonth, hour, minute, second}) 대응
+  if (typeof raw === 'object') {
+    const y = raw.year ?? raw?.$year;
+    const mo = raw.monthValue ?? raw.month;
+    const dd = raw.dayOfMonth ?? raw.day;
+    const h = raw.hour ?? 0;
+    const mi = raw.minute ?? 0;
+    const s = raw.second ?? 0;
+    if (y && mo && dd) {
+      const dt = new Date(y, (mo - 1), dd, h, mi, s);
+      if (!Number.isNaN(dt.getTime())) return dt.toLocaleString();
+    }
+    return '';
+  }
+  return '';
 }
 
 function goBack() {
