@@ -15,7 +15,7 @@
 
                  <!-- 제목 -->
          <div class="text-center">
-           <h1 class="text-xl font-bold text-gray-800">Challenge</h1>
+           <h1 class="text-xl font-bold text-gray-800">챌린지</h1>
          </div>
 
         <!-- 보유 포인트 배지 -->

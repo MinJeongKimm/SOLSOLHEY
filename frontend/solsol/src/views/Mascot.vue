@@ -4,8 +4,8 @@
     <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
       <!-- 상단 헤더 -->
       <div class="flex justify-between items-start mb-6">
-        <!-- 좌측: My Room 타이틀 -->
-        <h1 class="text-xl font-bold text-gray-800">My Room</h1>
+       <!-- 좌측: 마스코트 이름의 방 -->
+       <h1 class="text-xl font-bold text-gray-800">{{ (currentMascot && currentMascot.name) || '마스코트' }}의 방</h1>
         
         <!-- 우측: 포인트 & 좋아요 -->
         <div class="flex flex-col space-y-1">
@@ -88,13 +88,7 @@
               />
             </div>
 
-            <!-- 마스코트 이름 -->
-            <div class="absolute top-3 left-3">
-              <div class="bg-white bg-opacity-90 px-2 py-1 rounded-full">
-                <span class="text-xs font-medium text-gray-800">{{ currentMascot.name }}</span>
-              </div>
-            </div>
-            
+           
             <!-- 공유 버튼 -->
             <div class="absolute top-3 right-3 z-30 pointer-events-auto">
               <button 
@@ -322,6 +316,7 @@ const currentMascot = ref<Mascot | null>(null);
 // 포인트/좋아요
 const userCoins = computed(() => pointStore.userPoints);
 const userLikes = ref(0);
+const userNickname = ref<string>('나의');
 
 // 서버 커스터마이징 + 아이템 카탈로그 (동기 렌더)
 const customization = ref<MascotCustomization | null>(null);
@@ -1009,6 +1004,7 @@ async function reloadLikes() {
   try {
     const u: any = await auth.fetchUser();
     const uid = (u as any)?.userId as number | undefined;
+    userNickname.value = (u as any)?.nickname || '나의';
     if (uid) {
       const myHome = await getFriendHome(uid);
       userLikes.value = Number(myHome?.likeCount ?? 0);
