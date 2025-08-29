@@ -17,15 +17,11 @@ public class GeminiClientConfig {
 
     @Bean
     public Client geminiClient() {
-        // Prefer GEMINI_API_KEY; fall back to GOOGLE_API_KEY (google-genai default)
+        // Only use GEMINI_API_KEY (no fallback) to avoid ambiguity
         String apiKey = environment.getProperty("GEMINI_API_KEY");
         if (apiKey == null || apiKey.isBlank()) {
-            apiKey = environment.getProperty("GOOGLE_API_KEY");
-        }
-
-        if (apiKey == null || apiKey.isBlank()) {
             throw new IllegalStateException(
-                "Missing AI API key. Set GEMINI_API_KEY or GOOGLE_API_KEY in backend/.env or OS env.");
+                "Missing AI API key. Set GEMINI_API_KEY in backend/.env or OS env.");
         }
 
         // Build client with API key via public builder API
