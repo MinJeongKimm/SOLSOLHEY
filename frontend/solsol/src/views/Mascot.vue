@@ -50,10 +50,15 @@
                   ref="mascotEl"
                   :src="getMascotImageUrl(currentMascot.type)" 
                   :alt="currentMascot.name" 
-                  class="w-48 h-48 object-contain"
+                  class="w-48 h-48 object-contain cursor-pointer"
+                  @click="onMascotClick"
                   @load="updateRects"
                   @error="handleImageError"
                 />
+                <!-- AI 말풍선: 마스코트 오른쪽 상단 -->
+                <div v-if="showBubble" class="absolute -right-2 -top-4">
+                  <SpeechBubble :text="bubbleText" tail="left" aria-live="polite" />
+                </div>
               </div>
             </div>
 
@@ -284,11 +289,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth, apiRequest, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
+import { auth, apiRequest, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization , getAiSpeech } from '../api/index';
 import { getFriendHome } from '../api/friend';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
 import type { Mascot, ShopItem } from '../types/api';
+import SpeechBubble from '../components/ui/SpeechBubble.vue';
 import { toAbsoluteFromMascot } from '../utils/coordinates';
 
 const router = useRouter();
@@ -305,6 +311,24 @@ const userLikes = ref(0);
 // 서버 커스터마이징 + 아이템 카탈로그 (동기 렌더)
 const customization = ref<MascotCustomization | null>(null);
 const shopItems = ref<ShopItem[]>([]);
+
+// AI 말풍선 상태
+const showBubble = ref(false);
+const bubbleText = ref('');
+let bubbleTimer: number | null = null;
+
+async function onMascotClick() {
+  try {
+    const res = await getAiSpeech();
+    bubbleText.value = res.message || '안녕하세요! 오늘도 반가워요 :)';
+  } catch (e) {
+    console.warn('AI 말풍선 실패:', e);
+    bubbleText.value = '안녕하세요! 오늘도 반가워요 :)';
+  }
+  showBubble.value = true;
+  if (bubbleTimer) window.clearTimeout(bubbleTimer);
+  bubbleTimer = window.setTimeout(() => { showBubble.value = false; }, 10000);
+}
 // 과거 폴백 제거됨
 
 // 타입 표준화 유틸 (Customize.vue와 동일 컨셉)

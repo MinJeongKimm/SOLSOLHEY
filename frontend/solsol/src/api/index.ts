@@ -693,3 +693,11 @@ export function parseJwtPayload(token: string): any {
     return null;
   }
 }
+
+// AI 말풍선: 메시지 생성 요청
+export async function getAiSpeech(): Promise<{ success: boolean; message: string; expiresInSec?: number }>
+{
+  return apiRequest<{ success: boolean; message: string; expiresInSec?: number }>(`/ai/speech`, {
+    method: 'POST',
+  });
+}
