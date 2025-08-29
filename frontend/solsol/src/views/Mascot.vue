@@ -14,8 +14,12 @@
             <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5 mr-2" />
             <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userCoins }}P</span>
           </div>
-         
-        </div>
+          <!-- 좋아요 -->
+          <div class="flex items-center justify-end">
+            <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5 mr-2" />
+            <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userLikes }}</span>
+          </div>
+          </div>
       </div>
 
       <!-- 마스코트가 있는 경우에만 메인 영역 렌더 (없으면 라우터가 생성 페이지로 이동) -->
@@ -54,10 +58,11 @@
                 <!-- AI 말풍선: 마스코트 오른쪽 (클릭 시 챌린지 이동) -->
                 <div 
                   v-if="showBubble"
-                  class="absolute left-full top-2 sm:-top-1 ml-2 z-30 cursor-pointer select-none min-w-[220px] max-w-[90vw] sm:max-w-[600px]"
+                  class="absolute left-[calc(100%-6px)] top-2 z-30 cursor-pointer select-none min-w-[180px] w-fit"
+                  :style="{ maxWidth: bubbleMaxWidth }"
                   role="button"
                   tabindex="0"
-                  @click="goToChallenge"
+                  @click.stop="goToChallenge"
                   @keydown.enter.prevent="goToChallenge"
                 >
                   <SpeechBubble 
@@ -295,7 +300,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, onActivated, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { getFriendHome } from '../api/friend';
 import { apiRequest, auth, createShareLink, getAiSpeech, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
@@ -323,6 +328,7 @@ const shopItems = ref<ShopItem[]>([]);
 // AI 말풍선 상태
 const showBubble = ref(false);
 const bubbleText = ref('');
+const bubbleLocked = ref(false); // 여러 번 클릭 방지 락
 const bubbleDisplayText = computed(() => chunkByWords(bubbleText.value, 8).join('\n'));
 function chunkByWords(text: string, maxCharsPerLine: number): string[] {
   const raw = (text || '').trim();
@@ -348,17 +354,38 @@ function chunkByWords(text: string, maxCharsPerLine: number): string[] {
 }
 let bubbleTimer: number | null = null;
 
+const bubblePlaceholders = [
+  '불렀어?',
+  '나 여기 있어!',
+  '응, 듣고 있어!',
+  '짜자잔 ~',
+  '뿅! 나타났어'
+];
+
 async function onMascotClick() {
+  // 여러 번 클릭 방지: 말풍선 라이프사이클 종료 전엔 무시
+  if (bubbleLocked.value) return;
+  bubbleLocked.value = true;
+
+  // 즉시 표시: 지연 없이 말풍선 노출 (귀여운 반응)
+  if (bubbleTimer) window.clearTimeout(bubbleTimer);
+  bubbleText.value = bubblePlaceholders[Math.floor(Math.random() * bubblePlaceholders.length)];
+  showBubble.value = true;
+  await nextTick();
+  updateRects(); // 표시 직후 가용 너비 재계산
   try {
     const res = await getAiSpeech();
-    bubbleText.value = res.message || '안녕하세요! 오늘도 반가워요 :)';
+    bubbleText.value = res.message || '오늘은 가벼운 챌린지 어때?';
   } catch (e) {
     console.warn('AI 말풍선 실패:', e);
-    bubbleText.value = '안녕하세요! 오늘도 반가워요 :)';
+    bubbleText.value = '오늘은 가벼운 챌린지 어때?';
   }
-  showBubble.value = true;
+  // 최종 문구 기준으로 5초 유지하고 락 해제
   if (bubbleTimer) window.clearTimeout(bubbleTimer);
-  bubbleTimer = window.setTimeout(() => { showBubble.value = false; }, 10000);
+  bubbleTimer = window.setTimeout(() => {
+    showBubble.value = false;
+    bubbleLocked.value = false;
+  }, 5000);
 }
 // 과거 폴백 제거됨
 
@@ -408,6 +435,9 @@ const canvasEl = ref<HTMLElement>();
 const mascotEl = ref<HTMLElement>();
 const canvasRect = ref<DOMRect | null>(null);
 const mascotRect = ref<DOMRect | null>(null);
+const BUBBLE_OFFSET_PX = -6; // 마스코트와 겹치도록 왼쪽으로 6px 당김
+const bubbleAvailableWidth = ref<number>(0);
+const bubbleMaxWidth = computed(() => (bubbleAvailableWidth.value > 0 ? `${bubbleAvailableWidth.value}px` : '600px'));
 
 function updateRects() {
   if (canvasEl.value) {
@@ -415,6 +445,13 @@ function updateRects() {
   }
   if (mascotEl.value) {
     mascotRect.value = mascotEl.value.getBoundingClientRect();
+  }
+  // 말풍선 가용 너비 계산: 캔버스 오른쪽 끝까지의 거리에서 안전 여백 차감
+  if (canvasRect.value && mascotRect.value) {
+    const safeGap = 8; // 안전 여백(px)
+    const available = Math.max(0, Math.floor(canvasRect.value.right - mascotRect.value.right - safeGap - BUBBLE_OFFSET_PX));
+    // 너무 좁으면 최소값으로 제한(말풍선 너비 최소 보장)
+    bubbleAvailableWidth.value = Math.max(160, available);
   }
 }
 
@@ -940,20 +977,7 @@ onMounted(async () => {
     window.addEventListener('resize', updateRects);
 
     // 내 홈 요약(좋아요 누적) 로드
-    try {
-      let uid = auth.getUser()?.userId as number | undefined;
-      if (!uid) {
-        const u = await auth.fetchUser();
-        uid = (u as any)?.userId as number | undefined;
-      }
-      if (uid) {
-        const myHome = await getFriendHome(uid);
-        userLikes.value = Number(myHome?.likeCount ?? 0);
-      }
-    } catch (e) {
-      // 무시: 좋아요 수는 보조 정보
-      userLikes.value = 0;
-    }
+    await reloadLikes();
   } catch (err) {
     console.error('메인화면 데이터 로드 실패:', err);
     handleApiError(err);
@@ -962,7 +986,31 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateRects);
+  if (bubbleTimer) {
+    window.clearTimeout(bubbleTimer);
+    bubbleTimer = null as unknown as number;
+  }
+  bubbleLocked.value = false;
 });
+
+// 라우트 복귀 시 최신 좋아요 수 재조회
+onActivated(() => {
+  reloadLikes();
+});
+
+async function reloadLikes() {
+  try {
+    const u: any = await auth.fetchUser();
+    const uid = (u as any)?.userId as number | undefined;
+    if (uid) {
+      const myHome = await getFriendHome(uid);
+      userLikes.value = Number(myHome?.likeCount ?? 0);
+    }
+  } catch (e) {
+    // 무시: 좋아요 수는 보조 정보
+    userLikes.value = 0;
+  }
+}
 </script>
 
 <script lang="ts">
