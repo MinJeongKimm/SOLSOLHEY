@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AiMessageService {
     private final Client client;
     private final AcademicDummyProvider dummyProvider;
+    private final ContextLoader contextLoader;
     private final PromptBuilder promptBuilder;
     private final UserRepository userRepository;
     private final MascotRepository mascotRepository;
@@ -33,8 +34,9 @@ public class AiMessageService {
         String nickname = null;
         Integer level = null;
         if (user != null) {
-            campus = user.getCampus();
-            nickname = user.getNickname();
+            // PII 금지 정책: 캠퍼스/닉네임은 프롬프트에 사용하지 않음
+            campus = null;
+            nickname = null;
         }
         if (mascot != null) {
             level = mascot.getLevel();
@@ -46,20 +48,23 @@ public class AiMessageService {
         String result = null;
         SpeechType produced = null;
 
+        boolean avoidSocial = contextLoader.userNotesSuggestAvoidSocial(userId);
+        String userSummary = contextLoader.getUserSummary(userId).orElse(null);
+
         if (desired == SpeechType.ACADEMIC) {
-            result = tryAcademic(campus, nickname, level);
+            result = tryAcademic(campus, nickname, level, userId, avoidSocial, userSummary);
             if (result != null && !result.isBlank()) {
                 produced = SpeechType.ACADEMIC;
             } else {
-                result = tryChallenge(campus, nickname, level);
+                result = tryChallenge(campus, nickname, level, userId, avoidSocial, userSummary);
                 if (result != null && !result.isBlank()) produced = SpeechType.CHALLENGE;
             }
         } else { // desired CHALLENGE
-            result = tryChallenge(campus, nickname, level);
+            result = tryChallenge(campus, nickname, level, userId, avoidSocial, userSummary);
             if (result != null && !result.isBlank()) {
                 produced = SpeechType.CHALLENGE;
             } else {
-                result = tryAcademic(campus, nickname, level);
+                result = tryAcademic(campus, nickname, level, userId, avoidSocial, userSummary);
                 if (result != null && !result.isBlank()) produced = SpeechType.ACADEMIC;
             }
         }
@@ -79,11 +84,12 @@ public class AiMessageService {
         return finalText;
     }
 
-    private String tryAcademic(String campus, String nickname, Integer level) {
-        AcademicContext academic = dummyProvider.getDummyContext();
+    private String tryAcademic(String campus, String nickname, Integer level, Long userId, boolean avoidSocial, String userSummary) {
+        AcademicContext academic = contextLoader.getAcademicContext().orElseGet(dummyProvider::getDummyContext);
         AcademicContext varied = selectRandomSubContext(academic);
-        String prompt = promptBuilder.buildPrompt(campus, nickname, level, varied)
+        String prompt = promptBuilder.buildPrompt(campus, nickname, level, varied, userSummary)
                 + "\n표현 다양화 지침: 같은 의미라도 매번 어휘/어순을 바꿔 자연스럽게 다르게 써줘. 반말 유지, 이모지/닉네임/캠퍼스 언급 금지."
+                + (avoidSocial ? "\n추가 제약: 소셜 지표/친구/좋아요/팔로워 등 사회적 비교 표현을 언급하지 말 것." : "")
                 + "\n변주 토큰: " + java.util.UUID.randomUUID().toString().substring(0, 8);
         try {
             GenerateContentResponse res = client.models.generateContent(
@@ -99,7 +105,7 @@ public class AiMessageService {
         return null;
     }
 
-    private String tryChallenge(String campus, String nickname, Integer level) {
+    private String tryChallenge(String campus, String nickname, Integer level, Long userId, boolean avoidSocial, String userSummary) {
         try {
             var now = java.time.LocalDateTime.now();
             var challenges = challengeRepository.findAvailableChallenges(now);
@@ -107,7 +113,8 @@ public class AiMessageService {
             int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(challenges.size());
             var picked = challenges.get(idx);
             String challengeName = picked.getChallengeName();
-            String prompt = promptBuilder.buildChallengePrompt(campus, nickname, level, challengeName);
+            String prompt = promptBuilder.buildChallengePrompt(campus, nickname, level, challengeName, userSummary)
+                    + (avoidSocial ? "\n추가 제약: 소셜 지표/친구/좋아요/팔로워 등 언급 금지." : "");
             try {
                 GenerateContentResponse res = client.models.generateContent(
                         "gemini-2.5-flash",
