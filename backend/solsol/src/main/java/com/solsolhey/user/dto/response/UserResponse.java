@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
  */
 public record UserResponse(
     Long userId,
-    String username,
     String email,
     String nickname,
     String campus,

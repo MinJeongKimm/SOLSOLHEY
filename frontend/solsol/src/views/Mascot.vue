@@ -22,20 +22,8 @@
         </div>
       </div>
 
-      <!-- 마스코트가 없는 경우 생성 버튼 -->
-      <div v-if="!currentMascot" class="text-center py-8">
-        <div class="text-6xl mb-4">🥚</div>
-        <p class="text-gray-600 mb-4">아직 마스코트가 없습니다</p>
-        <button 
-          @click="goToCreate"
-          class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-        >
-          마스코트 생성하기
-        </button>
-      </div>
-
-      <!-- 마스코트가 있는 경우 메인 영역 -->
-      <div v-else class="space-y-4">
+      <!-- 마스코트가 있는 경우에만 메인 영역 렌더 (없으면 라우터가 생성 페이지로 이동) -->
+      <div v-if="currentMascot" class="space-y-4">
         <!-- 메인 캔버스: 방 배경 + 레이어링(배경/마스코트/전경) -->
         <div class="relative">
           <!-- 방 배경 컨테이너 -->
@@ -297,6 +285,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { auth, apiRequest, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
+import { getFriendHome } from '../api/friend';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
 import type { Mascot, ShopItem } from '../types/api';
@@ -309,9 +298,9 @@ const pointStore = usePointStore();
 
 // 반응형 데이터
 const currentMascot = ref<Mascot | null>(null);
-// 포인트 상태는 Store에서 관리
+// 포인트/좋아요
 const userCoins = computed(() => pointStore.userPoints);
-const userLikes = ref(151);
+const userLikes = ref(0);
 
 // 서버 커스터마이징 + 아이템 카탈로그 (동기 렌더)
 const customization = ref<MascotCustomization | null>(null);
@@ -636,9 +625,10 @@ function showToastMessage(message: string) {
 }
 
 // 공유 팝업 표시
-function showSharePopup() {
+async function showSharePopup() {
   // 토큰 상태 확인
-  if (!auth.isAuthenticated()) {
+  const ok = await auth.isAuthenticatedAsync();
+  if (!ok) {
     showToastMessage('로그인이 필요합니다. 로그인 페이지로 이동합니다.');
     setTimeout(() => {
       router.push('/');
@@ -695,7 +685,8 @@ async function handleShare() {
       const message = shareLinkData.value.message || '나의 마스코트와 함께한 이야기를 적어보세요!';
       
       const shareUrl = `${window.location.origin}/mascot/${currentMascot.value?.id}`;
-      const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+      const u: any = await auth.fetchUser();
+      const userNickname = u?.nickname || '나의';
       const mascotName = currentMascot.value?.name || '마스코트';
       const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
       
@@ -773,7 +764,8 @@ async function handleShare() {
         const blob = await composeShareImageBlob();
         const mascotName = currentMascot.value?.name || 'mascot';
         const file = new File([blob], `${mascotName}_share.png`, { type: blob.type || 'image/png' });
-        const userNickname = auth.getUser()?.nickname || auth.getUser()?.username || '나의';
+        const u2: any = await auth.fetchUser();
+        const userNickname = u2?.nickname || '나의';
         const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -887,6 +879,22 @@ onMounted(async () => {
     await nextTick();
     updateRects();
     window.addEventListener('resize', updateRects);
+
+    // 내 홈 요약(좋아요 누적) 로드
+    try {
+      let uid = auth.getUser()?.userId as number | undefined;
+      if (!uid) {
+        const u = await auth.fetchUser();
+        uid = (u as any)?.userId as number | undefined;
+      }
+      if (uid) {
+        const myHome = await getFriendHome(uid);
+        userLikes.value = Number(myHome?.likeCount ?? 0);
+      }
+    } catch (e) {
+      // 무시: 좋아요 수는 보조 정보
+      userLikes.value = 0;
+    }
   } catch (err) {
     console.error('메인화면 데이터 로드 실패:', err);
     handleApiError(err);

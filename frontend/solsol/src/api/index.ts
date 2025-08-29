@@ -33,6 +33,16 @@ import { useToastStore } from '../stores/toast';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
+// Helper: infer user-friendly EXP toast label by category
+function inferExpLabel(category: string): string {
+  if (!category) return '경험치 획득!';
+  if (category.includes('ATTEND')) return '출석 완료!';
+  if (category.includes('FINANCE') || category.includes('EXCHANGE') || category.includes('CHALLENGE')) return '금융 챌린지 참여!';
+  if (category.includes('FRIEND')) return '친구 상호작용!';
+  if (category.includes('SHOP') || category.includes('PURCHASE')) return '쇼핑 활동!';
+  return '경험치 획득!';
+}
+
 function getApiOrigin(): string {
   try {
     const url = new URL(API_BASE);
@@ -98,13 +108,12 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
       const exp = payload?.data?.expAwarded ?? payload?.expAwarded;
       if (exp && typeof exp.amount === 'number') {
         const toast = useToastStore();
-        const type = exp?.type as string | undefined;
-        const category = exp?.category as string | undefined;
         const amount = exp?.amount as number;
         const level = exp?.level as number | undefined;
-        const suffix = [type, category].filter(Boolean).join('/');
+        const category = String(exp?.category || '').toUpperCase();
+        const label = inferExpLabel(category);
         const levelTag = level ? ` · Lv.${level}` : '';
-        toast.show(`EXP +${amount}${suffix ? ` (${suffix})` : ''}${levelTag}`, 'success');
+        toast.show(`${label} +${amount}exp${levelTag}`, 'success');
       }
     } catch {
       // ignore toast parse/store errors
@@ -205,9 +214,11 @@ export async function getMascot(): Promise<Mascot | null> {
     const res = await apiRequest<any>('/mascot', {
       method: 'GET',
     });
-    
     return mascot.transformBackendResponse(res);
-  } catch (e) {
+  } catch (e: any) {
+    // Treat 404 as "no mascot yet" for both our HttpError and legacy ApiError types
+    const status = (e && typeof e === 'object' && 'status' in e) ? (e as any).status : undefined;
+    if (status === 404) return null;
     if (e instanceof ApiError && e.status === 404) return null;
     throw e;
   }
@@ -472,26 +483,18 @@ export function handleApiError(error: unknown): string {
 }
 
 // 쿠키 기반 인증 상태 확인 (호환성: 동기 + 정확성: 비동기)
-let _authKnown = false; // 마지막으로 확인된 로그인 상태(동기용)
-let _userCache: any | null = null; // 마지막으로 가져온 유저(동기 반환용)
+let _authKnown = false; // 마지막으로 확인된 로그인 상태
+let _userCache: any | null = null; // 마지막으로 가져온 유저
 let _fetching: Promise<any | null> | null = null; // fetchUser 중복 호출 방지
 export const auth = {
-  // 기존 시그니처 유지: 동기(boolean)
-  isAuthenticated(): boolean {
-    return _authKnown; // 새로고침 직후엔 false일 수 있으나 로그인/부트스트랩 후 갱신
-  },
   // 정확한 판별: 서버 핑
   async isAuthenticatedAsync(): Promise<boolean> {
     const u = await this.fetchUser();
     return !!u;
   },
 
-  // 하위호환: 동기 getUser (캐시 기반)
-  getUser<T = { username: string; userId?: number }>(): T | null {
-    return _userCache as T | null;
-  },
   // 정확한 정보: 서버에서 가져오고 캐시 갱신
-  async fetchUser<T = { username: string; userId?: number }>(): Promise<T | null> {
+  async fetchUser<T = { userId?: number; nickname?: string; email?: string; campus?: string; totalPoints?: number }>() : Promise<T | null> {
     if (_fetching) return _fetching as Promise<T | null>;
     _fetching = (async () => {
       for (let i = 0; i < 2; i++) {
@@ -501,7 +504,7 @@ export const auth = {
           if (!u) throw new Error((res as any)?.message || '사용자 정보를 가져오지 못했습니다.');
           _userCache = u;
           _authKnown = true;
-          return u;
+          return u as T;
         } catch {
           await new Promise(r => setTimeout(r, 100));
         }
@@ -584,11 +587,8 @@ export async function getMyChallenges(status?: string): Promise<Challenge[]> {
 }
 
 // 사용자 정보 조회 (포인트 포함)
-export async function getUserInfo(userId: number): Promise<ApiResponse<UserResponse>> {
-  return apiRequest<ApiResponse<UserResponse>>(`/users/${userId}`, {
-    method: 'GET',
-  });
-}
+// Deprecated: getUserInfo(userId) was duplicating /auth/me for current user.
+// Note: 로그인 사용자 정보는 auth.fetchUser() 결과를 직접 사용하세요.
 
 // 상점 관련 API 함수들
 export async function getShopItems(type?: string): Promise<ShopItem[]> {
