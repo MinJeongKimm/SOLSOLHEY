@@ -60,6 +60,20 @@ public class Challenge extends BaseEntity {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    // 리셋 정책: 일부 챌린지만 일일 리셋 적용
+    public enum ResetPolicy { NONE, DAILY, WEEKLY, MONTHLY }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reset_policy", nullable = false, length = 20)
+    private ResetPolicy resetPolicy = ResetPolicy.NONE;
+
+    // 리셋 기준: CALENDAR(캘린더 기준) | COMPLETION(완료일 기준)
+    public enum ResetAnchor { CALENDAR, COMPLETION }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "reset_anchor", nullable = false, length = 20)
+    private ResetAnchor resetAnchor = ResetAnchor.CALENDAR;
+
     @Builder
     public Challenge(ChallengeCategory category, String challengeName, String description,
                     Integer rewardPoints, Integer rewardExp, ChallengeType challengeType,

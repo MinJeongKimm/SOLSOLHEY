@@ -1,6 +1,7 @@
 package com.solsolhey.challenge.dto.response;
 
 import com.solsolhey.challenge.entity.UserChallenge;
+import com.solsolhey.challenge.entity.UserChallengeCycle;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -38,6 +39,21 @@ public class UserChallengeDto {
                 .startedAt(userChallenge.getStartedAt())
                 .completedAt(userChallenge.getCompletedAt())
                 .progressData(userChallenge.getProgressData())
+                .build();
+    }
+
+    // 주기 진행 레코드 기반 매핑 (프론트 호환을 위해 동일 필드에 매핑)
+    public static UserChallengeDto fromCycle(UserChallengeCycle cycle) {
+        return UserChallengeDto.builder()
+                .userChallengeId(cycle.getCycleId())
+                .status(cycle.getStatus().name())
+                .statusDisplayName(cycle.getStatus().getDisplayName())
+                .progressCount(cycle.getProgressCount())
+                .targetCount(cycle.getTargetCount())
+                .progressRate(cycle.getProgressRate())
+                .startedAt(cycle.getStartedAt())
+                .completedAt(cycle.getCompletedAt())
+                .progressData(cycle.getProgressData())
                 .build();
     }
 }
