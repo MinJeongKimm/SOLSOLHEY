@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -96,4 +97,11 @@ public interface FriendInteractionRepository extends JpaRepository<FriendInterac
                                                                        @Param("type") InteractionType type,
                                                                        @Param("start") LocalDateTime start,
                                                                        @Param("end") LocalDateTime end);
+
+    /**
+     * 현재 사용자에게 온 모든 상호작용을 일괄 읽음 처리
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE FriendInteraction fi SET fi.isRead = true WHERE fi.toUser = :toUser AND fi.isRead = false")
+    int markAllAsReadByToUser(@Param("toUser") User toUser);
 }

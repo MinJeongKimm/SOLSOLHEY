@@ -128,7 +128,7 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-700 mb-2">친구가 없습니다</h3>
-        <p class="text-gray-500 mb-6">새로운 친구를 추가하고 함께 쏠쏠Hey를 즐겨보세요!</p>
+        <p class="text-gray-500 mb-6">새로운 친구를 추가하고 <br/> 함께 쏠쏠Hey를 즐겨보세요!</p>
       </div>
     </div>
 

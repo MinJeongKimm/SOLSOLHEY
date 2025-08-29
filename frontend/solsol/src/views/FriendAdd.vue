@@ -64,7 +64,7 @@
             :disabled="isAdding"
             class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
-            {{ isAdding ? '추가 중...' : '친구 추가' }}
+            {{ isAdding ? '추가 중' : '추가' }}
           </button>
           
           <!-- 이미 친구인 경우 -->
