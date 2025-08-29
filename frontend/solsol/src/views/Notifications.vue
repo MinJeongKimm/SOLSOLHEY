@@ -34,21 +34,33 @@
         <div v-for="it in visibleLikeOnly" :key="it.interactionId" class="py-3 flex items-start justify-between">
           <div>
             <div class="text-sm text-gray-800">
-              <span class="font-semibold">{{ it.fromUserNickname }}</span>
+              <router-link
+                class="font-semibold text-blue-600 hover:underline"
+                :to="`/friends/${it.fromUserId}`"
+              >
+                {{ it.fromUserNickname }}
+              </router-link>
               <span class="ml-1">님이 좋아요를 보냈습니다.</span>
             </div>
             <div class="text-xs text-gray-500 mt-1">{{ formatDate(it.createdAt) }}</div>
-          </div>
-          <div class="ml-3">
-            <button
-              v-if="!it.isRead"
-              @click="markRead(it)"
-              class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-blue-500 text-white text-xs sm:text-sm hover:bg-blue-600"
-              :disabled="readingId === it.interactionId"
-            >
-              {{ readingId === it.interactionId ? '처리 중' : '읽음' }}
-            </button>
-            <span v-else class="text-xs text-gray-400">읽음</span>
+            <div class="mt-2 flex gap-2">
+              <button
+                class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-pink-500 text-white text-xs sm:text-sm hover:bg-pink-600 disabled:opacity-60"
+                @click="sendBackLike(it)"
+                :disabled="likingId === it.interactionId"
+              >
+                {{ likingId === it.interactionId ? '전송 중' : '좋아요 보내기' }}
+              </button>
+              <button
+                v-if="!it.isRead"
+                @click="markRead(it)"
+                class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-blue-500 text-white text-xs sm:text-sm hover:bg-blue-600"
+                :disabled="readingId === it.interactionId"
+              >
+                {{ readingId === it.interactionId ? '처리 중' : '읽음' }}
+              </button>
+              <span v-else class="text-xs text-gray-400 self-center">읽음</span>
+            </div>
           </div>
         </div>
       </div>
@@ -78,7 +90,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getInteractions, markInteractionRead, markAllInteractionsRead, getUnreadInteractionCount, type FriendInteraction, type PageResponse } from '../api/friend';
+import { getInteractions, markInteractionRead, markAllInteractionsRead, getUnreadInteractionCount, sendLike, type FriendInteraction, type PageResponse } from '../api/friend';
 
 const router = useRouter();
 
@@ -90,6 +102,7 @@ const unread = ref(0);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const readingId = ref<number | null>(null);
+const likingId = ref<number | null>(null);
 const processingAll = ref(false);
 const dismissedBefore = ref<string | null>(localStorage.getItem('notif:dismissedBefore'));
 
@@ -162,6 +175,20 @@ async function markAllRead() {
   }
 }
 
+async function sendBackLike(it: FriendInteraction) {
+  if (likingId.value) return;
+  likingId.value = it.interactionId;
+  try {
+    await sendLike(it.fromUserId);
+  } catch (e) {
+    // 필요 시 토스트/에러 처리 가능
+  } finally {
+    likingId.value = null;
+    // 보낸 직후 읽음 갱신/뱃지 갱신을 위해 미읽음 카운트 리프레시
+    await refreshUnread();
+  }
+}
+
 async function clearInbox() {
   if (processingAll.value) return;
   if (!confirm('알림을 화면에서 비웁니다. 계속할까요?')) return;
@@ -187,4 +214,3 @@ onMounted(load);
 
 <style scoped>
 </style>
-
