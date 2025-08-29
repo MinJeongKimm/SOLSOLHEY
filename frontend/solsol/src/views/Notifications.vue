@@ -226,6 +226,8 @@ async function markAllRead() {
 
 async function sendBackLike(it: FriendInteraction) {
   if (likingId.value) return;
+  // 안전장치: 오늘 3회 초과 또는 서버가 금지한 경우 전송 방지
+  if (canLikeNowMap.value[it.fromUserId] === false) return;
   likingId.value = it.interactionId;
   try {
     await sendLikeBack(it.interactionId);
