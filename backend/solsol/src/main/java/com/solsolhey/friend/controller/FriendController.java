@@ -2,6 +2,7 @@ package com.solsolhey.friend.controller;
 
 import com.solsolhey.auth.dto.response.CustomUserDetails;
 import com.solsolhey.common.response.ApiResponse;
+import com.solsolhey.common.exception.EntityNotFoundException;
 import com.solsolhey.friend.dto.request.FriendAddRequest;
 import com.solsolhey.friend.dto.request.FriendInteractionRequest;
 import com.solsolhey.friend.dto.response.*;
@@ -20,6 +21,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import com.solsolhey.user.entity.User;
+import com.solsolhey.user.repository.UserRepository;
 
 /**
  * 친구 관리 API Controller
@@ -32,6 +36,7 @@ import java.util.List;
 public class FriendController {
 
     private final FriendService friendService;
+    private final UserRepository userRepository;
 
     /**
      * 친구 요청 보내기
@@ -300,6 +305,49 @@ public class FriendController {
             return ResponseEntity.ok(ApiResponse.success("친구 홈 데이터를 조회했습니다.", body));
         } catch (Exception e) {
             log.error("친구 홈 조회 중 오류 발생: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * 친구 관계 확인
+     */
+    @GetMapping("/check/{targetUserId}")
+    @Operation(summary = "친구 관계 확인", description = "현재 사용자와 대상 사용자 간의 친구 관계를 확인합니다")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> checkFriendship(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long targetUserId
+    ) {
+        try {
+            log.info("친구 관계 확인 API 호출: userId={}, targetUserId={}", userDetails.getUserId(), targetUserId);
+            
+            // 자기 자신인지 확인
+            boolean isSelf = userDetails.getUserId().equals(targetUserId);
+            
+            // 친구 관계 확인
+            boolean isFriend = false;
+            boolean hasPendingRequest = false;
+            boolean hasSentRequest = false;
+            
+            if (!isSelf) {
+                User targetUser = userRepository.findById(targetUserId)
+                        .orElseThrow(() -> new EntityNotFoundException("대상 사용자를 찾을 수 없습니다."));
+                
+                isFriend = friendService.isFriend(userDetails.getUser(), targetUser);
+                hasPendingRequest = friendService.hasPendingRequest(userDetails.getUser(), targetUser);
+                hasSentRequest = friendService.hasSentRequest(userDetails.getUser(), targetUser);
+            }
+            
+            Map<String, Object> result = Map.of(
+                "isSelf", isSelf,
+                "isFriend", isFriend,
+                "hasPendingRequest", hasPendingRequest,
+                "hasSentRequest", hasSentRequest
+            );
+            
+            return ResponseEntity.ok(ApiResponse.success("친구 관계를 확인했습니다.", result));
+        } catch (Exception e) {
+            log.error("친구 관계 확인 중 오류 발생: {}", e.getMessage(), e);
             throw e;
         }
     }

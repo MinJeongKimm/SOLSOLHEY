@@ -671,6 +671,20 @@ export async function sendInteraction(toUserId: number, interactionType: 'LIKE' 
   }
 }
 
+// 친구 관계 확인 API 함수
+export async function checkFriendship(targetUserId: number): Promise<any> {
+  try {
+    const res = await apiRequest<any>(`/friends/check/${targetUserId}`, {
+      method: 'GET',
+    });
+    console.log('👥 친구 관계 확인 성공:', res);
+    return res;
+  } catch (e: any) {
+    console.error('❌ 친구 관계 확인 실패:', e);
+    throw e;
+  }
+}
+
 export async function getGifticons(): Promise<Gifticon[]> {
   const res = await apiRequest<any>('/shop/gifticons', { method: 'GET' });
   return (res && res.data) ? (res.data as Gifticon[]) : [];

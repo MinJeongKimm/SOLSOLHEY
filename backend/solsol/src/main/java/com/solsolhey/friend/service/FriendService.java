@@ -87,5 +87,20 @@ public interface FriendService {
     /**
      * 친구 홈 데이터 집계 조회 (레벨/마스코트 요약 + 좋아요 누적/오늘 핑퐁 상태)
      */
-    FriendHomeResponse getFriendHome(User viewer, Long friendId);
+    FriendHomeResponse getFriendHome(User viewer, Long ownerId);
+
+    /**
+     * 두 사용자가 친구인지 확인
+     */
+    boolean isFriend(User user1, User user2);
+
+    /**
+     * 사용자가 대상 사용자에게 친구 요청을 보냈는지 확인
+     */
+    boolean hasSentRequest(User user, User targetUser);
+
+    /**
+     * 사용자가 대상 사용자로부터 친구 요청을 받았는지 확인
+     */
+    boolean hasPendingRequest(User user, User targetUser);
 }

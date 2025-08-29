@@ -10,6 +10,12 @@
         <div>canSendFriendRequest: {{ permissions?.canSendFriendRequest }}</div>
         <div>canCheer: {{ permissions?.canCheer }}</div>
       </div>
+      <div class="mt-2 p-1 bg-blue-100 rounded">
+        <div>친구 관계 상태:</div>
+        <div>isFriend: {{ friendshipStatus?.isFriend }}</div>
+        <div>hasPendingRequest: {{ friendshipStatus?.hasPendingRequest }}</div>
+        <div>hasSentRequest: {{ friendshipStatus?.hasSentRequest }}</div>
+      </div>
     </div>
 
     <!-- 로딩 상태 -->
@@ -88,19 +94,39 @@
         
         <!-- 로그인 상태: 액션 버튼들 -->
         <template v-else-if="canShowActionButtons">
-          <button @click="addFriend" :disabled="!permissions?.canSendFriendRequest" class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+          <!-- 친구가 아닌 경우: 친구추가 버튼만 표시 -->
+          <button v-if="!friendshipStatus?.isFriend && !friendshipStatus?.hasSentRequest" 
+                  @click="addFriend" 
+                  :disabled="!permissions?.canSendFriendRequest" 
+                  class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
             <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
               <img src="/icons/icon_friends.png" alt="친구추가" class="w-6 h-6" />
             </div>
-            <span class="text-xs font-medium text-gray-700">{{ permissions?.canSendFriendRequest ? '친구추가' : '요청됨' }}</span>
+            <span class="text-xs font-medium text-gray-700">친구추가</span>
           </button>
-          <div class="col-start-2 col-span-1"></div>
-          <button @click="cheerMascot" :disabled="!permissions?.canCheer" class="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+          
+          <!-- 친구 요청 대기 중: "요청됨" 상태 -->
+          <div v-else-if="friendshipStatus?.hasSentRequest" 
+               class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-3 flex flex-col items-center space-y-1 opacity-50">
+            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+              <img src="/icons/icon_friends.png" alt="친구추가" class="w-6 h-6" />
+            </div>
+            <span class="text-xs font-medium text-gray-700">요청됨</span>
+          </div>
+          
+          <!-- 친구인 경우: 좋아요 버튼만 표시 -->
+          <button v-else-if="friendshipStatus?.isFriend" 
+                  @click="cheerMascot" 
+                  :disabled="!permissions?.canCheer" 
+                  class="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
             <div class="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
               <img src="/icons/icon_like.png" alt="좋아요" class="w-6 h-6" />
             </div>
             <span class="text-xs font-medium text-gray-700">{{ permissions?.canCheer ? '좋아요' : '완료' }}</span>
           </button>
+          
+          <!-- 중앙 공간 -->
+          <div class="col-start-2 col-span-1"></div>
         </template>
         
         <!-- 로그인했지만 마스코트 데이터가 없는 경우 -->
@@ -135,7 +161,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { auth, apiRequest, handleApiError, getShopItems, getPublicMascot, getPublicShopItems, sendFriendRequest, sendInteraction } from '../api/index';
+import { auth, apiRequest, handleApiError, getShopItems, getPublicMascot, getPublicShopItems, sendFriendRequest, sendInteraction, checkFriendship } from '../api/index';
 import type { Mascot, MascotViewResponse, Permissions, ShopItem } from '../types/api';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { toAbsoluteFromMascot } from '../utils/coordinates';
@@ -152,6 +178,30 @@ const shopItems = ref<ShopItem[]>([]);
 const shareLink = ref<any>(null);
 const isLoggedIn = ref(false);
 const errorMessage = ref('');
+
+// 친구 관계 상태
+const friendshipStatus = ref<{
+  isFriend: boolean;
+  hasPendingRequest: boolean;
+  hasSentRequest: boolean;
+} | null>(null);
+
+// 친구 관계 확인
+const checkFriendshipStatus = async () => {
+  if (!isLoggedIn.value || !shareLink.value?.userId) {
+    return;
+  }
+
+  try {
+    const response = await checkFriendship(shareLink.value.userId);
+    if (response && response.data) {
+      friendshipStatus.value = response.data;
+      console.log('✅ 친구 관계 상태 확인 완료:', friendshipStatus.value);
+    }
+  } catch (error) {
+    console.error('❌ 친구 관계 확인 실패:', error);
+  }
+};
 
 const pageTitle = computed(() => {
   if (ownerNickname.value) return `${ownerNickname.value}님의 Room`;
@@ -583,6 +633,11 @@ onMounted(async () => {
     // 마스코트 데이터 조회
     await fetchShareLinkData();
     await fetchMascotData();
+    
+    // 로그인된 사용자인 경우 친구 관계 확인
+    if (isLoggedIn.value) {
+      await checkFriendshipStatus();
+    }
     
   } catch (error) {
     console.error('❌ 컴포넌트 마운트 중 오류:', error);
