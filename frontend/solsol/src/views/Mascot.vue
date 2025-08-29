@@ -285,6 +285,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { auth, apiRequest, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
+import { getFriendHome } from '../api/friend';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
 import type { Mascot, ShopItem } from '../types/api';
@@ -297,9 +298,9 @@ const pointStore = usePointStore();
 
 // 반응형 데이터
 const currentMascot = ref<Mascot | null>(null);
-// 포인트 상태는 Store에서 관리
+// 포인트/좋아요
 const userCoins = computed(() => pointStore.userPoints);
-const userLikes = ref(151);
+const userLikes = ref(0);
 
 // 서버 커스터마이징 + 아이템 카탈로그 (동기 렌더)
 const customization = ref<MascotCustomization | null>(null);
@@ -808,6 +809,22 @@ onMounted(async () => {
     await nextTick();
     updateRects();
     window.addEventListener('resize', updateRects);
+
+    // 내 홈 요약(좋아요 누적) 로드
+    try {
+      let uid = auth.getUser()?.userId as number | undefined;
+      if (!uid) {
+        const u = await auth.fetchUser();
+        uid = (u as any)?.userId as number | undefined;
+      }
+      if (uid) {
+        const myHome = await getFriendHome(uid);
+        userLikes.value = Number(myHome?.likeCount ?? 0);
+      }
+    } catch (e) {
+      // 무시: 좋아요 수는 보조 정보
+      userLikes.value = 0;
+    }
   } catch (err) {
     console.error('메인화면 데이터 로드 실패:', err);
     handleApiError(err);

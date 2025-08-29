@@ -268,6 +268,24 @@ public class FriendController {
     }
 
     /**
+     * 받은 상호작용 모두 읽음 처리
+     */
+    @PutMapping("/interactions/read-all")
+    @Operation(summary = "상호작용 모두 읽음 처리", description = "현재 사용자에게 온 모든 상호작용을 읽음 처리합니다")
+    public ResponseEntity<ApiResponse<Void>> markAllInteractionsAsRead(
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        try {
+            log.info("상호작용 모두 읽음 처리 API 호출: userId={}", userDetails.getUserId());
+            friendService.markAllReceivedInteractionsAsRead(userDetails.getUser());
+            return ResponseEntity.ok(ApiResponse.success("모두 읽음 처리했습니다.", null));
+        } catch (Exception e) {
+            log.error("상호작용 모두 읽음 처리 중 오류 발생: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    /**
      * 친구 홈 데이터 조회 (레벨/마스코트 요약 + 좋아요 상태)
      */
     @GetMapping("/{friendId}/home")

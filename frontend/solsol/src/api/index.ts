@@ -33,6 +33,16 @@ import { useToastStore } from '../stores/toast';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
+// Helper: infer user-friendly EXP toast label by category
+function inferExpLabel(category: string): string {
+  if (!category) return '경험치 획득!';
+  if (category.includes('ATTEND')) return '출석 완료!';
+  if (category.includes('FINANCE') || category.includes('EXCHANGE') || category.includes('CHALLENGE')) return '금융 챌린지 참여!';
+  if (category.includes('FRIEND')) return '친구 상호작용!';
+  if (category.includes('SHOP') || category.includes('PURCHASE')) return '쇼핑 활동!';
+  return '경험치 획득!';
+}
+
 function getApiOrigin(): string {
   try {
     const url = new URL(API_BASE);
@@ -98,13 +108,12 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
       const exp = payload?.data?.expAwarded ?? payload?.expAwarded;
       if (exp && typeof exp.amount === 'number') {
         const toast = useToastStore();
-        const type = exp?.type as string | undefined;
-        const category = exp?.category as string | undefined;
         const amount = exp?.amount as number;
         const level = exp?.level as number | undefined;
-        const suffix = [type, category].filter(Boolean).join('/');
+        const category = String(exp?.category || '').toUpperCase();
+        const label = inferExpLabel(category);
         const levelTag = level ? ` · Lv.${level}` : '';
-        toast.show(`EXP +${amount}${suffix ? ` (${suffix})` : ''}${levelTag}`, 'success');
+        toast.show(`${label} +${amount}exp${levelTag}`, 'success');
       }
     } catch {
       // ignore toast parse/store errors
