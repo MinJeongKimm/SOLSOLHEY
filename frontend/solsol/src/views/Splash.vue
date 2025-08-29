@@ -6,13 +6,16 @@
     <div class="w-full px-6 flex flex-col items-center">
       <!-- Title + Subtitle -->
       <section>
-        <h1 class="text-white tracking-tight leading-none select-none">
-          <span class="align-middle font-brand font-semibold" :class="titleSize">쏠쏠</span>
+        <h1
+          class="text-white tracking-tight leading-none select-none flex items-end justify-center"
+          :style="titleStyle"
+        >
+          <span class="font-brand font-semibold">쏠쏠 </span>
           <img
             src="/icons/icon_hey.png"
             alt="Hey"
-            class="inline-block align-middle ml-2"
-            :class="heySize"
+            class="inline-block ml-1"
+            :style="heyStyle"
             draggable="false"
           />
         </h1>
@@ -50,11 +53,13 @@ const gradientStyle = computed(() => ({
 // Safe area for mobile (not forcing extra top gap for centering)
 const safeAreaBottom = { paddingBottom: 'env(safe-area-inset-bottom)' }
 
-// Responsive sizes (tweak here to adjust scale)
-const titleSize = 'text-5xl sm:text-6xl'
-const heySize = 'h-12 sm:h-48 w-auto'
+// Responsive sizes: headline uses CSS clamp for smooth scaling
+const titleStyle = { fontSize: 'clamp(54px, 14.4vw, 90px)', lineHeight: '1' }
+// Make Hey image follow the text size (em-based)
+const heyStyle = { height: '1.1em', width: 'auto' }
 const subtitleSize = 'text-base sm:text-lg'
-const mascotSize = 'w-8/12 max-w-sm sm:max-w-md'
+// Increase mascot size on mobile for better visibility
+const mascotSize = 'w-11/12 max-w-md sm:max-w-lg'
 
 onMounted(async () => {
   const isAuthenticated = await auth.isAuthenticatedAsync()
