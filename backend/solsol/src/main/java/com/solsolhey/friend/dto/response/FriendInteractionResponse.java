@@ -6,6 +6,7 @@ import com.solsolhey.exp.service.ExpDailyCounterService;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 /**
  * 친구 상호작용 응답 DTO
@@ -19,7 +20,9 @@ public record FriendInteractionResponse(
     String toUserNickname,
     InteractionType interactionType,
     String message,
+    Long referenceId,
     Boolean isRead,
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
     LocalDateTime createdAt,
     ExpDailyCounterService.ExpAwarded expAwarded
 ) {
@@ -32,6 +35,7 @@ public record FriendInteractionResponse(
                 .toUserNickname(interaction.getToUser().getNickname())
                 .interactionType(interaction.getInteractionType())
                 .message(interaction.getMessage())
+                .referenceId(interaction.getReferenceId())
                 .isRead(interaction.getIsRead())
                 .createdAt(interaction.getCreatedAt())
                 .expAwarded(null)

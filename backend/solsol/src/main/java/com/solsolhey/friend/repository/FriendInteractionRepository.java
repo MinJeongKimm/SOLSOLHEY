@@ -25,7 +25,7 @@ public interface FriendInteractionRepository extends JpaRepository<FriendInterac
      * 사용자가 받은 상호작용 목록 조회
      */
     @EntityGraph(attributePaths = {"fromUser"})
-    @Query("SELECT fi FROM FriendInteraction fi WHERE fi.toUser = :toUser ORDER BY fi.createdAt DESC")
+    @Query("SELECT fi FROM FriendInteraction fi WHERE fi.toUser = :toUser AND fi.isRead = false ORDER BY fi.createdAt DESC")
     Page<FriendInteraction> findByToUserOrderByCreatedAtDesc(@Param("toUser") User toUser, Pageable pageable);
 
     /**
@@ -99,9 +99,46 @@ public interface FriendInteractionRepository extends JpaRepository<FriendInterac
                                                                        @Param("end") LocalDateTime end);
 
     /**
+     * 기간 제한 없이 방향별 최근 상호작용 시각
+     */
+    @Query("SELECT MAX(fi.createdAt) FROM FriendInteraction fi WHERE fi.fromUser = :from AND fi.toUser = :to AND fi.interactionType = :type")
+    LocalDateTime findMaxCreatedAtDirectionalByType(@Param("from") User from,
+                                                    @Param("to") User to,
+                                                    @Param("type") InteractionType type);
+
+    /**
+     * 특정 시각 이후의 방향별 상호작용 수 (핑퐁 응답 검증용)
+     */
+    @Query("SELECT COUNT(fi) FROM FriendInteraction fi WHERE fi.fromUser = :from AND fi.toUser = :to AND fi.interactionType = :type AND fi.createdAt > :start")
+    long countDirectionalByTypeAndCreatedAtAfter(@Param("from") User from,
+                                                 @Param("to") User to,
+                                                 @Param("type") InteractionType type,
+                                                 @Param("start") LocalDateTime start);
+
+    /**
+     * 두 사용자 사이의 마지막 상호작용(양방향) 한 건 조회 (타입 기준, 최신순)
+     */
+    @Query("SELECT fi FROM FriendInteraction fi WHERE " +
+           "((fi.fromUser = :u1 AND fi.toUser = :u2) OR (fi.fromUser = :u2 AND fi.toUser = :u1)) " +
+           "AND fi.interactionType = :type ORDER BY fi.createdAt DESC")
+    List<FriendInteraction> findLatestBetweenUsersByType(@Param("u1") User u1,
+                                                         @Param("u2") User u2,
+                                                         @Param("type") InteractionType type,
+                                                         Pageable pageable);
+
+    /**
      * 현재 사용자에게 온 모든 상호작용을 일괄 읽음 처리
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE FriendInteraction fi SET fi.isRead = true WHERE fi.toUser = :toUser AND fi.isRead = false")
     int markAllAsReadByToUser(@Param("toUser") User toUser);
+
+    /**
+     * 참조 ID(예: 친구요청 friendId)로, 수신자 기준 특정 타입 알림 조회 (최신 우선)
+     */
+    @Query("SELECT fi FROM FriendInteraction fi WHERE fi.toUser = :toUser AND fi.interactionType = :type " +
+           "AND fi.referenceId = :referenceId ORDER BY fi.createdAt DESC")
+    List<FriendInteraction> findByToUserAndTypeAndReferenceId(@Param("toUser") User toUser,
+                                                              @Param("type") InteractionType type,
+                                                              @Param("referenceId") Long referenceId);
 }

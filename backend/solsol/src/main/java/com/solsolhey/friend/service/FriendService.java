@@ -88,4 +88,10 @@ public interface FriendService {
      * 친구 홈 데이터 집계 조회 (레벨/마스코트 요약 + 좋아요 누적/오늘 핑퐁 상태)
      */
     FriendHomeResponse getFriendHome(User viewer, Long friendId);
+
+    /**
+     * 좋아요 알림에 대한 즉시 답장 처리
+     * - 원본 알림은 즉시 읽음 처리됨
+     */
+    FriendInteractionResponse likeBack(User user, Long interactionId);
 }
