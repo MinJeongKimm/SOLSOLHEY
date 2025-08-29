@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative inline-block max-w-xs sm:max-w-sm md:max-w-md bg-white text-gray-800 rounded-2xl shadow-lg px-4 py-3 border border-gray-200"
+    class="relative inline-block bg-white text-gray-800 rounded-2xl shadow-lg px-4 py-3 border border-gray-200 horizontal-text"
     role="status"
     :aria-live="ariaLive"
   >
@@ -37,5 +37,12 @@ const props = withDefaults(defineProps<Props>(), {
 .drop-shadow {
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
 }
+/* 가로쓰기 강제 및 자연스러운 줄바꿈 */
+.horizontal-text {
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  white-space: pre-wrap; /* \n을 줄바꿈으로 반영 */
+  overflow-wrap: normal; /* 단어 단위 줄바꿈 우선 */
+  word-break: keep-all; /* 공백 기준 줄바꿈, 단어 중간 분리 지양 */
+}
 </style>
-

@@ -53,5 +53,25 @@ public class PromptBuilder {
         if (h >= 18 && h < 23) return "좋은 저녁";
         return "좋은 밤";
     }
-}
 
+    /**
+     * 챌린지 권유 특화 프롬프트
+     * - 말풍선용 1문장, 20~50자 이내, 자연스럽게 권유 어조
+     */
+    public String buildChallengePrompt(String campusName, String nickname, Integer level, String challengeName) {
+        String hero = nickname == null ? "친구" : nickname;
+        String camp = campusName == null ? "해이영 캠퍼스" : campusName;
+        String lvl = String.valueOf(level == null ? 1 : level);
+        StringBuilder sb = new StringBuilder();
+        sb.append("당신은 홈 화면 말풍선에 들어갈 한 문장의 짧은 권유 문구를 생성합니다.\n");
+        sb.append("출력 제약: 한국어, 1문장, 20~50자, 친근한 구어체, 말풍선용.\n");
+        sb.append("사용자 맥락: 캠퍼스=").append(camp)
+          .append(", 닉네임=").append(hero)
+          .append(", 레벨=").append(lvl).append(".\n");
+        sb.append("타겟 챌린지: '").append(challengeName).append("'\n");
+        sb.append("지침: 챌린지명을 자연스럽게 녹여 권유하세요(직설적 제목 나열 금지).\n");
+        sb.append("예: '환전 예상 금액 한 번 확인해볼까?'와 같은 톤.\n");
+        sb.append("출력: 문장만 출력(따옴표/머리말 금지).");
+        return sb.toString();
+    }
+}
