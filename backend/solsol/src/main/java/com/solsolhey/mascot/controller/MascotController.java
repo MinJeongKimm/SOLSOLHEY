@@ -56,6 +56,9 @@ public class MascotController {
             @Valid @RequestBody MascotCreateRequest request) {
         
         try {
+            if (userDetails == null) {
+                return createErrorResponse(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+            }
             Long userId = userDetails.getUserId();
             log.info("마스코트 생성 API 호출 - 사용자 ID: {}", userId);
             

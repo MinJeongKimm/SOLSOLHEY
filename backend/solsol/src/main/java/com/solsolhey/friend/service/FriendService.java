@@ -80,6 +80,11 @@ public interface FriendService {
     void markInteractionAsRead(User user, Long interactionId);
 
     /**
+     * 받은 상호작용 모두 읽음 처리
+     */
+    void markAllReceivedInteractionsAsRead(User user);
+
+    /**
      * 친구 홈 데이터 집계 조회 (레벨/마스코트 요약 + 좋아요 누적/오늘 핑퐁 상태)
      */
     FriendHomeResponse getFriendHome(User viewer, Long friendId);

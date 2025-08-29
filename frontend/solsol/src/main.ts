@@ -4,6 +4,7 @@ import '@/assets/main.css'
 import App from './App.vue'
 import router from './router/index'
 import './style.css'
+import './styles/bubble-font.css'
 import { bootstrapAuth } from './api/index'
 
 // Pinia 스토어 생성

@@ -19,7 +19,7 @@
             <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5 mr-2" />
             <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userLikes }}</span>
           </div>
-        </div>
+          </div>
       </div>
 
       <!-- 마스코트가 있는 경우에만 메인 영역 렌더 (없으면 라우터가 생성 페이지로 이동) -->
@@ -50,10 +50,28 @@
                   ref="mascotEl"
                   :src="getMascotImageUrl(currentMascot.type)" 
                   :alt="currentMascot.name" 
-                  class="w-48 h-48 object-contain"
+                  class="w-48 h-48 object-contain cursor-pointer"
+                  @click="onMascotClick"
                   @load="updateRects"
                   @error="handleImageError"
                 />
+                <!-- AI 말풍선: 마스코트 오른쪽 (클릭 시 챌린지 이동) -->
+                <div 
+                  v-if="showBubble"
+                  class="absolute left-[calc(100%-6px)] top-2 z-30 cursor-pointer select-none min-w-[180px] w-fit"
+                  :style="{ maxWidth: bubbleMaxWidth }"
+                  role="button"
+                  tabindex="0"
+                  @click.stop="goToChallenge"
+                  @keydown.enter.prevent="goToChallenge"
+                >
+                  <SpeechBubble 
+                    :text="bubbleDisplayText" 
+                    tail="left"
+                    aria-live="polite"
+                    class="text-sm leading-snug w-auto"
+                  />
+                </div>
               </div>
             </div>
 
@@ -76,7 +94,7 @@
             </div>
             
             <!-- 공유 버튼 -->
-            <div class="absolute top-3 right-3 z-50 pointer-events-auto">
+            <div class="absolute top-3 right-3 z-30 pointer-events-auto">
               <button 
                 @click="showSharePopup"
                 class="bg-white bg-opacity-90 p-1 rounded-lg hover:bg-opacity-100 transition-all flex items-center justify-center w-8 h-8"
@@ -282,9 +300,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, onActivated, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth, apiRequest, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
+import { getFriendHome } from '../api/friend';
+import { apiRequest, auth, createShareLink, getAiSpeech, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
+import SpeechBubble from '../components/ui/SpeechBubble.vue';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
 import type { Mascot, ShopItem } from '../types/api';
@@ -297,14 +317,79 @@ const pointStore = usePointStore();
 
 // 반응형 데이터
 const currentMascot = ref<Mascot | null>(null);
-// 포인트 상태는 Store에서 관리
+// 포인트/좋아요
 const userCoins = computed(() => pointStore.userPoints);
-const userLikes = ref(151);
+const userLikes = ref(0);
 
 // 서버 커스터마이징 + 아이템 카탈로그 (동기 렌더)
 const customization = ref<MascotCustomization | null>(null);
 const shopItems = ref<ShopItem[]>([]);
+
+// AI 말풍선 상태
+const showBubble = ref(false);
+const bubbleText = ref('');
+const bubbleLocked = ref(false); // 여러 번 클릭 방지 락
+const bubbleDisplayText = computed(() => chunkByWords(bubbleText.value, 8).join('\n'));
+function chunkByWords(text: string, maxCharsPerLine: number): string[] {
+  const raw = (text || '').trim();
+  if (!raw) return [''];
+  const words = raw.split(/\s+/);
+  const lines: string[] = [];
+  let current = '';
+  for (const w of words) {
+    if (current.length === 0) {
+      current = w;
+      continue;
+    }
+    // 다음 단어를 추가했을 때 길이 검사(공백 1 포함)
+    if ((current.length + 1 + w.length) <= maxCharsPerLine) {
+      current += ' ' + w;
+    } else {
+      lines.push(current);
+      current = w;
+    }
+  }
+  if (current.length) lines.push(current);
+  return lines;
+}
+let bubbleTimer: number | null = null;
+
+const bubblePlaceholders = [
+  '불렀어?',
+  '나 여기 있어!',
+  '응, 듣고 있어!',
+  '짜자잔 ~',
+  '뿅! 나타났어'
+];
+
+async function onMascotClick() {
+  // 여러 번 클릭 방지: 말풍선 라이프사이클 종료 전엔 무시
+  if (bubbleLocked.value) return;
+  bubbleLocked.value = true;
+
+  // 즉시 표시: 지연 없이 말풍선 노출 (귀여운 반응)
+  if (bubbleTimer) window.clearTimeout(bubbleTimer);
+  bubbleText.value = bubblePlaceholders[Math.floor(Math.random() * bubblePlaceholders.length)];
+  showBubble.value = true;
+  await nextTick();
+  updateRects(); // 표시 직후 가용 너비 재계산
+  try {
+    const res = await getAiSpeech();
+    bubbleText.value = res.message || '오늘은 가벼운 챌린지 어때?';
+  } catch (e) {
+    console.warn('AI 말풍선 실패:', e);
+    bubbleText.value = '오늘은 가벼운 챌린지 어때?';
+  }
+  // 최종 문구 기준으로 5초 유지하고 락 해제
+  if (bubbleTimer) window.clearTimeout(bubbleTimer);
+  bubbleTimer = window.setTimeout(() => {
+    showBubble.value = false;
+    bubbleLocked.value = false;
+  }, 5000);
+}
 // 과거 폴백 제거됨
+
+// 리사이즈 핸들러 불필요(항상 오른쪽, 고정 10자 줄바꿈)
 
 // 타입 표준화 유틸 (Customize.vue와 동일 컨셉)
 function normalizeType(val: unknown): string {
@@ -350,6 +435,9 @@ const canvasEl = ref<HTMLElement>();
 const mascotEl = ref<HTMLElement>();
 const canvasRect = ref<DOMRect | null>(null);
 const mascotRect = ref<DOMRect | null>(null);
+const BUBBLE_OFFSET_PX = -6; // 마스코트와 겹치도록 왼쪽으로 6px 당김
+const bubbleAvailableWidth = ref<number>(0);
+const bubbleMaxWidth = computed(() => (bubbleAvailableWidth.value > 0 ? `${bubbleAvailableWidth.value}px` : '600px'));
 
 function updateRects() {
   if (canvasEl.value) {
@@ -357,6 +445,13 @@ function updateRects() {
   }
   if (mascotEl.value) {
     mascotRect.value = mascotEl.value.getBoundingClientRect();
+  }
+  // 말풍선 가용 너비 계산: 캔버스 오른쪽 끝까지의 거리에서 안전 여백 차감
+  if (canvasRect.value && mascotRect.value) {
+    const safeGap = 8; // 안전 여백(px)
+    const available = Math.max(0, Math.floor(canvasRect.value.right - mascotRect.value.right - safeGap - BUBBLE_OFFSET_PX));
+    // 너무 좁으면 최소값으로 제한(말풍선 너비 최소 보장)
+    bubbleAvailableWidth.value = Math.max(160, available);
   }
 }
 
@@ -376,6 +471,8 @@ function styleForItem(e: { relativePosition: { x: number; y: number }; scale: nu
     pointerEvents: 'none',
   } as Record<string, string>;
 }
+
+// 말풍선은 항상 오른쪽에 표시 (요청사항)
 
 // 토스트 알림
 const showToast = ref(false);
@@ -454,40 +551,110 @@ async function composeShareImageBlob(): Promise<Blob> {
   if (!ctx) throw new Error('Canvas context unavailable');
   ctx.scale(DPR, DPR);
   ctx.imageSmoothingEnabled = true;
-  // 배경
-  const bgUrl = '/backgrounds/base/bg_blue.png';
-  const bgImg = await loadImage(bgUrl);
-  ctx.drawImage(bgImg, 0, 0, canvasSize, canvasSize);
+  // 배경 생성 (꾸미기 화면과 동일한 방식)
+  const bgColor = currentMascot.value?.backgroundColor || '#ffffff';
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvasSize, canvasSize);
+  
+  // 배경 패턴 그리기
+  if (currentMascot.value?.backgroundPattern === 'dots') {
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    for (let x = 6; x < canvasSize; x += 12) {
+      for (let y = 6; y < canvasSize; y += 12) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+  } else if (currentMascot.value?.backgroundPattern === 'stripes') {
+    // 꾸미기 화면과 동일하게 반대 대각선 방향으로 스트라이프 그리기
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    const stripeWidth = 10;
+    const stripeGap = 20;
+    
+    // 반대 대각선 방향으로 스트라이프 그리기 (-45도, 오른쪽 위에서 왼쪽 아래)
+    // 전체 캔버스를 완전히 덮도록 범위 확장
+    for (let offset = -canvasSize * 1.5; offset < canvasSize * 2.5; offset += stripeGap) {
+      ctx.save();
+      ctx.translate(offset, 0);
+      ctx.rotate(-Math.PI / 4); // -45도 회전 (반대 대각선)
+      ctx.fillRect(0, -canvasSize * 1.5, stripeWidth, canvasSize * 3);
+      ctx.restore();
+    }
+  }
 
   // 마스코트
   const mascotUrl = currentMascot.value ? getMascotImageUrl(currentMascot.value.type) : '/mascot/soll.png';
   const mascotImg = await loadImage(mascotUrl);
-  const mascotBoxSize = Math.floor(canvasSize * 0.5); // 중앙 50%
+  const mascotBoxSize = Math.floor(canvasSize * 0.6); // 메인화면과 동일한 60% 비율
   const mascotX = (canvasSize - mascotBoxSize) / 2;
   const mascotY = (canvasSize - mascotBoxSize) / 2;
   ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
 
-  // 아이템들(커스터마이징)
-  if (customization.value && customization.value.equippedItems?.length) {
-    const byId = new Map<number, ShopItem>(shopItems.value.map(s => [s.id, s]));
-    // UI 기준과 동일 비율 유지(아이템 기본 크기: BASE_ITEM_SIZE / UI_MASCOT_PX * mascotBoxSize)
-    const UI_MASCOT_PX = 128;
-    const baseItemSize = (BASE_ITEM_SIZE / UI_MASCOT_PX) * mascotBoxSize; // 약 0.9375 * mascotBoxSize
+      // 아이템들을 배경/일반 아이템으로 분리하여 처리
+    if (customization.value && customization.value.equippedItems?.length) {
+      const byId = new Map<number, ShopItem>(shopItems.value.map(s => [s.id, s]));
+      
+      // 아이템을 타입별로 분리 (배경 아이템을 맨 뒤로 보내기 위해)
+      const backgroundItems: any[] = [];
+      const normalItems: any[] = [];
+      
+      for (const e of customization.value.equippedItems) {
+        const si = byId.get(e.itemId);
+        if (!si) continue;
+        
+        // 배경 아이템인지 확인 (ranking.ts와 동일한 로직)
+        if (si.type === 'BACKGROUND') {
+          backgroundItems.push({ ...e, shopItem: si });
+        } else {
+          normalItems.push({ ...e, shopItem: si });
+        }
+      }
 
-    for (const e of customization.value.equippedItems) {
-      const si = byId.get(e.itemId);
-      if (!si) continue;
-      const img = await loadImage(si.imageUrl);
-      const centerX = mascotX + (e.relativePosition.x * mascotBoxSize);
-      const centerY = mascotY + (e.relativePosition.y * mascotBoxSize);
-      const size = Math.max(12, baseItemSize * (e.scale ?? 1));
-      const rot = (((e.rotation ?? 0) % 360) + 360) % 360;
+    // 1. 배경 아이템을 먼저 그리기 (맨뒤)
+    for (const e of backgroundItems) {
+      try {
+        const img = await loadImage(e.shopItem.imageUrl);
+        
+        // 배경 아이템은 캔버스 전체를 덮도록 크기 조정
+        const bgSize = canvasSize; // 캔버스 전체 크기
+        const bgX = 0;
+        const bgY = 0;
+        
+        ctx.save();
+        ctx.drawImage(img, bgX, bgY, bgSize, bgSize);
+        ctx.restore();
+      } catch (error) {
+        console.warn('배경 아이템 이미지 로드 실패:', e.itemId, error);
+      }
+    }
 
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate((rot * Math.PI) / 180);
-      ctx.drawImage(img, -size / 2, -size / 2, size, size);
-      ctx.restore();
+    // 2. 마스코트 다시 그리기 (배경 아이템 위에)
+    ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
+
+    // 3. 일반 아이템 그리기 (마스코트 위에)
+    for (const e of normalItems) {
+      try {
+        const img = await loadImage(e.shopItem.imageUrl);
+        
+        // 이미지 공유 시에만 아이템 크기를 줄임 (일반 화면과 구분)
+        const UI_MASCOT_PX = 128;
+        const SHARE_ITEM_SIZE = 80; // 이미지 공유용 아이템 크기 (120에서 80으로 조정)
+        const baseItemSize = (SHARE_ITEM_SIZE / UI_MASCOT_PX) * mascotBoxSize; // 약 0.625 * mascotBoxSize
+        
+        const centerX = mascotX + (e.relativePosition.x * mascotBoxSize);
+        const centerY = mascotY + (e.relativePosition.y * mascotBoxSize);
+        const size = Math.max(12, baseItemSize * (e.scale ?? 1));
+        const rot = (((e.rotation ?? 0) % 360) + 360) % 360;
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate((rot * Math.PI) / 180);
+        ctx.drawImage(img, -size / 2, -size / 2, size, size);
+        ctx.restore();
+      } catch (error) {
+        console.warn('일반 아이템 이미지 로드 실패:', e.itemId, error);
+      }
     }
   }
 
@@ -808,6 +975,9 @@ onMounted(async () => {
     await nextTick();
     updateRects();
     window.addEventListener('resize', updateRects);
+
+    // 내 홈 요약(좋아요 누적) 로드
+    await reloadLikes();
   } catch (err) {
     console.error('메인화면 데이터 로드 실패:', err);
     handleApiError(err);
@@ -816,7 +986,31 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateRects);
+  if (bubbleTimer) {
+    window.clearTimeout(bubbleTimer);
+    bubbleTimer = null as unknown as number;
+  }
+  bubbleLocked.value = false;
 });
+
+// 라우트 복귀 시 최신 좋아요 수 재조회
+onActivated(() => {
+  reloadLikes();
+});
+
+async function reloadLikes() {
+  try {
+    const u: any = await auth.fetchUser();
+    const uid = (u as any)?.userId as number | undefined;
+    if (uid) {
+      const myHome = await getFriendHome(uid);
+      userLikes.value = Number(myHome?.likeCount ?? 0);
+    }
+  } catch (e) {
+    // 무시: 좋아요 수는 보조 정보
+    userLikes.value = 0;
+  }
+}
 </script>
 
 <script lang="ts">

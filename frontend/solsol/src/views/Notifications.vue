@@ -13,16 +13,25 @@
       </div>
 
       <!-- 요약 -->
-      <div class="flex items-center justify-between mb-3 text-sm text-gray-600">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center mb-3 text-sm text-gray-600">
         <div>미읽음: <span class="font-semibold">{{ unread }}</span></div>
-        <div class="flex items-center space-x-2">
-          <span class="px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 text-xs">좋아요만 표시</span>
+        <div class="flex flex-wrap sm:justify-end gap-2">
+          <button 
+            class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-blue-100 text-blue-700 text-xs sm:text-sm hover:bg-blue-200 disabled:opacity-50"
+            @click="markAllRead"
+            :disabled="processingAll || loading"
+          >모두 읽음</button>
+          <button 
+            class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs sm:text-sm hover:bg-gray-200 disabled:opacity-50"
+            @click="clearInbox"
+            :disabled="processingAll || loading"
+          >알림함 비우기</button>
         </div>
       </div>
 
       <!-- 목록 영역 -->
       <div class="divide-y divide-gray-100">
-        <div v-for="it in likeOnly" :key="it.interactionId" class="py-3 flex items-start justify-between">
+        <div v-for="it in visibleLikeOnly" :key="it.interactionId" class="py-3 flex items-start justify-between">
           <div>
             <div class="text-sm text-gray-800">
               <span class="font-semibold">{{ it.fromUserNickname }}</span>
@@ -34,7 +43,7 @@
             <button
               v-if="!it.isRead"
               @click="markRead(it)"
-              class="px-3 py-1 rounded-lg bg-blue-500 text-white text-xs hover:bg-blue-600"
+              class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-blue-500 text-white text-xs sm:text-sm hover:bg-blue-600"
               :disabled="readingId === it.interactionId"
             >
               {{ readingId === it.interactionId ? '처리 중' : '읽음' }}
@@ -47,13 +56,13 @@
       <!-- 페이징 -->
       <div class="flex items-center justify-between mt-4 text-sm">
         <button 
-          class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+          class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
           :disabled="page === 0 || loading"
           @click="prevPage"
         >이전</button>
         <div class="text-gray-600">{{ page + 1 }} / {{ totalPages }}</div>
         <button 
-          class="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+          class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
           :disabled="page + 1 >= totalPages || loading"
           @click="nextPage"
         >다음</button>
@@ -69,7 +78,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getInteractions, markInteractionRead, getUnreadInteractionCount, type FriendInteraction, type PageResponse } from '../api/friend';
+import { getInteractions, markInteractionRead, markAllInteractionsRead, getUnreadInteractionCount, type FriendInteraction, type PageResponse } from '../api/friend';
 
 const router = useRouter();
 
@@ -81,8 +90,19 @@ const unread = ref(0);
 const loading = ref(false);
 const error = ref<string | null>(null);
 const readingId = ref<number | null>(null);
+const processingAll = ref(false);
+const dismissedBefore = ref<string | null>(localStorage.getItem('notif:dismissedBefore'));
 
 const likeOnly = computed(() => items.value.filter(i => i.interactionType === 'LIKE'));
+const visibleLikeOnly = computed(() => {
+  if (!dismissedBefore.value) return likeOnly.value;
+  const threshold = new Date(dismissedBefore.value).getTime();
+  return likeOnly.value.filter(i => {
+    const t = new Date(i.createdAt as any).getTime();
+    // 생성 시간이 없거나 파싱 불가하면 숨김 처리
+    return Number.isFinite(t) ? t >= threshold : false;
+  });
+});
 
 function formatDate(iso: string): string {
   try {
@@ -124,6 +144,38 @@ async function markRead(it: FriendInteraction) {
     // 실패 시 무시 또는 토스트 처리 가능
   } finally {
     readingId.value = null;
+  }
+}
+
+async function markAllRead() {
+  if (processingAll.value) return;
+  processingAll.value = true;
+  try {
+    await markAllInteractionsRead();
+    // 로컬 반영
+    items.value.forEach(i => { (i as any).isRead = true; });
+    await refreshUnread();
+  } catch (e) {
+    // 실패 시 무시 또는 에러 표시
+  } finally {
+    processingAll.value = false;
+  }
+}
+
+async function clearInbox() {
+  if (processingAll.value) return;
+  if (!confirm('알림을 화면에서 비웁니다. 계속할까요?')) return;
+  processingAll.value = true;
+  try {
+    const now = new Date().toISOString();
+    dismissedBefore.value = now;
+    localStorage.setItem('notif:dismissedBefore', now);
+    // 즉시 화면 비우기 효과와 페이징 리셋
+    items.value = [];
+    page.value = 0;
+    totalPages.value = 1;
+  } finally {
+    processingAll.value = false;
   }
 }
 
