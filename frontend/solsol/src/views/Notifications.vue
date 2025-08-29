@@ -144,13 +144,15 @@ const processingId = ref<number | null>(null);
 
 const likeOnly = computed(() => items.value.filter(i => i.interactionType === 'LIKE'));
 const requestOnly = computed(() => items.value.filter(i => i.interactionType === 'FRIEND_REQUEST'));
+// 좋아요 알림은 미읽음은 항상 표시하고, 읽음만 '알림함 비우기' 기준으로 숨김 처리
 const visibleLikeOnly = computed(() => {
   if (!dismissedBefore.value) return likeOnly.value;
   const threshold = new Date(dismissedBefore.value).getTime();
   return likeOnly.value.filter(i => {
+    if (!i.isRead) return true; // 미읽음은 항상 노출
     const t = new Date(i.createdAt as any).getTime();
-    // 생성 시간이 없거나 파싱 불가하면 숨김 처리
-    return Number.isFinite(t) ? t >= threshold : false;
+    // 생성 시간이 없거나 파싱 불가하면 일단 표시(서버/클라이언트 시간차 보호)
+    return Number.isFinite(t) ? t >= threshold : true;
   });
 });
 
