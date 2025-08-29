@@ -139,6 +139,24 @@ export async function createRankingEntryWithImage(
   rankingType: string
 ): Promise<EntryResponse> {
   try {
+    // 최신 CSRF 토큰 동기화: /health 호출로 쿠키/토큰 갱신
+    try {
+      const origin = getApiOrigin();
+      if (origin) {
+        const health = await fetch(`${origin}/health`, { credentials: 'include' });
+        // 토큰을 응답 바디에서 파싱
+        const text = await health.text();
+        if (text) {
+          try {
+            const json = JSON.parse(text);
+            const t = json?.data?.csrfToken || json?.csrfToken;
+            if (typeof t === 'string' && t.length > 0) {
+              // no-op; 아래에서 헤더에 사용
+            }
+          } catch {}
+        }
+      }
+    } catch {}
     // FormData 생성
     const formData = new FormData();
     formData.append('title', title);

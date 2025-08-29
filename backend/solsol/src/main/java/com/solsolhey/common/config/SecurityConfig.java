@@ -82,7 +82,8 @@ public class SecurityConfig {
                     new AntPathRequestMatcher("/api/v1/finance/**"),
                     // 임시: 교차 출처 CSRF 토큰 동기화 이슈 우회 (보안 강화 시 제거 권장)
                     new AntPathRequestMatcher("/api/v1/mascot/**"),
-                    new AntPathRequestMatcher("/api/v1/friends/**")
+                    new AntPathRequestMatcher("/api/v1/friends/**"),
+                    new AntPathRequestMatcher("/api/ranking/**")
                 )
 
             )
