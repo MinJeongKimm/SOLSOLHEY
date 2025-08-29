@@ -28,7 +28,9 @@ import com.solsolhey.friend.entity.FriendInteraction.InteractionType;
 import com.solsolhey.friend.repository.FriendInteractionRepository;
 import com.solsolhey.friend.repository.FriendRepository;
 import com.solsolhey.friend.entity.FriendLikeDailyCounter;
+import com.solsolhey.friend.entity.FriendLikePairState;
 import com.solsolhey.friend.repository.FriendLikeDailyCounterRepository;
+import com.solsolhey.friend.repository.FriendLikePairStateRepository;
 import com.solsolhey.mascot.dto.view.MascotViewResponse;
 import com.solsolhey.mascot.service.MascotViewService;
 import com.solsolhey.user.entity.User;
@@ -52,6 +54,7 @@ public class FriendServiceImpl implements FriendService {
     private final FriendRepository friendRepository;
     private final FriendInteractionRepository friendInteractionRepository;
     private final FriendLikeDailyCounterRepository likeDailyCounterRepository;
+    private final FriendLikePairStateRepository likePairStateRepository;
     private final UserRepository userRepository;
     private final ExpDailyCounterService expDailyCounterService;
     private final MascotViewService mascotViewService;
@@ -291,6 +294,17 @@ public class FriendServiceImpl implements FriendService {
         }
 
         if (request.interactionType() == InteractionType.LIKE) {
+            // 0) 페어 상태 락을 걸어 교대 보장 (두 사용자 간 동시성 제어)
+            User low = user.getUserId() < toUser.getUserId() ? user : toUser;
+            User high = user.getUserId() < toUser.getUserId() ? toUser : user;
+            FriendLikePairState state = likePairStateRepository
+                    .findForUpdate(low, high)
+                    .orElseGet(() -> new FriendLikePairState(low, high));
+            // 마지막 발신자가 나이면 차단
+            if (state.getLastSender() != null && state.getLastSender().getUserId().equals(user.getUserId())) {
+                throw new BusinessException("상대의 좋아요 이후에만 추가 좋아요가 가능합니다.");
+            }
+
             // 1) 일일 상한(3회) 먼저 강제
             LocalDate today = LocalDate.now(KST);
             FriendLikeDailyCounter counter = likeDailyCounterRepository
@@ -301,16 +315,12 @@ public class FriendServiceImpl implements FriendService {
                 throw new BusinessException("오늘 해당 친구에게 보낼 수 있는 좋아요 3회 한도를 초과했습니다.");
             }
 
-            // 2) 핑퐁 순서 제약: 두 사용자 사이의 마지막 LIKE가 '나'에서 보낸 경우라면 차단
-            List<FriendInteraction> latest = friendInteractionRepository
-                    .findLatestBetweenUsersByType(user, toUser, InteractionType.LIKE, Pageable.ofSize(1));
-            if (!latest.isEmpty() && latest.get(0).getFromUser().getUserId().equals(user.getUserId())) {
-                throw new BusinessException("상대의 좋아요 이후에만 추가 좋아요가 가능합니다.");
-            }
-
             // 카운터 증가는 모든 검증 통과 후 반영
             counter.inc();
             likeDailyCounterRepository.save(counter);
+            // 페어 상태 최신 발신자 갱신(내가 발신) — 상호작용 저장과 동일 트랜잭션 내
+            state.setLastSender(user);
+            likePairStateRepository.save(state);
         }
 
         // 기본 메시지: 타입별 디폴트 메시지를 제공 (요청 본문이 없을 때)
