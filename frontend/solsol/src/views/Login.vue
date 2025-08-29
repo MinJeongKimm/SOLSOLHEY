@@ -71,7 +71,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { loginAndBootstrap, handleApiError, getMascot, getUserInfo } from '../api/index';
 import { usePointStore } from '../stores/point';
 import type { LoginRequest } from '../types/api';
@@ -83,6 +83,7 @@ const errorMessage = ref('');
 const userIdError = ref('');
 const passwordError = ref('');
 const router = useRouter();
+const route = useRoute();
 
 function validateUserId(value: string) {
   if (!value) return '이메일을 입력하세요.';
@@ -125,6 +126,12 @@ async function onSubmit() {
       const pointStore = usePointStore();
       await pointStore.loadPoints();
       
+      // 리디렉션 처리
+      if (typeof route.query.redirect === 'string' && route.query.redirect) {
+        router.push(route.query.redirect);
+        return;
+      }
+
       // 마스코트 존재 여부 확인
       try {
         const mascotData = await getMascot();

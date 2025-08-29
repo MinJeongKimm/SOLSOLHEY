@@ -6,6 +6,7 @@ import FinanceAction from '../views/FinanceAction.vue'
 import Mascot from '../views/Mascot.vue'
 import MascotCreate from '../views/MascotCreate.vue'
 import MascotCustomize from '../views/MascotCustomize.vue'
+import MascotShare from '../views/MascotShare.vue'
 import FriendList from '../views/FriendList.vue'
 import FriendAdd from '../views/FriendAdd.vue'
 import FriendHome from '../views/FriendHome.vue'
@@ -57,6 +58,11 @@ const routes = [
     path: '/mascot/customize', 
     component: MascotCustomize,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/mascot/share/:linkCode',
+    component: MascotShare,
+    props: true
   },
   { 
     path: '/friend', 

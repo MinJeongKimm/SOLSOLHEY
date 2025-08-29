@@ -41,6 +41,10 @@ public class ShareLink extends BaseEntity {
     @Column(name = "target_url", length = 1000)
     private String targetUrl; // 클릭 시 이동할 URL
 
+    // 마스코트 스냅샷 이미지 (공유 시점의 마스코트 상태)
+    @Column(name = "mascot_snapshot", columnDefinition = "TEXT")
+    private String mascotSnapshot;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "share_type", nullable = false)
     private ShareType shareType;
@@ -63,6 +67,22 @@ public class ShareLink extends BaseEntity {
         this.description = description;
         this.thumbnailUrl = thumbnailUrl;
         this.targetUrl = targetUrl;
+        this.shareType = shareType;
+        this.clickCount = 0;
+        this.expiresAt = expiresAt;
+        this.isActive = true;
+    }
+
+    @Builder
+    public ShareLink(User user, String linkCode, String title, String description, 
+                    String thumbnailUrl, String targetUrl, String mascotSnapshot, ShareType shareType, LocalDateTime expiresAt) {
+        this.user = user;
+        this.linkCode = linkCode;
+        this.title = title;
+        this.description = description;
+        this.thumbnailUrl = thumbnailUrl;
+        this.targetUrl = targetUrl;
+        this.mascotSnapshot = mascotSnapshot;
         this.shareType = shareType;
         this.clickCount = 0;
         this.expiresAt = expiresAt;

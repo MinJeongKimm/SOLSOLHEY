@@ -224,6 +224,19 @@ export async function getMascot(): Promise<Mascot | null> {
   }
 }
 
+// 공개 마스코트 조회 (로그인하지 않은 사용자용)
+export async function getPublicMascot(ownerId: string): Promise<any> {
+  try {
+    const res = await apiRequest<any>(`/mascot/view/public?ownerId=${ownerId}`, {
+      method: 'GET',
+    });
+    return res;
+  } catch (e: any) {
+    console.error('공개 마스코트 조회 실패:', e);
+    throw e;
+  }
+}
+
 export async function equipItems(data: EquipItemsRequest): Promise<Mascot> {
   const res = await apiRequest<any>('/mascot/equip', {
     method: 'POST',
@@ -394,7 +407,7 @@ export enum ImageType {
 export interface ShareLinkCreateRequest {
   title: string;          // 필수
   description?: string;   // 선택
-  thumbnailUrl?: string;  // 선택
+  thumbnailUrl?: string;  // 선택 (백엔드 URL 검증 에러 방지)
   targetUrl?: string;     // 선택
   shareType: ShareType;   // 필수
   expiresAt?: string;     // 선택 (ISO 날짜 문자열)
@@ -496,10 +509,12 @@ export const auth = {
   // 정확한 정보: 서버에서 가져오고 캐시 갱신
   async fetchUser<T = { userId?: number; nickname?: string; email?: string; campus?: string; totalPoints?: number }>() : Promise<T | null> {
     if (_fetching) return _fetching as Promise<T | null>;
+    
     _fetching = (async () => {
       for (let i = 0; i < 2; i++) {
         try {
           const res = await apiRequest<{ success: boolean; data?: any; message?: string }>('/auth/me', { method: 'GET' });
+
           const u = (res && (res as any).data) ? (res as any).data as T : null;
           if (!u) throw new Error((res as any)?.message || '사용자 정보를 가져오지 못했습니다.');
           _userCache = u;
@@ -513,7 +528,8 @@ export const auth = {
       _authKnown = false;
       return null;
     })();
-    try { return await _fetching as T | null; }
+
+    try { return await _fetching as Promise<T | null>; }
     finally { _fetching = null; }
   },
 
@@ -591,11 +607,34 @@ export async function getMyChallenges(status?: string): Promise<Challenge[]> {
 // Note: 로그인 사용자 정보는 auth.fetchUser() 결과를 직접 사용하세요.
 
 // 상점 관련 API 함수들
-export async function getShopItems(type?: string): Promise<ShopItem[]> {
-  const endpoint = type ? `/shop/items?type=${type}` : '/shop/items';
-  const res = await apiRequest<any>(endpoint, { method: 'GET' });
-  // 백엔드 래핑 응답 언래핑
-  return (res && res.data) ? (res.data as ShopItem[]) : [];
+export async function getShopItems(): Promise<any> {
+  try {
+    const res = await apiRequest<any>('/shop/items', {
+      method: 'GET',
+    });
+    console.log('🛍️ 상품 목록 조회 성공:', res);
+    // 백엔드 응답 구조에 맞게 data 필드 추출
+    return res && res.data ? res.data : [];
+  } catch (e: any) {
+    console.error('❌ 상품 목록 조회 실패:', e);
+    // 에러가 발생해도 빈 배열 반환하여 앱이 중단되지 않도록 함
+    return [];
+  }
+}
+
+export async function getPublicShopItems(): Promise<any> {
+  try {
+    const res = await apiRequest<any>('/shop/items/public', {
+      method: 'GET',
+    });
+    console.log('🛍️ 공개 상품 목록 조회 성공:', res);
+    // 백엔드 응답 구조에 맞게 data 필드 추출
+    return res && res.data ? res.data : [];
+  } catch (e: any) {
+    console.error('❌ 공개 상품 목록 조회 실패:', e);
+    // 에러가 발생해도 빈 배열 반환하여 앱이 중단되지 않도록 함
+    return [];
+  }
 }
 
 export async function getGifticons(): Promise<Gifticon[]> {

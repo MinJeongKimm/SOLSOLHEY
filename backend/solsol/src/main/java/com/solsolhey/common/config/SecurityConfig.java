@@ -78,6 +78,8 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/health", "/actuator/**", "/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/mascot/view/public").permitAll() // 공개 마스코트 조회는 인증 불필요
+                .requestMatchers("/api/v1/shop/items/public").permitAll() // 공개 상품 목록 조회는 인증 불필요
                 .requestMatchers("/api/v1/mascot/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/friends/requests").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/attendance").authenticated()

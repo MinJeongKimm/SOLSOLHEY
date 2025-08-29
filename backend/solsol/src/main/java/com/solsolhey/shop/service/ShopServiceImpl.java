@@ -95,6 +95,30 @@ public class ShopServiceImpl implements ShopService {
     }
     
     @Override
+    public List<ItemResponse> getPublicItems(String type) {
+        List<Item> items;
+        
+        if (type == null || type.trim().isEmpty()) {
+            items = itemRepository.findByIsActiveTrue();
+            log.info("공개 전체 활성 상품 조회: {} 개", items.size());
+        } else {
+            try {
+                Item.ItemType itemType = Item.ItemType.valueOf(type.toUpperCase());
+                items = itemRepository.findByTypeAndIsActiveTrue(itemType);
+                log.info("공개 타입 {} 활성 상품 조회: {} 개", type, items.size());
+            } catch (IllegalArgumentException e) {
+                log.warn("잘못된 상품 타입: {}", type);
+                throw new IllegalArgumentException("유효하지 않은 상품 타입입니다: " + type);
+            }
+        }
+        
+        // 공개용으로는 기본 상품 정보만 반환 (소유권 정보 제외)
+        return items.stream()
+                .map(ItemResponse::from)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
     @Transactional
     public OrderResponse createOrder(Long userId, OrderRequest request) {
         log.info("주문 처리 시작 - 사용자: {}, 타입: {}", userId, request.getType());
