@@ -16,7 +16,7 @@
       <div class="text-center mb-6">
         <div class="mascot-preview mb-4">
           <img 
-            :src="mascotImageUrl" 
+            :src="imgSrc" 
             :alt="mascotName"
             class="w-32 h-32 object-cover rounded-xl mx-auto border-4 border-blue-200 shadow-lg"
             @error="handleImageError"
@@ -150,10 +150,26 @@ watch(() => props.mascotName, (newName) => {
   }
 });
 
+// 이미지 소스(안전 처리)
+import { getApiOrigin } from '../api/index';
+const BASE_URL = (import.meta as any).env?.BASE_URL || '/';
+const FALLBACK_IMG = BASE_URL + 'mascot/pli.png';
+
+function resolveSrc(val?: string): string {
+  const v = (val || '').trim();
+  if (!v) return FALLBACK_IMG;
+  if (v.startsWith('/uploads/')) return (getApiOrigin() || '') + v;
+  return v;
+}
+
+const imgSrc = ref<string>(resolveSrc(props.mascotImageUrl));
+watch(() => props.mascotImageUrl, (val) => {
+  imgSrc.value = resolveSrc(val);
+});
+
 // 이미지 로드 에러 처리
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement;
-  img.src = '/mascot/pli.png'; // 기본 마스코트 이미지로 대체
+const handleImageError = () => {
+  imgSrc.value = FALLBACK_IMG;
 };
 
 // 폼 제출 처리
@@ -197,4 +213,3 @@ button:not(:disabled):hover {
   @apply transform scale-105;
 }
 </style>
-

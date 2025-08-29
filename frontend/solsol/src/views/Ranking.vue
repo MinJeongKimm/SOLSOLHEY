@@ -274,7 +274,7 @@
                   <!-- 마스코트 이미지 (등록한 이미지 우선, 없으면 배경) -->
                   <div class="flex-shrink-0">
                     <img
-                      :src="entry.entryImageUrl || `/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
+                      :src="entryImageSrc(entry)"
                       :alt="`${entry.mascotName || '마스코트'} (${entry.ownerNickname})`"
                       class="w-12 h-12 rounded-lg object-cover"
                     />
@@ -431,7 +431,7 @@
                   <!-- 마스코트 이미지 (등록한 이미지 우선, 없으면 배경) -->
                   <div class="flex-shrink-0">
                     <img
-                      :src="entry.entryImageUrl || `/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
+                      :src="entryImageSrc(entry)"
                       :alt="`${entry.mascotName || '마스코트'} (${entry.ownerNickname})`"
                       class="w-12 h-12 rounded-lg object-cover"
                     />
@@ -493,6 +493,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
+import { getApiOrigin } from '../api/index';
 import { useRouter } from 'vue-router';
 import {
   getCampusRankings,
@@ -562,6 +563,33 @@ const campusFilters = ref({
   size: 10, // 페이지 크기를 10개로 고정
   page: 0
 });
+
+// 프론트 측 이미지 URL 보정: 상대 경로('/uploads/...')를 백엔드 오리진으로 변환
+function normalizeImageUrlClient(url?: string): string {
+  const v = (url || '').trim();
+  if (!v) return '';
+  if (v.startsWith('/uploads/')) {
+    try {
+      const origin = getApiOrigin();
+      return (origin || '') + v;
+    } catch {
+      return v;
+    }
+  }
+  return v;
+}
+
+// 배경 이미지 URL 조합 (import.meta 사용은 스크립트에서만)
+const BASE_URL = (import.meta as any).env?.BASE_URL || '/';
+function bgUrl(id?: string): string {
+  const name = id || 'bg_base.png';
+  return `${BASE_URL}backgrounds/${name}`;
+}
+
+// 랭킹 리스트/슬롯 공통 이미지 src 생성 (등록 이미지 우선, 없으면 배경)
+function entryImageSrc(entry: any): string {
+  return normalizeImageUrlClient(entry?.entryImageUrl) || bgUrl(entry?.backgroundId);
+}
 
 const nationalFilters = ref({
   sort: 'votes_desc',
@@ -1187,7 +1215,7 @@ async function handleRankingSubmit(data: CreateEntryRequest) {
     
     // 슬롯에 새 엔트리 할당
     currentSlots.value[selectedSlotIndex.value].entry = newEntry;
-    currentSlots.value[selectedSlotIndex.value].mascotImageUrl = newEntry.imageUrl || '';
+    currentSlots.value[selectedSlotIndex.value].mascotImageUrl = normalizeImageUrlClient(newEntry.imageUrl || '');
     
     console.log('슬롯에 설정된 이미지 URL:', currentSlots.value[selectedSlotIndex.value].mascotImageUrl);
     
@@ -1227,8 +1255,8 @@ async function updateNationalSlotMascotImages() {
       if (slot.entry) {
         console.log(`전국 슬롯 ${i} 엔트리:`, slot.entry);
         console.log(`전국 슬롯 ${i} 이미지 URL:`, slot.entry.imageUrl);
-        // 등록된 슬롯의 경우 저장된 이미지 URL 사용
-        slot.mascotImageUrl = slot.entry.imageUrl || '';
+        // 등록된 슬롯의 경우 저장된 이미지 URL 사용 (상대 경로 보정)
+        slot.mascotImageUrl = normalizeImageUrlClient(slot.entry.imageUrl || '');
         console.log(`전국 슬롯 ${i} 설정된 이미지 URL:`, slot.mascotImageUrl);
       }
     }
@@ -1314,6 +1342,8 @@ async function updateCampusSlotMascotImages() {
     console.error('교내 슬롯 마스코트 이미지 업데이트 실패:', error);
   }
 }
+
+// (중복 제거) normalizeImageUrlClient는 상단에 정의되어 있습니다.
 
 // 교내 랭킹 슬롯의 실제 랭킹 정보 업데이트 (득표수, 순위)
 async function updateCampusSlotRankingInfo() {

@@ -109,7 +109,8 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   const method = (init.method || 'GET').toUpperCase();
   const headers = new Headers(init.headers || {});
 
-  if (init.body != null && !headers.has('Content-Type')) {
+  const isFormData = typeof FormData !== 'undefined' && (init.body as any) instanceof FormData;
+  if (init.body != null && !headers.has('Content-Type') && !isFormData) {
     headers.set('Content-Type', 'application/json');
   }
 
