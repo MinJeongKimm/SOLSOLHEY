@@ -84,9 +84,9 @@
       </div>
 
       <!-- 액션 버튼 영역 -->
-      <div class="grid grid-cols-3 gap-3 mt-4">
+      <div class="mt-4">
         <!-- 비로그인 상태: 로그인 버튼 -->
-        <div v-if="!isLoggedIn" class="col-span-3">
+        <div v-if="!isLoggedIn">
           <button @click="handleLoginClick" class="w-full bg-blue-500 text-white py-3 rounded-lg font-bold hover:bg-blue-600 transition-all text-base">
             🔐 로그인하고 친구 맺기
           </button>
@@ -94,47 +94,40 @@
         
         <!-- 로그인 상태: 액션 버튼들 -->
         <template v-else-if="canShowActionButtons">
-          <!-- 친구가 아닌 경우: 친구추가 버튼만 표시 -->
-          <button v-if="!friendshipStatus?.isFriend && !friendshipStatus?.hasSentRequest" 
-                  @click="addFriend" 
-                  :disabled="!permissions?.canSendFriendRequest" 
-                  class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
-            <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <img src="/icons/icon_friends.png" alt="친구추가" class="w-6 h-6" />
+          <!-- 버튼들을 중앙에 배치하는 컨테이너 -->
+          <div class="flex justify-center items-center w-full">
+            <!-- 친구가 아닌 경우: 친구추가 버튼만 표시 -->
+            <button v-if="!friendshipStatus?.isFriend && !friendshipStatus?.hasSentRequest" 
+                    @click="addFriend" 
+                    :disabled="!permissions?.canSendFriendRequest" 
+                    class="w-1/3 max-w-48 bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+              <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <img src="/icons/icon_friends.png" alt="친구추가" class="w-6 h-6" />
+              </div>
+              <span class="text-xs font-medium text-gray-700">친구추가</span>
+            </button>
+            
+            <!-- 친구 요청 대기 중: "요청됨" 상태 -->
+            <div v-else-if="friendshipStatus?.hasSentRequest" 
+                 class="w-1/3 max-w-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-3 flex flex-col items-center space-y-1 opacity-50">
+              <div class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                <img src="/icons/icon_friends.png" alt="친구추가" class="w-6 h-6" />
+              </div>
+              <span class="text-xs font-medium text-gray-700">요청됨</span>
             </div>
-            <span class="text-xs font-medium text-gray-700">친구추가</span>
-          </button>
-          
-          <!-- 친구 요청 대기 중: "요청됨" 상태 -->
-          <div v-else-if="friendshipStatus?.hasSentRequest" 
-               class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-3 flex flex-col items-center space-y-1 opacity-50">
-            <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-              <img src="/icons/icon_friends.png" alt="친구추가" class="w-6 h-6" />
-            </div>
-            <span class="text-xs font-medium text-gray-700">요청됨</span>
+            
+            <!-- 친구인 경우: 좋아요 버튼만 표시 -->
+            <button v-else-if="friendshipStatus?.isFriend" 
+                    @click="cheerMascot" 
+                    :disabled="!permissions?.canCheer" 
+                    class="w-1/3 max-w-48 bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
+              <div class="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
+                <img src="/icons/icon_like.png" alt="좋아요" class="w-6 h-6" />
+              </div>
+              <span class="text-sm font-medium text-gray-700">{{ permissions?.canCheer ? '좋아요' : '완료' }}</span>
+            </button>
           </div>
-          
-          <!-- 친구인 경우: 좋아요 버튼만 표시 -->
-          <button v-else-if="friendshipStatus?.isFriend" 
-                  @click="cheerMascot" 
-                  :disabled="!permissions?.canCheer" 
-                  class="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
-            <div class="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
-              <img src="/icons/icon_like.png" alt="좋아요" class="w-6 h-6" />
-            </div>
-            <span class="text-xs font-medium text-gray-700">{{ permissions?.canCheer ? '좋아요' : '완료' }}</span>
-          </button>
-          
-          <!-- 중앙 공간 -->
-          <div class="col-start-2 col-span-1"></div>
         </template>
-        
-        <!-- 로그인했지만 마스코트 데이터가 없는 경우 -->
-        <div v-else-if="isLoggedIn && !currentMascot" class="col-span-3">
-          <button @click="goToMascot" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition-all text-base">
-            🏠 내 마스코트로 이동
-          </button>
-        </div>
       </div>
     </div>
 
