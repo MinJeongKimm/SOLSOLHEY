@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -20,6 +22,9 @@ public class AiMessageService {
     private final UserRepository userRepository;
     private final MascotRepository mascotRepository;
     private final ChallengeRepository challengeRepository;
+
+    private enum SpeechType { ACADEMIC, CHALLENGE }
+    private final ConcurrentHashMap<Long, SpeechType> lastTypeByUser = new ConcurrentHashMap<>();
 
     public String generateSpeech(Long userId) {
         var user = userRepository.findById(userId).orElse(null);
@@ -34,36 +39,52 @@ public class AiMessageService {
         if (mascot != null) {
             level = mascot.getLevel();
         }
-        // 1) 진행 가능한 챌린지 기반 권유 메시지 우선 생성
-        try {
-            var now = java.time.LocalDateTime.now();
-            var challenges = challengeRepository.findAvailableChallenges(now);
-            if (challenges != null && !challenges.isEmpty()) {
-                int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(challenges.size());
-                var picked = challenges.get(idx);
-                String challengeName = picked.getChallengeName();
-                String prompt = promptBuilder.buildChallengePrompt(campus, nickname, level, challengeName);
-                try {
-                    GenerateContentResponse res = client.models.generateContent(
-                            "gemini-2.5-flash",
-                            prompt,
-                            null
-                    );
-                    String text = res.text();
-                    if (text != null && !text.isBlank()) return text.trim();
-                } catch (Exception aiEx) {
-                    log.warn("Gemini 호출 실패(챌린지 권유), 폴백 사용: {}", aiEx.getMessage());
-                }
-                // AI 실패 또는 빈 응답일 때 간단 폴백
-                return fallbackChallengeMessage(challengeName);
+        // 번갈아가며 출력: 이전 타입 기준으로 다음 타입 결정(기본은 학사 먼저)
+        SpeechType prev = lastTypeByUser.getOrDefault(userId, SpeechType.CHALLENGE);
+        SpeechType desired = (prev == SpeechType.ACADEMIC) ? SpeechType.CHALLENGE : SpeechType.ACADEMIC;
+
+        String result = null;
+        SpeechType produced = null;
+
+        if (desired == SpeechType.ACADEMIC) {
+            result = tryAcademic(campus, nickname, level);
+            if (result != null && !result.isBlank()) {
+                produced = SpeechType.ACADEMIC;
+            } else {
+                result = tryChallenge(campus, nickname, level);
+                if (result != null && !result.isBlank()) produced = SpeechType.CHALLENGE;
             }
-        } catch (Exception listEx) {
-            log.warn("챌린지 목록 조회 실패, 일반 인삿말로 폴백: {}", listEx.getMessage());
+        } else { // desired CHALLENGE
+            result = tryChallenge(campus, nickname, level);
+            if (result != null && !result.isBlank()) {
+                produced = SpeechType.CHALLENGE;
+            } else {
+                result = tryAcademic(campus, nickname, level);
+                if (result != null && !result.isBlank()) produced = SpeechType.ACADEMIC;
+            }
         }
 
-        // 2) 챌린지가 없거나 실패 시: 기존 일반 인삿말 생성
+        if (result == null || result.isBlank()) {
+            // 최종 폴백: 학사 기본 멘트
+            var academic = dummyProvider.getDummyContext();
+            result = fallbackMessage(campus, nickname, level, academic);
+            produced = SpeechType.ACADEMIC;
+        }
+
+        // 말투 정규화 + 상태 저장
+        String finalText = normalizeBanmal(result);
+        if (userId != null && produced != null) {
+            lastTypeByUser.put(userId, produced);
+        }
+        return finalText;
+    }
+
+    private String tryAcademic(String campus, String nickname, Integer level) {
         AcademicContext academic = dummyProvider.getDummyContext();
-        String prompt = promptBuilder.buildPrompt(campus, nickname, level, academic);
+        AcademicContext varied = selectRandomSubContext(academic);
+        String prompt = promptBuilder.buildPrompt(campus, nickname, level, varied)
+                + "\n표현 다양화 지침: 같은 의미라도 매번 어휘/어순을 바꿔 자연스럽게 다르게 써줘. 반말 유지, 이모지/닉네임/캠퍼스 언급 금지."
+                + "\n변주 토큰: " + java.util.UUID.randomUUID().toString().substring(0, 8);
         try {
             GenerateContentResponse res = client.models.generateContent(
                     "gemini-2.5-flash",
@@ -71,22 +92,46 @@ public class AiMessageService {
                     null
             );
             String text = res.text();
-            if (text == null || text.isBlank()) throw new IllegalStateException("Empty AI response");
-            return text.trim();
+            if (text != null && !text.isBlank()) return text.trim();
         } catch (Exception e) {
-            log.warn("Gemini 호출 실패, 폴백 사용: {}", e.getMessage());
-            return fallbackMessage(campus, nickname, level, academic);
+            log.warn("학사 메시지 생성 실패: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private String tryChallenge(String campus, String nickname, Integer level) {
+        try {
+            var now = java.time.LocalDateTime.now();
+            var challenges = challengeRepository.findAvailableChallenges(now);
+            if (challenges == null || challenges.isEmpty()) return null;
+            int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(challenges.size());
+            var picked = challenges.get(idx);
+            String challengeName = picked.getChallengeName();
+            String prompt = promptBuilder.buildChallengePrompt(campus, nickname, level, challengeName);
+            try {
+                GenerateContentResponse res = client.models.generateContent(
+                        "gemini-2.5-flash",
+                        prompt,
+                        null
+                );
+                String text = res.text();
+                if (text != null && !text.isBlank()) return text.trim();
+            } catch (Exception aiEx) {
+                log.warn("챌린지 메시지 생성 실패: {}", aiEx.getMessage());
+            }
+            return fallbackChallengeMessage(challengeName);
+        } catch (Exception listEx) {
+            log.warn("챌린지 목록 조회 실패: {}", listEx.getMessage());
+            return null;
         }
     }
 
     private String fallbackMessage(String campus, String nickname, Integer level, AcademicContext academic) {
-        String hero = nickname != null ? nickname : "친구";
-        String camp = campus != null ? campus : "해이영 캠퍼스";
         if (academic != null && academic.upcomingEvents() != null && !academic.upcomingEvents().isEmpty()) {
             var e = academic.upcomingEvents().get(0);
-            return String.format("%s 안녕하세요! %s 일정 체크했어요. 곧 '%s' 마감이에요. 오늘 조금만 더 힘내봐요!", hero, camp, e.title());
+            return String.format("곧 '%s' 마감이야. 오늘 체크해두면 마음이 한결 편해질 거야!", e.title());
         }
-        return String.format("%s 반가워요! %s에서 멋진 하루 보내요. 오늘도 작은 한 걸음, 충분해요!", hero, camp);
+        return "좋은 하루야. 오늘 할 일 한 가지만 정해서 가볍게 시작해보자!";
     }
 
     private String fallbackChallengeMessage(String challengeName) {
@@ -95,5 +140,58 @@ public class AiMessageService {
         }
         // 간단한 구어체 권유 템플릿
         return challengeName + " 한 번 해볼까?";
+    }
+
+    // 간단한 말투 정규화: 존댓말 → 반말로 변환 (휴리스틱)
+    private String normalizeBanmal(String text) {
+        if (text == null) return "";
+        String s = text.trim();
+        // 따옴표 제거
+        s = s.replace("\n", " ").replaceAll("[“”\"']", "");
+        // 문장부호 앞 공백 정리
+        s = s.replaceAll("\s+([.!?])", "$1");
+        // 대표 종결어 변환
+        s = s.replaceAll("입니다([.!?])", "야$1");
+        s = s.replaceAll("입니다$", "야");
+        s = s.replaceAll("(이에요|예요|에요)([.!?])", "야$2");
+        s = s.replaceAll("(이에요|예요|에요)$", "야");
+        s = s.replaceAll("해주세요", "해줘");
+        s = s.replace("하실래요?", "할래?");
+        s = s.replace("하시겠어요?", "할래?");
+        s = s.replace("해볼까요?", "해볼까?");
+        s = s.replace("어때요?", "어때?");
+        s = s.replaceAll("봅시다", "보자");
+        s = s.replaceAll("합시다", "하자");
+        s = s.replaceAll("하십시오", "해줘");
+        s = s.replaceAll("하세요", "해");
+        s = s.replaceAll("좋아요", "좋아");
+        s = s.replaceAll("봐요", "봐");
+        // 문장 끝의 '요' 제거
+        s = s.replaceAll("요([.!?])", "$1");
+        s = s.replaceAll("요$", "");
+        // 공백 정리
+        s = s.replaceAll("\s{2,}", " ").trim();
+        return s;
+    }
+
+    private AcademicContext selectRandomSubContext(AcademicContext ctx) {
+        if (ctx == null) return null;
+        var rnd = java.util.concurrent.ThreadLocalRandom.current();
+        java.util.List<AcademicContext.Event> events = java.util.List.of();
+        java.util.List<AcademicContext.Today> todays = java.util.List.of();
+        java.util.List<AcademicContext.Notice> notices = java.util.List.of();
+        if (ctx.upcomingEvents() != null && !ctx.upcomingEvents().isEmpty()) {
+            int idx = rnd.nextInt(ctx.upcomingEvents().size());
+            events = java.util.List.of(ctx.upcomingEvents().get(idx));
+        }
+        if (ctx.todaySchedule() != null && !ctx.todaySchedule().isEmpty()) {
+            int idx = rnd.nextInt(ctx.todaySchedule().size());
+            todays = java.util.List.of(ctx.todaySchedule().get(idx));
+        }
+        if (ctx.notices() != null && !ctx.notices().isEmpty()) {
+            int idx = rnd.nextInt(ctx.notices().size());
+            notices = java.util.List.of(ctx.notices().get(idx));
+        }
+        return new AcademicContext(events, todays, notices);
     }
 }
