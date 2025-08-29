@@ -31,9 +31,13 @@ import { ApiError } from '../types/api';
 import router from '../router';
 import { useToastStore } from '../stores/toast';
 
-const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+// 공개 API 베이스 URL
+// - 프로덕션: VITE_API_BASE_URL (예: https://<backend>.up.railway.app/api/v1)
+// - 로컬 기본값: http://localhost:8080/api/v1
+export const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
-function getApiOrigin(): string {
+// 백엔드 오리진(origin)만 필요할 때 사용 (예: /api/ranking 같이 v1 prefix가 아닌 엔드포인트)
+export function getApiOrigin(): string {
   try {
     const url = new URL(API_BASE);
     return `${url.protocol}//${url.host}`;

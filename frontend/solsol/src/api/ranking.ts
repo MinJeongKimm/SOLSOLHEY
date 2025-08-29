@@ -1,4 +1,4 @@
-import { apiRequest } from './index';
+import { apiRequest, getApiOrigin } from './index';
 import { auth } from './index';
 import type { ApiResponse, UserResponse } from '../types/api';
 
@@ -114,7 +114,8 @@ export interface Mascot {
 
 // 랭킹 참가 등록
 export async function createRankingEntry(request: CreateEntryRequest): Promise<EntryResponse> {
-  const response = await apiRequest<ApiResponse<EntryResponse>>('http://localhost:8080/api/ranking/entries', {
+  // /api/ranking 은 v1 prefix 바깥에 있으므로 오리진 기반 절대 URL 사용
+  const response = await apiRequest<ApiResponse<EntryResponse>>(`${getApiOrigin()}/api/ranking/entries`, {
     method: 'POST',
     body: JSON.stringify(request),
   });
@@ -150,8 +151,8 @@ export async function createRankingEntryWithImage(
     // CSRF 토큰 가져오기
     const csrfToken = getCookie('XSRF-TOKEN');
     
-    // 이미지 업로드 API 호출
-    const response = await fetch('http://localhost:8080/api/ranking/entries/with-image', {
+    // 이미지 업로드 API 호출 (FormData는 apiRequest 사용 시 Content-Type 이슈가 있어 직접 fetch)
+    const response = await fetch(`${getApiOrigin()}/api/ranking/entries/with-image`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -177,21 +178,21 @@ export async function createRankingEntryWithImage(
 
 // 사용자 참가 목록 조회
 export async function getUserEntries(): Promise<EntryResponse[]> {
-  const response = await apiRequest<ApiResponse<EntryResponse[]>>('http://localhost:8080/api/ranking/entries/user');
+  const response = await apiRequest<ApiResponse<EntryResponse[]>>(`${getApiOrigin()}/api/ranking/entries/user`);
   if (!response.data) throw new Error('응답 데이터가 없습니다.');
   return response.data;
 }
 
 // 사용자 특정 타입 참가 목록 조회
 export async function getUserEntriesByType(rankingType: string): Promise<EntryResponse[]> {
-  const response = await apiRequest<ApiResponse<EntryResponse[]>>(`http://localhost:8080/api/ranking/entries/user/type/${rankingType}`);
+  const response = await apiRequest<ApiResponse<EntryResponse[]>>(`${getApiOrigin()}/api/ranking/entries/user/type/${rankingType}`);
   if (!response.data) throw new Error('응답 데이터가 없습니다.');
   return response.data;
 }
 
 // 참가 취소 (삭제)
 export async function deleteRankingEntry(entryId: number): Promise<void> {
-  await apiRequest<ApiResponse<void>>(`http://localhost:8080/api/ranking/entries/${entryId}`, {
+  await apiRequest<ApiResponse<void>>(`${getApiOrigin()}/api/ranking/entries/${entryId}`, {
     method: 'DELETE',
   });
 }
@@ -202,14 +203,14 @@ export async function getLeaderboard(page: number = 0, size: number = 20): Promi
     page: page.toString(),
     size: size.toString()
   });
-  const response = await apiRequest<ApiResponse<LeaderboardResponse>>(`http://localhost:8080/api/ranking/entries/leaderboard?${params}`);
+  const response = await apiRequest<ApiResponse<LeaderboardResponse>>(`${getApiOrigin()}/api/ranking/entries/leaderboard?${params}`);
   if (!response.data) throw new Error('응답 데이터가 없습니다.');
   return response.data;
 }
 
 // 사용자 참가 개수 조회
 export async function getUserEntryCount(): Promise<number> {
-  const response = await apiRequest<ApiResponse<number>>('http://localhost:8080/api/ranking/entries/user/count');
+  const response = await apiRequest<ApiResponse<number>>(`${getApiOrigin()}/api/ranking/entries/user/count`);
   if (!response.data) throw new Error('응답 데이터가 없습니다.');
   return response.data;
 }
@@ -219,8 +220,8 @@ export async function getCurrentUserMascotSnapshot(): Promise<MascotSnapshot | n
   try {
     console.log('마스코트 스냅샷 조회 시작...');
     
-    // 백엔드의 실제 경로: /api/v1/mascot/snapshots
-    const response = await apiRequest<any>('http://localhost:8080/api/v1/mascot/snapshots');
+    // 백엔드의 실제 경로: /api/v1/mascot/snapshots → API_BASE + 상대 경로 사용
+    const response = await apiRequest<any>('/mascot/snapshots');
     console.log('마스코트 스냅샷 응답:', response);
     
     if (response.result !== 'SUCCESS' || !response.data || response.data.length === 0) {
@@ -345,8 +346,8 @@ export async function getCurrentUserMascot(): Promise<Mascot | null> {
   try {
     console.log('마스코트 정보 조회 시작...');
     
-    // 백엔드의 실제 경로: /api/v1/mascot (마스코트 기본 정보)
-    const response = await apiRequest<any>('http://localhost:8080/api/v1/mascot');
+    // 백엔드의 실제 경로: /api/v1/mascot (마스코트 기본 정보) → API_BASE + 상대 경로 사용
+    const response = await apiRequest<any>('/mascot');
     console.log('마스코트 기본 정보 응답:', response);
     
     if (response.result !== 'SUCCESS' || !response.data) {
