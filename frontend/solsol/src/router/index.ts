@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
+import Splash from '../views/Splash.vue'
 import Signup from '../views/Signup.vue'
 import Challenge from '../views/Challenge.vue'
 import FinanceAction from '../views/FinanceAction.vue'
@@ -17,10 +18,9 @@ import Attendance from '../views/Attendance.vue'
 import { auth } from '../api/index'
 
 const routes = [
-  { 
-    path: '/', 
-    component: Login,
-    meta: { requiresGuest: true }
+  {
+    path: '/',
+    component: Splash,
   },
   { 
     path: '/login', 
