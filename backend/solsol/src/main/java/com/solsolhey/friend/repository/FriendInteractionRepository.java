@@ -99,6 +99,23 @@ public interface FriendInteractionRepository extends JpaRepository<FriendInterac
                                                                        @Param("end") LocalDateTime end);
 
     /**
+     * 기간 제한 없이 방향별 최근 상호작용 시각
+     */
+    @Query("SELECT MAX(fi.createdAt) FROM FriendInteraction fi WHERE fi.fromUser = :from AND fi.toUser = :to AND fi.interactionType = :type")
+    LocalDateTime findMaxCreatedAtDirectionalByType(@Param("from") User from,
+                                                    @Param("to") User to,
+                                                    @Param("type") InteractionType type);
+
+    /**
+     * 특정 시각 이후의 방향별 상호작용 수 (핑퐁 응답 검증용)
+     */
+    @Query("SELECT COUNT(fi) FROM FriendInteraction fi WHERE fi.fromUser = :from AND fi.toUser = :to AND fi.interactionType = :type AND fi.createdAt > :start")
+    long countDirectionalByTypeAndCreatedAtAfter(@Param("from") User from,
+                                                 @Param("to") User to,
+                                                 @Param("type") InteractionType type,
+                                                 @Param("start") LocalDateTime start);
+
+    /**
      * 현재 사용자에게 온 모든 상호작용을 일괄 읽음 처리
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)

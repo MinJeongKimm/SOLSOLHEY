@@ -291,15 +291,28 @@ public class FriendServiceImpl implements FriendService {
         }
 
         if (request.interactionType() == InteractionType.LIKE) {
+            // 1) 일일 상한(3회) 먼저 강제
             LocalDate today = LocalDate.now(KST);
-            // 통합 카운터(경로 무관) - 비관적 락으로 동시성 제어
             FriendLikeDailyCounter counter = likeDailyCounterRepository
                     .findForUpdate(user, toUser, today)
                     .orElseGet(() -> new FriendLikeDailyCounter(user, toUser, today));
-            Integer current = counter.getLikeCount() == null ? 0 : counter.getLikeCount();
+            int current = counter.getLikeCount() == null ? 0 : counter.getLikeCount();
             if (current >= 3) {
                 throw new BusinessException("오늘 해당 친구에게 보낼 수 있는 좋아요 3회 한도를 초과했습니다.");
             }
+
+            // 2) 핑퐁 순서 제약: 마지막 내 발신 이후 상대의 응답이 있어야 다음 발신 허용
+            LocalDateTime lastSentAt = friendInteractionRepository
+                    .findMaxCreatedAtDirectionalByType(user, toUser, InteractionType.LIKE);
+            if (lastSentAt != null) {
+                long receivedAfter = friendInteractionRepository
+                        .countDirectionalByTypeAndCreatedAtAfter(toUser, user, InteractionType.LIKE, lastSentAt);
+                if (receivedAfter < 1) {
+                    throw new BusinessException("상대의 좋아요 이후에만 추가 좋아요가 가능합니다.");
+                }
+            }
+
+            // 카운터 증가는 모든 검증 통과 후 반영
             counter.inc();
             likeDailyCounterRepository.save(counter);
         }
@@ -433,7 +446,7 @@ public class FriendServiceImpl implements FriendService {
         long lifetimeLikes = friendInteractionRepository
                 .countByToUserAndInteractionType(owner, InteractionType.LIKE);
 
-        // Today (KST) unified count via counter + receivedToday for display
+        // Today (KST) unified count via counter + receivedToday for display, and ping-pong gating for canLikeNow
         LocalDate today = LocalDate.now(KST);
         int sentToday = likeDailyCounterRepository.findOne(viewer, owner, today)
                 .map(FriendLikeDailyCounter::getLikeCount)
@@ -444,7 +457,15 @@ public class FriendServiceImpl implements FriendService {
                 owner, viewer, InteractionType.LIKE, startOfDay, endOfDay);
         int allowedMax = 3;
         int remaining = Math.max(0, allowedMax - sentToday);
-        boolean canLikeNow = remaining > 0;
+        boolean respondedAfterLast = true;
+        LocalDateTime lastSentAtGlobal = friendInteractionRepository
+                .findMaxCreatedAtDirectionalByType(viewer, owner, InteractionType.LIKE);
+        if (lastSentAtGlobal != null) {
+            long resp = friendInteractionRepository
+                    .countDirectionalByTypeAndCreatedAtAfter(owner, viewer, InteractionType.LIKE, lastSentAtGlobal);
+            respondedAfterLast = resp >= 1;
+        }
+        boolean canLikeNow = remaining > 0 && respondedAfterLast;
 
         return FriendHomeResponse.builder()
                 .ownerId(view.getOwner().getId())
