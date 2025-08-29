@@ -55,24 +55,26 @@
                   @load="updateRects"
                   @error="handleImageError"
                 />
-                <!-- AI 말풍선: 마스코트 오른쪽 (클릭 시 챌린지 이동) -->
-                <div 
-                  v-if="showBubble"
-                  class="absolute left-[calc(100%-6px)] top-2 z-30 cursor-pointer select-none min-w-[180px] w-fit"
-                  :style="{ maxWidth: bubbleMaxWidth }"
-                  role="button"
-                  tabindex="0"
-                  @click.stop="goToChallenge"
-                  @keydown.enter.prevent="goToChallenge"
-                >
-                  <SpeechBubble 
-                    :text="bubbleDisplayText" 
-                    tail="left"
-                    aria-live="polite"
-                    class="text-sm leading-snug w-auto"
-                  />
-                </div>
+                <!-- (말풍선은 이 래퍼 밖에서 렌더링하여 떠다니지 않도록 함) -->
               </div>
+            </div>
+
+            <!-- 고정 말풍선(마스코트 아래, 움직임 없음) -->
+            <div
+              v-if="showBubble"
+              class="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 cursor-pointer select-none"
+              role="button"
+              tabindex="0"
+              @click.stop="onBubbleClick"
+              @keydown.enter.prevent="onBubbleClick"
+            >
+              <SpeechBubble
+                :text="bubbleDisplayText"
+                tail="top"
+                aria-live="polite"
+                class="leading-snug whitespace-nowrap"
+                :style="{ whiteSpace: 'nowrap' }"
+              />
             </div>
 
             <!-- 레이어 3: 전경 아이템 (마스코트 앞) -->
@@ -328,8 +330,10 @@ const shopItems = ref<ShopItem[]>([]);
 // AI 말풍선 상태
 const showBubble = ref(false);
 const bubbleText = ref('');
+const bubbleKind = ref<'ACADEMIC' | 'CHALLENGE' | null>(null);
 const bubbleLocked = ref(false); // 여러 번 클릭 방지 락
-const bubbleDisplayText = computed(() => chunkByWords(bubbleText.value, 8).join('\n'));
+// 모바일 일부 브라우저에서 줄바꿈 이슈가 있어, 강제 개행을 제거하고 브라우저 줄바꿈에 맡깁니다.
+const bubbleDisplayText = computed(() => (bubbleText.value || ''));
 function chunkByWords(text: string, maxCharsPerLine: number): string[] {
   const raw = (text || '').trim();
   if (!raw) return [''];
@@ -376,9 +380,11 @@ async function onMascotClick() {
   try {
     const res = await getAiSpeech();
     bubbleText.value = res.message || '오늘은 가벼운 챌린지 어때?';
+    bubbleKind.value = (res as any).kind || null;
   } catch (e) {
     console.warn('AI 말풍선 실패:', e);
     bubbleText.value = '오늘은 가벼운 챌린지 어때?';
+    bubbleKind.value = null;
   }
   // 최종 문구 기준으로 5초 유지하고 락 해제
   if (bubbleTimer) window.clearTimeout(bubbleTimer);
@@ -435,9 +441,7 @@ const canvasEl = ref<HTMLElement>();
 const mascotEl = ref<HTMLElement>();
 const canvasRect = ref<DOMRect | null>(null);
 const mascotRect = ref<DOMRect | null>(null);
-const BUBBLE_OFFSET_PX = -6; // 마스코트와 겹치도록 왼쪽으로 6px 당김
-const bubbleAvailableWidth = ref<number>(0);
-const bubbleMaxWidth = computed(() => (bubbleAvailableWidth.value > 0 ? `${bubbleAvailableWidth.value}px` : '600px'));
+// 말풍선 크기 계산 제거: 자연 크기 사용
 
 function updateRects() {
   if (canvasEl.value) {
@@ -446,13 +450,7 @@ function updateRects() {
   if (mascotEl.value) {
     mascotRect.value = mascotEl.value.getBoundingClientRect();
   }
-  // 말풍선 가용 너비 계산: 캔버스 오른쪽 끝까지의 거리에서 안전 여백 차감
-  if (canvasRect.value && mascotRect.value) {
-    const safeGap = 8; // 안전 여백(px)
-    const available = Math.max(0, Math.floor(canvasRect.value.right - mascotRect.value.right - safeGap - BUBBLE_OFFSET_PX));
-    // 너무 좁으면 최소값으로 제한(말풍선 너비 최소 보장)
-    bubbleAvailableWidth.value = Math.max(160, available);
-  }
+  // 말풍선 크기 계산 제거(자연 크기 사용)
 }
 
 function styleForItem(e: { relativePosition: { x: number; y: number }; scale: number; rotation: number }) {
@@ -699,6 +697,15 @@ function goToCustomize() {
 function goToChallenge() {
   router.push('/challenge');
 }
+
+function onBubbleClick() {
+  if (bubbleKind.value === 'CHALLENGE') {
+    router.push('/challenge');
+  }
+}
+
+// 길이 제한 유틸 (유니코드 안전)
+// (길이 트림 제거) AI가 25~35자 내로 생성하도록 백엔드 프롬프트 조정됨
 
 // 마스코트 생성 화면으로 이동
 function goToCreate() {
