@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed left-1/2 -translate-x-1/2 bottom-4 z-50 space-y-2 w-[90%] max-w-sm">
+  <div :class="['fixed left-1/2 -translate-x-1/2 z-50 space-y-2 w-[90%] max-w-sm', hasHeader ? 'top-20' : 'top-4']">
     <div
       v-for="t in toasts"
       :key="t.id"
@@ -17,9 +17,13 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 import { useToastStore } from '../stores/toast';
+import { useRoute } from 'vue-router';
+import { computed } from 'vue';
 
 const toast = useToastStore();
 const { items: toasts } = storeToRefs(toast);
+const route = useRoute();
+const hasHeader = computed(() => route.matched.some(r => (r.meta as any)?.requiresAuth));
 
 function dismiss(id: number) {
   toast.dismiss(id);

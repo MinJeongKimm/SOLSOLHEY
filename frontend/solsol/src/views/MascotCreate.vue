@@ -28,7 +28,7 @@
       <div v-if="currentStep === 1" class="space-y-6">
         <div class="text-center">
           <h2 class="text-2xl font-bold text-gray-800 mb-2">🐾 마스코트를 선택해주세요</h2>
-          <p class="text-gray-600">화살표 버튼이나 키보드 방향키로 마음에 드는 친구를 찾아보세요!</p>
+          <p class="text-gray-600">화살표 버튼이나 키보드 방향키로 <br/> 마음에 드는 친구를 찾아보세요!</p>
         </div>
         
         <!-- 커스텀 슬라이더 -->
@@ -98,7 +98,7 @@
         <div class="flex justify-center mt-8">
           <button 
             @click="selectCurrentMascot"
-            class="bg-purple-500 hover:bg-purple-600 text-white py-3 px-8 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
+            class="inline-flex items-center whitespace-nowrap bg-purple-500 hover:bg-purple-600 text-white py-3 px-6 sm:px-8 rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg hover:shadow-xl text-sm sm:text-base"
           >
             {{ currentMascotType.name }}(으)로 선택! ✨
           </button>
@@ -140,14 +140,14 @@
         <div class="flex space-x-3">
           <button 
             @click="currentStep = 1"
-            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+            class="inline-flex items-center justify-center whitespace-nowrap flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base"
           >
             이전
           </button>
           <button 
             @click="proceedToFinal"
             :disabled="!newMascot.name.trim()"
-            class="flex-1 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg font-medium transition-colors"
+            class="inline-flex items-center justify-center whitespace-nowrap flex-1 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base"
           >
             다음
           </button>
@@ -175,13 +175,13 @@
         <div class="flex space-x-3">
           <button 
             @click="currentStep = 2"
-            class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+            class="inline-flex items-center justify-center whitespace-nowrap flex-1 bg-gray-500 hover:bg-gray-600 text-white py-3 px-4 rounded-lg font-medium transition-colors text-sm sm:text-base"
           >
             수정
           </button>
           <button 
             @click="createMascot"
-            class="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white py-3 px-4 rounded-lg font-medium transition-all transform hover:scale-105"
+            class="inline-flex items-center justify-center whitespace-nowrap flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white py-3 px-4 rounded-lg font-medium transition-all transform hover:scale-105 text-sm sm:text-base"
           >
             생성 완료! 🚀
           </button>
