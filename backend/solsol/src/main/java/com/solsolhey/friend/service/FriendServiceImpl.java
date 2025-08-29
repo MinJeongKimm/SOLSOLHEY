@@ -433,11 +433,15 @@ public class FriendServiceImpl implements FriendService {
         long lifetimeLikes = friendInteractionRepository
                 .countByToUserAndInteractionType(owner, InteractionType.LIKE);
 
-        // Today (KST) unified count via counter
+        // Today (KST) unified count via counter + receivedToday for display
         LocalDate today = LocalDate.now(KST);
         int sentToday = likeDailyCounterRepository.findOne(viewer, owner, today)
                 .map(FriendLikeDailyCounter::getLikeCount)
                 .orElse(0);
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+        long receivedToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
+                owner, viewer, InteractionType.LIKE, startOfDay, endOfDay);
         int allowedMax = 3;
         int remaining = Math.max(0, allowedMax - sentToday);
         boolean canLikeNow = remaining > 0;
