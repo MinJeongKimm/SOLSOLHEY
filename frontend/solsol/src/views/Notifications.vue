@@ -29,7 +29,42 @@
         </div>
       </div>
 
-      <!-- 목록 영역 -->
+      <!-- 목록 영역: 친구 요청 -->
+      <div v-if="visibleRequests.length" class="mb-2">
+        <div class="text-xs font-semibold text-gray-500 mb-1">친구 요청</div>
+        <div class="divide-y divide-gray-100">
+          <div v-for="it in visibleRequests" :key="it.interactionId" class="py-3">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm text-gray-800">
+                  <router-link
+                    class="font-semibold text-blue-600 hover:underline"
+                    :to="`/friends/${it.fromUserId}`"
+                  >
+                    {{ it.fromUserNickname }}
+                  </router-link>
+                  <span class="ml-1">님이 친구 요청을 보냈습니다.</span>
+                </div>
+                <div class="text-xs text-gray-500 mt-1">{{ formatDate(it.createdAt) }}</div>
+              </div>
+            </div>
+            <div class="mt-2 flex gap-2">
+              <button
+                class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-green-500 text-white text-xs sm:text-sm hover:bg-green-600 disabled:opacity-60"
+                :disabled="processingId === it.interactionId"
+                @click="acceptRequestFromInbox(it)"
+              >{{ processingId === it.interactionId ? '처리 중' : '수락' }}</button>
+              <button
+                class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-red-500 text-white text-xs sm:text-sm hover:bg-red-600 disabled:opacity-60"
+                :disabled="processingId === it.interactionId"
+                @click="rejectRequestFromInbox(it)"
+              >거절</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 목록 영역: 좋아요 -->
       <div class="divide-y divide-gray-100">
         <div v-for="it in visibleLikeOnly" :key="it.interactionId" class="py-3 flex items-start justify-between">
           <div>
@@ -90,7 +125,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getInteractions, markInteractionRead, markAllInteractionsRead, getUnreadInteractionCount, sendLike, type FriendInteraction, type PageResponse } from '../api/friend';
+import { getInteractions, markInteractionRead, markAllInteractionsRead, getUnreadInteractionCount, sendLike, acceptFriendRequest, rejectFriendRequest, type FriendInteraction, type PageResponse } from '../api/friend';
 
 const router = useRouter();
 
@@ -105,14 +140,25 @@ const readingId = ref<number | null>(null);
 const likingId = ref<number | null>(null);
 const processingAll = ref(false);
 const dismissedBefore = ref<string | null>(localStorage.getItem('notif:dismissedBefore'));
+const processingId = ref<number | null>(null);
 
 const likeOnly = computed(() => items.value.filter(i => i.interactionType === 'LIKE'));
+const requestOnly = computed(() => items.value.filter(i => i.interactionType === 'FRIEND_REQUEST'));
 const visibleLikeOnly = computed(() => {
   if (!dismissedBefore.value) return likeOnly.value;
   const threshold = new Date(dismissedBefore.value).getTime();
   return likeOnly.value.filter(i => {
     const t = new Date(i.createdAt as any).getTime();
     // 생성 시간이 없거나 파싱 불가하면 숨김 처리
+    return Number.isFinite(t) ? t >= threshold : false;
+  });
+});
+
+const visibleRequests = computed(() => {
+  if (!dismissedBefore.value) return requestOnly.value;
+  const threshold = new Date(dismissedBefore.value).getTime();
+  return requestOnly.value.filter(i => {
+    const t = new Date(i.createdAt as any).getTime();
     return Number.isFinite(t) ? t >= threshold : false;
   });
 });
@@ -186,6 +232,38 @@ async function sendBackLike(it: FriendInteraction) {
     likingId.value = null;
     // 보낸 직후 읽음 갱신/뱃지 갱신을 위해 미읽음 카운트 리프레시
     await refreshUnread();
+  }
+}
+
+async function acceptRequestFromInbox(it: FriendInteraction) {
+  if (!it.referenceId) return;
+  if (processingId.value) return;
+  processingId.value = it.interactionId;
+  try {
+    await acceptFriendRequest(it.referenceId);
+    it.isRead = true as any;
+    items.value = items.value.filter(x => x.interactionId !== it.interactionId);
+    await refreshUnread();
+  } catch (e) {
+    // 실패 시 무시 또는 에러 표시
+  } finally {
+    processingId.value = null;
+  }
+}
+
+async function rejectRequestFromInbox(it: FriendInteraction) {
+  if (!it.referenceId) return;
+  if (processingId.value) return;
+  processingId.value = it.interactionId;
+  try {
+    await rejectFriendRequest(it.referenceId);
+    it.isRead = true as any;
+    items.value = items.value.filter(x => x.interactionId !== it.interactionId);
+    await refreshUnread();
+  } catch (e) {
+    // 실패 시 무시 또는 에러 표시
+  } finally {
+    processingId.value = null;
   }
 }
 

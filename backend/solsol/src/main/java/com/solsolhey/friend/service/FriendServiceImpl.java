@@ -76,7 +76,22 @@ public class FriendServiceImpl implements FriendService {
                 .build();
 
         Friend savedFriend = friendRepository.save(friend);
-        
+
+        // 친구 요청 알림 상호작용 생성: 수신자(friendUser)에게 FRIEND_REQUEST 타입 알림
+        try {
+            String msg = user.getNickname() + "님이 친구 요청을 보냈습니다.";
+            FriendInteraction reqNotice = FriendInteraction.builder()
+                    .fromUser(user)
+                    .toUser(friendUser)
+                    .interactionType(InteractionType.FRIEND_REQUEST)
+                    .message(msg)
+                    .referenceId(savedFriend.getFriendId())
+                    .build();
+            friendInteractionRepository.save(reqNotice);
+        } catch (Exception e) {
+            log.warn("친구 요청 알림 생성 실패: from={}, to={}, err={}", user.getUserId(), friendUser.getUserId(), e.getMessage());
+        }
+
         return FriendResponse.from(savedFriend, false);
     }
 

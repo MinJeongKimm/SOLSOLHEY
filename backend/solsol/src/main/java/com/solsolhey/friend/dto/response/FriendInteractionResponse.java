@@ -19,6 +19,7 @@ public record FriendInteractionResponse(
     String toUserNickname,
     InteractionType interactionType,
     String message,
+    Long referenceId,
     Boolean isRead,
     LocalDateTime createdAt,
     ExpDailyCounterService.ExpAwarded expAwarded
@@ -32,6 +33,7 @@ public record FriendInteractionResponse(
                 .toUserNickname(interaction.getToUser().getNickname())
                 .interactionType(interaction.getInteractionType())
                 .message(interaction.getMessage())
+                .referenceId(interaction.getReferenceId())
                 .isRead(interaction.getIsRead())
                 .createdAt(interaction.getCreatedAt())
                 .expAwarded(null)

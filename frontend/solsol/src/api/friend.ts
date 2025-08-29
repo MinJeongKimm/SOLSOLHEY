@@ -70,8 +70,9 @@ export interface FriendInteraction {
   fromUserNickname: string;
   toUserId: number;
   toUserNickname: string;
-  interactionType: 'LIKE' | 'CHEER' | 'POKE' | 'MESSAGE';
+  interactionType: 'LIKE' | 'CHEER' | 'POKE' | 'MESSAGE' | 'FRIEND_REQUEST';
   message?: string;
+  referenceId?: number; // 서버 referenceId: 친구요청 등 원본 엔티티 ID
   isRead: boolean;
   createdAt: string;
 }
