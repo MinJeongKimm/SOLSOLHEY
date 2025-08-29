@@ -7,14 +7,18 @@
       <!-- Title + Subtitle -->
       <section>
         <h1
-          class="text-white tracking-tight leading-none select-none flex items-end justify-center"
+          class="text-white tracking-tight leading-none select-none flex items-baseline gap-2 justify-center title"
           :style="titleStyle"
         >
-          <span class="font-brand font-semibold">쏠쏠 </span>
+          <span class="font-brand font-semibold title-text">
+            <template v-for="(ch, i) in letters" :key="i">
+              <span class="inline-block anim-wave" :style="{ animationDelay: `${i * 120}ms` }">{{ ch }}</span>
+            </template>
+          </span>
           <img
             src="/icons/icon_hey.png"
             alt="Hey"
-            class="inline-block ml-1"
+            class="inline-block"
             :style="heyStyle"
             draggable="false"
           />
@@ -61,6 +65,9 @@ const subtitleSize = 'text-base sm:text-lg'
 // Increase mascot size on mobile for better visibility
 const mascotSize = 'w-11/12 max-w-md sm:max-w-lg'
 
+// Title animation: wave only
+const letters = ['쏠', '쏠']
+
 onMounted(async () => {
   const isAuthenticated = await auth.isAuthenticatedAsync()
   if (isAuthenticated) {
@@ -69,6 +76,7 @@ onMounted(async () => {
   }
   setTimeout(() => router.replace('/login'), 3000)
 })
+
 </script>
 
 <style scoped>
@@ -79,5 +87,16 @@ onMounted(async () => {
 }
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+/* Title animation (wave) */
+@keyframes waveY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.anim-wave { animation: waveY 1.6s ease-in-out infinite; display: inline-block; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float, .anim-wave { animation: none !important; }
 }
 </style>
