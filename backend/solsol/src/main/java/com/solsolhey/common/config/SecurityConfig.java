@@ -62,7 +62,7 @@ public class SecurityConfig {
 
         // Configure CSRF cookie attributes for cross-origin SPA
         CookieCsrfTokenRepository csrfRepo = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        csrfRepo.setCookieCustomizer((request, builder) -> builder
+        csrfRepo.setCookieCustomizer((builder) -> builder
             .secure(true)
             .sameSite("None")
         );
