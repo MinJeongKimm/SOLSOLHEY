@@ -637,6 +637,40 @@ export async function getPublicShopItems(): Promise<any> {
   }
 }
 
+// 친구 관련 API 함수들
+export async function sendFriendRequest(friendUserId: number): Promise<any> {
+  try {
+    const res = await apiRequest<any>('/friends/requests', {
+      method: 'POST',
+      body: JSON.stringify({ friendUserId }),
+    });
+    console.log('👥 친구 요청 성공:', res);
+    return res;
+  } catch (e: any) {
+    console.error('❌ 친구 요청 실패:', e);
+    throw e;
+  }
+}
+
+// 좋아요(응원) 관련 API 함수들
+export async function sendInteraction(toUserId: number, interactionType: 'LIKE' | 'CHEER' = 'LIKE', message?: string): Promise<any> {
+  try {
+    const res = await apiRequest<any>('/friends/interactions', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        toUserId, 
+        interactionType, 
+        message: message || (interactionType === 'LIKE' ? '좋아요!' : '응원합니다!') 
+      }),
+    });
+    console.log('❤️ 상호작용 전송 성공:', res);
+    return res;
+  } catch (e: any) {
+    console.error('❌ 상호작용 전송 실패:', e);
+    throw e;
+  }
+}
+
 export async function getGifticons(): Promise<Gifticon[]> {
   const res = await apiRequest<any>('/shop/gifticons', { method: 'GET' });
   return (res && res.data) ? (res.data as Gifticon[]) : [];

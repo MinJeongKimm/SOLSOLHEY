@@ -92,14 +92,14 @@
             <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
               <img src="/icons/icon_friends.png" alt="친구추가" class="w-6 h-6" />
             </div>
-            <span class="text-xs font-medium text-gray-700">친구추가</span>
+            <span class="text-xs font-medium text-gray-700">{{ permissions?.canSendFriendRequest ? '친구추가' : '요청됨' }}</span>
           </button>
           <div class="col-start-2 col-span-1"></div>
           <button @click="cheerMascot" :disabled="!permissions?.canCheer" class="bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-3 flex flex-col items-center space-y-1 hover:shadow-md transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed">
             <div class="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
               <img src="/icons/icon_like.png" alt="좋아요" class="w-6 h-6" />
             </div>
-            <span class="text-xs font-medium text-gray-700">좋아요</span>
+            <span class="text-xs font-medium text-gray-700">{{ permissions?.canCheer ? '좋아요' : '완료' }}</span>
           </button>
         </template>
         
@@ -135,7 +135,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { auth, apiRequest, handleApiError, getShopItems, getPublicMascot, getPublicShopItems } from '../api/index';
+import { auth, apiRequest, handleApiError, getShopItems, getPublicMascot, getPublicShopItems, sendFriendRequest, sendInteraction } from '../api/index';
 import type { Mascot, MascotViewResponse, Permissions, ShopItem } from '../types/api';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { toAbsoluteFromMascot } from '../utils/coordinates';
@@ -302,19 +302,66 @@ async function handleLoginClick() {
   router.push('/login?redirect=' + encodeURIComponent(route.fullPath));
 }
 
-function addFriend() { 
-  if (isLoggedIn.value) {
-    alert('친구추가 기능은 준비 중입니다.'); 
-  } else {
+async function addFriend() {
+  if (!isLoggedIn.value) {
     handleLoginClick();
+    return;
+  }
+
+  if (!permissions.value?.canSendFriendRequest) {
+    alert('친구추가 권한이 없습니다.');
+    return;
+  }
+
+  try {
+    const response = await sendFriendRequest(shareLink.value.userId);
+    if (response && response.data) {
+      alert('친구 요청이 성공적으로 전송되었습니다!');
+      // 친구 요청 성공 시 권한 업데이트
+      permissions.value = {
+        ...permissions.value,
+        canSendFriendRequest: false, // 친구 요청 전송 후 권한 제거
+        canCheer: false // 좋아요 권한도 제거
+      };
+      console.log('✅ 친구 요청 전송 완료:', response.data);
+    } else {
+      console.error('❌ 친구 요청 전송 실패:', response);
+      alert('친구 요청 전송에 실패했습니다.');
+    }
+  } catch (error: any) {
+    console.error('❌ 친구 요청 전송 중 오류:', error);
+    alert('친구 요청 전송 중 오류가 발생했습니다.');
   }
 }
 
-function cheerMascot() { 
-  if (isLoggedIn.value) {
-    alert('좋아요 기능은 준비 중입니다.'); 
-  } else {
+async function cheerMascot() {
+  if (!isLoggedIn.value) {
     handleLoginClick();
+    return;
+  }
+
+  if (!permissions.value?.canCheer) {
+    alert('좋아요 권한이 없습니다.');
+    return;
+  }
+
+  try {
+    const response = await sendInteraction(shareLink.value.userId, 'CHEER');
+    if (response && response.data) {
+      alert('좋아요가 성공적으로 전송되었습니다!');
+      // 좋아요 성공 시 권한 업데이트
+      permissions.value = {
+        ...permissions.value,
+        canCheer: false // 좋아요 권한 제거
+      };
+      console.log('✅ 좋아요 전송 완료:', response.data);
+    } else {
+      console.error('❌ 좋아요 전송 실패:', response);
+      alert('좋아요 전송에 실패했습니다.');
+    }
+  } catch (error: any) {
+    console.error('❌ 좋아요 전송 중 오류:', error);
+    alert('좋아요 전송 중 오류가 발생했습니다.');
   }
 }
 
