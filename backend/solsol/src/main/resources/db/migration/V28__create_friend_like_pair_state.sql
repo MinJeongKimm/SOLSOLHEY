@@ -10,3 +10,4 @@ CREATE TABLE IF NOT EXISTS friend_like_pair_state (
 );
 
 CREATE INDEX IF NOT EXISTS idx_like_pair_low_high ON friend_like_pair_state(user_low_id, user_high_id);
+

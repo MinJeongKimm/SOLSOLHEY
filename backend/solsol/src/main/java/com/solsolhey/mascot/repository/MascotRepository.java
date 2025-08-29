@@ -37,6 +37,6 @@ public interface MascotRepository extends JpaRepository<Mascot, Long> {
      * @param campus 캠퍼스명
      * @return 마스코트 목록
      */
-    @Query("SELECT m FROM Mascot m JOIN User u ON m.userId = u.id WHERE u.campus = :campus")
+    @Query("SELECT m FROM Mascot m JOIN User u ON m.userId = u.userId WHERE u.campus = :campus")
     List<Mascot> findByUserCampus(@Param("campus") String campus);
 }
