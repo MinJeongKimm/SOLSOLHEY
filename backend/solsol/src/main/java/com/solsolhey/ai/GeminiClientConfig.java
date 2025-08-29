@@ -4,6 +4,7 @@ import com.google.genai.Client;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import java.util.Optional;
 
 @Configuration
 public class GeminiClientConfig {
@@ -27,7 +28,9 @@ public class GeminiClientConfig {
                 "Missing AI API key. Set GEMINI_API_KEY or GOOGLE_API_KEY in backend/.env or OS env.");
         }
 
-        // Provide key directly to the client instead of relying on env var name.
-        return new Client(apiKey);
+        // Build client with API key via public builder API
+        return Client.builder()
+                .apiKey(apiKey)
+                .build();
     }
 }
