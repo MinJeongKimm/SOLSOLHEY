@@ -14,11 +14,7 @@
             <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5 mr-2" />
             <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userCoins }}P</span>
           </div>
-          <!-- 좋아요 -->
-          <div class="flex items-center justify-end">
-            <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5 mr-2" />
-            <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userLikes }}</span>
-          </div>
+         
         </div>
       </div>
 
@@ -284,7 +280,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth, apiRequest, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization } from '../api/index';
+import { apiRequest, auth, createShareLink, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
 import type { Mascot, ShopItem } from '../types/api';
