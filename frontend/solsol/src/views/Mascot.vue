@@ -55,9 +55,21 @@
                   @load="updateRects"
                   @error="handleImageError"
                 />
-                <!-- AI 말풍선: 마스코트 오른쪽 상단 -->
-                <div v-if="showBubble" class="absolute -right-2 -top-4">
-                  <SpeechBubble :text="bubbleText" tail="left" aria-live="polite" />
+                <!-- AI 말풍선: 마스코트 오른쪽 (클릭 시 챌린지 이동) -->
+                <div 
+                  v-if="showBubble"
+                  class="absolute left-full top-2 sm:-top-1 ml-2 z-30 cursor-pointer select-none min-w-[220px] max-w-[90vw] sm:max-w-[600px]"
+                  role="button"
+                  tabindex="0"
+                  @click="goToChallenge"
+                  @keydown.enter.prevent="goToChallenge"
+                >
+                  <SpeechBubble 
+                    :text="bubbleDisplayText" 
+                    tail="left"
+                    aria-live="polite"
+                    class="text-sm leading-snug w-auto"
+                  />
                 </div>
               </div>
             </div>
@@ -315,6 +327,29 @@ const shopItems = ref<ShopItem[]>([]);
 // AI 말풍선 상태
 const showBubble = ref(false);
 const bubbleText = ref('');
+const bubbleDisplayText = computed(() => chunkByWords(bubbleText.value, 8).join('\n'));
+function chunkByWords(text: string, maxCharsPerLine: number): string[] {
+  const raw = (text || '').trim();
+  if (!raw) return [''];
+  const words = raw.split(/\s+/);
+  const lines: string[] = [];
+  let current = '';
+  for (const w of words) {
+    if (current.length === 0) {
+      current = w;
+      continue;
+    }
+    // 다음 단어를 추가했을 때 길이 검사(공백 1 포함)
+    if ((current.length + 1 + w.length) <= maxCharsPerLine) {
+      current += ' ' + w;
+    } else {
+      lines.push(current);
+      current = w;
+    }
+  }
+  if (current.length) lines.push(current);
+  return lines;
+}
 let bubbleTimer: number | null = null;
 
 async function onMascotClick() {
@@ -330,6 +365,8 @@ async function onMascotClick() {
   bubbleTimer = window.setTimeout(() => { showBubble.value = false; }, 10000);
 }
 // 과거 폴백 제거됨
+
+// 리사이즈 핸들러 불필요(항상 오른쪽, 고정 10자 줄바꿈)
 
 // 타입 표준화 유틸 (Customize.vue와 동일 컨셉)
 function normalizeType(val: unknown): string {
@@ -401,6 +438,8 @@ function styleForItem(e: { relativePosition: { x: number; y: number }; scale: nu
     pointerEvents: 'none',
   } as Record<string, string>;
 }
+
+// 말풍선은 항상 오른쪽에 표시 (요청사항)
 
 // 토스트 알림
 const showToast = ref(false);
