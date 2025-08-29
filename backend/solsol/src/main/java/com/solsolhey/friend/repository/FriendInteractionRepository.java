@@ -25,7 +25,7 @@ public interface FriendInteractionRepository extends JpaRepository<FriendInterac
      * 사용자가 받은 상호작용 목록 조회
      */
     @EntityGraph(attributePaths = {"fromUser"})
-    @Query("SELECT fi FROM FriendInteraction fi WHERE fi.toUser = :toUser ORDER BY fi.createdAt DESC")
+    @Query("SELECT fi FROM FriendInteraction fi WHERE fi.toUser = :toUser AND fi.isRead = false ORDER BY fi.createdAt DESC")
     Page<FriendInteraction> findByToUserOrderByCreatedAtDesc(@Param("toUser") User toUser, Pageable pageable);
 
     /**
@@ -104,4 +104,13 @@ public interface FriendInteractionRepository extends JpaRepository<FriendInterac
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE FriendInteraction fi SET fi.isRead = true WHERE fi.toUser = :toUser AND fi.isRead = false")
     int markAllAsReadByToUser(@Param("toUser") User toUser);
+
+    /**
+     * 참조 ID(예: 친구요청 friendId)로, 수신자 기준 특정 타입 알림 조회 (최신 우선)
+     */
+    @Query("SELECT fi FROM FriendInteraction fi WHERE fi.toUser = :toUser AND fi.interactionType = :type " +
+           "AND fi.referenceId = :referenceId ORDER BY fi.createdAt DESC")
+    List<FriendInteraction> findByToUserAndTypeAndReferenceId(@Param("toUser") User toUser,
+                                                              @Param("type") InteractionType type,
+                                                              @Param("referenceId") Long referenceId);
 }

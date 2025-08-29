@@ -150,6 +150,21 @@ public class FriendServiceImpl implements FriendService {
         }
 
         friend.accept();
+
+        // 수신자(user) 관점의 친구요청 알림 메시지 갱신 + 읽음 처리
+        try {
+            List<FriendInteraction> notices = friendInteractionRepository
+                    .findByToUserAndTypeAndReferenceId(user, InteractionType.FRIEND_REQUEST, friendId);
+            if (!notices.isEmpty()) {
+                FriendInteraction notice = notices.get(0);
+                String fromNickname = friend.getUser().getNickname();
+                notice.setMessage("이제 " + fromNickname + "님과 친구가 되었습니다.");
+                notice.markAsRead();
+            }
+        } catch (Exception e) {
+            log.warn("친구요청 수락 알림 갱신 실패: toUser={}, friendId={}, err={}", user.getUserId(), friendId, e.getMessage());
+        }
+
         return FriendResponse.from(friend, true);
     }
 
@@ -165,6 +180,17 @@ public class FriendServiceImpl implements FriendService {
         }
 
         friend.reject();
+
+        // 수신자(user) 관점의 친구요청 알림 삭제(인박스에서 사라짐)
+        try {
+            List<FriendInteraction> notices = friendInteractionRepository
+                    .findByToUserAndTypeAndReferenceId(user, InteractionType.FRIEND_REQUEST, friendId);
+            for (FriendInteraction n : notices) {
+                friendInteractionRepository.delete(n);
+            }
+        } catch (Exception e) {
+            log.warn("친구요청 거절 알림 삭제 실패: toUser={}, friendId={}, err={}", user.getUserId(), friendId, e.getMessage());
+        }
     }
 
     @Override
@@ -292,11 +318,17 @@ public class FriendServiceImpl implements FriendService {
             }
         }
 
+        // 기본 메시지: 타입별 디폴트 메시지를 제공 (요청 본문이 없을 때)
+        String msg = request.message();
+        if ((msg == null || msg.isBlank()) && request.interactionType() == InteractionType.LIKE) {
+            msg = user.getNickname() + "님이 좋아요를 보냈습니다.";
+        }
+
         FriendInteraction interaction = FriendInteraction.builder()
                 .fromUser(user)
                 .toUser(toUser)
                 .interactionType(request.interactionType())
-                .message(request.message())
+                .message(msg)
                 .build();
 
         FriendInteraction savedInteraction = friendInteractionRepository.save(interaction);
@@ -322,10 +354,46 @@ public class FriendServiceImpl implements FriendService {
                 .toUserNickname(savedInteraction.getToUser().getNickname())
                 .interactionType(savedInteraction.getInteractionType())
                 .message(savedInteraction.getMessage())
+                .referenceId(savedInteraction.getReferenceId())
                 .isRead(savedInteraction.getIsRead())
                 .createdAt(savedInteraction.getCreatedAt())
                 .expAwarded(activeAwarded.orElse(null))
                 .build();
+    }
+
+    @Override
+    public FriendInteractionResponse likeBack(User user, Long interactionId) {
+        // 원본 알림 확인
+        FriendInteraction original = friendInteractionRepository.findById(interactionId)
+                .orElseThrow(() -> new EntityNotFoundException("상호작용을 찾을 수 없습니다."));
+
+        if (!original.getToUser().getUserId().equals(user.getUserId())) {
+            throw new BusinessException("해당 상호작용에 답장할 권한이 없습니다.");
+        }
+        if (original.getInteractionType() != InteractionType.LIKE) {
+            throw new BusinessException("좋아요에만 답장할 수 있습니다.");
+        }
+
+        // 친구 여부 검증 (양방향)
+        User target = original.getFromUser();
+        if (!friendRepository.existsMutualFriendship(user, target)) {
+            throw new BusinessException("친구 관계가 아닌 사용자입니다.");
+        }
+
+        // 기존 sendInteraction 로직 재사용 (핑퐁 규칙 포함)
+        FriendInteractionRequest req = new FriendInteractionRequest(
+                target.getUserId(), InteractionType.LIKE, null
+        );
+        FriendInteractionResponse sent = sendInteraction(user, req);
+
+        // 원본 알림 읽음 처리
+        try {
+            original.markAsRead();
+        } catch (Exception e) {
+            log.warn("좋아요 답장 후 원본 읽음처리 실패: interactionId={}, err={}", interactionId, e.getMessage());
+        }
+
+        return sent;
     }
 
     @Override

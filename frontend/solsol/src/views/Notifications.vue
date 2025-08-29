@@ -43,22 +43,25 @@
                   >
                     {{ it.fromUserNickname }}
                   </router-link>
-                  <span class="ml-1">님이 친구 요청을 보냈습니다.</span>
+                  <span class="ml-1">{{ it.message || '님이 친구 요청을 보냈습니다.' }}</span>
                 </div>
                 <div class="text-xs text-gray-500 mt-1">{{ formatDate(it.createdAt) }}</div>
               </div>
             </div>
             <div class="mt-2 flex gap-2">
-              <button
-                class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-green-500 text-white text-xs sm:text-sm hover:bg-green-600 disabled:opacity-60"
-                :disabled="processingId === it.interactionId"
-                @click="acceptRequestFromInbox(it)"
-              >{{ processingId === it.interactionId ? '처리 중' : '수락' }}</button>
-              <button
-                class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-red-500 text-white text-xs sm:text-sm hover:bg-red-600 disabled:opacity-60"
-                :disabled="processingId === it.interactionId"
-                @click="rejectRequestFromInbox(it)"
-              >거절</button>
+              <template v-if="!it.isRead && !isAcceptedMessage(it.message)">
+                <button
+                  class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-green-500 text-white text-xs sm:text-sm hover:bg-green-600 disabled:opacity-60"
+                  :disabled="processingId === it.interactionId"
+                  @click="acceptRequestFromInbox(it)"
+                >{{ processingId === it.interactionId ? '처리 중' : '수락' }}</button>
+                <button
+                  class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-red-500 text-white text-xs sm:text-sm hover:bg-red-600 disabled:opacity-60"
+                  :disabled="processingId === it.interactionId"
+                  @click="rejectRequestFromInbox(it)"
+                >거절</button>
+              </template>
+              <span v-else class="text-xs text-gray-400 self-center">처리됨</span>
             </div>
           </div>
         </div>
@@ -123,9 +126,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, onActivated, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getInteractions, markInteractionRead, markAllInteractionsRead, getUnreadInteractionCount, sendLike, acceptFriendRequest, rejectFriendRequest, type FriendInteraction, type PageResponse } from '../api/friend';
+import { getInteractions, markInteractionRead, markAllInteractionsRead, getUnreadInteractionCount, sendLikeBack, acceptFriendRequest, rejectFriendRequest, type FriendInteraction, type PageResponse } from '../api/friend';
 
 const router = useRouter();
 
@@ -142,21 +145,10 @@ const processingAll = ref(false);
 const dismissedBefore = ref<string | null>(localStorage.getItem('notif:dismissedBefore'));
 const processingId = ref<number | null>(null);
 
+// 서버가 미읽음만 반환하므로 단순 필터만 유지
 const likeOnly = computed(() => items.value.filter(i => i.interactionType === 'LIKE'));
 const requestOnly = computed(() => items.value.filter(i => i.interactionType === 'FRIEND_REQUEST'));
-// 좋아요 알림은 미읽음은 항상 표시하고, 읽음만 '알림함 비우기' 기준으로 숨김 처리
-const visibleLikeOnly = computed(() => {
-  if (!dismissedBefore.value) return likeOnly.value;
-  const threshold = new Date(dismissedBefore.value).getTime();
-  return likeOnly.value.filter(i => {
-    if (!i.isRead) return true; // 미읽음은 항상 노출
-    const t = new Date(i.createdAt as any).getTime();
-    // 생성 시간이 없거나 파싱 불가하면 일단 표시(서버/클라이언트 시간차 보호)
-    return Number.isFinite(t) ? t >= threshold : true;
-  });
-});
-
-// 친구 요청은 중요 알림으로 간주하여 '알림함 비우기' 필터를 적용하지 않음
+const visibleLikeOnly = computed(() => likeOnly.value);
 const visibleRequests = computed(() => requestOnly.value);
 
 function formatDate(iso: string): string {
@@ -193,7 +185,8 @@ async function markRead(it: FriendInteraction) {
   readingId.value = it.interactionId;
   try {
     await markInteractionRead(it.interactionId);
-    it.isRead = true as any; // 가벼운 낙관적 반영
+    // 미읽음만 보여주므로 읽음 처리 성공 시 즉시 제거
+    items.value = items.value.filter(x => x.interactionId !== it.interactionId);
     await refreshUnread();
   } catch (e) {
     // 실패 시 무시 또는 토스트 처리 가능
@@ -207,8 +200,8 @@ async function markAllRead() {
   processingAll.value = true;
   try {
     await markAllInteractionsRead();
-    // 로컬 반영
-    items.value.forEach(i => { (i as any).isRead = true; });
+    // 미읽음만 노출이므로 모두 제거
+    items.value = [];
     await refreshUnread();
   } catch (e) {
     // 실패 시 무시 또는 에러 표시
@@ -221,7 +214,9 @@ async function sendBackLike(it: FriendInteraction) {
   if (likingId.value) return;
   likingId.value = it.interactionId;
   try {
-    await sendLike(it.fromUserId);
+    await sendLikeBack(it.interactionId);
+    // 서버에서 원본 읽음 처리 → 미읽음만 노출이므로 즉시 제거
+    items.value = items.value.filter(x => x.interactionId !== it.interactionId);
   } catch (e) {
     // 필요 시 토스트/에러 처리 가능
   } finally {
@@ -237,7 +232,7 @@ async function acceptRequestFromInbox(it: FriendInteraction) {
   processingId.value = it.interactionId;
   try {
     await acceptFriendRequest(it.referenceId);
-    it.isRead = true as any;
+    // 서버에서 읽음/메시지 갱신되지만, 미읽음만 노출하므로 즉시 제거
     items.value = items.value.filter(x => x.interactionId !== it.interactionId);
     await refreshUnread();
   } catch (e) {
@@ -253,7 +248,6 @@ async function rejectRequestFromInbox(it: FriendInteraction) {
   processingId.value = it.interactionId;
   try {
     await rejectFriendRequest(it.referenceId);
-    it.isRead = true as any;
     items.value = items.value.filter(x => x.interactionId !== it.interactionId);
     await refreshUnread();
   } catch (e) {
@@ -265,16 +259,15 @@ async function rejectRequestFromInbox(it: FriendInteraction) {
 
 async function clearInbox() {
   if (processingAll.value) return;
-  if (!confirm('알림을 화면에서 비웁니다. 계속할까요?')) return;
+  if (!confirm('알림함의 미읽음 알림을 모두 읽음 처리합니다. 계속할까요?')) return;
   processingAll.value = true;
   try {
-    const now = new Date().toISOString();
-    dismissedBefore.value = now;
-    localStorage.setItem('notif:dismissedBefore', now);
-    // 즉시 화면 비우기 효과와 페이징 리셋
+    // 서버에서 모두 읽음 처리 -> 미읽음만 보여주므로 목록은 자동 비워짐
+    await markAllInteractionsRead();
     items.value = [];
     page.value = 0;
     totalPages.value = 1;
+    await refreshUnread();
   } finally {
     processingAll.value = false;
   }
@@ -284,6 +277,13 @@ function nextPage() { if (page.value + 1 < totalPages.value) { page.value++; loa
 function prevPage() { if (page.value > 0) { page.value--; load(); } }
 
 onMounted(load);
+// keep-alive로 재진입 시 최신 상태 재조회
+onActivated(() => { page.value = 0; load(); });
+
+// helper: 수락 메시지 여부 판별 (버튼 숨김용)
+function isAcceptedMessage(msg?: string) {
+  return !!msg && msg.includes('친구가 되었습니다');
+}
 </script>
 
 <style scoped>
