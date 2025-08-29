@@ -34,6 +34,9 @@ public class RankingEntryServiceImpl implements RankingEntryService {
     @Autowired
     private RankingEntryRepository rankingEntryRepository;
 
+    @Autowired
+    private com.solsolhey.solsol.config.MediaStorageProperties mediaProps;
+
     private static final int MAX_ENTRIES_PER_USER = 3;
 
     @Override
@@ -171,9 +174,6 @@ public class RankingEntryServiceImpl implements RankingEntryService {
     }
 
     @Override
-    @Autowired
-    private com.solsolhey.solsol.config.MediaStorageProperties mediaProps;
-
     public String uploadMascotImage(MultipartFile mascotImage) {
         try {
             // 업로드 디렉토리 설정
