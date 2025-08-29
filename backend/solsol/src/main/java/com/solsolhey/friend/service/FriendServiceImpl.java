@@ -111,13 +111,6 @@ public class FriendServiceImpl implements FriendService {
         }
 
         friend.accept();
-        // 처리된 친구요청 알림 제거
-        try {
-            friendInteractionRepository.deleteByToUserAndTypeAndReferenceId(
-                    user, InteractionType.FRIEND_REQUEST, friend.getFriendId());
-        } catch (Exception e) {
-            log.warn("친구요청 알림 삭제 실패(수락): userId={}, friendId={}, err={}", user.getUserId(), friendId, e.getMessage());
-        }
         return FriendResponse.from(friend, true);
     }
 
@@ -133,13 +126,6 @@ public class FriendServiceImpl implements FriendService {
         }
 
         friend.reject();
-        // 처리된 친구요청 알림 제거
-        try {
-            friendInteractionRepository.deleteByToUserAndTypeAndReferenceId(
-                    user, InteractionType.FRIEND_REQUEST, friend.getFriendId());
-        } catch (Exception e) {
-            log.warn("친구요청 알림 삭제 실패(거절): userId={}, friendId={}, err={}", user.getUserId(), friendId, e.getMessage());
-        }
     }
 
     @Override

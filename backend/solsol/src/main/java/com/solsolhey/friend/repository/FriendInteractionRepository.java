@@ -104,13 +104,4 @@ public interface FriendInteractionRepository extends JpaRepository<FriendInterac
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE FriendInteraction fi SET fi.isRead = true WHERE fi.toUser = :toUser AND fi.isRead = false")
     int markAllAsReadByToUser(@Param("toUser") User toUser);
-
-    /**
-     * 친구요청 처리 이후 알림 레코드 제거 (수신자/요청ID 기준)
-     */
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("DELETE FROM FriendInteraction fi WHERE fi.toUser = :toUser AND fi.interactionType = :type AND fi.referenceId = :refId")
-    int deleteByToUserAndTypeAndReferenceId(@Param("toUser") User toUser,
-                                            @Param("type") InteractionType type,
-                                            @Param("refId") Long referenceId);
 }
