@@ -14,8 +14,12 @@
             <img src="/icons/icon_point.png" alt="포인트" class="w-5 h-5 mr-2" />
             <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userCoins }}P</span>
           </div>
-         
-        </div>
+          <!-- 좋아요 -->
+          <div class="flex items-center justify-end">
+            <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5 mr-2" />
+            <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userLikes }}</span>
+          </div>
+          </div>
       </div>
 
       <!-- 마스코트가 있는 경우에만 메인 영역 렌더 (없으면 라우터가 생성 페이지로 이동) -->
@@ -283,7 +287,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, onActivated, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { getFriendHome } from '../api/friend';
 import { apiRequest, auth, createShareLink, getAiSpeech, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
@@ -901,20 +905,7 @@ onMounted(async () => {
     window.addEventListener('resize', updateRects);
 
     // 내 홈 요약(좋아요 누적) 로드
-    try {
-      let uid = auth.getUser()?.userId as number | undefined;
-      if (!uid) {
-        const u = await auth.fetchUser();
-        uid = (u as any)?.userId as number | undefined;
-      }
-      if (uid) {
-        const myHome = await getFriendHome(uid);
-        userLikes.value = Number(myHome?.likeCount ?? 0);
-      }
-    } catch (e) {
-      // 무시: 좋아요 수는 보조 정보
-      userLikes.value = 0;
-    }
+    await reloadLikes();
   } catch (err) {
     console.error('메인화면 데이터 로드 실패:', err);
     handleApiError(err);
@@ -924,6 +915,25 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('resize', updateRects);
 });
+
+// 라우트 복귀 시 최신 좋아요 수 재조회
+onActivated(() => {
+  reloadLikes();
+});
+
+async function reloadLikes() {
+  try {
+    const u: any = await auth.fetchUser();
+    const uid = (u as any)?.userId as number | undefined;
+    if (uid) {
+      const myHome = await getFriendHome(uid);
+      userLikes.value = Number(myHome?.likeCount ?? 0);
+    }
+  } catch (e) {
+    // 무시: 좋아요 수는 보조 정보
+    userLikes.value = 0;
+  }
+}
 </script>
 
 <script lang="ts">
