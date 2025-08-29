@@ -644,7 +644,6 @@ public class RankingServiceImpl implements RankingService {
             throw new BusinessException("전국 랭킹 투표 히스토리를 조회하는데 실패했습니다.");
         }
     }
-}
 
     private String normalizeImageUrl(String url) {
         if (url == null || url.isBlank()) return url;
@@ -666,3 +665,4 @@ public class RankingServiceImpl implements RankingService {
         }
         return url;
     }
+}
