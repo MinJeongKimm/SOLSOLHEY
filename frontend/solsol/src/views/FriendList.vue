@@ -101,7 +101,7 @@
                 <h4 class="font-semibold text-gray-800">{{ friend.nickname }}</h4>
                 <p class="text-sm text-gray-600">{{ friend.campus || '캠퍼스 정보 없음' }}</p>
                 <p class="text-xs text-gray-500">{{ friend.email }}</p>
-                <p class="text-xs text-blue-500">{{ friend.totalPoints || 0 }} 포인트</p>
+                <!-- 친구 포인트 표시는 요구사항에 따라 제거되었습니다. -->
               </div>
               
               <!-- 친구 삭제 버튼 -->
