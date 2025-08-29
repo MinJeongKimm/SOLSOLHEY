@@ -116,6 +116,17 @@ public interface FriendInteractionRepository extends JpaRepository<FriendInterac
                                                  @Param("start") LocalDateTime start);
 
     /**
+     * 두 사용자 사이의 마지막 상호작용(양방향) 한 건 조회 (타입 기준, 최신순)
+     */
+    @Query("SELECT fi FROM FriendInteraction fi WHERE " +
+           "((fi.fromUser = :u1 AND fi.toUser = :u2) OR (fi.fromUser = :u2 AND fi.toUser = :u1)) " +
+           "AND fi.interactionType = :type ORDER BY fi.createdAt DESC")
+    List<FriendInteraction> findLatestBetweenUsersByType(@Param("u1") User u1,
+                                                         @Param("u2") User u2,
+                                                         @Param("type") InteractionType type,
+                                                         Pageable pageable);
+
+    /**
      * 현재 사용자에게 온 모든 상호작용을 일괄 읽음 처리
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)

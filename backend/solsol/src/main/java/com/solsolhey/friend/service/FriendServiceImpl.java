@@ -301,15 +301,11 @@ public class FriendServiceImpl implements FriendService {
                 throw new BusinessException("오늘 해당 친구에게 보낼 수 있는 좋아요 3회 한도를 초과했습니다.");
             }
 
-            // 2) 핑퐁 순서 제약: 마지막 내 발신 이후 상대의 응답이 있어야 다음 발신 허용
-            LocalDateTime lastSentAt = friendInteractionRepository
-                    .findMaxCreatedAtDirectionalByType(user, toUser, InteractionType.LIKE);
-            if (lastSentAt != null) {
-                long receivedAfter = friendInteractionRepository
-                        .countDirectionalByTypeAndCreatedAtAfter(toUser, user, InteractionType.LIKE, lastSentAt);
-                if (receivedAfter < 1) {
-                    throw new BusinessException("상대의 좋아요 이후에만 추가 좋아요가 가능합니다.");
-                }
+            // 2) 핑퐁 순서 제약: 두 사용자 사이의 마지막 LIKE가 '나'에서 보낸 경우라면 차단
+            List<FriendInteraction> latest = friendInteractionRepository
+                    .findLatestBetweenUsersByType(user, toUser, InteractionType.LIKE, Pageable.ofSize(1));
+            if (!latest.isEmpty() && latest.get(0).getFromUser().getUserId().equals(user.getUserId())) {
+                throw new BusinessException("상대의 좋아요 이후에만 추가 좋아요가 가능합니다.");
             }
 
             // 카운터 증가는 모든 검증 통과 후 반영
@@ -457,15 +453,13 @@ public class FriendServiceImpl implements FriendService {
                 owner, viewer, InteractionType.LIKE, startOfDay, endOfDay);
         int allowedMax = 3;
         int remaining = Math.max(0, allowedMax - sentToday);
-        boolean respondedAfterLast = true;
-        LocalDateTime lastSentAtGlobal = friendInteractionRepository
-                .findMaxCreatedAtDirectionalByType(viewer, owner, InteractionType.LIKE);
-        if (lastSentAtGlobal != null) {
-            long resp = friendInteractionRepository
-                    .countDirectionalByTypeAndCreatedAtAfter(owner, viewer, InteractionType.LIKE, lastSentAtGlobal);
-            respondedAfterLast = resp >= 1;
+        boolean alternationOk = true;
+        List<FriendInteraction> latestPair = friendInteractionRepository
+                .findLatestBetweenUsersByType(viewer, owner, InteractionType.LIKE, Pageable.ofSize(1));
+        if (!latestPair.isEmpty() && latestPair.get(0).getFromUser().getUserId().equals(viewer.getUserId())) {
+            alternationOk = false; // 마지막 발신자가 나면 응답 전까지 금지
         }
-        boolean canLikeNow = remaining > 0 && respondedAfterLast;
+        boolean canLikeNow = remaining > 0 && alternationOk;
 
         return FriendHomeResponse.builder()
                 .ownerId(view.getOwner().getId())
