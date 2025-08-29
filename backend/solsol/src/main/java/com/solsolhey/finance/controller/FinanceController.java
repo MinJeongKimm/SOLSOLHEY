@@ -1,12 +1,11 @@
 package com.solsolhey.finance.controller;
 
 import com.solsolhey.finance.dto.request.EstimateRequest;
-import com.solsolhey.finance.dto.request.TransactionHistoryRequest;
 import com.solsolhey.finance.dto.response.ExchangeEstimateResponse;
 import com.solsolhey.finance.dto.response.ExchangeRateResponse;
 import com.solsolhey.finance.dto.response.CreditRatingResponse;
+import com.solsolhey.auth.dto.response.CustomUserDetails;
 import com.solsolhey.finance.dto.response.SingleExchangeRateResponse;
-import com.solsolhey.finance.dto.response.TransactionsResponse;
 import com.solsolhey.finance.service.FinanceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -72,26 +71,19 @@ public class FinanceController {
                 });
     }
 
-    // 계좌 거래내역 조회
-    @PostMapping("/accounts/transactions")
-    public Mono<ResponseEntity<TransactionsResponse>> getTransactionHistory(@RequestBody TransactionHistoryRequest request) {
-        log.info("계좌 거래내역 조회 API 호출: {}", request.getAccountNo());
-        return financeService.getTransactionHistory(request)
-                .map(ResponseEntity::ok)
-                .onErrorResume(error -> {
-                    log.error("계좌 거래내역 조회 실패", error);
-                    TransactionsResponse err = TransactionsResponse.builder()
-                            .code("error")
-                            .message("계좌 거래내역 조회에 실패했습니다.")
-                            .build();
-                    return Mono.just(ResponseEntity.internalServerError().body(err));
-                });
-    }
 
-    // 신용등급 조회
+    // 신용등급 조회 (현재 로그인 사용자 기반)
     @GetMapping("/credit-rating")
-    public Mono<ResponseEntity<CreditRatingResponse>> getMyCreditRating(@RequestParam("userKey") String userKey) {
-        log.info("신용등급 조회 API 호출");
+    public Mono<ResponseEntity<CreditRatingResponse>> getMyCreditRating(@org.springframework.security.core.annotation.AuthenticationPrincipal CustomUserDetails userDetails) {
+        log.info("신용등급 조회 API 호출 (current user)");
+        String userKey = userDetails != null ? userDetails.getUser().getFinanceUserKey() : null;
+        if (userKey == null || userKey.isBlank()) {
+            CreditRatingResponse err = CreditRatingResponse.builder()
+                    .code("error")
+                    .message("금융 사용자 키가 없습니다. 잠시 후 다시 시도하거나 다시 로그인해 주세요.")
+                    .build();
+            return Mono.just(ResponseEntity.badRequest().body(err));
+        }
         return financeService.getMyCreditRating(userKey)
                 .map(ResponseEntity::ok)
                 .onErrorResume(error -> {

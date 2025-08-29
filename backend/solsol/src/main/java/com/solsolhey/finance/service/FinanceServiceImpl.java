@@ -2,14 +2,11 @@ package com.solsolhey.finance.service;
 
 import com.solsolhey.finance.client.FinanceApiClient;
 import com.solsolhey.finance.dto.request.EstimateRequest;
-import com.solsolhey.finance.dto.request.TransactionHistoryRequest;
 import com.solsolhey.finance.dto.response.ExchangeRateResponse;
 import com.solsolhey.finance.dto.response.ExternalExchangeRateResponse;
-import com.solsolhey.finance.dto.response.ExternalTransactionHistoryResponse;
 import com.solsolhey.finance.dto.response.ExchangeEstimateResponse;
 import com.solsolhey.finance.exception.ExternalApiException;
 import com.solsolhey.finance.dto.response.SingleExchangeRateResponse;
-import com.solsolhey.finance.dto.response.TransactionsResponse;
 import com.solsolhey.finance.dto.response.ExternalCreditRatingResponse;
 import com.solsolhey.finance.dto.response.CreditRatingResponse;
 import lombok.RequiredArgsConstructor;
@@ -117,25 +114,6 @@ public class FinanceServiceImpl implements FinanceService {
                 ));
     }
 
-    @Override
-    public Mono<TransactionsResponse> getTransactionHistory(TransactionHistoryRequest request) {
-        log.info("계좌거래내역 조회 시작: {}", request.getAccountNo());
-        return financeApiClient.getTransactionHistory(
-                        request.getUserKey(),
-                        request.getAccountNo(),
-                        request.getStartDate(),
-                        request.getEndDate(),
-                        request.getTransactionType(),
-                        request.getOrderByType()
-                )
-                .map(this::convertToTransactionsResponse)
-                .onErrorResume(error -> Mono.just(
-                        TransactionsResponse.builder()
-                                .code("error")
-                                .message("계좌거래내역 조회에 실패했습니다: " + (error.getMessage() != null ? error.getMessage() : "원인 미상"))
-                                .build()
-                ));
-    }
 
     @Override
     public Mono<CreditRatingResponse> getMyCreditRating(String userKey) {
@@ -171,28 +149,7 @@ public class FinanceServiceImpl implements FinanceService {
 
     // 단건 변환 도우미는 리스트 필터 방식으로 대체됨
 
-    private TransactionsResponse convertToTransactionsResponse(ExternalTransactionHistoryResponse external) {
-        if (external == null || external.getRec() == null) {
-            return TransactionsResponse.builder()
-                    .code("error")
-                    .message("거래내역을 가져올 수 없습니다.")
-                    .build();
-        }
-        List<TransactionsResponse.TransactionItem> items = external.getRec().getList().stream()
-                .map(i -> TransactionsResponse.TransactionItem.builder()
-                        .date(i.getTransactionDate())
-                        .time(i.getTransactionTime())
-                        .typeName(i.getTransactionTypeName())
-                        .amount(i.getTransactionBalance())
-                        .build())
-                .collect(Collectors.toList());
-        return TransactionsResponse.builder()
-                .code("success")
-                .message("거래내역 조회 완료")
-                .totalCount(external.getRec().getTotalCount())
-                .items(items)
-                .build();
-    }
+    
 
     private CreditRatingResponse convertToCreditRatingResponse(ExternalCreditRatingResponse external) {
         if (external == null || external.getRec() == null) {

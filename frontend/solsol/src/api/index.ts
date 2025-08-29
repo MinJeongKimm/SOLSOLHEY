@@ -711,17 +711,12 @@ export async function estimateExchange(data: { currency: string; exchangeCurrenc
 }
 
 // 계좌 거래내역 조회
-export async function getTransactionHistory(data: {
-  userKey: string;
-  accountNo: string;
-  startDate: string; // YYYYMMDD
-  endDate: string;   // YYYYMMDD
-  transactionType: 'M' | 'D' | 'A';
-  orderByType?: 'ASC' | 'DESC';
-}): Promise<any> {
-  return apiRequest<any>('/finance/accounts/transactions', {
-    method: 'POST',
-    body: JSON.stringify(data),
+// (removed) 계좌 거래내역 조회 API — challenge 제거로 UI에서 사용하지 않음
+
+// 신용등급 조회(현재 사용자)
+export async function getCreditRating(): Promise<any> {
+  return apiRequest<any>('/finance/credit-rating', {
+    method: 'GET',
   });
 }
 

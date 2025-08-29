@@ -3,13 +3,11 @@ package com.solsolhey.finance.client;
 import com.solsolhey.finance.config.FinanceApiProperties;
 import com.solsolhey.finance.dto.request.ExchangeEstimateRequest;
 import com.solsolhey.finance.dto.request.ExchangeRateRequest;
-import com.solsolhey.finance.dto.request.TransactionHistoryListRequest;
 import com.solsolhey.finance.dto.request.CreditRatingRequest;
 import com.solsolhey.finance.dto.request.MemberCreateRequest;
 import com.solsolhey.finance.dto.request.MemberSearchRequest;
 import com.solsolhey.finance.dto.response.ExternalExchangeEstimateResponse;
 import com.solsolhey.finance.dto.response.ExternalExchangeRateResponse;
-import com.solsolhey.finance.dto.response.ExternalTransactionHistoryResponse;
 import com.solsolhey.finance.dto.response.ExternalCreditRatingResponse;
 import com.solsolhey.finance.dto.response.MemberResponse;
 import com.solsolhey.finance.exception.ExternalApiException;
@@ -132,33 +130,6 @@ public class FinanceApiClient {
                 .doOnSuccess(response -> log.info("환전 예상 금액 조회 API 호출 성공"));
     }
 
-    public Mono<ExternalTransactionHistoryResponse> getTransactionHistory(String userKey, String accountNo, String startDate, String endDate, String transactionType, String orderByType) {
-        String url = "/demandDeposit/inquireTransactionHistoryList";
-        TransactionHistoryListRequest request = buildTransactionHistoryListRequest(userKey, accountNo, startDate, endDate, transactionType, orderByType);
-        // Debug 로그: 민감정보 마스킹 후 전송 값 확인
-        TransactionHistoryListRequest.Header h = request.getHeader();
-        log.info("외부 거래내역 요청 Header: apiName={}, transmissionDate={}, transmissionTime={}, institutionCode={}, fintechAppNo={}, apiServiceCode={}, uniqueNo={}, userKey={}",
-                h.getApiName(), h.getTransmissionDate(), h.getTransmissionTime(), h.getInstitutionCode(), h.getFintechAppNo(), h.getApiServiceCode(), h.getInstitutionTransactionUniqueNo(), maskKey(h.getUserKey()));
-        log.info("외부 거래내역 요청 Body: accountNo={}, startDate={}, endDate={}, transactionType={}, orderByType={}",
-                request.getAccountNo(), request.getStartDate(), request.getEndDate(), request.getTransactionType(), request.getOrderByType());
-        log.info("계좌거래내역 조회 API 호출: {} ({})", url, accountNo);
-        return webClient.post()
-                .uri(url)
-                .bodyValue(request)
-                .exchangeToMono(clientResponse -> {
-                    if (clientResponse.statusCode().isError()) {
-                        return clientResponse.bodyToMono(String.class)
-                                .defaultIfEmpty("")
-                                .flatMap(body -> {
-                                    String msg = String.format("외부 API 오류(%s): %s", clientResponse.statusCode().value(), body);
-                                    log.error(msg);
-                                    return Mono.error(new ExternalApiException("계좌거래내역 조회에 실패했습니다: " + msg));
-                                });
-                    }
-                    return clientResponse.bodyToMono(ExternalTransactionHistoryResponse.class);
-                })
-                .doOnSuccess(response -> log.info("계좌거래내역 조회 API 호출 성공"));
-    }
 
     public Mono<ExternalCreditRatingResponse> getMyCreditRating(String userKey) {
         String url = "/loan/inquireMyCreditRating";
@@ -233,41 +204,7 @@ public class FinanceApiClient {
                 .build();
     }
 
-    private TransactionHistoryListRequest buildTransactionHistoryListRequest(String userKey, String accountNo, String startDate, String endDate, String transactionType, String orderByType) {
-        // 입력 정규화: 공백 제거, 대문자화 등
-        String safeUserKey = trim(userKey);
-        String safeAccountNo = trim(accountNo);
-        String safeStartDate = trim(startDate);
-        String safeEndDate = trim(endDate);
-        String safeTransactionType = upper(trim(transactionType));
-        String safeOrderByType = upper(trim(orderByType));
-
-        ZonedDateTime nowKst = ZonedDateTime.now(ZoneId.of("Asia/Seoul"));
-        String currentDate = nowKst.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String currentTime = nowKst.format(DateTimeFormatter.ofPattern("HHmmss"));
-        String transactionId = generateInstitutionTransactionId(nowKst);
-
-        TransactionHistoryListRequest.Header header = TransactionHistoryListRequest.Header.builder()
-                .apiName("inquireTransactionHistoryList")
-                .transmissionDate(currentDate)
-                .transmissionTime(currentTime)
-                .institutionCode(properties.getInstitutionCode())
-                .fintechAppNo(properties.getFintechAppNo())
-                .apiServiceCode("inquireTransactionHistoryList")
-                .institutionTransactionUniqueNo(transactionId)
-                .apiKey(properties.getApiKey())
-                .userKey(safeUserKey)
-                .build();
-
-        return TransactionHistoryListRequest.builder()
-                .header(header)
-                .accountNo(safeAccountNo)
-                .startDate(safeStartDate)
-                .endDate(safeEndDate)
-                .transactionType(safeTransactionType)
-                .orderByType(safeOrderByType)
-                .build();
-    }
+    
 
     private CreditRatingRequest buildCreditRatingRequest(String userKey) {
         String safeUserKey = trim(userKey);

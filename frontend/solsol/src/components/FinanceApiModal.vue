@@ -123,53 +123,31 @@
           <ApiResult :error="error" :raw="raw" />
         </div>
 
-        <!-- Transaction History -->
-        <div v-else-if="active === 'TX_HISTORY'" class="space-y-3">
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="label">UserKey</label>
-              <input v-model="txUserKey" class="input" />
-            </div>
-            <div>
-              <label class="label">계좌번호</label>
-              <input v-model="txAccountNo" class="input" />
-            </div>
-            <div>
-              <label class="label">시작일(YYYYMMDD)</label>
-              <input v-model="txStartDate" class="input" />
-            </div>
-            <div>
-              <label class="label">종료일(YYYYMMDD)</label>
-              <input v-model="txEndDate" class="input" />
-            </div>
-            <div>
-              <label class="label">유형(M/D/A)</label>
-              <input v-model="txType" class="input" />
-            </div>
-            <div>
-              <label class="label">정렬(ASC/DESC)</label>
-              <input v-model="txOrder" class="input" />
-            </div>
-          </div>
+        
+
+        <!-- Credit Rating -->
+        <div v-else-if="active === 'CREDIT_RATING'" class="space-y-3">
           <div class="text-center">
-            <button @click="callTxHistory" :disabled="loading" class="btn-primary">
-              {{ loading ? '조회 중...' : '거래내역 조회' }}
+            <button @click="callCreditRating" :disabled="loading" class="btn-primary">
+              {{ loading ? '조회 중...' : '신용등급 조회' }}
             </button>
           </div>
-
-          <div v-if="txSummary" class="card space-y-2">
+          <div v-if="creditCard" class="card space-y-2">
             <div class="card-row">
-              <span class="card-key">총 건수</span>
-              <span class="card-val">{{ txSummary.totalCount }}</span>
+              <span class="card-key">신용등급</span>
+              <span class="card-val font-semibold text-indigo-700">{{ creditCard.ratingName }}</span>
             </div>
-            <div v-if="txSummary.first" class="pt-2 border-t">
-              <div class="text-xs text-gray-500 mb-1">첫 거래 미리보기</div>
-              <div class="grid grid-cols-2 gap-2 text-sm">
-                <div v-for="(v, k) in txSummary.first" :key="String(k)" class="flex justify-between gap-3">
-                  <span class="text-gray-500">{{ k }}</span>
-                  <span class="text-gray-800 font-medium">{{ v }}</span>
-                </div>
-              </div>
+            <div v-if="creditCard.totalAssetValue" class="card-row">
+              <span class="card-key">총 자산</span>
+              <span class="card-val">{{ creditCard.totalAssetValue }}</span>
+            </div>
+            <div v-if="creditCard.demandDepositAssetValue" class="card-row">
+              <span class="card-key">보통예금 자산</span>
+              <span class="card-val">{{ creditCard.demandDepositAssetValue }}</span>
+            </div>
+            <div v-if="creditCard.depositSavingsAssetValue" class="card-row">
+              <span class="card-key">예적금 자산</span>
+              <span class="card-val">{{ creditCard.depositSavingsAssetValue }}</span>
             </div>
           </div>
           <ApiResult :error="error" :raw="raw" />
@@ -186,9 +164,9 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, defineComponent } from 'vue';
-import { getAllExchangeRates, getExchangeRate, estimateExchange, getTransactionHistory } from '../api/index';
+import { getAllExchangeRates, getExchangeRate, estimateExchange, getCreditRating } from '../api/index';
 
-interface Tab { key: 'EXCHANGE_RATES'|'SINGLE_RATE'|'ESTIMATE'|'TX_HISTORY'; label: string }
+interface Tab { key: 'EXCHANGE_RATES'|'SINGLE_RATE'|'ESTIMATE'|'CREDIT_RATING'; label: string }
 
 const props = defineProps<{ visible: boolean; title?: string; defaultTab?: Tab['key']; onlyTab?: Tab['key']; challengeId?: number; targetCount?: number }>();
 const emit = defineEmits<{ (e: 'close'): void; (e: 'succeeded'): void }>();
@@ -197,7 +175,7 @@ const tabs: Tab[] = [
   { key: 'EXCHANGE_RATES', label: '환율 전체 조회' },
   { key: 'SINGLE_RATE', label: '환율 조회' },
   { key: 'ESTIMATE', label: '환전 예상' },
-  { key: 'TX_HISTORY', label: '거래내역' },
+  { key: 'CREDIT_RATING', label: '신용등급 조회' },
 ];
 
 const active = ref<Tab['key']>(props.onlyTab || props.defaultTab || 'EXCHANGE_RATES');
@@ -225,14 +203,7 @@ const estimateCard = ref<{
   targetCurrency: string; targetAmount: string|number; targetName?: string;
 } | null>(null);
 
-// Tx history
-const txUserKey = ref('');
-const txAccountNo = ref('');
-const txStartDate = ref('20240101');
-const txEndDate = ref('20241231');
-const txType = ref<'M'|'D'|'A'>('A');
-const txOrder = ref<'ASC'|'DESC'>('DESC');
-const txSummary = ref<{ totalCount: number; first?: Record<string, any> } | null>(null);
+// (Tx history removed)
 
 function firstArrayIn(obj: any): any[] | null {
   if (!obj) return null;
@@ -264,7 +235,7 @@ function resetState() {
   raw.value = null;
   singleRateCard.value = null;
   estimateCard.value = null;
-  txSummary.value = null;
+  // txSummary removed
 }
 
 async function callExchangeRates() {
@@ -278,6 +249,47 @@ async function callExchangeRates() {
     if (!ok) throw new Error(res?.Header?.responseMessage || res?.message || '환율 전체 조회 실패');
     actionSucceeded.value = true;
     lastAction.value = 'EXCHANGE_RATES';
+  } catch (e: any) {
+    error.value = e?.message || '호출 실패';
+  } finally { loading.value = false; }
+}
+
+// Credit rating
+const creditCard = ref<{ ratingName: string; totalAssetValue?: string; demandDepositAssetValue?: string; depositSavingsAssetValue?: string } | null>(null);
+
+async function callCreditRating() {
+  loading.value = true; resetState(); creditCard.value = null;
+  try {
+    actionInvoked.value = true;
+    const res = await getCreditRating();
+    raw.value = res;
+    // Backend format
+    if (res && res.code === 'success') {
+      creditCard.value = {
+        ratingName: res.ratingName,
+        totalAssetValue: res.totalAssetValue,
+        demandDepositAssetValue: res.demandDepositAssetValue,
+        depositSavingsAssetValue: res.depositSavingsAssetValue,
+      };
+      actionSucceeded.value = true;
+      lastAction.value = 'CREDIT_RATING';
+    } else {
+      // Provider format
+      const ok = res?.Header?.responseCode === 'H0000';
+      const rec = res?.REC;
+      if (ok && rec && rec.ratingName) {
+        creditCard.value = {
+          ratingName: rec.ratingName,
+          totalAssetValue: rec.totalAssetValue,
+          demandDepositAssetValue: rec.demandDepositAssetValue,
+          depositSavingsAssetValue: rec.depositSavingsAssetValue,
+        };
+        actionSucceeded.value = true;
+        lastAction.value = 'CREDIT_RATING';
+      } else {
+        throw new Error(res?.Header?.responseMessage || res?.message || '신용등급 조회 실패');
+      }
+    }
   } catch (e: any) {
     error.value = e?.message || '호출 실패';
   } finally { loading.value = false; }
