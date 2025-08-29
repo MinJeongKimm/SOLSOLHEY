@@ -70,7 +70,19 @@ public class RankingEntryServiceImpl implements RankingEntryService {
             .build();
 
         RankingEntry savedEntry = rankingEntryRepository.save(entry);
-        return EntryResponse.from(savedEntry);
+        EntryResponse resp = EntryResponse.from(savedEntry);
+        String norm = normalizeUrl(resp.imageUrl());
+        return new EntryResponse(
+            resp.entryId(),
+            resp.userId(),
+            resp.mascotId(),
+            resp.mascotSnapshotId(),
+            resp.title(),
+            resp.description(),
+            norm,
+            resp.rankingType(),
+            resp.createdAt()
+        );
     }
 
     @Override
@@ -78,6 +90,10 @@ public class RankingEntryServiceImpl implements RankingEntryService {
         List<RankingEntry> entries = rankingEntryRepository.findByUserIdOrderByCreatedAtDesc(userId);
         return entries.stream()
             .map(EntryResponse::from)
+            .map(er -> new EntryResponse(
+                er.entryId(), er.userId(), er.mascotId(), er.mascotSnapshotId(), er.title(), er.description(),
+                normalizeUrl(er.imageUrl()), er.rankingType(), er.createdAt()
+            ))
             .collect(Collectors.toList());
     }
 
@@ -86,6 +102,10 @@ public class RankingEntryServiceImpl implements RankingEntryService {
         List<RankingEntry> entries = rankingEntryRepository.findByUserIdAndRankingTypeOrderByCreatedAtDesc(userId, rankingType);
         return entries.stream()
             .map(EntryResponse::from)
+            .map(er -> new EntryResponse(
+                er.entryId(), er.userId(), er.mascotId(), er.mascotSnapshotId(), er.title(), er.description(),
+                normalizeUrl(er.imageUrl()), er.rankingType(), er.createdAt()
+            ))
             .collect(Collectors.toList());
     }
 
@@ -188,6 +208,26 @@ public class RankingEntryServiceImpl implements RankingEntryService {
         } catch (IOException e) {
             throw new BusinessException("이미지 업로드에 실패했습니다: " + e.getMessage());
         }
+    }
+
+    private String normalizeUrl(String url) {
+        if (url == null || url.isBlank()) return url;
+        String base = mediaProps.getPublicBaseUrl();
+        if (url.startsWith("http://localhost:8080")) {
+            String path = url.substring("http://localhost:8080".length());
+            if (base != null && !base.isBlank()) {
+                if (base.endsWith("/")) base = base.substring(0, base.length()-1);
+                return base + path;
+            }
+            return path;
+        }
+        if (url.startsWith("/uploads/")) {
+            if (base != null && !base.isBlank()) {
+                if (base.endsWith("/")) base = base.substring(0, base.length()-1);
+                return base + url;
+            }
+        }
+        return url;
     }
 
     @Autowired
