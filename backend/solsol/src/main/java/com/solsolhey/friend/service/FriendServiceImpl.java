@@ -27,6 +27,8 @@ import com.solsolhey.friend.entity.FriendInteraction;
 import com.solsolhey.friend.entity.FriendInteraction.InteractionType;
 import com.solsolhey.friend.repository.FriendInteractionRepository;
 import com.solsolhey.friend.repository.FriendRepository;
+import com.solsolhey.friend.entity.FriendLikeDailyCounter;
+import com.solsolhey.friend.repository.FriendLikeDailyCounterRepository;
 import com.solsolhey.mascot.dto.view.MascotViewResponse;
 import com.solsolhey.mascot.service.MascotViewService;
 import com.solsolhey.user.entity.User;
@@ -49,6 +51,7 @@ public class FriendServiceImpl implements FriendService {
 
     private final FriendRepository friendRepository;
     private final FriendInteractionRepository friendInteractionRepository;
+    private final FriendLikeDailyCounterRepository likeDailyCounterRepository;
     private final UserRepository userRepository;
     private final ExpDailyCounterService expDailyCounterService;
     private final MascotViewService mascotViewService;
@@ -289,36 +292,16 @@ public class FriendServiceImpl implements FriendService {
 
         if (request.interactionType() == InteractionType.LIKE) {
             LocalDate today = LocalDate.now(KST);
-            LocalDateTime startOfDay = today.atStartOfDay();
-            LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
-
-            long sentToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
-                    user, toUser, InteractionType.LIKE, startOfDay, endOfDay);
-            // 일일 3회 상한선(보낸 사람 -> 특정 친구)
-            if (sentToday >= 3) {
+            // 통합 카운터(경로 무관) - 비관적 락으로 동시성 제어
+            FriendLikeDailyCounter counter = likeDailyCounterRepository
+                    .findForUpdate(user, toUser, today)
+                    .orElseGet(() -> new FriendLikeDailyCounter(user, toUser, today));
+            Integer current = counter.getLikeCount() == null ? 0 : counter.getLikeCount();
+            if (current >= 3) {
                 throw new BusinessException("오늘 해당 친구에게 보낼 수 있는 좋아요 3회 한도를 초과했습니다.");
             }
-
-            // 기존 핑퐁 제한(순서 기반) 유지
-            boolean allowed;
-            if (sentToday == 0) {
-                allowed = true; // 기본 1회
-            } else {
-                LocalDateTime lastSentAt = friendInteractionRepository
-                        .findMaxCreatedAtDirectionalByTypeAndCreatedAtBetween(
-                                user, toUser, InteractionType.LIKE, startOfDay, endOfDay);
-                if (lastSentAt == null) {
-                    allowed = false;
-                } else {
-                    LocalDateTime afterLastSent = lastSentAt.plusNanos(1);
-                    long receivedAfter = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
-                            toUser, user, InteractionType.LIKE, afterLastSent, endOfDay);
-                    allowed = receivedAfter >= 1;
-                }
-            }
-            if (!allowed) {
-                throw new BusinessException("오늘은 더 이상 해당 친구에게 좋아요를 보낼 수 없습니다.");
-            }
+            counter.inc();
+            likeDailyCounterRepository.save(counter);
         }
 
         // 기본 메시지: 타입별 디폴트 메시지를 제공 (요청 본문이 없을 때)
@@ -450,36 +433,13 @@ public class FriendServiceImpl implements FriendService {
         long lifetimeLikes = friendInteractionRepository
                 .countByToUserAndInteractionType(owner, InteractionType.LIKE);
 
-        // Today window (KST)
+        // Today (KST) unified count via counter
         LocalDate today = LocalDate.now(KST);
-        LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
-
-        long sentToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
-                viewer, owner, InteractionType.LIKE, startOfDay, endOfDay);
-        long receivedToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
-                owner, viewer, InteractionType.LIKE, startOfDay, endOfDay);
-
-        int allowedMax = 3; // 일일 최대 3회로 상향
-        int remaining; // 남은 가능 횟수(핑퐁 + 일일 상한 동시 반영)
-        if (sentToday == 0) {
-            remaining = 1; // 핑퐁 기본 1회
-        } else {
-            LocalDateTime lastSentAt = friendInteractionRepository
-                    .findMaxCreatedAtDirectionalByTypeAndCreatedAtBetween(
-                            viewer, owner, InteractionType.LIKE, startOfDay, endOfDay);
-            if (lastSentAt == null) {
-                remaining = 0;
-            } else {
-                LocalDateTime afterLastSent = lastSentAt.plusNanos(1);
-                long receivedAfter = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
-                        owner, viewer, InteractionType.LIKE, afterLastSent, endOfDay);
-                remaining = receivedAfter >= 1 ? 1 : 0;
-            }
-        }
-        // 일일 상한(3회) 적용: 남은 핑퐁 슬랏과 3회-보낸횟수 중 최소값을 적용
-        int remainingByCap = Math.max(0, 3 - (int) sentToday);
-        remaining = Math.min(remaining, remainingByCap);
+        int sentToday = likeDailyCounterRepository.findOne(viewer, owner, today)
+                .map(FriendLikeDailyCounter::getLikeCount)
+                .orElse(0);
+        int allowedMax = 3;
+        int remaining = Math.max(0, allowedMax - sentToday);
         boolean canLikeNow = remaining > 0;
 
         return FriendHomeResponse.builder()
