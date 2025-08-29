@@ -10,6 +10,8 @@ import com.solsolhey.finance.dto.response.ExchangeEstimateResponse;
 import com.solsolhey.finance.exception.ExternalApiException;
 import com.solsolhey.finance.dto.response.SingleExchangeRateResponse;
 import com.solsolhey.finance.dto.response.TransactionsResponse;
+import com.solsolhey.finance.dto.response.ExternalCreditRatingResponse;
+import com.solsolhey.finance.dto.response.CreditRatingResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -134,6 +136,19 @@ public class FinanceServiceImpl implements FinanceService {
                                 .build()
                 ));
     }
+
+    @Override
+    public Mono<CreditRatingResponse> getMyCreditRating(String userKey) {
+        log.info("신용등급 조회 시작");
+        return financeApiClient.getMyCreditRating(userKey)
+                .map(this::convertToCreditRatingResponse)
+                .onErrorResume(error -> Mono.just(
+                        CreditRatingResponse.builder()
+                                .code("error")
+                                .message("신용등급 조회에 실패했습니다.")
+                                .build()
+                ));
+    }
     
     private ExchangeRateResponse convertToExchangeRateResponse(ExternalExchangeRateResponse externalResponse) {
         if (externalResponse == null || externalResponse.getRec() == null) {
@@ -176,6 +191,24 @@ public class FinanceServiceImpl implements FinanceService {
                 .message("거래내역 조회 완료")
                 .totalCount(external.getRec().getTotalCount())
                 .items(items)
+                .build();
+    }
+
+    private CreditRatingResponse convertToCreditRatingResponse(ExternalCreditRatingResponse external) {
+        if (external == null || external.getRec() == null) {
+            return CreditRatingResponse.builder()
+                    .code("error")
+                    .message("신용등급 정보를 가져올 수 없습니다.")
+                    .build();
+        }
+        var rec = external.getRec();
+        return CreditRatingResponse.builder()
+                .code("success")
+                .message("신용등급 조회 완료")
+                .ratingName(rec.getRatingName())
+                .demandDepositAssetValue(rec.getDemandDepositAssetValue())
+                .depositSavingsAssetValue(rec.getDepositSavingsAssetValue())
+                .totalAssetValue(rec.getTotalAssetValue())
                 .build();
     }
 }

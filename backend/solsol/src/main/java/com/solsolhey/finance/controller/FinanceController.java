@@ -4,6 +4,7 @@ import com.solsolhey.finance.dto.request.EstimateRequest;
 import com.solsolhey.finance.dto.request.TransactionHistoryRequest;
 import com.solsolhey.finance.dto.response.ExchangeEstimateResponse;
 import com.solsolhey.finance.dto.response.ExchangeRateResponse;
+import com.solsolhey.finance.dto.response.CreditRatingResponse;
 import com.solsolhey.finance.dto.response.SingleExchangeRateResponse;
 import com.solsolhey.finance.dto.response.TransactionsResponse;
 import com.solsolhey.finance.service.FinanceService;
@@ -82,6 +83,22 @@ public class FinanceController {
                     TransactionsResponse err = TransactionsResponse.builder()
                             .code("error")
                             .message("계좌 거래내역 조회에 실패했습니다.")
+                            .build();
+                    return Mono.just(ResponseEntity.internalServerError().body(err));
+                });
+    }
+
+    // 신용등급 조회
+    @GetMapping("/credit-rating")
+    public Mono<ResponseEntity<CreditRatingResponse>> getMyCreditRating(@RequestParam("userKey") String userKey) {
+        log.info("신용등급 조회 API 호출");
+        return financeService.getMyCreditRating(userKey)
+                .map(ResponseEntity::ok)
+                .onErrorResume(error -> {
+                    log.error("신용등급 조회 실패", error);
+                    CreditRatingResponse err = CreditRatingResponse.builder()
+                            .code("error")
+                            .message("신용등급 조회에 실패했습니다.")
                             .build();
                     return Mono.just(ResponseEntity.internalServerError().body(err));
                 });

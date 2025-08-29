@@ -236,7 +236,8 @@ public class ChallengeServiceImpl implements ChallengeService {
         return name.contains("환율 전체") || name.contains("전체 환율") || name.contains("환율전체")
                 || name.contains("환율 확인") || name.contains("단건") || name.contains("환율확인")
                 || name.contains("환전") || name.contains("예상") || name.contains("환전예상")
-                || name.contains("거래내역");
+                || name.contains("거래내역")
+                || name.contains("신용등급") || name.contains("신용 등급") || name.contains("신용") || name.contains("등급 조회");
     }
 
     /**
