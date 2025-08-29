@@ -79,7 +79,10 @@ public class SecurityConfig {
                     new AntPathRequestMatcher("/h2-console/**")
                 )
                 .ignoringRequestMatchers(
-                    new AntPathRequestMatcher("/api/v1/finance/**")
+                    new AntPathRequestMatcher("/api/v1/finance/**"),
+                    // 임시: 교차 출처 CSRF 토큰 동기화 이슈 우회 (보안 강화 시 제거 권장)
+                    new AntPathRequestMatcher("/api/v1/mascot/**"),
+                    new AntPathRequestMatcher("/api/v1/friends/**")
                 )
 
             )
