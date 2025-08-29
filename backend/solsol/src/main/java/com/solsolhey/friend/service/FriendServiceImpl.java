@@ -287,9 +287,6 @@ public class FriendServiceImpl implements FriendService {
             throw new BusinessException("친구 관계가 아닌 사용자에게는 상호작용을 보낼 수 없습니다.");
         }
 
-        // LIKE 핑퐁 제한(순서 기반):
-        // - 기본 1회(오늘 U->V 보낸 적 없으면 1회)
-        // - 이미 오늘 보냈다면, 내 마지막 발신 시각 이후에 상대(V->U)로부터 받은 내역이 있을 때만 추가 1회 허용
         if (request.interactionType() == InteractionType.LIKE) {
             LocalDate today = LocalDate.now(KST);
             LocalDateTime startOfDay = today.atStartOfDay();
@@ -297,6 +294,12 @@ public class FriendServiceImpl implements FriendService {
 
             long sentToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
                     user, toUser, InteractionType.LIKE, startOfDay, endOfDay);
+            // 일일 3회 상한선(보낸 사람 -> 특정 친구)
+            if (sentToday >= 3) {
+                throw new BusinessException("오늘 해당 친구에게 보낼 수 있는 좋아요 3회 한도를 초과했습니다.");
+            }
+
+            // 기존 핑퐁 제한(순서 기반) 유지
             boolean allowed;
             if (sentToday == 0) {
                 allowed = true; // 기본 1회
@@ -457,10 +460,10 @@ public class FriendServiceImpl implements FriendService {
         long receivedToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
                 owner, viewer, InteractionType.LIKE, startOfDay, endOfDay);
 
-        int allowedMax = 1; // 표시용: 기본 1회
-        int remaining;
+        int allowedMax = 3; // 일일 최대 3회로 상향
+        int remaining; // 남은 가능 횟수(핑퐁 + 일일 상한 동시 반영)
         if (sentToday == 0) {
-            remaining = 1;
+            remaining = 1; // 핑퐁 기본 1회
         } else {
             LocalDateTime lastSentAt = friendInteractionRepository
                     .findMaxCreatedAtDirectionalByTypeAndCreatedAtBetween(
@@ -474,6 +477,9 @@ public class FriendServiceImpl implements FriendService {
                 remaining = receivedAfter >= 1 ? 1 : 0;
             }
         }
+        // 일일 상한(3회) 적용: 남은 핑퐁 슬랏과 3회-보낸횟수 중 최소값을 적용
+        int remainingByCap = Math.max(0, 3 - (int) sentToday);
+        remaining = Math.min(remaining, remainingByCap);
         boolean canLikeNow = remaining > 0;
 
         return FriendHomeResponse.builder()

@@ -85,7 +85,7 @@
               <button
                 class="inline-flex items-center whitespace-nowrap px-3 py-1 rounded-lg bg-pink-500 text-white text-xs sm:text-sm hover:bg-pink-600 disabled:opacity-60"
                 @click="sendBackLike(it)"
-                :disabled="likingId === it.interactionId"
+                :disabled="isLikeBackDisabled(it)"
               >
                 {{ likingId === it.interactionId ? '전송 중' : '좋아요 보내기' }}
               </button>
@@ -128,7 +128,7 @@
 <script setup lang="ts">
 import { onMounted, onActivated, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { getInteractions, markInteractionRead, markAllInteractionsRead, getUnreadInteractionCount, sendLikeBack, acceptFriendRequest, rejectFriendRequest, type FriendInteraction, type PageResponse } from '../api/friend';
+import { getInteractions, markInteractionRead, markAllInteractionsRead, getUnreadInteractionCount, sendLikeBack, acceptFriendRequest, rejectFriendRequest, getFriendHome, type FriendInteraction, type PageResponse } from '../api/friend';
 
 const router = useRouter();
 
@@ -144,6 +144,8 @@ const likingId = ref<number | null>(null);
 const processingAll = ref(false);
 const dismissedBefore = ref<string | null>(localStorage.getItem('notif:dismissedBefore'));
 const processingId = ref<number | null>(null);
+// fromUserId -> 오늘 기준 지금 보낼 수 있는지 여부(cache)
+const canLikeNowMap = ref<Record<number, boolean>>({});
 
 // 서버가 미읽음만 반환하므로 단순 필터만 유지
 const likeOnly = computed(() => items.value.filter(i => i.interactionType === 'LIKE'));
@@ -172,6 +174,18 @@ async function load() {
     const res: PageResponse<FriendInteraction> = await getInteractions(page.value, size.value);
     items.value = res.content || [];
     totalPages.value = Math.max(1, res.totalPages || 1);
+    // LIKE 알림의 발신자에 대해 canLikeNow 조회(친구 홈 API 재사용)
+    const ids = Array.from(new Set((items.value || [])
+      .filter(i => i.interactionType === 'LIKE')
+      .map(i => i.fromUserId)));
+    await Promise.all(ids.map(async (uid) => {
+      try {
+        const home = await getFriendHome(uid);
+        canLikeNowMap.value[uid] = !!home.canLikeNow;
+      } catch {
+        // 실패 시 비활성화하지 않음(서버에서 차단됨)
+      }
+    }));
     await refreshUnread();
   } catch (e: any) {
     error.value = e?.message || '불러오기 실패';
@@ -217,6 +231,11 @@ async function sendBackLike(it: FriendInteraction) {
     await sendLikeBack(it.interactionId);
     // 서버에서 원본 읽음 처리 → 미읽음만 노출이므로 즉시 제거
     items.value = items.value.filter(x => x.interactionId !== it.interactionId);
+    // 동일 발신자 기준 추가 전송 가능 여부를 갱신
+    try {
+      const home = await getFriendHome(it.fromUserId);
+      canLikeNowMap.value[it.fromUserId] = !!home.canLikeNow;
+    } catch {}
   } catch (e) {
     // 필요 시 토스트/에러 처리 가능
   } finally {
@@ -283,6 +302,11 @@ onActivated(() => { page.value = 0; load(); });
 // helper: 수락 메시지 여부 판별 (버튼 숨김용)
 function isAcceptedMessage(msg?: string) {
   return !!msg && msg.includes('친구가 되었습니다');
+}
+
+// helper: 좋아요 답장 버튼 비활성화 여부
+function isLikeBackDisabled(it: FriendInteraction) {
+  return likingId.value === it.interactionId || canLikeNowMap.value[it.fromUserId] === false;
 }
 </script>
 
