@@ -120,6 +120,11 @@ public class MascotViewServiceImpl implements MascotViewService {
                 .id(null)
                 .build();
 
+        // 권한 설정: 로그인된 사용자는 친구추가/좋아요 가능, 로그인하지 않은 사용자는 불가
+        // TODO: 실제로는 SecurityContext에서 현재 로그인된 사용자 ID를 가져와야 함
+        // 현재는 기본적으로 로그인된 사용자 권한을 부여 (임시 해결책)
+        Permissions permissions = Permissions.loggedInVisitor();
+
         MascotSummary mascotSummary = MascotSummary.builder()
                 .name(mascot.getName())
                 .type(mascot.getType())
@@ -135,7 +140,7 @@ public class MascotViewServiceImpl implements MascotViewService {
                 .owner(ownerSummary)
                 .viewer(viewerSummary)
                 .viewMode(ViewMode.OTHER) // 공개 조회는 항상 OTHER
-                .permissions(Permissions.publicViewer()) // 공개 조회자 권한
+                .permissions(permissions) // 로그인된 사용자 권한 부여
                 .mascot(mascotSummary)
                 .build();
     }
@@ -154,7 +159,7 @@ public class MascotViewServiceImpl implements MascotViewService {
         }
         
         try {
-            log.debug("Parsing equipped_layout for mascot {}: {}", mascot.getId(), equippedLayout);
+            log.debug("Parsing equipped_layout for mascot {} (length: {})", mascot.getId(), equippedLayout.length());
             List<MascotCustomizationDto.Item> items = objectMapper.readValue(
                 equippedLayout, 
                 new TypeReference<List<MascotCustomizationDto.Item>>() {}
@@ -162,10 +167,10 @@ public class MascotViewServiceImpl implements MascotViewService {
             log.debug("Successfully parsed {} items for mascot: {}", items.size(), mascot.getId());
             return items;
         } catch (JsonProcessingException e) {
-            log.error("Failed to parse equipped_layout for mascot {}: {}", mascot.getId(), equippedLayout, e);
+            log.error("Failed to parse equipped_layout for mascot {} (length: {}): {}", mascot.getId(), equippedLayout.length(), e.getMessage());
             return new ArrayList<>(); // 파싱 실패 시 빈 리스트 반환
         } catch (Exception e) {
-            log.error("Unexpected error while parsing equipped_layout for mascot {}: {}", mascot.getId(), equippedLayout, e);
+            log.error("Unexpected error while parsing equipped_layout for mascot {} (length: {}): {}", mascot.getId(), equippedLayout.length(), e.getMessage());
             return new ArrayList<>();
         }
     }

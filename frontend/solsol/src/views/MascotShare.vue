@@ -1,36 +1,39 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
-    <!-- 로딩 중 -->
-    <div v-if="isLoading" class="text-center">
-      <div class="text-6xl mb-4 animate-bounce">🥚</div>
-      <p class="text-gray-600">마스코트를 불러오는 중...</p>
+    <!-- 디버깅 정보 (개발 중에만 표시) -->
+    <div class="absolute top-3 right-3 bg-white bg-opacity-90 p-2 rounded-lg text-xs">
+      <div>로그인: {{ isLoggedIn }}</div>
+      <div>권한: {{ permissions?.canSendFriendRequest ? '친구추가 가능' : '친구추가 불가' }}</div>
+      <div>좋아요: {{ permissions?.canCheer ? '좋아요 가능' : '좋아요 불가' }}</div>
+      <div class="mt-2 p-1 bg-gray-100 rounded">
+        <div>permissions 전체: {{ JSON.stringify(permissions) }}</div>
+        <div>canSendFriendRequest: {{ permissions?.canSendFriendRequest }}</div>
+        <div>canCheer: {{ permissions?.canCheer }}</div>
+      </div>
     </div>
 
-    <!-- 공유 링크 없음 -->
-    <div v-else-if="!shareLink" class="text-center">
-      <div class="text-6xl mb-4">🔗</div>
-      <p class="text-gray-600 mb-4">공유 링크를 찾을 수 없습니다.</p>
-      <p class="text-sm text-gray-500">링크가 만료되었거나 잘못된 링크입니다.</p>
+    <!-- 로딩 상태 -->
+    <div v-if="isLoading" class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+        <p class="text-gray-600">마스코트 정보를 불러오는 중...</p>
+      </div>
     </div>
 
-    <!-- 마스코트 없음 -->
-    <div v-else-if="!currentMascot" class="text-center">
-      <div class="text-6xl mb-4">🤔</div>
-      <p class="text-gray-600 mb-4">마스코트 정보를 찾을 수 없습니다.</p>
-      <p class="text-sm text-gray-500 mb-4">{{ errorMessage || '마스코트가 삭제되었거나 비공개로 설정되었을 수 있습니다.' }}</p>
-      <div class="space-y-2">
-        <p class="text-xs text-gray-400">가능한 원인:</p>
-        <ul class="text-xs text-gray-400 space-y-1">
-          <li>• 해당 사용자가 마스코트를 생성하지 않음</li>
-          <li>• 마스코트가 삭제됨</li>
-          <li>• 공유 링크가 만료됨</li>
-          <li>• 잘못된 링크</li>
-        </ul>
+    <!-- 에러 상태 -->
+    <div v-else-if="errorMessage" class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
+      <div class="text-center">
+        <div class="text-red-500 text-6xl mb-4">⚠️</div>
+        <h1 class="text-xl font-bold text-gray-800 mb-4">오류가 발생했습니다</h1>
+        <p class="text-gray-600 mb-6">{{ errorMessage }}</p>
+        <button @click="retryLoad" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-all">
+          다시 시도
+        </button>
       </div>
     </div>
 
     <!-- 메인 카드 -->
-    <div v-else class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
+    <div v-else-if="currentMascot" class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
       <h1 class="text-xl font-bold text-gray-800 text-center mb-6">{{ pageTitle }}</h1>
       
       <!-- 메인 캔버스 -->
@@ -105,6 +108,24 @@
           <button @click="goToMascot" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition-all text-base">
             🏠 내 마스코트로 이동
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 마스코트가 없는 경우 -->
+    <div v-else class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
+      <div class="text-center">
+        <div class="text-6xl mb-4">🤔</div>
+        <h1 class="text-xl font-bold text-gray-800 mb-4">마스코트 정보를 찾을 수 없습니다</h1>
+        <p class="text-gray-600 mb-4">마스코트가 삭제되었거나 비공개로 설정되었을 수 있습니다.</p>
+        <div class="space-y-2">
+          <p class="text-xs text-gray-400">가능한 원인:</p>
+          <ul class="text-xs text-gray-400 space-y-1">
+            <li>• 해당 사용자가 마스코트를 생성하지 않음</li>
+            <li>• 마스코트가 삭제됨</li>
+            <li>• 공유 링크가 만료됨</li>
+            <li>• 잘못된 링크</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -218,14 +239,39 @@ const fetchMascotData = async () => {
 
     if (mascotViewResponse && mascotViewResponse.data) {
       const mascot = mascotViewResponse.data.mascot;
+      const permissionsData = mascotViewResponse.data.permissions;
       console.log('🔍 파싱된 마스코트:', mascot);
+      console.log('🔍 파싱된 권한:', permissionsData);
 
       if (mascot) {
         currentMascot.value = {
           ...mascot,
           equippedLayout: mascot?.equippedLayout || null
         };
+        
+        // 권한 설정
+        if (permissionsData) {
+          // 백엔드에서 받은 권한을 기반으로 하되, 로그인 상태에 따라 조정
+          permissions.value = {
+            ...permissionsData,
+            canSendFriendRequest: isLoggedIn.value && permissionsData.canSendFriendRequest,
+            canCheer: isLoggedIn.value && permissionsData.canCheer
+          };
+        } else {
+          // 기본 권한 설정 (로그인 상태에 따라)
+          permissions.value = {
+            canSendFriendRequest: isLoggedIn.value,
+            canCheer: isLoggedIn.value,
+            canViewDetails: true
+          };
+        }
+        
+        // viewMode 설정 (다른 사용자의 마스코트를 보고 있음)
+        viewMode.value = 'OTHER';
+        
         console.log('✅ currentMascot 설정 완료:', currentMascot.value);
+        console.log('✅ permissions 설정 완료:', permissions.value);
+        console.log('✅ viewMode 설정 완료:', viewMode.value);
       } else {
         console.error('❌ 마스코트 정보가 없음');
         errorMessage.value = '마스코트 정보를 찾을 수 없습니다.';
@@ -270,6 +316,12 @@ function cheerMascot() {
   } else {
     handleLoginClick();
   }
+}
+
+function retryLoad() {
+  errorMessage.value = '';
+  fetchShareLinkData();
+  fetchMascotData();
 }
 
 function goToMascot() {
@@ -441,6 +493,21 @@ watch(currentMascot, (newValue, oldValue) => {
     newType: newValue?.type
   });
 }, { deep: true });
+
+// 로그인 상태 변경 감지
+watch(isLoggedIn, (newValue) => {
+  console.log('🔐 로그인 상태 변경 감지:', newValue);
+  
+  // 로그인 상태가 변경되면 권한 업데이트
+  if (permissions.value) {
+    permissions.value = {
+      ...permissions.value,
+      canSendFriendRequest: newValue,
+      canCheer: newValue
+    };
+    console.log('✅ 권한 업데이트 완료:', permissions.value);
+  }
+});
 
 // 컴포넌트 마운트
 onMounted(async () => {
