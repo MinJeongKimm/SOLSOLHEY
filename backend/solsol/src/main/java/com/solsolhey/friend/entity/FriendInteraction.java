@@ -38,13 +38,18 @@ public class FriendInteraction extends BaseEntity {
     @Column(name = "is_read", nullable = false)
     private Boolean isRead = false;
 
+    // 선택: 요청(예: 친구 요청)과 같은 상호작용의 원본 엔티티 ID 참조
+    @Column(name = "reference_id")
+    private Long referenceId;
+
     @Builder
-    public FriendInteraction(User fromUser, User toUser, InteractionType interactionType, String message) {
+    public FriendInteraction(User fromUser, User toUser, InteractionType interactionType, String message, Long referenceId) {
         this.fromUser = fromUser;
         this.toUser = toUser;
         this.interactionType = interactionType;
         this.message = message;
         this.isRead = false;
+        this.referenceId = referenceId;
     }
 
     /**
@@ -58,6 +63,7 @@ public class FriendInteraction extends BaseEntity {
         LIKE,       // 좋아요
         CHEER,      // 응원
         POKE,       // 찌르기
-        MESSAGE     // 메시지
+        MESSAGE,    // 메시지
+        FRIEND_REQUEST // 친구 요청 알림
     }
 }

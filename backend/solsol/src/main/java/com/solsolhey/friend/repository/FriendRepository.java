@@ -30,6 +30,13 @@ public interface FriendRepository extends JpaRepository<Friend, Long> {
     Optional<Friend> findFriendshipBetween(@Param("user") User user, @Param("friend") User friend);
 
     /**
+     * 두 사용자 간의 모든 친구 관계(양방향) 조회
+     */
+    @EntityGraph(attributePaths = {"user", "friendUser"})
+    @Query("SELECT f FROM Friend f WHERE (f.user = :user AND f.friendUser = :friend) OR (f.user = :friend AND f.friendUser = :user)")
+    List<Friend> findAllFriendshipsBetween(@Param("user") User user, @Param("friend") User friend);
+
+    /**
      * 사용자의 친구 목록 조회 (상태별)
      */
     @EntityGraph(attributePaths = {"friendUser"})
