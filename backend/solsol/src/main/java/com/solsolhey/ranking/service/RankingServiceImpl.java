@@ -46,6 +46,7 @@ public class RankingServiceImpl implements RankingService {
     private final MascotRepository mascotRepository;
     private final MascotSnapshotRepository mascotSnapshotRepository;
     private final RankingEntryRepository rankingEntryRepository;
+    private final com.solsolhey.solsol.config.MediaStorageProperties mediaProps;
 
     // 일일 투표 제한 (교내: 10회, 전국: 5회)
     private static final int DAILY_CAMPUS_VOTE_LIMIT = 10;
@@ -402,7 +403,7 @@ public class RankingServiceImpl implements RankingService {
             long voteCount = getVoteCount(entry.getEntryId(), Vote.VoteType.CAMPUS);
             
             // 새로 등록한 엔트리(이미지 업로드)인지 확인
-            if (entry.getImageUrl() != null && entry.getImageUrl().startsWith("http://localhost:8080/uploads/ranking/")) {
+            if (entry.getImageUrl() != null && entry.getImageUrl().contains("/uploads/ranking/")) {
                 // 이미지 업로드로 등록된 엔트리: 스냅샷 없이 처리
                 RankingEntryResponse rankedEntry = RankingEntryResponse.fromWithEntry(
                     mascot,
@@ -412,7 +413,7 @@ public class RankingServiceImpl implements RankingService {
                     null, // schoolName
                     null, // schoolId
                     voteCount,
-                    entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
+                    normalizeImageUrl(entry.getImageUrl()), // 공개 URL 정규화
                     entry.getTitle(), // 등록 시 설정한 제목 사용
                     entry.getEntryId() // 랭킹 엔트리 ID
                 );
@@ -437,7 +438,7 @@ public class RankingServiceImpl implements RankingService {
                     null, // schoolName
                     null, // schoolId
                     voteCount,
-                    entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
+                    normalizeImageUrl(entry.getImageUrl()),
                     entry.getTitle(), // 등록 시 설정한 제목 사용
                     entry.getEntryId() // 랭킹 엔트리 ID
                 );
@@ -478,7 +479,7 @@ public class RankingServiceImpl implements RankingService {
             long voteCount = getVoteCount(entry.getEntryId(), Vote.VoteType.NATIONAL);
             
             // 새로 등록한 엔트리(이미지 업로드)인지 확인
-            if (entry.getImageUrl() != null && entry.getImageUrl().startsWith("http://localhost:8080/uploads/ranking/")) {
+            if (entry.getImageUrl() != null && entry.getImageUrl().contains("/uploads/ranking/")) {
                 // 이미지 업로드로 등록된 엔트리: 스냅샷 없이 처리
                 RankingEntryResponse rankedEntry = RankingEntryResponse.fromWithEntry(
                     mascot,
@@ -488,7 +489,7 @@ public class RankingServiceImpl implements RankingService {
                     owner.getCampus(),
                     null, // schoolId
                     voteCount,
-                    entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
+                    normalizeImageUrl(entry.getImageUrl()),
                     entry.getTitle(), // 등록 시 설정한 제목 사용
                     entry.getEntryId() // 랭킹 엔트리 ID
                 );
@@ -513,7 +514,7 @@ public class RankingServiceImpl implements RankingService {
                     owner.getCampus(),
                     null, // schoolId
                     voteCount,
-                    entry.getImageUrl(), // 등록 시 업로드한 이미지 사용
+                    normalizeImageUrl(entry.getImageUrl()),
                     entry.getTitle(), // 등록 시 설정한 제목 사용
                     entry.getEntryId() // 랭킹 엔트리 ID
                 );
@@ -644,3 +645,24 @@ public class RankingServiceImpl implements RankingService {
         }
     }
 }
+
+    private String normalizeImageUrl(String url) {
+        if (url == null || url.isBlank()) return url;
+        String base = mediaProps.getPublicBaseUrl();
+        if (url.startsWith("http://localhost:8080")) {
+            String path = url.substring("http://localhost:8080".length());
+            if (base != null && !base.isBlank()) {
+                if (base.endsWith("/")) base = base.substring(0, base.length()-1);
+                return base + path;
+            }
+            // fallback to relative
+            return path;
+        }
+        if (url.startsWith("/uploads/")) {
+            if (base != null && !base.isBlank()) {
+                if (base.endsWith("/")) base = base.substring(0, base.length()-1);
+                return base + url;
+            }
+        }
+        return url;
+    }
