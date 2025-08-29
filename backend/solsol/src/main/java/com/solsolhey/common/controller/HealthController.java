@@ -19,14 +19,16 @@ public class HealthController {
     @GetMapping("/health")
     public ResponseEntity<ApiResponse<Map<String, Object>>> health(CsrfToken csrfToken) {
         // Declaring CsrfToken param materializes the token so CookieCsrfTokenRepository sets XSRF-TOKEN cookie.
-        csrfToken.getToken(); // ensure access
-        
+        String token = csrfToken.getToken(); // ensure generation and read value
+
         Map<String, Object> healthInfo = Map.of(
             "status", "UP",
             "timestamp", LocalDateTime.now(),
-            "service", "SOLSOLHEY Backend"
+            "service", "SOLSOLHEY Backend",
+            // Expose CSRF token in body so cross-origin SPAs can read it and send X-XSRF-TOKEN header
+            "csrfToken", token
         );
-        
+
         return ResponseEntity.ok(
             ApiResponse.success("서버가 정상적으로 작동 중입니다.", healthInfo)
         );

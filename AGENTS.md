@@ -1,35 +1,33 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `backend/solsol/`: Spring Boot (Gradle). Source in `src/main/java`, tests in `src/test/java`, config in `src/main/resources`. Build files: `build.gradle`, `gradlew`.
-- `backend/.env`: Active backend environment (hidden). Template: `backend/solsol/env.example` (see also `README-ENV.md`).
-- `frontend/`: Vite + Vue 3 + TypeScript. App lives in `frontend/solsol/` (`index.html`, `src/`); static assets in `frontend/public/`.
-- `documents/`, `logs/`: Reference and runtime artifacts. Do not commit secrets.
+- Backend: `backend/solsol/` (Spring Boot). Code in `src/main/java`, tests in `src/test/java`, config in `src/main/resources` (`application.yml`).
+- Env: active env is `backend/.env` (hidden). Template: `backend/solsol/env.example`.
+- Frontend: `frontend/` (Vite + Vue 3 + TS). App under `frontend/solsol/` (`index.html`, `src/`); static assets in `frontend/public/`.
+- Docs/Logs: `documents/`, `logs/` for references and runtime artifacts.
 
 ## Build, Test, and Development Commands
-- Backend run: `cd backend/solsol && ./gradlew bootRun` — starts API on `http://localhost:8080` with `local` profile.
-- Backend test: `./gradlew test` — runs JUnit 5 tests.
-- Backend build: `./gradlew build` — creates JAR in `build/libs/`.
-- Rate limit check: `cd backend/solsol && ./test-rate-limit.sh` — smoke-test rate limiting.
-- Frontend dev: `cd frontend && npm ci && npm run dev` — Vite dev server on `http://localhost:5173`.
-- Frontend build: `npm run build` — outputs to `frontend/dist/`.
+- Backend run: `cd backend/solsol && ./gradlew bootRun` (defaults to `local`).
+- Force profile: `SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun`.
+- Backend test/build: `./gradlew test`, `./gradlew build` (JAR in `build/libs/`).
+- Rate limit smoke: `cd backend/solsol && ./test-rate-limit.sh`.
+- Frontend dev/build: `cd frontend && npm ci && npm run dev` (http://localhost:5173), `npm run build` → `frontend/dist/`.
 
 ## Coding Style & Naming Conventions
-- Java 17, Spring conventions, package-by-feature (e.g., `auth/`, `mascot/`, `finance/`). Classes `PascalCase`; methods/fields `camelCase`; DTOs end with `Request`/`Response`; controllers end with `Controller`.
-- Vue/TS: components `PascalCase.vue` in `components/` or feature folders; pages in `views/`. Shared types in `src/types/`. Keep API clients under `src/api/`.
-- Indentation: 4 spaces (Java), 2 spaces (FE). Keep imports organized; no enforced linter—follow existing patterns.
+- Java 17 + Spring: 4-space indent, package-by-feature (`auth/`, `finance/`, `mascot/`). Classes `PascalCase`; fields/methods `camelCase`; DTOs `*Request`/`*Response`; controllers `*Controller`.
+- Vue/TS: 2-space indent. Components `PascalCase.vue`; pages under `views/`; shared types in `src/types/`; API clients in `src/api/`.
 
 ## Testing Guidelines
-- Backend: Place tests under `backend/solsol/src/test/java/...` mirroring package paths. File names: `*Tests.java` or `*Test.java`. Run with `./gradlew test`.
-- Target: service/business logic and controller behavior; prefer mocking external integrations.
-- Frontend: No test runner configured—propose and align before adding tests.
+- Backend: JUnit 5. Place tests in `backend/solsol/src/test/java/...` mirroring packages. Names: `*Test.java` or `*Tests.java`. Run `./gradlew test`.
+- Focus: service/business logic and controller behavior. Mock external integrations.
 
 ## Commit & Pull Request Guidelines
-- Branches: `main` (release), `develop` (integration), `feature/<scope>`.
-- Commits (conventional): `feat: add mascot equip API`, `fix: handle JWT expiration`, `docs: update README`.
-- PRs: include purpose, linked issues, steps to verify (commands/URLs), and screenshots for UI changes. Keep scope focused; update `env.example`/docs when config changes.
+- Branches: `main`(release), `develop`(integration), `feature/<scope>`.
+- Conventional commits: e.g., `feat: add mascot equip API`, `fix: handle JWT expiration`.
+- PRs: include purpose, linked issues, verification steps (commands/URLs), and screenshots for UI changes. Update env/docs when config changes.
 
-## Security & Configuration Tips
-- Copy `backend/solsol/env.example` to `backend/.env` and set: `JWT_SECRET_KEY`, `DB_*`, `CORS_ALLOWED_ORIGINS`, `FINANCE_API_KEY`.
-- Profiles: `SPRING_PROFILES_ACTIVE=local|dev|prod`. In prod, disable dev-only surfaces (H2, Swagger) and restrict CORS. Never commit `.env`.
-
+## Security, Config & Environments
+- Env: copy `backend/solsol/env.example` → `backend/.env`. Never commit secrets.
+- Profiles: `local`(H2, 개인 개발) and `dev`(PostgreSQL, 공용 원격 DB). Switch via `SPRING_PROFILES_ACTIVE`.
+- CORS: restrict `CORS_ALLOWED_ORIGINS` to actual domains.
+- Docker (dev): run backend container with `--env-file backend/.env`; prefer shared remote Postgres for team consistency.

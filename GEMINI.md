@@ -31,5 +31,4 @@
 
 ## Security & Configuration Tips
 - Copy `backend/solsol/env.example` to `backend/.env` and set: `JWT_SECRET_KEY`, `DB_*`, `CORS_ALLOWED_ORIGINS`, `FINANCE_API_KEY`.
-- Profiles: `SPRING_PROFILES_ACTIVE=local|dev|prod`. In prod, disable dev-only surfaces (H2, Swagger) and restrict CORS. Never commit `.env`.
-
+- Profiles: `SPRING_PROFILES_ACTIVE=local|dev`. Use `local` (H2) for local development and `dev` (PostgreSQL) for shared/dev DB. Never commit `.env`.

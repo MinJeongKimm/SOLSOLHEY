@@ -65,7 +65,7 @@
                   수락
                 </button>
                 <button
-                  @click="rejectFriendRequest(request.userId)"
+                  @click="rejectFriendRequest(request.requestId)"
                   :disabled="isProcessing"
                   class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm"
                 >
@@ -101,7 +101,7 @@
                 <h4 class="font-semibold text-gray-800">{{ friend.nickname }}</h4>
                 <p class="text-sm text-gray-600">{{ friend.campus || '캠퍼스 정보 없음' }}</p>
                 <p class="text-xs text-gray-500">{{ friend.email }}</p>
-                <p class="text-xs text-blue-500">{{ friend.totalPoints || 0 }} 포인트</p>
+                <!-- 친구 포인트 표시는 요구사항에 따라 제거되었습니다. -->
               </div>
               
               <!-- 친구 삭제 버튼 -->
@@ -260,10 +260,10 @@ const closeDeleteModal = () => {
   friendToDelete.value = null;
 };
 
-const acceptFriendRequest = async (userId: number) => {
+const acceptFriendRequest = async (friendId: number) => {
   isProcessing.value = true;
   try {
-    await acceptRequest(userId);
+    await acceptRequest(friendId);
     alert('친구 요청을 수락했습니다!');
     await loadData(); // 수락 후 목록 전체를 새로고침
   } catch (error) {
@@ -274,13 +274,13 @@ const acceptFriendRequest = async (userId: number) => {
   }
 };
 
-const rejectFriendRequest = async (userId: number) => {
+const rejectFriendRequest = async (friendId: number) => {
   isProcessing.value = true;
   try {
-    await rejectRequest(userId);
+    await rejectRequest(friendId);
     alert('친구 요청을 거절했습니다.');
     // 거절 후 요청 목록에서 즉시 제거
-    friendRequests.value = friendRequests.value.filter(req => req.userId !== userId);
+    friendRequests.value = friendRequests.value.filter(req => req.requestId !== friendId);
   } catch (error) {
     console.error('친구 요청 거절 실패:', error);
     alert('친구 요청 거절에 실패했습니다. 다시 시도해주세요.');

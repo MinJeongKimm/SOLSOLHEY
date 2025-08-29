@@ -27,6 +27,10 @@ import com.solsolhey.friend.entity.FriendInteraction;
 import com.solsolhey.friend.entity.FriendInteraction.InteractionType;
 import com.solsolhey.friend.repository.FriendInteractionRepository;
 import com.solsolhey.friend.repository.FriendRepository;
+import com.solsolhey.friend.entity.FriendLikeDailyCounter;
+import com.solsolhey.friend.entity.FriendLikePairState;
+import com.solsolhey.friend.repository.FriendLikeDailyCounterRepository;
+import com.solsolhey.friend.repository.FriendLikePairStateRepository;
 import com.solsolhey.mascot.dto.view.MascotViewResponse;
 import com.solsolhey.mascot.service.MascotViewService;
 import com.solsolhey.user.entity.User;
@@ -49,6 +53,8 @@ public class FriendServiceImpl implements FriendService {
 
     private final FriendRepository friendRepository;
     private final FriendInteractionRepository friendInteractionRepository;
+    private final FriendLikeDailyCounterRepository likeDailyCounterRepository;
+    private final FriendLikePairStateRepository likePairStateRepository;
     private final UserRepository userRepository;
     private final ExpDailyCounterService expDailyCounterService;
     private final MascotViewService mascotViewService;
@@ -64,9 +70,48 @@ public class FriendServiceImpl implements FriendService {
             throw new BusinessException("자기 자신에게는 친구 요청을 보낼 수 없습니다.");
         }
 
-        // 이미 친구 관계가 있는지 확인
-        if (friendRepository.findFriendshipBetween(user, friendUser).isPresent()) {
-            throw new BusinessException("이미 친구 요청이 존재합니다.");
+        // 기존 친구 관계/요청 상태 확인 후 처리 (중복/유물 레코드 정리 포함)
+        List<Friend> all = friendRepository.findAllFriendshipsBetween(user, friendUser);
+        if (!all.isEmpty()) {
+            // ACCEPTED가 하나라도 있으면 새 요청 불가
+            boolean anyAccepted = all.stream().anyMatch(f -> f.getStatus() == FriendshipStatus.ACCEPTED);
+            if (anyAccepted) {
+                throw new BusinessException("이미 친구입니다.");
+            }
+
+            // 최신 레코드를 기준으로 재요청 허용 처리, 나머지는 정리
+            all.sort((a, b) -> Long.compare(
+                    b.getFriendId() == null ? 0L : b.getFriendId(),
+                    a.getFriendId() == null ? 0L : a.getFriendId()
+            ));
+            Friend base = all.get(0);
+            // base를 요청 방향(user -> friendUser)으로 설정하고 PENDING으로 전환
+            base.setUser(user);
+            base.setFriendUser(friendUser);
+            base.setStatus(FriendshipStatus.PENDING);
+            Friend revived = friendRepository.save(base);
+
+            // 여분 레코드는 삭제하여 상태 일관성 보장
+            for (int i = 1; i < all.size(); i++) {
+                try { friendRepository.delete(all.get(i)); } catch (Exception ignore) {}
+            }
+
+            // 친구 요청 알림 상호작용 생성
+            try {
+                String msg = user.getNickname() + "님이 친구 요청을 보냈습니다.";
+                FriendInteraction reqNotice = FriendInteraction.builder()
+                        .fromUser(user)
+                        .toUser(friendUser)
+                        .interactionType(InteractionType.FRIEND_REQUEST)
+                        .message(msg)
+                        .referenceId(revived.getFriendId())
+                        .build();
+                friendInteractionRepository.save(reqNotice);
+            } catch (Exception e) {
+                log.warn("친구 요청 알림 생성 실패(revive-multi): from={}, to={}, err={}", user.getUserId(), friendUser.getUserId(), e.getMessage());
+            }
+
+            return FriendResponse.from(revived, false);
         }
 
         Friend friend = Friend.builder()
@@ -76,7 +121,22 @@ public class FriendServiceImpl implements FriendService {
                 .build();
 
         Friend savedFriend = friendRepository.save(friend);
-        
+
+        // 친구 요청 알림 상호작용 생성: 수신자(friendUser)에게 FRIEND_REQUEST 타입 알림
+        try {
+            String msg = user.getNickname() + "님이 친구 요청을 보냈습니다.";
+            FriendInteraction reqNotice = FriendInteraction.builder()
+                    .fromUser(user)
+                    .toUser(friendUser)
+                    .interactionType(InteractionType.FRIEND_REQUEST)
+                    .message(msg)
+                    .referenceId(savedFriend.getFriendId())
+                    .build();
+            friendInteractionRepository.save(reqNotice);
+        } catch (Exception e) {
+            log.warn("친구 요청 알림 생성 실패: from={}, to={}, err={}", user.getUserId(), friendUser.getUserId(), e.getMessage());
+        }
+
         return FriendResponse.from(savedFriend, false);
     }
 
@@ -96,6 +156,21 @@ public class FriendServiceImpl implements FriendService {
         }
 
         friend.accept();
+
+        // 수신자(user) 관점의 친구요청 알림 메시지 갱신 + 읽음 처리
+        try {
+            List<FriendInteraction> notices = friendInteractionRepository
+                    .findByToUserAndTypeAndReferenceId(user, InteractionType.FRIEND_REQUEST, friendId);
+            if (!notices.isEmpty()) {
+                FriendInteraction notice = notices.get(0);
+                String fromNickname = friend.getUser().getNickname();
+                notice.setMessage("이제 " + fromNickname + "님과 친구가 되었습니다.");
+                notice.markAsRead();
+            }
+        } catch (Exception e) {
+            log.warn("친구요청 수락 알림 갱신 실패: toUser={}, friendId={}, err={}", user.getUserId(), friendId, e.getMessage());
+        }
+
         return FriendResponse.from(friend, true);
     }
 
@@ -111,6 +186,17 @@ public class FriendServiceImpl implements FriendService {
         }
 
         friend.reject();
+
+        // 수신자(user) 관점의 친구요청 알림 삭제(인박스에서 사라짐)
+        try {
+            List<FriendInteraction> notices = friendInteractionRepository
+                    .findByToUserAndTypeAndReferenceId(user, InteractionType.FRIEND_REQUEST, friendId);
+            for (FriendInteraction n : notices) {
+                friendInteractionRepository.delete(n);
+            }
+        } catch (Exception e) {
+            log.warn("친구요청 거절 알림 삭제 실패: toUser={}, friendId={}, err={}", user.getUserId(), friendId, e.getMessage());
+        }
     }
 
     @Override
@@ -207,42 +293,47 @@ public class FriendServiceImpl implements FriendService {
             throw new BusinessException("친구 관계가 아닌 사용자에게는 상호작용을 보낼 수 없습니다.");
         }
 
-        // LIKE 핑퐁 제한(순서 기반):
-        // - 기본 1회(오늘 U->V 보낸 적 없으면 1회)
-        // - 이미 오늘 보냈다면, 내 마지막 발신 시각 이후에 상대(V->U)로부터 받은 내역이 있을 때만 추가 1회 허용
         if (request.interactionType() == InteractionType.LIKE) {
-            LocalDate today = LocalDate.now(KST);
-            LocalDateTime startOfDay = today.atStartOfDay();
-            LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
+            // 0) 페어 상태 락을 걸어 교대 보장 (두 사용자 간 동시성 제어)
+            User low = user.getUserId() < toUser.getUserId() ? user : toUser;
+            User high = user.getUserId() < toUser.getUserId() ? toUser : user;
+            FriendLikePairState state = likePairStateRepository
+                    .findForUpdate(low, high)
+                    .orElseGet(() -> new FriendLikePairState(low, high));
+            // 마지막 발신자가 나이면 차단
+            if (state.getLastSender() != null && state.getLastSender().getUserId().equals(user.getUserId())) {
+                throw new BusinessException("상대의 좋아요 이후에만 추가 좋아요가 가능합니다.");
+            }
 
-            long sentToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
-                    user, toUser, InteractionType.LIKE, startOfDay, endOfDay);
-            boolean allowed;
-            if (sentToday == 0) {
-                allowed = true; // 기본 1회
-            } else {
-                LocalDateTime lastSentAt = friendInteractionRepository
-                        .findMaxCreatedAtDirectionalByTypeAndCreatedAtBetween(
-                                user, toUser, InteractionType.LIKE, startOfDay, endOfDay);
-                if (lastSentAt == null) {
-                    allowed = false;
-                } else {
-                    LocalDateTime afterLastSent = lastSentAt.plusNanos(1);
-                    long receivedAfter = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
-                            toUser, user, InteractionType.LIKE, afterLastSent, endOfDay);
-                    allowed = receivedAfter >= 1;
-                }
+            // 1) 일일 상한(3회) 먼저 강제
+            LocalDate today = LocalDate.now(KST);
+            FriendLikeDailyCounter counter = likeDailyCounterRepository
+                    .findForUpdate(user, toUser, today)
+                    .orElseGet(() -> new FriendLikeDailyCounter(user, toUser, today));
+            int current = counter.getLikeCount() == null ? 0 : counter.getLikeCount();
+            if (current >= 3) {
+                throw new BusinessException("오늘 해당 친구에게 보낼 수 있는 좋아요 3회 한도를 초과했습니다.");
             }
-            if (!allowed) {
-                throw new BusinessException("오늘은 더 이상 해당 친구에게 좋아요를 보낼 수 없습니다.");
-            }
+
+            // 카운터 증가는 모든 검증 통과 후 반영
+            counter.inc();
+            likeDailyCounterRepository.save(counter);
+            // 페어 상태 최신 발신자 갱신(내가 발신) — 상호작용 저장과 동일 트랜잭션 내
+            state.setLastSender(user);
+            likePairStateRepository.save(state);
+        }
+
+        // 기본 메시지: 타입별 디폴트 메시지를 제공 (요청 본문이 없을 때)
+        String msg = request.message();
+        if ((msg == null || msg.isBlank()) && request.interactionType() == InteractionType.LIKE) {
+            msg = user.getNickname() + "님이 좋아요를 보냈습니다.";
         }
 
         FriendInteraction interaction = FriendInteraction.builder()
                 .fromUser(user)
                 .toUser(toUser)
                 .interactionType(request.interactionType())
-                .message(request.message())
+                .message(msg)
                 .build();
 
         FriendInteraction savedInteraction = friendInteractionRepository.save(interaction);
@@ -268,10 +359,46 @@ public class FriendServiceImpl implements FriendService {
                 .toUserNickname(savedInteraction.getToUser().getNickname())
                 .interactionType(savedInteraction.getInteractionType())
                 .message(savedInteraction.getMessage())
+                .referenceId(savedInteraction.getReferenceId())
                 .isRead(savedInteraction.getIsRead())
                 .createdAt(savedInteraction.getCreatedAt())
                 .expAwarded(activeAwarded.orElse(null))
                 .build();
+    }
+
+    @Override
+    public FriendInteractionResponse likeBack(User user, Long interactionId) {
+        // 원본 알림 확인
+        FriendInteraction original = friendInteractionRepository.findById(interactionId)
+                .orElseThrow(() -> new EntityNotFoundException("상호작용을 찾을 수 없습니다."));
+
+        if (!original.getToUser().getUserId().equals(user.getUserId())) {
+            throw new BusinessException("해당 상호작용에 답장할 권한이 없습니다.");
+        }
+        if (original.getInteractionType() != InteractionType.LIKE) {
+            throw new BusinessException("좋아요에만 답장할 수 있습니다.");
+        }
+
+        // 친구 여부 검증 (양방향)
+        User target = original.getFromUser();
+        if (!friendRepository.existsMutualFriendship(user, target)) {
+            throw new BusinessException("친구 관계가 아닌 사용자입니다.");
+        }
+
+        // 기존 sendInteraction 로직 재사용 (핑퐁 규칙 포함)
+        FriendInteractionRequest req = new FriendInteractionRequest(
+                target.getUserId(), InteractionType.LIKE, null
+        );
+        FriendInteractionResponse sent = sendInteraction(user, req);
+
+        // 원본 알림 읽음 처리
+        try {
+            original.markAsRead();
+        } catch (Exception e) {
+            log.warn("좋아요 답장 후 원본 읽음처리 실패: interactionId={}, err={}", interactionId, e.getMessage());
+        }
+
+        return sent;
     }
 
     @Override
@@ -325,34 +452,24 @@ public class FriendServiceImpl implements FriendService {
         long lifetimeLikes = friendInteractionRepository
                 .countByToUserAndInteractionType(owner, InteractionType.LIKE);
 
-        // Today window (KST)
+        // Today (KST) unified count via counter + receivedToday for display, and ping-pong gating for canLikeNow
         LocalDate today = LocalDate.now(KST);
+        int sentToday = likeDailyCounterRepository.findOne(viewer, owner, today)
+                .map(FriendLikeDailyCounter::getLikeCount)
+                .orElse(0);
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
-
-        long sentToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
-                viewer, owner, InteractionType.LIKE, startOfDay, endOfDay);
         long receivedToday = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
                 owner, viewer, InteractionType.LIKE, startOfDay, endOfDay);
-
-        int allowedMax = 1; // 표시용: 기본 1회
-        int remaining;
-        if (sentToday == 0) {
-            remaining = 1;
-        } else {
-            LocalDateTime lastSentAt = friendInteractionRepository
-                    .findMaxCreatedAtDirectionalByTypeAndCreatedAtBetween(
-                            viewer, owner, InteractionType.LIKE, startOfDay, endOfDay);
-            if (lastSentAt == null) {
-                remaining = 0;
-            } else {
-                LocalDateTime afterLastSent = lastSentAt.plusNanos(1);
-                long receivedAfter = friendInteractionRepository.countDirectionalByTypeAndCreatedAtBetween(
-                        owner, viewer, InteractionType.LIKE, afterLastSent, endOfDay);
-                remaining = receivedAfter >= 1 ? 1 : 0;
-            }
+        int allowedMax = 3;
+        int remaining = Math.max(0, allowedMax - sentToday);
+        boolean alternationOk = true;
+        List<FriendInteraction> latestPair = friendInteractionRepository
+                .findLatestBetweenUsersByType(viewer, owner, InteractionType.LIKE, Pageable.ofSize(1));
+        if (!latestPair.isEmpty() && latestPair.get(0).getFromUser().getUserId().equals(viewer.getUserId())) {
+            alternationOk = false; // 마지막 발신자가 나면 응답 전까지 금지
         }
-        boolean canLikeNow = remaining > 0;
+        boolean canLikeNow = remaining > 0 && alternationOk;
 
         return FriendHomeResponse.builder()
                 .ownerId(view.getOwner().getId())

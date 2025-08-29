@@ -31,7 +31,19 @@ import { ApiError } from '../types/api';
 import router from '../router';
 import { useToastStore } from '../stores/toast';
 
-const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+// 공개 API 베이스 URL
+// - 프로덕션: VITE_API_BASE_URL (예: https://<backend>.up.railway.app/api/v1)
+// - 로컬 기본값: http://localhost:8080/api/v1
+export const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+
+// 내부 캐시: 교차 출처 환경에서 CSRF 쿠키를 프론트 도메인에서 읽을 수 없으므로
+// 백엔드의 /health 응답 바디에 담긴 토큰을 보관한다.
+let CSRF_TOKEN_CACHE: string | undefined;
+
+// 로컬 개발 환경에서 쿠키(Secure) 미전송 문제를 우회하기 위한 Bearer 토큰 보관소
+// - 백엔드의 JwtAuthenticationFilter는 local/dev에서 Authorization 헤더 허용
+const IS_LOCAL_DEV = typeof window !== 'undefined' && window.location.origin.startsWith('http://localhost');
+let DEV_BEARER_TOKEN: string | undefined;
 
 // Helper: infer user-friendly EXP toast label by category
 function inferExpLabel(category: string): string {
@@ -43,7 +55,8 @@ function inferExpLabel(category: string): string {
   return '경험치 획득!';
 }
 
-function getApiOrigin(): string {
+// 백엔드 오리진(origin)만 필요할 때 사용 (예: /api/ranking 같이 v1 prefix가 아닌 엔드포인트)
+export function getApiOrigin(): string {
   try {
     const url = new URL(API_BASE);
     return `${url.protocol}//${url.host}`;
@@ -61,9 +74,26 @@ function getCookie(name: string): string | undefined {
 
 // CSRF 쿠키 시드 보장
 async function ensureCsrfCookie(): Promise<void> {
-  if (!getCookie('XSRF-TOKEN')) {
-    const origin = getApiOrigin();
-    await fetch(`${origin}/health`, { credentials: 'include' });
+  const origin = getApiOrigin();
+  if (!origin) return; // 잘못된 API_BASE일 때 조용히 스킵
+
+  try {
+    // 항상 최신 토큰과 쿠키를 동기화하기 위해 매번 호출
+    const res = await fetch(`${origin}/health`, { credentials: 'include' });
+    const text = await res.text();
+    if (text) {
+      try {
+        const json = JSON.parse(text);
+        const token = json?.data?.csrfToken || json?.csrfToken;
+        if (typeof token === 'string' && token.length > 0) {
+          CSRF_TOKEN_CACHE = token;
+        }
+      } catch {
+        // ignore json parse errors
+      }
+    }
+  } catch {
+    // ignore network errors here; 실제 요청 시 다시 시도
   }
 }
 
@@ -84,8 +114,9 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   }
 
   if (method !== 'GET' && method !== 'HEAD') {
+    // 항상 호출해 토큰-쿠키 동기화 보장
     await ensureCsrfCookie();
-    const xsrf = getCookie('XSRF-TOKEN');
+    const xsrf = CSRF_TOKEN_CACHE || getCookie('XSRF-TOKEN');
     if (!xsrf) throw new Error('Missing XSRF-TOKEN');
     headers.set('X-XSRF-TOKEN', xsrf);
   }
@@ -95,6 +126,11 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     const isAbsoluteUrl = path.startsWith('http://') || path.startsWith('https://');
     const fullUrl = isAbsoluteUrl ? path : `${API_BASE}${path}`;
     
+    // 로컬 개발 환경에서는 Bearer 토큰을 Authorization 헤더로 부착해 쿠키 의존을 우회
+    if (IS_LOCAL_DEV && DEV_BEARER_TOKEN && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${DEV_BEARER_TOKEN}`);
+    }
+
     const res = await fetch(fullUrl, {
       credentials: 'include',
       ...init,
@@ -180,15 +216,25 @@ export async function signup(userData: SignupRequest): Promise<SignupResponse> {
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  return apiRequest<LoginResponse>('/auth/login', {
+  const res = await apiRequest<LoginResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(credentials),
   });
+  // 로컬 개발 환경: 로그인 성공 시 응답 바디의 토큰을 보관하여 이후 요청에 Authorization 헤더로 첨부
+  try {
+    if (IS_LOCAL_DEV && res && (res as any).data && (res as any).data.token) {
+      DEV_BEARER_TOKEN = (res as any).data.token as string;
+    }
+  } catch { /* ignore */ }
+  return res;
 }
 
 // 서버 로그아웃 호출 (재귀 방지용 별도 함수)
 export async function requestServerLogout(): Promise<LogoutResponse> {
-  return apiRequest<LogoutResponse>('/auth/logout', { method: 'POST' });
+  const r = await apiRequest<LogoutResponse>('/auth/logout', { method: 'POST' });
+  // 로컬 개발 환경: 토큰 클리어
+  if (IS_LOCAL_DEV) DEV_BEARER_TOKEN = undefined;
+  return r;
 }
 // 기존 이름 유지 (호환성)
 export async function logout(): Promise<LogoutResponse> {
@@ -695,9 +741,9 @@ export function parseJwtPayload(token: string): any {
 }
 
 // AI 말풍선: 메시지 생성 요청
-export async function getAiSpeech(): Promise<{ success: boolean; message: string; expiresInSec?: number }>
+export async function getAiSpeech(): Promise<{ success: boolean; message: string; kind?: 'ACADEMIC' | 'CHALLENGE'; expiresInSec?: number }>
 {
-  return apiRequest<{ success: boolean; message: string; expiresInSec?: number }>(`/ai/speech`, {
+  return apiRequest<{ success: boolean; message: string; kind?: 'ACADEMIC' | 'CHALLENGE'; expiresInSec?: number }>(`/ai/speech`, {
     method: 'POST',
   });
 }

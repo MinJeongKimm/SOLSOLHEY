@@ -16,7 +16,8 @@ public class PromptBuilder {
         String timeGreeting = getTimeGreeting(LocalDateTime.now());
         StringBuilder sb = new StringBuilder();
         sb.append("당신은 사용자의 홈 화면에서 마스코트가 말풍선으로 전하는 짧은 인삿말을 생성합니다.\n");
-        sb.append("출력 제약: 한국어, 1~2문장, 60~120자, 친근하고 격려하는 톤, 말풍선용 짧은 문장.\n");
+        sb.append("출력 제약: 한국어, 1문장, 20~25자(최대 25자), 친근하고 격려하는 톤, 말풍선용.\n");
+        sb.append("길이 엄수: 25자를 절대 넘기지 말 것.\n");
         sb.append("말투: 반말(해/해보자/할래?/해볼까?)로 통일, 존댓말 금지. 문장 종결은 '~야/~해/~하자/~해보자/~할래?' 등으로.\n");
         sb.append("주의: 닉네임/이름/호칭(예: 친구, 님)을 문장에 직접 넣지 말 것. 캠퍼스명도 직접 언급하지 말 것. 문장만 출력.\n");
         // PII 배제: 캠퍼스/닉네임은 프롬프트에 포함하지 않음
@@ -66,7 +67,7 @@ public class PromptBuilder {
 
     /**
      * 챌린지 권유 특화 프롬프트
-     * - 말풍선용 1문장, 20~50자 이내, 자연스럽게 권유 어조
+     * - 말풍선용 1문장, 20~25자(최대 25자), 자연스럽게 권유 어조
      */
     public String buildChallengePrompt(String campusName, String nickname, Integer level, String challengeName) {
         return buildChallengePrompt(campusName, nickname, level, challengeName, null);
@@ -74,8 +75,9 @@ public class PromptBuilder {
 
     public String buildChallengePrompt(String campusName, String nickname, Integer level, String challengeName, String userSummary) {
         StringBuilder sb = new StringBuilder();
-        sb.append("당신은 홈 화면 말풍선에 들어갈 한 문장의 짧한 권유 문구를 생성합니다.\n");
-        sb.append("출력 제약: 한국어, 1문장, 20~50자, 친근한 구어체, 말풍선용.\n");
+        sb.append("당신은 홈 화면 말풍선에 들어갈 한 문장의 짧은 권유 문구를 생성합니다.\n");
+        sb.append("출력 제약: 한국어, 1문장, 20~25자(최대 25자), 친근한 구어체, 말풍선용.\n");
+        sb.append("길이 엄수: 25자를 절대 넘기지 말 것.\n");
         sb.append("말투: 반말로 통일(예: ~하자/~해볼까?), 존댓말 금지.\n");
         sb.append("주의: 닉네임/이름/호칭을 문장에 넣지 말 것. 캠퍼스명도 직접 언급하지 말 것.\n");
         sb.append("사용자 맥락: 레벨=").append(level == null ? 1 : level).append(".\n");
