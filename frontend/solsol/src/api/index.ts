@@ -695,9 +695,9 @@ export function parseJwtPayload(token: string): any {
 }
 
 // AI 말풍선: 메시지 생성 요청
-export async function getAiSpeech(): Promise<{ success: boolean; message: string; expiresInSec?: number }>
+export async function getAiSpeech(): Promise<{ success: boolean; message: string; kind?: 'ACADEMIC' | 'CHALLENGE'; expiresInSec?: number }>
 {
-  return apiRequest<{ success: boolean; message: string; expiresInSec?: number }>(`/ai/speech`, {
+  return apiRequest<{ success: boolean; message: string; kind?: 'ACADEMIC' | 'CHALLENGE'; expiresInSec?: number }>(`/ai/speech`, {
     method: 'POST',
   });
 }

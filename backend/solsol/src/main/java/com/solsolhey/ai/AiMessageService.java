@@ -26,7 +26,7 @@ public class AiMessageService {
     private enum SpeechType { ACADEMIC, CHALLENGE }
     private final ConcurrentHashMap<Long, SpeechType> lastTypeByUser = new ConcurrentHashMap<>();
 
-    public String generateSpeech(Long userId) {
+    public com.solsolhey.ai.dto.AiSpeechGenResult generateSpeech(Long userId) {
         var user = userRepository.findById(userId).orElse(null);
         var mascot = mascotRepository.findByUserId(userId).orElse(null);
         String campus = null;
@@ -73,10 +73,12 @@ public class AiMessageService {
 
         // 말투 정규화 + 상태 저장
         String finalText = normalizeBanmal(result);
+        finalText = ensureMaxLength(finalText, 25);
         if (userId != null && produced != null) {
             lastTypeByUser.put(userId, produced);
         }
-        return finalText;
+        String kind = produced == null ? SpeechType.ACADEMIC.name() : produced.name();
+        return new com.solsolhey.ai.dto.AiSpeechGenResult(finalText, kind);
     }
 
     private String tryAcademic(String campus, String nickname, Integer level) {
@@ -129,17 +131,17 @@ public class AiMessageService {
     private String fallbackMessage(String campus, String nickname, Integer level, AcademicContext academic) {
         if (academic != null && academic.upcomingEvents() != null && !academic.upcomingEvents().isEmpty()) {
             var e = academic.upcomingEvents().get(0);
-            return String.format("곧 '%s' 마감이야. 오늘 체크해두면 마음이 한결 편해질 거야!", e.title());
+            return ensureMaxLength(String.format("곧 '%s' 마감이야. 오늘 체크해두면 마음이 한결 편해질 거야!", e.title()), 25);
         }
-        return "좋은 하루야. 오늘 할 일 한 가지만 정해서 가볍게 시작해보자!";
+        return ensureMaxLength("좋은 하루야. 오늘 할 일 한 가지만 정해서 가볍게 시작해보자!", 25);
     }
 
     private String fallbackChallengeMessage(String challengeName) {
         if (challengeName == null || challengeName.isBlank()) {
-            return "오늘 할 일 하나 찜해볼까?";
+            return ensureMaxLength("오늘 할 일 하나 찜해볼까?", 25);
         }
         // 간단한 구어체 권유 템플릿
-        return challengeName + " 한 번 해볼까?";
+        return ensureMaxLength(challengeName + " 한 번 해볼까?", 25);
     }
 
     // 간단한 말투 정규화: 존댓말 → 반말로 변환 (휴리스틱)
@@ -172,6 +174,44 @@ public class AiMessageService {
         // 공백 정리
         s = s.replaceAll("\s{2,}", " ").trim();
         return s;
+    }
+
+    // 길이 보정: 25자 초과 시 재작성 시도 → 실패 시 첫 문장 기준 축약
+    private String ensureMaxLength(String text, int max) {
+        if (text == null) return "";
+        String s = text.trim();
+        if (s.length() <= max) return s;
+        // 1) 모델에게 축약 요청 시도
+        try {
+            String prompt = "다음 문장을 의미 유지한 채 한국어 반말 한 문장으로 " + max + "자 이내로 축약해줘. 따옴표 없이 문장만 출력.\n문장: " + s;
+            GenerateContentResponse res = client.models.generateContent(
+                    "gemini-2.5-flash",
+                    prompt,
+                    null
+            );
+            String out = (res == null) ? null : res.text();
+            if (out != null) {
+                out = normalizeBanmal(out);
+                if (out.length() <= max) return out;
+            }
+        } catch (Exception ignore) {}
+        // 2) 휴리스틱 축약: 첫 줄/첫 문장 기준 자르기
+        int end = s.indexOf('\n');
+        if (end > 0) s = s.substring(0, end).trim();
+        int dot = indexOfFirst(s, '!', '?', '。', '！', '？', '…');
+        if (dot > 0) s = s.substring(0, dot + 1).trim();
+        if (s.length() <= max) return s;
+        // 3) 마지막으로 하드 컷(말줄임표 없이) — 최대한 자연스러운 지점에서 자르기
+        return s.substring(0, Math.min(max, s.length()));
+    }
+
+    private int indexOfFirst(String s, char... chars) {
+        int min = -1;
+        for (char c : chars) {
+            int i = s.indexOf(c);
+            if (i >= 0) min = (min < 0) ? i : Math.min(min, i);
+        }
+        return min;
     }
 
     private AcademicContext selectRandomSubContext(AcademicContext ctx) {
