@@ -64,9 +64,49 @@ public class FriendServiceImpl implements FriendService {
             throw new BusinessException("자기 자신에게는 친구 요청을 보낼 수 없습니다.");
         }
 
-        // 이미 친구 관계가 있는지 확인
-        if (friendRepository.findFriendshipBetween(user, friendUser).isPresent()) {
-            throw new BusinessException("이미 친구 요청이 존재합니다.");
+        // 기존 친구 관계/요청 상태 확인 후 처리
+        Optional<Friend> existingOpt = friendRepository.findFriendshipBetween(user, friendUser);
+        if (existingOpt.isPresent()) {
+            Friend existing = existingOpt.get();
+            FriendshipStatus status = existing.getStatus();
+            if (status == FriendshipStatus.ACCEPTED) {
+                throw new BusinessException("이미 친구입니다.");
+            }
+            if (status == FriendshipStatus.PENDING) {
+                // 내가 이미 보낸 요청이거나, 상대가 보낸 요청이 대기중인 경우
+                if (existing.getUser().getUserId().equals(user.getUserId())) {
+                    throw new BusinessException("이미 친구 요청이 존재합니다.");
+                } else {
+                    throw new BusinessException("상대방의 친구 요청이 대기 중입니다.");
+                }
+            }
+            if (status == FriendshipStatus.REJECTED) {
+                // 거절된 기록은 재요청 허용: 기존 레코드를 요청자/수신자 재지정 후 PENDING으로 전환
+                existing.setUser(user);
+                existing.setFriendUser(friendUser);
+                existing.setStatus(FriendshipStatus.PENDING);
+                Friend revived = friendRepository.save(existing);
+
+                // 친구 요청 알림 상호작용 생성
+                try {
+                    String msg = user.getNickname() + "님이 친구 요청을 보냈습니다.";
+                    FriendInteraction reqNotice = FriendInteraction.builder()
+                            .fromUser(user)
+                            .toUser(friendUser)
+                            .interactionType(InteractionType.FRIEND_REQUEST)
+                            .message(msg)
+                            .referenceId(revived.getFriendId())
+                            .build();
+                    friendInteractionRepository.save(reqNotice);
+                } catch (Exception e) {
+                    log.warn("친구 요청 알림 생성 실패(revive): from={}, to={}, err={}", user.getUserId(), friendUser.getUserId(), e.getMessage());
+                }
+
+                return FriendResponse.from(revived, false);
+            }
+            if (status == FriendshipStatus.BLOCKED) {
+                throw new BusinessException("차단된 사용자입니다.");
+            }
         }
 
         Friend friend = Friend.builder()
