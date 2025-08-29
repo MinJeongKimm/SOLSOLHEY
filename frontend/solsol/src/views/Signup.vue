@@ -149,7 +149,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { signup, handleApiError } from '../api/index';
+import { signup, handleApiError, logout } from '../api/index';
 import { getCampusList } from '../api/campus';
 import type { SignupRequest, Campus } from '../types/api';
 
@@ -247,10 +247,12 @@ async function onSubmit() {
       password.value = '';
       password2.value = '';
       campus.value = '';
-      
+
+      // 혹시 남아있을 수 있는 인증 쿠키/세션을 정리하고 로그인 화면으로 이동
+      try { await logout(); } catch { /* ignore */ }
       // 1.5초 후 로그인 페이지로 이동
       setTimeout(() => {
-        router.push('/');
+        router.push('/login');
       }, 1500);
     } else {
       // 서버에서 성공하지 않은 응답을 보낸 경우
