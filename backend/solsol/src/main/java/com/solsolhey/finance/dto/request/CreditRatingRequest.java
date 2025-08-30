@@ -10,28 +10,24 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TransactionHistoryListRequest {
+public class CreditRatingRequest {
     @JsonProperty("Header")
     private Header header;
-    private String accountNo;
-    private String startDate;       // YYYYMMDD
-    private String endDate;         // YYYYMMDD
-    private String transactionType; // M/D/A
-    private String orderByType;     // ASC/DESC (옵션)
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
     public static class Header {
-        private String apiName; // inquireTransactionHistoryList
+        private String apiName; // inquireMyCreditRating
         private String transmissionDate;
         private String transmissionTime;
         private String institutionCode;
         private String fintechAppNo;
-        private String apiServiceCode; // inquireTransactionHistoryList
+        private String apiServiceCode; // inquireMyCreditRating
         private String institutionTransactionUniqueNo;
         private String apiKey;
-        private String userKey; // 이 API는 userKey 필요
+        private String userKey; // 필수
     }
 }
+
