@@ -649,14 +649,24 @@ async function composeShareImageBlob(): Promise<Blob> {
     // 2. 마스코트 다시 그리기 (배경 아이템 위에)
     ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
 
-    // 3. 일반 아이템 그리기 (마스코트 위에)
-    for (const e of normalItems) {
+    // 3. 일반 아이템 그리기 (마스코트 위에) - DraggableItem과 동일한 타입별 z-index 적용
+    const zIndexFor = (cat: string) => ({
+      background: 1,
+      clothing: 5,
+      head: 10,
+      accessory: 15,
+    } as Record<string, number>)[(cat || '').toLowerCase()] ?? 5;
+    const sortedForeground = normalItems
+      .map((it: any, idx: number) => ({ it, idx, z: zIndexFor(it.shopItem?.category) }))
+      .sort((a, b) => (a.z - b.z) || (a.idx - b.idx));
+
+    for (const { it: e } of sortedForeground) {
       try {
         const img = await loadImage(e.shopItem.imageUrl);
         
         // 이미지 공유 시에만 아이템 크기를 줄임 (일반 화면과 구분)
         const UI_MASCOT_PX = 128;
-        const SHARE_ITEM_SIZE = 80; // 이미지 공유용 아이템 크기 (120에서 80으로 조정)
+        const SHARE_ITEM_SIZE = 80; // 이미지 공유용 아이템 크기 (유지)
         const baseItemSize = (SHARE_ITEM_SIZE / UI_MASCOT_PX) * mascotBoxSize; // 약 0.625 * mascotBoxSize
         
         const centerX = mascotX + (e.relativePosition.x * mascotBoxSize);
