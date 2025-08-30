@@ -11,6 +11,7 @@ export interface RankingEntry {
   ownerNickname: string;
   mascotName: string;
   entryTitle: string;
+  description?: string; // 랭킹 등록 시 설정한 상세 설명
   votes: number;
   backgroundId: string;
   imageUrl: string;
