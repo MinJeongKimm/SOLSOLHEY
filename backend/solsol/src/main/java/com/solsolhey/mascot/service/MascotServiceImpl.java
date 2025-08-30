@@ -28,6 +28,7 @@ import com.solsolhey.shop.domain.Item;
 import com.solsolhey.shop.domain.UserItem;
 import com.solsolhey.shop.repository.ItemRepository;
 import com.solsolhey.shop.repository.UserItemRepository;
+import com.solsolhey.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +49,7 @@ public class MascotServiceImpl implements MascotService {
     private final com.solsolhey.mascot.repository.MascotSnapshotRepository mascotSnapshotRepository;
     private final com.solsolhey.util.MediaStorageService mediaStorageService;
     private final com.solsolhey.solsol.config.MediaStorageProperties mediaStorageProperties;
+    private final UserRepository userRepository;
     
     @Override
     @Transactional
@@ -57,6 +59,19 @@ public class MascotServiceImpl implements MascotService {
         // 이미 마스코트가 존재하는지 확인
         if (mascotRepository.existsByUserId(userId)) {
             throw new MascotAlreadyExistsException(userId);
+        }
+        
+        // 캠퍼스별 마스코트 타입 제한 검증
+        if ("sookmyung".equals(request.getType())) {
+            // 사용자 정보 조회
+            com.solsolhey.user.entity.User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+            
+            // 숙명여자대학교 캠퍼스가 아닌 경우 접근 거부
+            if (!"숙명여자대학교".equals(user.getCampus())) {
+                log.warn("숙명여자대학교 캠퍼스가 아닌 사용자가 눈송이 마스코트 생성 시도 - 사용자 ID: {}, 캠퍼스: {}", userId, user.getCampus());
+                throw new IllegalArgumentException("숙명여자대학교 캠퍼스 사용자만 눈송이 마스코트를 생성할 수 있습니다.");
+            }
         }
         
         // 마스코트 생성

@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-blue-100 to-blue-300 px-4">
+  <div class="min-h-screen flex flex-col justify-center items-center px-4" style="background: linear-gradient(to bottom, #6E72EF 0%, #E586E2 100%);">
     <div class="w-full max-w-sm bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-6" role="main" aria-label="회원가입 폼">
       <!-- 상단 헤더: 뒤로가기 + 타이틀 -->
       <div class="relative mb-2">
