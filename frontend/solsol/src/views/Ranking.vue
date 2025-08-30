@@ -2,19 +2,22 @@
   <div class="min-h-screen bg-gradient-to-br from-purple-100 via-blue-100 to-green-100 p-2 sm:p-4">
     <div class="bg-white rounded-2xl shadow-xl max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
       <!-- 헤더 -->
-      <div class="flex flex-col sm:flex-row items-center mb-6 sm:mb-8 relative">
-        <!-- 뒤로가기 버튼 (모바일에서는 상단, 데스크톱에서는 왼쪽) -->
+      <div class="flex items-center justify-between mb-6 sm:mb-8">
+        <!-- 뒤로가기 버튼 -->
         <router-link 
           to="/mascot" 
-          class="p-2 text-purple-500 hover:text-purple-700 transition-colors rounded-full hover:bg-purple-50 absolute left-0 top-0 sm:relative sm:left-auto sm:top-auto"
+          class="p-2 text-purple-500 hover:text-purple-700 transition-colors rounded-full hover:bg-purple-50"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
           </svg>
         </router-link>
         
-        <!-- 제목 (가운데) -->
-        <h1 class="text-xl sm:text-2xl font-bold text-gray-800 text-center w-full mt-8 sm:mt-0">Ranking</h1>
+        <!-- 제목 -->
+        <h1 class="text-xl sm:text-2xl font-bold text-gray-800">랭킹</h1>
+        
+        <!-- 빈 공간 (가운데 정렬을 위해) -->
+        <div class="w-10 h-10"></div>
       </div>
 
       <!-- 탭 네비게이션 -->
