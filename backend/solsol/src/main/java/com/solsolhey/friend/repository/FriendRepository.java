@@ -79,4 +79,10 @@ public interface FriendRepository extends JpaRepository<Friend, Long> {
     @Query("SELECT f FROM Friend f WHERE f.user = :user AND f.status = 'ACCEPTED' AND " +
            "LOWER(f.friendUser.nickname) LIKE LOWER(CONCAT('%', :nickname, '%'))")
     List<Friend> findFriendsByNickname(@Param("user") User user, @Param("nickname") String nickname);
+
+    /**
+     * 특정 사용자와의 친구 관계를 상태별로 조회
+     */
+    @Query("SELECT f FROM Friend f WHERE f.user = :user AND f.friendUser = :friendUser AND f.status = :status")
+    Optional<Friend> findByUserAndFriendUserAndStatus(@Param("user") User user, @Param("friendUser") User friendUser, @Param("status") FriendshipStatus status);
 }

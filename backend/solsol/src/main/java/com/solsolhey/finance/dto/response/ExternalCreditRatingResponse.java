@@ -6,13 +6,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ExternalTransactionHistoryResponse {
+public class ExternalCreditRatingResponse {
     @JsonProperty("Header")
     private Header header;
     @JsonProperty("REC")
@@ -25,6 +23,13 @@ public class ExternalTransactionHistoryResponse {
     public static class Header {
         private String responseCode;
         private String responseMessage;
+        private String apiName;
+        private String transmissionDate;
+        private String transmissionTime;
+        private String institutionCode;
+        private String apiKey;
+        private String apiServiceCode;
+        private String institutionTransactionUniqueNo;
     }
 
     @Data
@@ -32,19 +37,10 @@ public class ExternalTransactionHistoryResponse {
     @AllArgsConstructor
     @Builder
     public static class Rec {
-        private String totalCount;
-        private List<Item> list;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class Item {
-        private String transactionDate;
-        private String transactionTime;
-        private String transactionTypeName;
-        private String transactionBalance; // 금액
-        private String transactionAfterBalance; // 잔액
+        private String ratingName;
+        private String demandDepositAssetValue;
+        private String depositSavingsAssetValue;
+        private String totalAssetValue;
     }
 }
+

@@ -65,6 +65,35 @@ public class ShopController {
         }
     }
     
+    @Operation(summary = "공개 상품 목록 조회", description = "인증 없이 상품 목록을 조회합니다 (링크 공유용)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "조회 성공"),
+            @ApiResponse(responseCode = "500", description = "서버 오류")
+    })
+    @GetMapping("/items/public")
+    public ResponseEntity<Map<String, Object>> getPublicItems(
+            @Parameter(description = "상품 타입 (EQUIP, BACKGROUND)", example = "EQUIP")
+            @RequestParam(required = false) String type) {
+        
+        try {
+            log.info("공개 상품 목록 조회 API 호출 - type: {}", type);
+            
+            // 공개용 상품 목록 조회 (소유권 정보 제외)
+            List<ItemResponse> items = shopService.getPublicItems(type);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("result", "SUCCESS");
+            result.put("message", "공개 상품 목록 조회가 완료되었습니다.");
+            result.put("data", items);
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("공개 상품 목록 조회 중 오류 발생", e);
+            return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "공개 상품 목록 조회에 실패했습니다.");
+        }
+    }
+    
     @Operation(summary = "주문 생성", description = "상품 또는 기프티콘을 구매합니다")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "주문 성공"),
