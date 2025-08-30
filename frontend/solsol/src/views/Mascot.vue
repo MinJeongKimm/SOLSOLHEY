@@ -317,7 +317,7 @@
 import { computed, nextTick, onMounted, onUnmounted, onActivated, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { getFriendHome } from '../api/friend';
-import { apiRequest, auth, createShareLink, getAiSpeech, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
+import { apiRequest, auth, createShareLink, getAiSpeechNext, prefillAiSpeech, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
 import SpeechBubble from '../components/ui/SpeechBubble.vue';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
@@ -371,27 +371,15 @@ function chunkByWords(text: string, maxCharsPerLine: number): string[] {
 }
 let bubbleTimer: number | null = null;
 
-const bubblePlaceholders = [
-  '불렀어?',
-  '나 여기 있어!',
-  '응, 듣고 있어!',
-  '짜자잔 ~',
-  '뿅! 나타났어'
-];
-
 async function onMascotClick() {
   // 여러 번 클릭 방지: 말풍선 라이프사이클 종료 전엔 무시
   if (bubbleLocked.value) return;
   bubbleLocked.value = true;
 
-  // 즉시 표시: 지연 없이 말풍선 노출 (귀여운 반응)
+  // 버퍼에서 즉시 소비하여 문구 수신 후 표시
   if (bubbleTimer) window.clearTimeout(bubbleTimer);
-  bubbleText.value = bubblePlaceholders[Math.floor(Math.random() * bubblePlaceholders.length)];
-  showBubble.value = true;
-  await nextTick();
-  updateRects(); // 표시 직후 가용 너비 재계산
   try {
-    const res = await getAiSpeech();
+    const res = await getAiSpeechNext();
     bubbleText.value = res.message || '오늘은 가벼운 챌린지 어때?';
     bubbleKind.value = (res as any).kind || null;
   } catch (e) {
@@ -399,6 +387,10 @@ async function onMascotClick() {
     bubbleText.value = '오늘은 가벼운 챌린지 어때?';
     bubbleKind.value = null;
   }
+  // 문구가 준비된 뒤 노출
+  showBubble.value = true;
+  await nextTick();
+  updateRects();
   // 최종 문구 기준으로 5초 유지하고 락 해제
   if (bubbleTimer) window.clearTimeout(bubbleTimer);
   bubbleTimer = window.setTimeout(() => {
@@ -994,6 +986,13 @@ onMounted(async () => {
 
     // 내 홈 요약(좋아요 누적) 로드
     await reloadLikes();
+
+    // AI 말풍선 버퍼 프리필 (타입별 2개 → 총 4개 목표)
+    try {
+      await prefillAiSpeech(2);
+    } catch (e) {
+      console.warn('AI 말풍선 프리필 실패:', e);
+    }
   } catch (err) {
     console.error('메인화면 데이터 로드 실패:', err);
     handleApiError(err);

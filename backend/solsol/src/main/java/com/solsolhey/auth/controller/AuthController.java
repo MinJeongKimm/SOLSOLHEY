@@ -35,6 +35,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final com.solsolhey.auth.jwt.JwtTokenProvider jwtTokenProvider;
+    private final com.solsolhey.ai.AiSpeechBufferService aiSpeechBufferService;
 
     /**
      * 회원가입
@@ -97,6 +98,11 @@ public class AuthController {
             // Spring Security의 자동 CSRF 토큰 생성에 의존
             // csrfRepo.generateToken(request);
             // csrfRepo.saveToken(csrf, request, response);
+
+            // 3) Warm up AI speech buffer asynchronously (about 4 total → 2 per type)
+            try {
+                aiSpeechBufferService.refillAsync(Long.parseLong(userId), 2);
+            } catch (Exception ignored) {}
 
             return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessC.toString())
