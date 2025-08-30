@@ -7,6 +7,7 @@ import com.solsolhey.finance.dto.response.CreditRatingResponse;
 import com.solsolhey.auth.dto.response.CustomUserDetails;
 import com.solsolhey.finance.dto.response.SingleExchangeRateResponse;
 import com.solsolhey.finance.service.FinanceService;
+import com.solsolhey.finance.service.FinanceUserProvisioningService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import reactor.core.publisher.Mono;
 public class FinanceController {
 
     private final FinanceService financeService;
+    private final FinanceUserProvisioningService financeUserProvisioningService;
 
     // 환율 전체 조회
     @GetMapping("/exchange-rates")
@@ -78,11 +80,17 @@ public class FinanceController {
         log.info("신용등급 조회 API 호출 (current user)");
         String userKey = userDetails != null ? userDetails.getUser().getFinanceUserKey() : null;
         if (userKey == null || userKey.isBlank()) {
-            CreditRatingResponse err = CreditRatingResponse.builder()
-                    .code("error")
-                    .message("금융 사용자 키가 없습니다. 잠시 후 다시 시도하거나 다시 로그인해 주세요.")
-                    .build();
-            return Mono.just(ResponseEntity.badRequest().body(err));
+            // 동기 프로비저닝 시도 후 진행
+            Long userId = userDetails != null ? userDetails.getUserId() : null;
+            String ensured = (userId != null) ? financeUserProvisioningService.provisionAndGetUserKey(userId) : null;
+            if (ensured == null || ensured.isBlank()) {
+                CreditRatingResponse err = CreditRatingResponse.builder()
+                        .code("error")
+                        .message("금융 사용자 키 발급 중입니다. 잠시 후 다시 시도해 주세요.")
+                        .build();
+                return Mono.just(ResponseEntity.status(202).body(err));
+            }
+            userKey = ensured;
         }
         return financeService.getMyCreditRating(userKey)
                 .map(ResponseEntity::ok)
