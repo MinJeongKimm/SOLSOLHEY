@@ -26,6 +26,8 @@ public class AiMessageService {
 
     private enum SpeechType { ACADEMIC, CHALLENGE }
     private final ConcurrentHashMap<Long, SpeechType> lastTypeByUser = new ConcurrentHashMap<>();
+    private enum FocusType { ACADEMIC, TIME, PATTERN, MAJOR, ROLE, STREAK }
+    private final ConcurrentHashMap<Long, java.util.Deque<FocusType>> recentFocusByUser = new ConcurrentHashMap<>();
 
     public com.solsolhey.ai.dto.AiSpeechGenResult generateSpeech(Long userId) {
         var user = userRepository.findById(userId).orElse(null);
@@ -52,19 +54,23 @@ public class AiMessageService {
         String userSummary = contextLoader.getUserSummary(userId).orElse(null);
 
         if (desired == SpeechType.ACADEMIC) {
-            result = tryAcademic(campus, nickname, level, userId, avoidSocial, userSummary);
+            var focus = chooseFocus(userId, desired);
+            result = tryAcademic(campus, nickname, level, userId, avoidSocial, userSummary, focus);
             if (result != null && !result.isBlank()) {
                 produced = SpeechType.ACADEMIC;
             } else {
-                result = tryChallenge(campus, nickname, level, userId, avoidSocial, userSummary);
+                focus = chooseFocus(userId, SpeechType.CHALLENGE);
+                result = tryChallenge(campus, nickname, level, userId, avoidSocial, userSummary, focus);
                 if (result != null && !result.isBlank()) produced = SpeechType.CHALLENGE;
             }
         } else { // desired CHALLENGE
-            result = tryChallenge(campus, nickname, level, userId, avoidSocial, userSummary);
+            var focus = chooseFocus(userId, desired);
+            result = tryChallenge(campus, nickname, level, userId, avoidSocial, userSummary, focus);
             if (result != null && !result.isBlank()) {
                 produced = SpeechType.CHALLENGE;
             } else {
-                result = tryAcademic(campus, nickname, level, userId, avoidSocial, userSummary);
+                focus = chooseFocus(userId, SpeechType.ACADEMIC);
+                result = tryAcademic(campus, nickname, level, userId, avoidSocial, userSummary, focus);
                 if (result != null && !result.isBlank()) produced = SpeechType.ACADEMIC;
             }
         }
@@ -86,10 +92,11 @@ public class AiMessageService {
         return new com.solsolhey.ai.dto.AiSpeechGenResult(finalText, kind);
     }
 
-    private String tryAcademic(String campus, String nickname, Integer level, Long userId, boolean avoidSocial, String userSummary) {
+    private String tryAcademic(String campus, String nickname, Integer level, Long userId, boolean avoidSocial, String userSummary, FocusType focus) {
         AcademicContext academic = contextLoader.getAcademicContext().orElseGet(dummyProvider::getDummyContext);
         AcademicContext varied = selectRandomSubContext(academic);
-        String prompt = promptBuilder.buildPrompt(campus, nickname, level, varied, userSummary)
+        String[] focusKV = resolveFocusKV(userId, focus, varied);
+        String prompt = promptBuilder.buildPrompt(campus, nickname, level, varied, userSummary, focusKV[0], focusKV[1])
                 + "\n표현 다양화 지침: 같은 의미라도 매번 어휘/어순을 바꿔 자연스럽게 다르게 써줘. 반말 유지, 이모지/닉네임/캠퍼스 언급 금지."
                 + (avoidSocial ? "\n추가 제약: 소셜 지표/친구/좋아요/팔로워 등 사회적 비교 표현을 언급하지 말 것." : "")
                 + "\n변주 토큰: " + java.util.UUID.randomUUID().toString().substring(0, 8);
@@ -107,7 +114,7 @@ public class AiMessageService {
         return null;
     }
 
-    private String tryChallenge(String campus, String nickname, Integer level, Long userId, boolean avoidSocial, String userSummary) {
+    private String tryChallenge(String campus, String nickname, Integer level, Long userId, boolean avoidSocial, String userSummary, FocusType focus) {
         try {
             var now = java.time.LocalDateTime.now();
             var challenges = challengeRepository.findAvailableChallenges(now);
@@ -115,7 +122,8 @@ public class AiMessageService {
             int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(challenges.size());
             var picked = challenges.get(idx);
             String challengeName = picked.getChallengeName();
-            String prompt = promptBuilder.buildChallengePrompt(campus, nickname, level, challengeName, userSummary)
+            String[] focusKV = resolveFocusKV(userId, focus, null);
+            String prompt = promptBuilder.buildChallengePrompt(campus, nickname, level, challengeName, userSummary, focusKV[0], focusKV[1])
                     + (avoidSocial ? "\n추가 제약: 소셜 지표/친구/좋아요/팔로워 등 언급 금지." : "");
             try {
                 GenerateContentResponse res = client.models.generateContent(
@@ -240,5 +248,63 @@ public class AiMessageService {
             notices = java.util.List.of(ctx.notices().get(idx));
         }
         return new AcademicContext(events, todays, notices);
+    }
+
+    private FocusType chooseFocus(Long userId, SpeechType desired) {
+        var facetsOpt = contextLoader.getUserFacets(userId);
+        var academicOpt = contextLoader.getAcademicContext();
+        java.util.List<FocusType> pool = new java.util.ArrayList<>();
+        java.util.function.BiConsumer<FocusType,Integer> add = (t,w) -> { for (int i=0;i<w;i++) pool.add(t); };
+        if (desired == SpeechType.ACADEMIC) {
+            if (academicOpt.isPresent()) add.accept(FocusType.ACADEMIC, 4);
+            facetsOpt.ifPresent(f -> {
+                if (f.time != null) add.accept(FocusType.TIME, 3);
+                if (f.pattern != null) add.accept(FocusType.PATTERN, 3);
+                if (f.major != null) add.accept(FocusType.MAJOR, 2);
+                if (f.role != null) add.accept(FocusType.ROLE, 2);
+                if (f.streak != null) add.accept(FocusType.STREAK, 1);
+            });
+        } else {
+            facetsOpt.ifPresent(f -> {
+                if (f.time != null) add.accept(FocusType.TIME, 3);
+                if (f.pattern != null) add.accept(FocusType.PATTERN, 3);
+                if (f.major != null) add.accept(FocusType.MAJOR, 2);
+                if (f.role != null) add.accept(FocusType.ROLE, 2);
+                if (f.streak != null) add.accept(FocusType.STREAK, 1);
+            });
+            if (pool.isEmpty() && academicOpt.isPresent()) add.accept(FocusType.ACADEMIC, 1);
+        }
+        if (pool.isEmpty()) return null;
+        var dq = recentFocusByUser.computeIfAbsent(userId == null ? -1L : userId, k -> new java.util.ArrayDeque<>());
+        java.util.Set<FocusType> cooldown = new java.util.HashSet<>(dq);
+        java.util.List<FocusType> filtered = pool.stream().filter(f -> !cooldown.contains(f)).toList();
+        java.util.List<FocusType> finalPool = filtered.isEmpty() ? pool : filtered;
+        int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(finalPool.size());
+        FocusType pick = finalPool.get(idx);
+        dq.addFirst(pick);
+        while (dq.size() > 3) dq.removeLast();
+        recentFocusByUser.put(userId == null ? -1L : userId, dq);
+        return pick;
+    }
+
+    private String[] resolveFocusKV(Long userId, FocusType focus, AcademicContext varied) {
+        String key = null, val = null;
+        if (focus == null) return new String[]{null, null};
+        var facets = contextLoader.getUserFacets(userId).orElse(null);
+        switch (focus) {
+            case ACADEMIC -> {
+                if (varied != null && varied.upcomingEvents() != null && !varied.upcomingEvents().isEmpty()) {
+                    var e = varied.upcomingEvents().get(0);
+                    key = "academic";
+                    val = e.title();
+                }
+            }
+            case TIME -> { if (facets != null && facets.time != null) { key = "time"; val = facets.time; } }
+            case PATTERN -> { if (facets != null && facets.pattern != null) { key = "pattern"; val = facets.pattern; } }
+            case MAJOR -> { if (facets != null && facets.major != null) { key = "major"; val = facets.major; } }
+            case ROLE -> { if (facets != null && facets.role != null) { key = "role"; val = facets.role; } }
+            case STREAK -> { if (facets != null && facets.streak != null) { key = "streak"; val = facets.streak + "일"; } }
+        }
+        return new String[]{key, val};
     }
 }

@@ -9,10 +9,10 @@ import java.time.format.DateTimeFormatter;
 @Component
 public class PromptBuilder {
     public String buildPrompt(String campusName, String nickname, Integer level, AcademicContext academic) {
-        return buildPrompt(campusName, nickname, level, academic, null);
+        return buildPrompt(campusName, nickname, level, academic, null, null, null);
     }
 
-    public String buildPrompt(String campusName, String nickname, Integer level, AcademicContext academic, String userSummary) {
+    public String buildPrompt(String campusName, String nickname, Integer level, AcademicContext academic, String userSummary, String focusKey, String focusValue) {
         String timeGreeting = getTimeGreeting(LocalDateTime.now());
         StringBuilder sb = new StringBuilder();
         sb.append("당신은 사용자의 홈 화면에서 마스코트가 말풍선으로 전하는 짧은 인삿말을 생성합니다.\n");
@@ -25,9 +25,12 @@ public class PromptBuilder {
                 .append(level == null ? 1 : level).append(".\n");
         if (userSummary != null && !userSummary.isBlank()) {
             sb.append("사용자 요약: ").append(userSummary).append("\n");
-            sb.append("개인화: 전공/역할/시간대/습관을 은근히 반영. 노골적 열거 금지, 한 문장에 자연스럽게 녹일 것.\n");
+            sb.append("개인화 지침: 아래 '이번 포커스'만 은근히 반영. 다른 속성은 쓰지 말 것. 노골적 열거 금지.\n");
         }
-        sb.append("시간대 인사: ").append(timeGreeting).append(" 포함.\n");
+        if (focusKey != null && !focusKey.isBlank() && focusValue != null && !focusValue.isBlank()) {
+            sb.append("이번 포커스: ").append(focusKey).append("=").append(focusValue).append("\n");
+        }
+        sb.append("시간대 인사: 선택적으로 포함. 표현이 단조로우면 생략 가능.\n");
         sb.append("학사 데이터가 있을 경우 마감 임박(24~48시간) 우선, 다음으로 오늘 일정, 다음으로 공지를 간단히 반영.\n");
         sb.append("학사 데이터가 없거나 비어있으면 일반 인사 + 동기부여 한 줄.\n");
         sb.append("문구는 친근하고 가볍게, 부담 없이 행동 유도(반말 유지).\n");
@@ -70,10 +73,10 @@ public class PromptBuilder {
      * - 말풍선용 1문장, 20~25자(최대 25자), 자연스럽게 권유 어조
      */
     public String buildChallengePrompt(String campusName, String nickname, Integer level, String challengeName) {
-        return buildChallengePrompt(campusName, nickname, level, challengeName, null);
+        return buildChallengePrompt(campusName, nickname, level, challengeName, null, null, null);
     }
 
-    public String buildChallengePrompt(String campusName, String nickname, Integer level, String challengeName, String userSummary) {
+    public String buildChallengePrompt(String campusName, String nickname, Integer level, String challengeName, String userSummary, String focusKey, String focusValue) {
         StringBuilder sb = new StringBuilder();
         sb.append("당신은 홈 화면 말풍선에 들어갈 한 문장의 짧은 권유 문구를 생성합니다.\n");
         sb.append("출력 제약: 한국어, 1문장, 20~25자(최대 25자), 친근한 구어체, 말풍선용.\n");
@@ -83,7 +86,10 @@ public class PromptBuilder {
         sb.append("사용자 맥락: 레벨=").append(level == null ? 1 : level).append(".\n");
         if (userSummary != null && !userSummary.isBlank()) {
             sb.append("사용자 요약: ").append(userSummary).append("\n");
-            sb.append("개인화: 전공/시간대/패턴을 고려해 과제/연습/문제풀이 등 적합한 활동으로 권유.\n");
+            sb.append("개인화 지침: 아래 '이번 포커스'만 은근히 반영. 다른 속성은 쓰지 말 것.\n");
+        }
+        if (focusKey != null && !focusKey.isBlank() && focusValue != null && !focusValue.isBlank()) {
+            sb.append("이번 포커스: ").append(focusKey).append("=").append(focusValue).append("\n");
         }
         sb.append("타겟 챌린지: '").append(challengeName).append("'\n");
         sb.append("지침: 챌린지명을 자연스럽게 녹여 권유하세요(직설적 제목 나열 금지).\n");

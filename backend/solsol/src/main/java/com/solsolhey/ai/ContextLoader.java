@@ -75,6 +75,10 @@ public class ContextLoader {
         return getUserContextById(userId).map(this::summarizeUser);
     }
 
+    public Optional<UserFacets> getUserFacets(Long userId) {
+        return getUserContextById(userId).map(this::extractFacets);
+    }
+
     private String summarizeUser(UserContext u) {
         StringBuilder sb = new StringBuilder();
         if (u.major_group != null && !u.major_group.isBlank()) {
@@ -107,6 +111,37 @@ public class ContextLoader {
             sb.append("streak=").append(u.library.streak_days).append("일");
         }
         return sb.toString();
+    }
+
+    private UserFacets extractFacets(UserContext u) {
+        UserFacets f = new UserFacets();
+        // major
+        if (u.major_group != null && !u.major_group.isBlank()) {
+            f.major = u.major_group;
+            // simple domain hints
+            if (u.major_group.contains("미대")) f.majorHint = "작업/실습";
+            else if (u.major_group.contains("공대")) f.majorHint = "문제/리포트";
+        }
+        // role
+        if (u.role_tags != null && !u.role_tags.isEmpty()) {
+            f.role = String.join("/", u.role_tags);
+            if (u.role_tags.contains("freshman")) f.roleHint = "기초 다지기";
+            if (u.role_tags.contains("graduating")) f.roleHint = "졸업 준비";
+        }
+        // time/pattern
+        if (u.timetable != null) {
+            if (Boolean.TRUE.equals(u.timetable.morning) && !Boolean.TRUE.equals(u.timetable.afternoon)) f.time = "오전";
+            else if (!Boolean.TRUE.equals(u.timetable.morning) && Boolean.TRUE.equals(u.timetable.afternoon)) f.time = "오후";
+            else if (Boolean.TRUE.equals(u.timetable.morning) && Boolean.TRUE.equals(u.timetable.afternoon)) f.time = "오전/오후";
+
+            if (Boolean.TRUE.equals(u.timetable.back_to_back)) f.pattern = "백투백";
+            else if (Boolean.TRUE.equals(u.timetable.long_free_day)) f.pattern = "긴공강";
+        }
+        // streak
+        if (u.library != null && u.library.streak_days != null) {
+            f.streak = u.library.streak_days;
+        }
+        return f;
     }
 
     public boolean userNotesSuggestAvoidSocial(Long userId) {
@@ -150,4 +185,14 @@ public class ContextLoader {
         } catch (Exception ignored) {}
         return null;
     }
+}
+
+class UserFacets {
+    public String major;      // 예: 미대, 공대
+    public String majorHint;  // 예: 작업/실습, 문제/리포트
+    public String role;       // 예: freshman, graduating
+    public String roleHint;   // 예: 기초 다지기, 졸업 준비
+    public String time;       // 예: 오전, 오후, 오전/오후
+    public String pattern;    // 예: 백투백, 긴공강
+    public Integer streak;    // 예: 21
 }
