@@ -21,32 +21,34 @@
       </div>
 
       <!-- 탭 네비게이션 -->
-      <div class="border-b border-gray-200 mb-6 sm:mb-8">
-        <nav class="-mb-px flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-8 justify-center">
-          <button
-            @click="activeTab = 'campus'"
-            :class="[
-              activeTab === 'campus'
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'whitespace-nowrap py-2 px-1 border-b-2 sm:border-b-2 border-l-2 sm:border-l-0 font-medium text-sm'
-            ]"
-          >
-            교내 랭킹
-          </button>
-          <button
-            @click="activeTab = 'national'"
-            :class="[
-              activeTab === 'national'
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-              'whitespace-nowrap py-2 px-1 border-b-2 sm:border-b-2 border-l-2 sm:border-l-0 font-medium text-sm'
-            ]"
-          >
-            전국 랭킹
-          </button>
+      <div class="mb-6 sm:mb-8">
+        <nav class="flex justify-center">
+          <div class="flex bg-gray-200 rounded-lg p-0.5 w-64 max-w-full">
+            <button
+              @click="activeTab = 'campus'"
+              :class="[
+                activeTab === 'campus'
+                  ? 'bg-white text-purple-600 shadow-md'
+                  : 'text-gray-600 hover:text-purple-500 hover:bg-gray-100',
+                'flex-1 py-2 px-3 rounded-md font-medium text-sm transition-all duration-200'
+              ]"
+            >
+              교내 랭킹
+            </button>
+            <button
+              @click="activeTab = 'national'"
+              :class="[
+                activeTab === 'national'
+                  ? 'bg-white text-purple-600 shadow-md'
+                  : 'text-gray-600 hover:text-purple-500 hover:bg-gray-100',
+                'flex-1 py-2 px-3 rounded-md font-medium text-sm transition-all duration-200'
+              ]"
+            >
+              전국 랭킹
+            </button>
+          </div>
         </nav>
-  </div>
+      </div>
 
   <!-- 전국 랭킹 참가 슬롯 섹션 -->
       <div v-if="activeTab === 'national'" class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 sm:p-6 mb-6 border-2 border-blue-200">
