@@ -1,0 +1,24 @@
+{
+  "user_id": "uB",
+  "role_tags": ["graduating"],
+  "major_group": "공대",
+  "stats": {
+    "likes": 12,
+    "friends": 8,
+    "items": 6,
+    "join_rate": 0.18,
+    "success_rate": 0.10,
+    "points": 950
+  },
+  "timetable": {
+    "morning": false,
+    "afternoon": true,
+    "back_to_back": false,
+    "long_free_day": true
+  },
+  "library": {
+    "streak_days": 21
+  },
+  "notes": "소셜 수치 낮음 → 소셜 언급 회피"
+}
+
