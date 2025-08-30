@@ -29,6 +29,10 @@
         <div class="text-center">
           <h2 class="text-2xl font-bold text-gray-800 mb-2">🐾 마스코트를 선택해주세요</h2>
           <p class="text-gray-600">화살표 버튼이나 키보드 방향키로 <br/> 마음에 드는 친구를 찾아보세요!</p>
+          
+
+          
+
         </div>
         
         <!-- 커스텀 슬라이더 -->
@@ -52,7 +56,7 @@
                 @load="handleImageLoad"
               />
               <div class="flex justify-center items-center mt-2 space-x-2">
-                <span class="text-xs text-gray-400">{{ selectedMascotIndex + 1 }} / {{ mascotTypes.length }}</span>
+                <span class="text-xs text-gray-400">{{ selectedMascotIndex + 1 }} / {{ availableMascotTypes.length }}</span>
                 <span class="text-xs text-purple-500">• {{ currentMascotType.name }}</span>
               </div>
             </div>
@@ -73,7 +77,7 @@
           
           <button 
             @click="nextMascot"
-            :disabled="selectedMascotIndex === mascotTypes.length - 1"
+            :disabled="selectedMascotIndex === availableMascotTypes.length - 1"
             class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white rounded-full p-3 shadow-lg nav-button disabled:opacity-50 disabled:cursor-not-allowed z-10"
           >
             <svg class="w-6 h-6 text-purple-600 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -84,7 +88,7 @@
           <!-- 인디케이터 -->
           <div class="flex justify-center mt-6 space-x-2">
             <button
-              v-for="(type, index) in mascotTypes"
+              v-for="(type, index) in availableMascotTypes"
               :key="index"
               @click="selectedMascotIndex = index"
               :class="[
@@ -203,7 +207,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { createMascot as createMascotApi, handleApiError } from '../api/index';
+import { createMascot as createMascotApi, handleApiError, auth } from '../api/index';
 import { mascotTypes } from '../data/mockData';
 import type { CreateMascotRequest } from '../types/api';
 
@@ -212,10 +216,27 @@ const router = useRouter();
 // 단계 관리
 const currentStep = ref(1);
 
+// 사용자 캠퍼스 정보
+const campusName = ref<string>('');
+const isLoadingCampus = ref(true);
+
+// 사용 가능한 마스코트 타입 (캠퍼스별 필터링)
+const availableMascotTypes = computed(() => {
+  if (campusName.value === '숙명여자대학교') {
+    // 숙명여자대학교: 눈송이를 맨 앞으로, 나머지는 기존 순서
+    const sookmyung = mascotTypes.find(type => type.id === 'sookmyung');
+    const others = mascotTypes.filter(type => type.id !== 'sookmyung');
+    return sookmyung ? [sookmyung, ...others] : mascotTypes;
+  } else {
+    // 기타 캠퍼스: 눈송이 제외
+    return mascotTypes.filter(type => type.id !== 'sookmyung');
+  }
+});
+
 // 마스코트 선택 관련
 const selectedMascotIndex = ref(0);
-const selectedMascot = computed(() => mascotTypes[selectedMascotIndex.value]);
-const currentMascotType = computed(() => mascotTypes[selectedMascotIndex.value]);
+const selectedMascot = computed(() => availableMascotTypes.value[selectedMascotIndex.value]);
+const currentMascotType = computed(() => availableMascotTypes.value[selectedMascotIndex.value]);
 
 // 폼 데이터
 const newMascot = ref<CreateMascotRequest>({
@@ -232,7 +253,7 @@ const nameInput = ref<HTMLInputElement>();
 
 // 슬라이더 네비게이션 함수들
 function nextMascot() {
-  if (selectedMascotIndex.value < mascotTypes.length - 1) {
+  if (selectedMascotIndex.value < availableMascotTypes.value.length - 1) {
     selectedMascotIndex.value++;
   }
 }
@@ -328,8 +349,34 @@ function handleKeydown(event: KeyboardEvent) {
   }
 }
 
+// 사용자 캠퍼스 정보 조회
+async function fetchUserCampus() {
+  try {
+    isLoadingCampus.value = true;
+    const user = await auth.fetchUser();
+    if (user && user.campus) {
+      campusName.value = user.campus;
+      console.log('사용자 캠퍼스:', user.campus);
+      
+      // 캠퍼스 정보에 따라 선택된 마스코트 인덱스 조정
+      if (campusName.value !== '숙명여자대학교' && selectedMascotIndex.value >= availableMascotTypes.value.length) {
+        selectedMascotIndex.value = Math.max(0, availableMascotTypes.value.length - 1);
+      }
+    }
+  } catch (error) {
+    console.error('사용자 캠퍼스 정보 조회 실패:', error);
+    // 기본값으로 설정 (눈송이 제외)
+    campusName.value = '';
+  } finally {
+    isLoadingCampus.value = false;
+  }
+}
+
 // 컴포넌트 마운트
-onMounted(() => {
+onMounted(async () => {
+  // 사용자 캠퍼스 정보 조회
+  await fetchUserCampus();
+  
   // 키보드 이벤트 리스너 등록
   document.addEventListener('keydown', handleKeydown);
 });

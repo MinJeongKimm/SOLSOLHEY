@@ -188,6 +188,12 @@ export const mascotTypes = [
     name: '플리', 
     description: '귀엽고 사랑스러운 플리 마스코트',
     imageUrl: '/mascot/pli.png'
+  },
+  { 
+    id: 'sookmyung', 
+    name: '눈송이', 
+    description: '미래를 향해 도전하며 늘 깨어있는 숙명인',
+    imageUrl: '/mascot/sookmyung_base.png'
   }
 ];
 

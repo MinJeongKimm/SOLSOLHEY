@@ -39,4 +39,10 @@ public interface MascotRepository extends JpaRepository<Mascot, Long> {
      */
     @Query("SELECT m FROM Mascot m JOIN User u ON m.userId = u.userId WHERE u.campus = :campus")
     List<Mascot> findByUserCampus(@Param("campus") String campus);
+
+    /**
+     * 사용자 ID로 마스코트 레벨만 조회 (LOB 회피용 경량 쿼리)
+     */
+    @Query("SELECT m.level FROM Mascot m WHERE m.userId = :userId")
+    Integer findLevelByUserId(@Param("userId") Long userId);
 }
