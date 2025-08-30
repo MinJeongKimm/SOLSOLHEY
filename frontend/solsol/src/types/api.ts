@@ -106,6 +106,7 @@ export interface Mascot {
   level: number;
   exp: number; // 백엔드의 exp 필드와 일치
   equippedItem?: string; // 백엔드의 equippedItem 필드와 일치 (단순 문자열)
+  equippedLayout?: string; // 백엔드의 equippedLayout 필드와 일치 (JSON 문자열)
   backgroundColor?: string;
   backgroundPattern?: string; // 'dots' | 'stripes' | 'none'
   createdAt?: string;
@@ -370,4 +371,43 @@ export interface RankingResponse {
   campus?: {
     campusName: string;
   };
+}
+
+// MascotView 관련 타입들 추가
+export interface MascotViewResponse {
+  owner: OwnerSummary;
+  viewer: ViewerSummary;
+  viewMode: 'SELF' | 'OTHER' | 'UNKNOWN';
+  permissions: Permissions;
+  mascot: MascotSummary;
+}
+
+export interface OwnerSummary {
+  id: number;
+  nickname: string;
+  level: number;
+}
+
+export interface ViewerSummary {
+  id: number | null;
+}
+
+export interface MascotSummary {
+  id: number;
+  name: string;
+  type: string;
+  equippedItem: string | null;
+  level: number;
+  exp: number;
+  backgroundColor?: string;
+  backgroundPattern?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  snapshotImage?: string;
+}
+
+export interface Permissions {
+  canSendFriendRequest: boolean;
+  canCheer: boolean;
+  canViewDetails: boolean;
 }

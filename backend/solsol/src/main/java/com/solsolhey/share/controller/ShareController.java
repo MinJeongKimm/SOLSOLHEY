@@ -61,6 +61,10 @@ public class ShareController {
         try {
             log.info("공유 링크 조회 API 호출: linkCode={}", linkCode);
             ShareLinkResponse response = shareService.getShareLinkByCode(linkCode);
+            
+            // 공유 링크 조회 시 클릭 카운트 증가
+            shareService.clickShareLink(linkCode);
+            
             return ResponseEntity.ok(ApiResponse.success("공유 링크를 조회했습니다.", response));
         } catch (Exception e) {
             log.error("공유 링크 조회 중 오류 발생: {}", e.getMessage(), e);
