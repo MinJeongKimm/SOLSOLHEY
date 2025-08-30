@@ -300,9 +300,16 @@ export async function composeMascotImage(
         }
       }
     } else if (mascot?.backgroundPattern === 'stripes') {
+      // 대각선 스트라이프 (-45도)로 꾸미기 화면과 일치
       ctx.fillStyle = 'rgba(0,0,0,0.08)';
-      for (let i = 0; i < canvasSize; i += 20) {
-        ctx.fillRect(i, 0, 10, canvasSize);
+      const stripeWidth = 10;
+      const stripeGap = 20;
+      for (let offset = -canvasSize * 1.5; offset < canvasSize * 2.5; offset += stripeGap) {
+        ctx.save();
+        ctx.translate(offset, 0);
+        ctx.rotate(-Math.PI / 4);
+        ctx.fillRect(0, -canvasSize * 1.5, stripeWidth, canvasSize * 3);
+        ctx.restore();
       }
     }
 
@@ -323,8 +330,8 @@ export async function composeMascotImage(
       const baseItemSize = (BASE_ITEM_SIZE / UI_MASCOT_PX) * mascotBoxSize;
 
       // 아이템을 타입별로 분리 (배경 아이템을 맨 뒤로 보내기 위해)
-      const backgroundItems = [];
-      const foregroundItems = [];
+      const backgroundItems: any[] = [];
+      const foregroundItems: any[] = [];
       
       for (const e of customization.equippedItems) {
         const si = byId.get(e.itemId);
@@ -358,8 +365,18 @@ export async function composeMascotImage(
       // 3-2. 마스코트 다시 그리기 (배경 아이템 위에)
       ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
 
-      // 3-3. 전경 아이템들을 나중에 그리기 (맨 앞 레이어)
-      for (const e of foregroundItems) {
+      // 3-3. 전경 아이템들을 나중에 그리기 (맨 앞 레이어) - 타입별 z-index 적용(안정 정렬)
+      const zIndexFor = (cat: string) => ({
+        background: 1,
+        clothing: 5,
+        head: 10,
+        accessory: 15,
+      } as Record<string, number>)[(cat || '').toLowerCase()] ?? 5;
+      const sortedForeground = foregroundItems
+        .map((e: any, idx: number) => ({ e, idx, z: zIndexFor(e.shopItem?.category) }))
+        .sort((a, b) => (a.z - b.z) || (a.idx - b.idx));
+
+      for (const { e } of sortedForeground) {
         try {
           const img = await loadImage(e.shopItem.imageUrl);
           const centerX = mascotX + (e.relativePosition.x * mascotBoxSize);
