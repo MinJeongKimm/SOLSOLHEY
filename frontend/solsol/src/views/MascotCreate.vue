@@ -223,9 +223,13 @@ const isLoadingCampus = ref(true);
 // 사용 가능한 마스코트 타입 (캠퍼스별 필터링)
 const availableMascotTypes = computed(() => {
   if (campusName.value === '숙명여자대학교') {
-    return mascotTypes; // 모든 마스코트 타입 사용 가능
+    // 숙명여자대학교: 눈송이를 맨 앞으로, 나머지는 기존 순서
+    const sookmyung = mascotTypes.find(type => type.id === 'sookmyung');
+    const others = mascotTypes.filter(type => type.id !== 'sookmyung');
+    return sookmyung ? [sookmyung, ...others] : mascotTypes;
   } else {
-    return mascotTypes.filter(type => type.id !== 'sookmyung'); // 눈송이 제외
+    // 기타 캠퍼스: 눈송이 제외
+    return mascotTypes.filter(type => type.id !== 'sookmyung');
   }
 });
 
