@@ -281,6 +281,30 @@ public class FriendServiceImpl implements FriendService {
     }
 
     @Override
+    public boolean isFriend(User user1, User user2) {
+        if (user1.getUserId().equals(user2.getUserId())) {
+            return false; // 자기 자신은 친구가 아님
+        }
+        return friendRepository.existsMutualFriendship(user1, user2);
+    }
+
+    @Override
+    public boolean hasSentRequest(User user, User targetUser) {
+        if (user.getUserId().equals(targetUser.getUserId())) {
+            return false; // 자기 자신에게는 요청 불가
+        }
+        return friendRepository.findByUserAndFriendUserAndStatus(user, targetUser, FriendshipStatus.PENDING).isPresent();
+    }
+
+    @Override
+    public boolean hasPendingRequest(User user, User targetUser) {
+        if (user.getUserId().equals(targetUser.getUserId())) {
+            return false; // 자기 자신으로부터는 요청 불가
+        }
+        return friendRepository.findByUserAndFriendUserAndStatus(targetUser, user, FriendshipStatus.PENDING).isPresent();
+    }
+
+    @Override
     public FriendInteractionResponse sendInteraction(User user, FriendInteractionRequest request) {
         log.debug("상호작용 보내기: userId={}, toUserId={}, type={}", 
                  user.getUserId(), request.toUserId(), request.interactionType());

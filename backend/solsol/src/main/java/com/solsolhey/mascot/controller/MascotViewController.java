@@ -31,5 +31,17 @@ public class MascotViewController {
         MascotViewResponse response = mascotViewService.getView(viewerId, ownerId);
         return ResponseEntity.ok(ApiResponse.success("마스코트 뷰 조회 완료", response));
     }
+
+    /**
+     * 공개 마스코트 조회 (로그인하지 않은 사용자용)
+     */
+    @GetMapping("/view/public")
+    public ResponseEntity<ApiResponse<MascotViewResponse>> getPublicView(
+            @RequestParam("ownerId") Long ownerId
+    ) {
+        log.info("공개 마스코트 뷰 조회: ownerId={}", ownerId);
+        MascotViewResponse response = mascotViewService.getPublicView(ownerId);
+        return ResponseEntity.ok(ApiResponse.success("공개 마스코트 뷰 조회 완료", response));
+    }
 }
 

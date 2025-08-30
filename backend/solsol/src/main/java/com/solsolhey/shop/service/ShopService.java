@@ -27,6 +27,13 @@ public interface ShopService {
     List<ItemResponse> getItemsWithOwnership(Long userId, String type);
     
     /**
+     * 공개 상품 목록 조회 (소유권 정보 제외)
+     * @param type 상품 타입 (EQUIP, BACKGROUND) - null이면 전체 조회
+     * @return 공개 상품 목록
+     */
+    List<ItemResponse> getPublicItems(String type);
+    
+    /**
      * 주문 처리 (상품 구매 또는 기프티콘 구매)
      * @param userId 사용자 ID
      * @param request 주문 요청
