@@ -1,23 +1,5 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
-    <!-- 디버깅 정보 (개발 중에만 표시) -->
-    <div class="absolute top-3 right-3 bg-white bg-opacity-90 p-2 rounded-lg text-xs">
-      <div>로그인: {{ isLoggedIn }}</div>
-      <div>권한: {{ permissions?.canSendFriendRequest ? '친구추가 가능' : '친구추가 불가' }}</div>
-      <div>좋아요: {{ permissions?.canCheer ? '좋아요 가능' : '좋아요 불가' }}</div>
-      <div class="mt-2 p-1 bg-gray-100 rounded">
-        <div>permissions 전체: {{ JSON.stringify(permissions) }}</div>
-        <div>canSendFriendRequest: {{ permissions?.canSendFriendRequest }}</div>
-        <div>canCheer: {{ permissions?.canCheer }}</div>
-      </div>
-      <div class="mt-2 p-1 bg-blue-100 rounded">
-        <div>친구 관계 상태:</div>
-        <div>isFriend: {{ friendshipStatus?.isFriend }}</div>
-        <div>hasPendingRequest: {{ friendshipStatus?.hasPendingRequest }}</div>
-        <div>hasSentRequest: {{ friendshipStatus?.hasSentRequest }}</div>
-      </div>
-    </div>
-
     <!-- 로딩 상태 -->
     <div v-if="isLoading" class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
       <div class="text-center">
@@ -61,17 +43,6 @@
               <span class="text-xs font-medium text-gray-800">{{ currentMascot.name }}</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- 레벨 정보 -->
-      <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 mt-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center space-x-2">
-            <span class="text-xl">⭐</span>
-            <span class="text-lg font-bold text-gray-800">Lv.{{ currentMascot.level }}</span>
-          </div>
-          <span class="text-sm text-gray-500">{{ currentMascot.exp || 0 }} / {{ getNextLevelExp() }} XP</span>
         </div>
       </div>
 
