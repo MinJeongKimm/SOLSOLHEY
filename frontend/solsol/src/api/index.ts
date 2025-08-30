@@ -469,6 +469,17 @@ export async function createShareLink(data: ShareLinkCreateRequest): Promise<any
 
 // 공유 이미지 생성
 export async function createShareImage(data: ShareImageCreateRequest): Promise<any> {
+  // 공유 이미지 URL이 상대 경로('/uploads/...')인 경우 절대 경로로 보정
+  try {
+    if (data && typeof data.imageUrl === 'string') {
+      const u = data.imageUrl.trim();
+      if (u.startsWith('/uploads/')) {
+        const origin = getApiOrigin();
+        const abs = (origin || '') + u;
+        data = { ...data, imageUrl: abs };
+      }
+    }
+  } catch { /* ignore */ }
   return apiRequest<any>('/shares/images', {
     method: 'POST',
     body: JSON.stringify(data),

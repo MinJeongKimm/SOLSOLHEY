@@ -229,6 +229,16 @@
               rows="3"
             ></textarea>
           </div>
+          <div class="flex items-center justify-between">
+            <div class="text-xs text-gray-600">스냅샷을 선택해서 이미지를 공유하세요.</div>
+            <button @click="openSnapshotPickerForShare" class="text-xs px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg">
+              스냅샷 선택
+            </button>
+          </div>
+          <div v-if="selectedSnapshotForShare.url" class="border rounded-lg overflow-hidden">
+            <img :src="selectedSnapshotForShare.url" class="w-full h-32 object-cover" alt="선택된 스냅샷 미리보기" />
+            <div class="text-[11px] text-gray-500 p-1 text-center truncate">선택된 스냅샷</div>
+          </div>
         </div>
 
         <!-- 공유 버튼 -->
@@ -254,6 +264,14 @@
         </div>
       </div>
     </div>
+
+    <!-- 스냅샷 선택 모달 (공유용) -->
+    <SnapshotPickerModal
+      :visible="showSnapshotPickerShare"
+      :snapshots="snapshotListShare"
+      @close="showSnapshotPickerShare = false"
+      @select="onSnapshotPickedForShare"
+    />
 
     <!-- EXP 요약 모달 -->
     <div v-if="showExpSummary" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -477,9 +495,15 @@ const shareType = ref<'link' | 'image'>('link');
 const shareLinkData = ref({
   message: ''
 });
-const shareImageData = ref({
-  message: ''
-});
+const shareImageData = ref({ message: '' });
+
+// 공유용 스냅샷 선택 상태
+import SnapshotPickerModal from '../components/SnapshotPickerModal.vue';
+import { getUserSnapshots } from '../api/ranking';
+import { createShareImage, ImageType, getApiOrigin } from '../api/index';
+const showSnapshotPickerShare = ref(false);
+const snapshotListShare = ref<any[]>([]);
+const selectedSnapshotForShare = ref<{ id?: number; url?: string }>({});
 
 // EXP 요약
 const showExpSummary = ref(false);
@@ -738,6 +762,7 @@ async function showSharePopup() {
   shareType.value = 'link'; // 기본값 설정
   shareLinkData.value = { message: '' };
   shareImageData.value = { message: '' };
+  selectedSnapshotForShare.value = {};
   
   // 백엔드 연결 상태 확인
   checkBackendStatus();
@@ -772,6 +797,24 @@ function closeExpSummary() {
 // 공유 팝업 닫기
 function closeSharePopup() {
   showShare.value = false;
+}
+
+async function openSnapshotPickerForShare() {
+  try {
+    const list = await getUserSnapshots();
+    snapshotListShare.value = list || [];
+    showSnapshotPickerShare.value = true;
+  } catch (e) {
+    console.error('스냅샷 목록 로드 실패:', e);
+    showToastMessage('스냅샷 목록을 불러오지 못했습니다.');
+  }
+}
+
+function onSnapshotPickedForShare(s: any) {
+  const apiOrigin = (getApiOrigin && getApiOrigin()) || '';
+  const url = (s?.imageUrl || '').startsWith('/uploads/') ? apiOrigin + s.imageUrl : s?.imageUrl || '';
+  selectedSnapshotForShare.value = { id: s?.id, url };
+  showSnapshotPickerShare.value = false;
 }
 
 // 공유 처리
@@ -859,22 +902,40 @@ async function handleShare() {
   } else {
       const message = shareImageData.value.message || '나의 마스코트와 함께한 이야기를 적어보세요!';
       try {
-        const blob = await composeShareImageBlob();
-        const mascotName = currentMascot.value?.name || 'mascot';
-        const file = new File([blob], `${mascotName}_share.png`, { type: blob.type || 'image/png' });
+        if (!selectedSnapshotForShare.value.url) {
+          showToastMessage('먼저 스냅샷을 선택해 주세요.');
+          return;
+        }
         const u2: any = await auth.fetchUser();
         const userNickname = u2?.nickname || '나의';
+        const mascotName = currentMascot.value?.name || 'mascot';
         const shareTitle = `${userNickname}의 마스코트 '${mascotName}'`;
 
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ title: shareTitle, text: message, files: [file] });
+        // 1) 스냅샷 원본 이미지를 Blob으로 다운로드
+        const res = await fetch(selectedSnapshotForShare.value.url!, { mode: 'cors' });
+        if (!res.ok) throw new Error('이미지 다운로드 실패');
+        const blob = await res.blob();
+
+        // 2) 네이티브 파일 공유 지원 시 파일로 공유
+        const fileName = (() => {
+          try {
+            const u = new URL(selectedSnapshotForShare.value.url!);
+            const base = u.pathname.split('/').pop() || `${mascotName}_snapshot.png`;
+            return base.endsWith('.png') || base.endsWith('.jpg') || base.endsWith('.jpeg') ? base : `${mascotName}_snapshot.png`;
+          } catch { return `${mascotName}_snapshot.png`; }
+        })();
+
+        const file = new File([blob], fileName, { type: blob.type || 'image/png' });
+
+        if ((navigator as any).canShare && (navigator as any).canShare({ files: [file] })) {
+          await (navigator as any).share({ title: shareTitle, text: message, files: [file] });
           showToastMessage('이미지로 공유했습니다!');
         } else {
-          // 데스크톱 등: 다운로드로 폴백
+          // 3) 데스크톱 등: 파일 다운로드로 폴백
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `${mascotName}_share.png`;
+          a.download = fileName;
           document.body.appendChild(a);
           a.click();
           a.remove();
@@ -882,8 +943,8 @@ async function handleShare() {
           showToastMessage('이미지를 다운로드했습니다.');
         }
       } catch (err) {
-        console.error('이미지 합성/공유 실패:', err);
-        showToastMessage('이미지 합성에 실패했습니다.');
+        console.error('스냅샷 공유 실패:', err);
+        showToastMessage('스냅샷 공유에 실패했습니다.');
       }
   }
     closeSharePopup();
