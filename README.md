@@ -11,27 +11,37 @@
 
 ## 🧰 기술 스택
 - **백엔드**: Spring Boot 3.4.8, Java 17, Spring Security, JPA, WebFlux, Flyway
-- **프론트엔드**: Vue 3, Vite 5, TypeScript, Vue Router, Tailwind CSS
-- **DB/인프라**: H2(local), PostgreSQL(dev)
+- **프론트엔드**: Vue 3, Vite 5, TypeScript, Vue Router, Pinia, Tailwind CSS
+- **DB/인프라**: H2(local file), PostgreSQL(dev)
 
 ## 🗂️ 프로젝트 구조
 ```bash
 SOLSOLHEY/
-├── backend/solsol/
-│   ├── src/main/java/com/solsolhey/
-│   │   ├── solsol/            # 인증, 공통, 설정, 챌린지 등
-│   │   └── mascot/, finance/  # 마스코트/금융 모듈
-│   ├── src/main/resources/application.yml
-│   ├── build.gradle
-│   └── env.example            # .env 템플릿 (복사해 사용)
+├── backend/
+│   ├── docker-compose.dev.yml       # 로컬 개발용 DB/pgAdmin
+│   ├── pgadmin/                     # pgAdmin 초기설정
+│   └── solsol/
+│       ├── src/main/java/com/solsolhey/
+│       │   ├── auth/, user/, common/, config/
+│       │   ├── mascot/, shop/, ranking/, friend/
+│       │   ├── challenge/, exp/, finance/, point/, share/
+│       │   ├── campus/, ai/, util/
+│       │   └── SolsolApplication.java
+│       ├── src/main/resources/
+│       │   ├── application.yml
+│       │   └── db/migration/        # Flyway 마이그레이션 (VXX__*.sql)
+│       └── build.gradle
 └── frontend/
     ├── package.json
-    ├── vite.config.ts         # root: 'solsol'
+    ├── vite.config.ts
+    ├── public/                      # 정적 자산 (전역)
     └── solsol/
         ├── index.html
         └── src/
             ├── api/, router/, views/, components/
-            └── assets/main.css
+            ├── assets/, data/, utils/, styles/
+            ├── stores/              # Pinia stores
+            └── style.css
 ```
 
 ## 🚀 시작하기
@@ -53,8 +63,10 @@ cp env.example .env
 cd SOLSOLHEY/backend/solsol
 ./gradlew bootRun
 ```
-- 프로필: 기본 `local` (H2 메모리 DB)
-- H2 Console: `http://localhost:8080/h2-console` (JDBC: `jdbc:h2:mem:testdb`, 사용자: `sa`)
+- 프로필: 기본 `local` (H2 파일 DB)
+- H2 Console: `http://localhost:8080/h2-console`
+  - JDBC: `jdbc:h2:file:./.localdb/solsol;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE`
+  - 사용자: `sa`
   - ⚠️ **보안**: 개발환경(`local`, `dev`)에서만 접근 가능
 
 ### 4) 프론트엔드 실행
@@ -65,9 +77,14 @@ npm run dev
 ```
 - 접속: `http://localhost:5173`
 - API 베이스 URL(선택): `frontend/solsol/.env`에 `VITE_API_BASE_URL=http://localhost:8080` 설정 가능
+ - Vite 설정: 루트(`solsol`), 정적(`public`), 빌드 출력(`frontend/dist`)
+
+### 5) API 문서 (Swagger)
+- UI: `http://localhost:8080/swagger-ui/index.html`
+- Spec: `http://localhost:8080/v3/api-docs` (JSON), `http://localhost:8080/v3/api-docs.yaml` (YAML)
+- 로컬/개발 프로파일에서 접근 가능
 
 ## 🔌 API 요약
-아래 경로는 실제 컨트롤러 기준입니다.
 
 - **헬스체크/공개**
   - GET `/health`
@@ -97,31 +114,33 @@ npm run dev
   - GET `/my?status=` (내 챌린지)
 
 참고: **보안 강화됨** - CORS는 환경변수로 제한된 도메인만 허용. 개발환경: `localhost` 포트들, 배포 환경: 실제 도메인 설정 필요.
+헬스엔드포인트는 `/health` (permitAll)이며, Actuator 일부 경로도 허용됩니다.
 
-## 🛡️ 보안 기능
+## 🔒 보안
 
 ### Rate Limiting
 - **일반 API**: 분당 100회 요청 제한 (설정 가능)
-- **로그인**: 15분당 5회 시도 제한 (설정 가능)
+- **로그인**: 15분당 10회 시도 제한 (설정 가능)
 - **IP 기반 차단**: 자동 정리 및 캐시 관리
-- **설정**: `env.example`의 `RATE_LIMIT_*` 변수로 조정
-
-### 테스트
-```bash
-cd backend/solsol
-./test-rate-limit.sh  # Rate Limiting 동작 테스트
-```
 
 ## ⚙️ 프로필/설정
 - `local`: H2, `ddl-auto=update`, 콘솔 활성화
 - `dev`: PostgreSQL(`jdbc:postgresql://localhost:5432/solsol_dev`), `ddl-auto=validate`
 - 로깅: `com.solsolhey=DEBUG`, WebClient DEBUG 활성
 
-## 🔒 보안 설정
+### 마이그레이션(Flyway)
+- 마이그레이션 파일은 불변입니다. 기존 파일을 수정하지 말고 항상 새로운 버전을 추가하세요.
+- 로컬에서 체크섬 불일치 발생 시: `rm -rf backend/solsol/.localdb` 후 재기동하거나 `./gradlew flywayRepair` 실행(로컬에서만 권장).
+
 ### 주요 보안 기능
-- **JWT 인증**: 256비트 강력한 Secret Key 사용, Access/Refresh 토큰 분리
+- **JWT 인증**: 256비트 Secret Key, Access/Refresh 분리
+  - `ACCESS_TOKEN`: HttpOnly + Secure + SameSite=None, `path=/`, 만료 기본 15분
+  - `REFRESH_TOKEN`: HttpOnly + Secure + SameSite=None, `path=/api/v1/auth`, 만료 기본 14일
+  - 필터는 기본적으로 쿠키에서 토큰을 읽습니다(개발 프로파일에서만 `Authorization: Bearer` 허용)
 - **CORS 보안**: 환경별 허용 도메인 제한 (`CORS_ALLOWED_ORIGINS` 환경변수)
-- **환경별 접근 제어**: 개발용 엔드포인트(H2 Console, Swagger)는 배포 환경에서 자동 비활성화(구성 시)
+- **CSRF 보호**: `CookieCsrfTokenRepository` 사용, `XSRF-TOKEN`(읽기 가능) 쿠키 발급 → 요청 헤더 `X-XSRF-TOKEN`로 전송
+  - 일부 엔드포인트(`/api/v1/auth/**`, `/h2-console/**` 등)는 CSRF 제외(개발 편의). 운영에서는 최소화 권장
+- **환경별 접근 제어**: 개발용 엔드포인트(H2 Console, Swagger)는 배포 환경에서 비활성화 가능
 - **입력값 검증**: `@Valid` 기반 데이터 검증, 전역 예외 처리
 
 ### 보안 체크리스트
@@ -141,6 +160,10 @@ SPRING_PROFILES_ACTIVE=dev
 CORS_ALLOWED_ORIGINS=https://your-domain.com
 JWT_SECRET_KEY=<256비트-강력한-랜덤-키>
 ```
+
+프론트엔드 참고
+- 쿠키 전송: `fetch/axios`에서 `withCredentials: true` 사용
+- CSRF 헤더: `document.cookie`의 `XSRF-TOKEN` 값을 `X-XSRF-TOKEN` 헤더로 전송
 
 ## 🤝 기여 가이드
 - 브랜치: `main`(배포), `develop`(통합), `feature/기능명`
@@ -162,6 +185,12 @@ Remove      파일을 삭제하는 작업만 수행하는 경우
 - 개발 유의사항
   - Entity 변경 전 합의, 환경 변수 템플릿 최신화, API 명세 준수, 테스트 코드 권장
 
+## 🧩 프론트 커스터마이징/스냅샷
+- 꾸미기 화면과 스냅샷 이미지의 순서·크기 일치
+  - 레이어: 배경색/패턴 → 배경 아이템 → 마스코트 → 전경 아이템(타입별 z-index)
+  - 스냅샷 마스코트 크기: 캔버스의 60%, 아이템 BASE 120px 기준 비율 적용
+- 공유/랭킹 합성도 동일한 레이어 규칙을 적용(용도에 따라 크기만 다를 수 있음)
+
 ## 🧷 금융 API 연동 개요
 - 목적: 금융 기능 호출 시 사용자 식별을 위해 외부 `userKey`를 사용합니다.
 - 시점: 우리 서비스 회원가입 성공 직후, 커밋 이후 비동기로 금융 사용자 생성 요청을 전송합니다.
@@ -170,30 +199,6 @@ Remove      파일을 삭제하는 작업만 수행하는 경우
   - 로컬 파트 길이 보호: 40자로 절단. 재시도 시 동일 값으로 멱등 처리.
 - 실패 처리(옵션 B): 가입은 성공으로 유지. `users.finance_user_key`는 NULL이며, 스케줄러(60초 주기)가 재시도합니다.
 - 중복 응답 처리: 생성 시 중복이면 `/member/search`로 `userKey`를 조회하여 저장합니다.
-
-### 관련 DB/마이그레이션
-- `users.finance_user_key VARCHAR(100)` 컬럼 추가(Flyway V7), 유니크 인덱스 적용.
-
-### 환경 변수 (백엔드)
-- `FINANCE_API_KEY` 외에 다음을 지원합니다:
-  - `FINANCE_API_BASE_URL` (기본: `https://finopenapi.ssafy.io/ssafy/api/v1/edu`)
-  - `FINANCE_API_MEMBER_BASE_URL` (기본: `https://finopenapi.ssafy.io/ssafy/api/v1`)
-
-### Swagger 변경점
-- 인증 DTO에서 username 제거, 이메일을 주체로 통일.
-- 회원가입 응답은 `userId`, `email`만 포함. 금융 `userKey`는 내부 저장 필드입니다(응답에 노출되지 않음).
-
-## 🆘 트러블슈팅
-### 일반적인 문제
-- **H2 Console 404**: 프로필이 `local` 또는 `dev`인지 확인
-- **401 Unauthorized**: `Authorization: Bearer <accessToken>` 헤더 확인
-- **DB 연결 실패**: `.env`의 `DB_*` 값과 `application.yml` 프로파일 확인
-- **CORS 오류**: `CORS_ALLOWED_ORIGINS` 환경변수에 프론트엔드 도메인 추가 확인
-
-### 보안 관련 문제
-- **JWT 토큰 무효화**: Secret Key 변경 시 모든 기존 토큰이 무효됨 (정상 동작)
-- **Swagger UI 접근 불가**: 배포 환경에서 제한할 수 있음(도메인/CORS/보안 설정 확인)
-  - **개발용 엔드포인트 차단**: 프로필을 `local` 또는 `dev`로 변경 필요
 
 ## 📜 라이선스
 - 해커톤 진행용 내부 프로젝트 — 라이선스는 추후 결정 예정
