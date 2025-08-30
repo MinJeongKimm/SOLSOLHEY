@@ -415,6 +415,7 @@ public class RankingServiceImpl implements RankingService {
                     voteCount,
                     normalizeImageUrl(entry.getImageUrl()), // 공개 URL 정규화
                     entry.getTitle(), // 등록 시 설정한 제목 사용
+                    entry.getDescription(), // 등록 시 설정한 상세 설명 사용
                     entry.getEntryId() // 랭킹 엔트리 ID
                 );
                 rankedEntries.add(rankedEntry);
@@ -440,6 +441,7 @@ public class RankingServiceImpl implements RankingService {
                     voteCount,
                     normalizeImageUrl(entry.getImageUrl()),
                     entry.getTitle(), // 등록 시 설정한 제목 사용
+                    entry.getDescription(), // 등록 시 설정한 상세 설명 사용
                     entry.getEntryId() // 랭킹 엔트리 ID
                 );
                 rankedEntries.add(rankedEntry);
@@ -491,10 +493,11 @@ public class RankingServiceImpl implements RankingService {
                     voteCount,
                     normalizeImageUrl(entry.getImageUrl()),
                     entry.getTitle(), // 등록 시 설정한 제목 사용
+                    entry.getDescription(), // 등록 시 설정한 상세 설명 사용
                     entry.getEntryId() // 랭킹 엔트리 ID
                 );
                 rankedEntries.add(rankedEntry);
-            } else {
+                            } else {
                 // 기존 스냅샷 기반 엔트리: 스냅샷 조회
                 MascotSnapshot snapshot = mascotSnapshotRepository.findByMascotIdOrderByCreatedAtDesc(mascot.getId())
                     .stream()
@@ -516,6 +519,7 @@ public class RankingServiceImpl implements RankingService {
                     voteCount,
                     normalizeImageUrl(entry.getImageUrl()),
                     entry.getTitle(), // 등록 시 설정한 제목 사용
+                    entry.getDescription(), // 등록 시 설정한 상세 설명 사용
                     entry.getEntryId() // 랭킹 엔트리 ID
                 );
                 rankedEntries.add(rankedEntry);

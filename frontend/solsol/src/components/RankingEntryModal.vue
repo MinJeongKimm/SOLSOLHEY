@@ -38,7 +38,7 @@
         <!-- 제목 입력 -->
         <div>
           <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
-            참가 제목 *
+            참가 제목 <span class="text-red-500">*</span>
           </label>
           <input
             id="title"
@@ -49,28 +49,26 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             placeholder="참가 제목을 입력하세요"
           />
-          <div class="flex justify-between items-center mt-1">
+          <div class="text-right">
             <span class="text-xs text-gray-500">
               {{ formData.title.length }}/100
-            </span>
-            <span v-if="formData.title.length === 0" class="text-xs text-red-500">
-              제목을 입력해주세요
             </span>
           </div>
         </div>
 
-        <!-- 설명 입력 (선택사항) -->
+        <!-- 설명 입력 (필수) -->
         <div>
           <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-            참가 설명 <span class="text-gray-500">(선택사항)</span>
+            참가 설명 <span class="text-red-500">*</span>
           </label>
           <textarea
             id="description"
             v-model="formData.description"
             rows="3"
             maxlength="500"
+            required
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
-            placeholder="참가 설명을 입력하세요 (선택사항)"
+            placeholder="참가 설명을 입력하세요"
           ></textarea>
           <div class="text-right">
             <span class="text-xs text-gray-500">
@@ -140,7 +138,8 @@ const isSubmitting = ref(false);
 // 폼 유효성 검사
 const isFormValid = computed(() => {
   return formData.value.title.trim().length > 0 && 
-         formData.value.title.trim().length <= 100;
+         formData.value.title.trim().length <= 100 &&
+         formData.value.description.trim().length > 0;
 });
 
 // 마스코트 이름이 변경되면 제목도 업데이트
