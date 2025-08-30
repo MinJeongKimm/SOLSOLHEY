@@ -58,7 +58,15 @@ export interface FriendHomeResponse {
   canLikeNow: boolean;
   viewMode: 'SELF' | 'OTHER';
   permissions: { editAllowed?: boolean; [k: string]: any };
-  mascot: { name: string; type: string; backgroundId?: string; equippedItem?: string };
+  mascot: { 
+    name: string; 
+    type: string; 
+    backgroundId?: string; 
+    equippedItem?: string;
+    equippedLayout?: string; // 마스코트 커스터마이징 레이아웃 JSON
+    backgroundColor?: string; // 배경 색상
+    backgroundPattern?: string; // 배경 패턴
+  };
   isFriend: boolean;
   isOwner: boolean;
 }
