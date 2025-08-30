@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.solsolhey.common.exception.BusinessException;
 import com.solsolhey.mascot.domain.Mascot;
 import com.solsolhey.mascot.repository.MascotRepository;
+import com.solsolhey.mascot.repository.MascotSnapshotRepository;
 import com.solsolhey.ranking.dto.request.CreateEntryRequest;
 import com.solsolhey.ranking.dto.response.EntryResponse;
 import com.solsolhey.ranking.dto.response.LeaderboardResponse;
@@ -37,6 +38,9 @@ public class RankingEntryServiceImpl implements RankingEntryService {
     @Autowired
     private com.solsolhey.solsol.config.MediaStorageProperties mediaProps;
 
+    @Autowired
+    private MascotSnapshotRepository mascotSnapshotRepository;
+
     private static final int MAX_ENTRIES_PER_USER = 3;
 
     @Override
@@ -52,15 +56,32 @@ public class RankingEntryServiceImpl implements RankingEntryService {
         if (request.mascotSnapshotId() != null && request.mascotSnapshotId() > 0) {
             // 마스코트 스냅샷 중복 참가 체크
             if (isMascotSnapshotAlreadyParticipated(request.mascotSnapshotId())) {
-                throw new BusinessException("이미 다른 사용자가 참가한 마스코트 스냅샷입니다.");
+                throw new BusinessException("동일한 외형으로 등록할 순 없어요.");
             }
 
             // 사용자가 해당 마스코트 스냅샷을 이미 참가했는지 체크
             if (hasUserParticipatedWithSnapshot(userId, request.mascotSnapshotId())) {
-                throw new BusinessException("이미 참가한 마스코트 스냅샷입니다.");
+                throw new BusinessException("동일한 외형으로 등록할 순 없어요.");
             }
         }
 
+        // 스냅샷 기반인 경우, 스냅샷 이미지 URL을 일관되게 사용하고 중복을 방지
+        String finalImageUrl = request.imageUrl();
+        if (request.mascotSnapshotId() != null && request.mascotSnapshotId() > 0) {
+            var snapshot = mascotSnapshotRepository.findById(request.mascotSnapshotId())
+                    .orElse(null);
+            if (snapshot != null && snapshot.getImageUrl() != null && !snapshot.getImageUrl().isBlank()) {
+                finalImageUrl = snapshot.getImageUrl();
+            }
+        }
+
+        // 동일 이미지로 이미 참가했는지 확인 (사용자/랭킹타입 단위)
+        if (finalImageUrl != null && !finalImageUrl.isBlank()) {
+            if (rankingEntryRepository.existsByUserIdAndRankingTypeAndImageUrl(userId, request.rankingType(), finalImageUrl)) {
+                throw new BusinessException("동일한 외형으로 등록할 순 없어요.");
+            }
+        }
+        
         // RankingEntry 생성 및 저장
         RankingEntry entry = RankingEntry.builder()
             .userId(userId)
@@ -68,7 +89,7 @@ public class RankingEntryServiceImpl implements RankingEntryService {
             .mascotSnapshotId(request.mascotSnapshotId())
             .title(request.title())
             .description(request.description())
-            .imageUrl(request.imageUrl())
+            .imageUrl(finalImageUrl)
             .rankingType(request.rankingType())
             .build();
 

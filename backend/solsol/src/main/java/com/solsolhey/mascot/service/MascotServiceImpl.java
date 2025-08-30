@@ -367,40 +367,63 @@ public class MascotServiceImpl implements MascotService {
         try {
             String json = objectMapper.writeValueAsString(dto);
             mascot.updateEquippedLayout(json);
-            // 스냅샷 이미지 저장: Data URL -> 파일시스템 -> URL 저장 (선택 입력)
+            // 스냅샷 이미지 저장: Data URL -> 중복 해시 체크 -> 파일시스템 저장(or 재사용) (선택 입력)
             if (dto.getSnapshotImageDataUrl() != null && !dto.getSnapshotImageDataUrl().isBlank()) {
                 String dataUrl = dto.getSnapshotImageDataUrl();
                 try {
-                    var saved = mediaStorageService.saveImageDataUrl(dataUrl, "snapshots");
-                    String url = saved.urlPath; // e.g., /uploads/snapshots/...
-                    mascot.updateSnapshotImage(url);
-                    // 이력 테이블에 저장 (최대 20개 유지)
-                    mascotSnapshotRepository.save(
-                        com.solsolhey.mascot.domain.MascotSnapshot.builder()
-                            .userId(userId)
-                            .mascotId(mascot.getId())
-                            .imageUrl(url)
-                            .build()
-                    );
-                    long cnt = mascotSnapshotRepository.countByUserId(userId);
-                    int maxEntries = Math.max(1, mediaStorageProperties.getSnapshotMaxEntries());
-                    if (cnt > maxEntries) {
-                        var olds = mascotSnapshotRepository.findByUserIdOrderByCreatedAtAsc(userId);
-                        int toDelete = (int)(cnt - maxEntries);
-                        for (int i = 0; i < toDelete && i < olds.size(); i++) {
-                            var s = olds.get(i);
-                            try { mediaStorageService.deleteUrlPath(s.getImageUrl()); } catch (Exception ignore) {}
-                            mascotSnapshotRepository.deleteById(s.getId());
+                    String hash = computeSha256Hex(dataUrl);
+                    var existingOpt = mascotSnapshotRepository.findFirstByUserIdAndContentHashOrderByCreatedAtDesc(userId, hash);
+                    if (existingOpt.isPresent()) {
+                        String url = existingOpt.get().getImageUrl();
+                        mascot.updateSnapshotImage(url);
+                    } else {
+                        var saved = mediaStorageService.saveImageDataUrl(dataUrl, "snapshots");
+                        String url = saved.urlPath; // e.g., /uploads/snapshots/...
+                        mascot.updateSnapshotImage(url);
+                        mascotSnapshotRepository.save(
+                            com.solsolhey.mascot.domain.MascotSnapshot.builder()
+                                .userId(userId)
+                                .mascotId(mascot.getId())
+                                .imageUrl(url)
+                                .contentHash(hash)
+                                .build()
+                        );
+                        long cnt = mascotSnapshotRepository.countByUserId(userId);
+                        int maxEntries = Math.max(1, mediaStorageProperties.getSnapshotMaxEntries());
+                        if (cnt > maxEntries) {
+                            var olds = mascotSnapshotRepository.findByUserIdOrderByCreatedAtAsc(userId);
+                            int toDelete = (int)(cnt - maxEntries);
+                            for (int i = 0; i < toDelete && i < olds.size(); i++) {
+                                var s = olds.get(i);
+                                try { mediaStorageService.deleteUrlPath(s.getImageUrl()); } catch (Exception ignore) {}
+                                mascotSnapshotRepository.deleteById(s.getId());
+                            }
                         }
                     }
                 } catch (Exception ex) {
-                    log.warn("스냅샷 저장 실패: userId={}", userId, ex);
+                    log.warn("斯냅샷 저장 실패: userId={}", userId, ex);
                 }
             }
             mascotRepository.save(mascot);
             return dto;
         } catch (Exception e) {
             throw new RuntimeException("커스터마이징 저장 실패", e);
+        }
+    }
+
+    private static String computeSha256Hex(String dataUrl) {
+        try {
+            int comma = dataUrl.indexOf(',');
+            if (comma < 0) throw new IllegalArgumentException("Invalid data URL");
+            String b64 = dataUrl.substring(comma + 1);
+            byte[] bytes = java.util.Base64.getDecoder().decode(b64);
+            java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(bytes);
+            StringBuilder sb = new StringBuilder(digest.length * 2);
+            for (byte b : digest) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to compute hash", e);
         }
     }
 

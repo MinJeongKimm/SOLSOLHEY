@@ -528,7 +528,7 @@ async function loadChallengeProgress(challengeId: number) {
 }
 
 // 금융 팝업 상태 및 유틸
-type FinanceTab = 'EXCHANGE_RATES' | 'SINGLE_RATE' | 'ESTIMATE' | 'TX_HISTORY';
+type FinanceTab = 'EXCHANGE_RATES' | 'SINGLE_RATE' | 'ESTIMATE' | 'CREDIT_RATING';
 const showFinanceModal = ref(false);
 const financeModalTitle = ref('');
 const financeDefaultTab = ref<FinanceTab>('EXCHANGE_RATES');
@@ -548,7 +548,7 @@ function inferFinanceTabByName(name: string): FinanceTab {
   if (n === '환율전체조회하기') return 'EXCHANGE_RATES';
   if (n === '환율단건확인하기') return 'SINGLE_RATE';
   if (n === '환전예상계산하기') return 'ESTIMATE';
-  if (n === '나의계좌거래내역조회') return 'TX_HISTORY';
+  if (n === '신용등급조회하기') return 'CREDIT_RATING';
   return 'EXCHANGE_RATES';
 }
 
@@ -558,7 +558,7 @@ function isRecognizedFinanceAction(name: string): boolean {
     n === '환율전체조회하기' ||
     n === '환율단건확인하기' ||
     n === '환전예상계산하기' ||
-    n === '나의계좌거래내역조회'
+    n === '신용등급조회하기'
   );
 }
 

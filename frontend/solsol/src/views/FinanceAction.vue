@@ -62,35 +62,11 @@
           </button>
         </template>
 
-        <template v-else-if="actionType === 'TX_HISTORY'">
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-xs text-gray-700 mb-1">UserKey</label>
-              <input v-model="txUserKey" class="border rounded px-2 py-1 text-sm w-full" />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-700 mb-1">계좌번호</label>
-              <input v-model="txAccountNo" class="border rounded px-2 py-1 text-sm w-full" />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-700 mb-1">시작일(YYYYMMDD)</label>
-              <input v-model="txStartDate" class="border rounded px-2 py-1 text-sm w-full" />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-700 mb-1">종료일(YYYYMMDD)</label>
-              <input v-model="txEndDate" class="border rounded px-2 py-1 text-sm w-full" />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-700 mb-1">유형(M/D/A)</label>
-              <input v-model="txType" class="border rounded px-2 py-1 text-sm w-full" />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-700 mb-1">정렬(ASC/DESC)</label>
-              <input v-model="txOrder" class="border rounded px-2 py-1 text-sm w-full" />
-            </div>
-          </div>
-          <button @click="callTxHistory" :disabled="loading" class="mt-2 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
-            {{ loading ? '조회 중...' : '거래내역 조회' }}
+        
+
+        <template v-else-if="actionType === 'CREDIT_RATING'">
+          <button @click="callCreditRating" :disabled="loading" class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">
+            {{ loading ? '조회 중...' : '신용등급 조회' }}
           </button>
         </template>
 
@@ -113,7 +89,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getChallenges, getAllExchangeRates, getExchangeRate, estimateExchange, getTransactionHistory } from '../api/index';
+import { getChallenges, getAllExchangeRates, getExchangeRate, estimateExchange, getCreditRating } from '../api/index';
 import type { Challenge } from '../types/api';
 
 const route = useRoute();
@@ -124,7 +100,7 @@ const challenge = ref<Challenge | null>(null);
 const challengeTitle = computed(() => challenge.value?.challengeName || '');
 
 // 액션 타입 추론
-type ActionType = 'EXCHANGE_RATES' | 'SINGLE_RATE' | 'ESTIMATE' | 'TX_HISTORY' | 'UNKNOWN';
+type ActionType = 'EXCHANGE_RATES' | 'SINGLE_RATE' | 'ESTIMATE' | 'CREDIT_RATING' | 'UNKNOWN';
 const actionType = ref<ActionType>('UNKNOWN');
 
 // 공통 상태
@@ -137,12 +113,7 @@ const rateCurrency = ref('USD');
 const estimateSrcCurrency = ref('USD');
 const estimateDstCurrency = ref('KRW');
 const estimateAmount = ref<number | null>(100);
-const txUserKey = ref('');
-const txAccountNo = ref('');
-const txStartDate = ref('20240101');
-const txEndDate = ref('20241231');
-const txType = ref<'M' | 'D' | 'A'>('A');
-const txOrder = ref<'ASC' | 'DESC'>('DESC');
+// removed tx inputs
 
 function goBack() {
   router.push('/challenge');
@@ -153,7 +124,8 @@ function inferActionFromName(name: string): ActionType {
   if (n.includes('환율 전체') || n.includes('전체 환율')) return 'EXCHANGE_RATES';
   if (n.includes('환율 확인') || n.includes('단건')) return 'SINGLE_RATE';
   if (n.includes('환전') || n.includes('예상')) return 'ESTIMATE';
-  if (n.includes('거래내역')) return 'TX_HISTORY';
+  // 거래내역 액션 제거됨
+  if (n.includes('신용등급') || n.includes('신용 등급')) return 'CREDIT_RATING';
   return 'UNKNOWN';
 }
 
@@ -212,15 +184,17 @@ async function callEstimate() {
   } finally { loading.value = false; }
 }
 
-async function callTxHistory() {
-  if (!txUserKey.value || !txAccountNo.value || !txStartDate.value || !txEndDate.value) { error.value = '필수 입력을 확인하세요.'; return; }
+// removed: callTxHistory
+
+async function callCreditRating() {
   loading.value = true; error.value = ''; result.value = null;
   try {
-    const res = await getTransactionHistory({ userKey: txUserKey.value, accountNo: txAccountNo.value, startDate: txStartDate.value, endDate: txEndDate.value, transactionType: txType.value, orderByType: txOrder.value });
-    if (res && res.code === 'success') {
-      result.value = { totalCount: res.totalCount ?? 0 };
+    const res = await getCreditRating();
+    if (res && (res.code === 'success' || res?.Header?.responseCode === 'H0000')) {
+      const rec = res?.REC;
+      result.value = rec ? { ratingName: rec.ratingName, totalAssetValue: rec.totalAssetValue } : { ratingName: res.ratingName, totalAssetValue: res.totalAssetValue };
     } else {
-      throw new Error(res?.message || '거래내역 조회 실패');
+      throw new Error(res?.message || '신용등급 조회 실패');
     }
   } catch (e: any) {
     error.value = e?.message || '호출 실패';

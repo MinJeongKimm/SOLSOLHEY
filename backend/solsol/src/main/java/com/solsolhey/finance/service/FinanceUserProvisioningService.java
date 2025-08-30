@@ -98,6 +98,28 @@ public class FinanceUserProvisioningService {
         log.info("금융 userKey 저장 완료(userId={}, key={})", user.getUserId(), maskKey(userKey));
     }
 
+    /**
+     * 동기 방식으로 financeUserKey를 보장하고, 최종 userKey를 반환한다.
+     * - 이미 존재하면 그대로 반환
+     * - 없으면 생성/조회 로직을 수행한 뒤, DB에서 최신 값을 읽어 반환
+     */
+    @Transactional
+    public String provisionAndGetUserKey(Long userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) return null;
+        if (user.getFinanceUserKey() != null && !user.getFinanceUserKey().isBlank()) {
+            return user.getFinanceUserKey();
+        }
+        try {
+            provisionFinanceUser(userId);
+        } catch (Exception e) {
+            log.warn("동기 finance userKey 발급 실패(userId={}): {}", userId, e.getMessage());
+        }
+        // 최신 값 재조회
+        User refreshed = userRepository.findById(userId).orElse(null);
+        return refreshed != null ? refreshed.getFinanceUserKey() : null;
+    }
+
     static String buildFinanceEmail(String email, long createdAtEpochMs) {
         if (email == null || email.isBlank()) return null;
         int at = email.indexOf('@');

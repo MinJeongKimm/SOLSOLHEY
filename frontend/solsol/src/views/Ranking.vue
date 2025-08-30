@@ -43,13 +43,14 @@
             전국 랭킹
           </button>
         </nav>
-      </div>
+  </div>
 
-      <!-- 전국 랭킹 참가 슬롯 섹션 -->
+  <!-- 전국 랭킹 참가 슬롯 섹션 -->
       <div v-if="activeTab === 'national'" class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 sm:p-6 mb-6 border-2 border-blue-200">
         <div class="mb-4">
           <h2 class="text-base sm:text-lg font-bold text-gray-800 mb-2">전국 랭킹 참가 슬롯</h2>
           <p class="text-xs sm:text-sm text-gray-600">마스코트를 전국 랭킹에 등록하여 다른 사용자들과 경쟁해보세요!</p>
+          
         </div>
         
         <!-- 슬롯 슬라이드 컨테이너 -->
@@ -116,13 +117,22 @@
             :class="currentSlideIndex.national === index ? 'bg-blue-500 w-4' : 'bg-gray-300 hover:bg-gray-400'"
           ></button>
         </div>
-      </div>
+  </div>
 
-      <!-- 교내 랭킹 참가 슬롯 섹션 -->
+  <!-- 스냅샷 선택 모달 -->
+  <SnapshotPickerModal
+    :visible="showSnapshotPicker"
+    :snapshots="snapshotList"
+    @close="showSnapshotPicker = false"
+    @select="onSnapshotPicked"
+  />
+
+  <!-- 교내 랭킹 참가 슬롯 섹션 -->
       <div v-if="activeTab === 'campus'" class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 sm:p-6 mb-6 border-2 border-purple-200">
         <div class="mb-4">
           <h2 class="text-base sm:text-lg font-bold text-gray-800 mb-2">교내 랭킹 참가 슬롯</h2>
           <p class="text-xs sm:text-sm text-gray-600">마스코트를 교내 랭킹에 등록하여 다른 사용자들과 경쟁해보세요!</p>
+          
         </div>
         
         <!-- 슬롯 슬라이드 컨테이너 -->
@@ -274,7 +284,7 @@
                   <!-- 마스코트 이미지 (등록한 이미지 우선, 없으면 배경) -->
                   <div class="flex-shrink-0">
                     <img
-                      :src="entry.entryImageUrl || `/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
+                      :src="entryImageSrc(entry)"
                       :alt="`${entry.mascotName || '마스코트'} (${entry.ownerNickname})`"
                       class="w-12 h-12 rounded-lg object-cover"
                     />
@@ -431,7 +441,7 @@
                   <!-- 마스코트 이미지 (등록한 이미지 우선, 없으면 배경) -->
                   <div class="flex-shrink-0">
                     <img
-                      :src="entry.entryImageUrl || `/backgrounds/${entry.backgroundId || 'bg_base.png'}`"
+                      :src="entryImageSrc(entry)"
                       :alt="`${entry.mascotName || '마스코트'} (${entry.ownerNickname})`"
                       class="w-12 h-12 rounded-lg object-cover"
                     />
@@ -493,6 +503,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
+import { getApiOrigin } from '../api/index';
 import { useRouter } from 'vue-router';
 import {
   getCampusRankings,
@@ -505,21 +516,22 @@ import {
   getUserEntries,
   getUserEntriesByType,
   createRankingEntry,
-  createRankingEntryWithImage,
   deleteRankingEntry,
   getCurrentUserMascotSnapshot,
   getCurrentUserMascot,
   composeMascotImage,
   getCampusVoteableStatus,
   getNationalVoteableStatus,
+  getUserSnapshots,
   type RankingResponse,
   type VoteRequest,
   type EntryResponse,
   type CreateEntryRequest
 } from '../api/ranking';
-import { bootstrapAuth, auth, getMascot, getMascotCustomization, getShopItems } from '../api/index';
+import { bootstrapAuth, auth, getMascot, getMascotCustomization, getShopItems, saveMascotCustomization } from '../api/index';
 import RankingSlot from '../components/RankingSlot.vue';
 import RankingEntryModal from '../components/RankingEntryModal.vue';
+import SnapshotPickerModal from '../components/SnapshotPickerModal.vue';
 
 // Router 인스턴스
 const router = useRouter();
@@ -555,6 +567,10 @@ const selectedSlotIndex = ref(-1);
 const currentMascot = ref<{ name: string; imageUrl: string; snapshotId: number } | null>(null);
 const loadingRanking = ref(false);
 
+// 스냅샷 선택 모달 상태
+const showSnapshotPicker = ref(false);
+const snapshotList = ref<any[]>([]);
+
 // 필터 설정
 const campusFilters = ref({
   sort: 'votes_desc',
@@ -562,6 +578,58 @@ const campusFilters = ref({
   size: 10, // 페이지 크기를 10개로 고정
   page: 0
 });
+
+// 프론트 측 이미지 URL 보정: 상대 경로('/uploads/...')를 백엔드 오리진으로 변환
+function normalizeImageUrlClient(url?: string): string {
+  const v = (url || '').trim();
+  if (!v) return '';
+  if (v.startsWith('/uploads/')) {
+    try {
+      const origin = getApiOrigin();
+      return (origin || '') + v;
+    } catch {
+      return v;
+    }
+  }
+  return v;
+}
+
+// 배경 이미지 URL 조합 (import.meta 사용은 스크립트에서만)
+const BASE_URL = (import.meta as any).env?.BASE_URL || '/';
+function bgUrl(id?: string): string {
+  const name = id || 'bg_base.png';
+  return `${BASE_URL}backgrounds/${name}`;
+}
+
+// 랭킹 리스트/슬롯 공통 이미지 src 생성 (등록 이미지 우선, 없으면 배경)
+function entryImageSrc(entry: any): string {
+  return normalizeImageUrlClient(entry?.entryImageUrl) || bgUrl(entry?.backgroundId);
+}
+
+async function openSnapshotPicker(tab: 'national' | 'campus', slotIndex?: number) {
+  try {
+    const list = await getUserSnapshots();
+    snapshotList.value = list || [];
+    const slots = tab === 'national' ? nationalRankingSlots : campusRankingSlots;
+    if (typeof slotIndex === 'number') {
+      selectedSlotIndex.value = slotIndex;
+    } else {
+      const idx = slots.value.findIndex(s => s.isActive);
+      selectedSlotIndex.value = idx >= 0 ? idx : 0;
+    }
+    showSnapshotPicker.value = true;
+  } catch (e) {
+    console.error('스냅샷 목록 로드 실패:', e);
+    alert('스냅샷 목록을 불러오지 못했습니다.');
+  }
+}
+
+function onSnapshotPicked(s: any) {
+  const url = normalizeImageUrlClient(s?.imageUrl || '');
+  currentMascot.value = { name: '스냅샷', imageUrl: url, snapshotId: s?.id || 0 };
+  showSnapshotPicker.value = false;
+  showRankingModal.value = true;
+}
 
 const nationalFilters = ref({
   sort: 'votes_desc',
@@ -1095,40 +1163,9 @@ function updateCampusSlotActivation() {
 }
 
 async function handleSlotClick(slotIndex: number) {
-  // 현재 활성 탭에 따라 적절한 슬롯 배열 선택
   const currentSlots = activeTab.value === 'national' ? nationalRankingSlots : campusRankingSlots;
-  
   if (!currentSlots.value[slotIndex].isActive) return;
-  
-  try {
-    // 현재 마스코트 정보와 커스터마이징, 상점 아이템 로드
-    const [mascot, customization, shopItems] = await Promise.all([
-      getCurrentUserMascot(),
-      getMascotCustomization(),
-      getShopItems()
-    ]);
-    
-    if (!mascot) {
-      alert('마스코트 정보를 불러올 수 없습니다.');
-      return;
-    }
-    
-    // 실시간 마스코트 이미지 합성
-    const realtimeImageUrl = await composeMascotImage(mascot, customization, shopItems);
-    
-    currentMascot.value = {
-      name: mascot.name,
-      imageUrl: realtimeImageUrl,
-      snapshotId: 0 // 실시간 이미지이므로 0으로 설정
-    };
-    
-    selectedSlotIndex.value = slotIndex;
-    showRankingModal.value = true;
-    
-  } catch (error) {
-    console.error('마스코트 정보 로드 실패:', error);
-    alert('마스코트 정보를 불러올 수 없습니다.');
-  }
+  await openSnapshotPicker(activeTab.value, slotIndex);
 }
 
 async function handleRankingSubmit(data: CreateEntryRequest) {
@@ -1147,8 +1184,8 @@ async function handleRankingSubmit(data: CreateEntryRequest) {
     
     // 실시간 마스코트 이미지 생성
     const realtimeImageUrl = await composeMascotImage(mascot, customization, shopItems);
-    
-    // Canvas를 Blob으로 변환
+
+    // Canvas에 그려 dataURL 생성(스냅샷 저장용)
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas context unavailable');
@@ -1165,9 +1202,7 @@ async function handleRankingSubmit(data: CreateEntryRequest) {
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
     
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Canvas toBlob failed')), 'image/png');
-    });
+    const dataUrl = canvas.toDataURL('image/png');
     
     // 현재 활성 탭에 따라 랭킹 타입 결정
     const rankingType = activeTab.value === 'national' ? 'NATIONAL' : 'CAMPUS';
@@ -1175,8 +1210,26 @@ async function handleRankingSubmit(data: CreateEntryRequest) {
     // description이 필수이므로 빈 문자열 대신 기본값 설정
     const description = data.description && data.description.trim() !== '' ? data.description : '랭킹 참가';
     
-    // 이미지와 함께 랭킹 등록
-    const newEntry = await createRankingEntryWithImage(data.title, description, blob, rankingType);
+    // 1) 스냅샷 저장(커스터마이징에 스냅샷만 추가 저장)
+    try {
+      const payload = { ...(customization as any), snapshotImageDataUrl: dataUrl };
+      await saveMascotCustomization(payload);
+    } catch (e) { console.warn('스냅샷 저장 실패(계속 진행):', e); }
+
+    // 2) 최신 스냅샷 조회 → 스냅샷 기반 랭킹 등록
+    const latestSnapshot = await getCurrentUserMascotSnapshot();
+    if (!latestSnapshot) {
+      alert('스냅샷 생성에 실패했습니다. 다시 시도해주세요.');
+      return;
+    }
+    const req: any = {
+      mascotId: mascot.id,
+      mascotSnapshotId: latestSnapshot.id,
+      title: data.title,
+      description,
+      rankingType
+    };
+    const newEntry = await createRankingEntry(req);
     
     console.log('새로 생성된 엔트리:', newEntry);
     console.log('엔트리의 이미지 URL:', newEntry.imageUrl);
@@ -1187,7 +1240,7 @@ async function handleRankingSubmit(data: CreateEntryRequest) {
     
     // 슬롯에 새 엔트리 할당
     currentSlots.value[selectedSlotIndex.value].entry = newEntry;
-    currentSlots.value[selectedSlotIndex.value].mascotImageUrl = newEntry.imageUrl || '';
+    currentSlots.value[selectedSlotIndex.value].mascotImageUrl = normalizeImageUrlClient(newEntry.imageUrl || '');
     
     console.log('슬롯에 설정된 이미지 URL:', currentSlots.value[selectedSlotIndex.value].mascotImageUrl);
     
@@ -1227,8 +1280,8 @@ async function updateNationalSlotMascotImages() {
       if (slot.entry) {
         console.log(`전국 슬롯 ${i} 엔트리:`, slot.entry);
         console.log(`전국 슬롯 ${i} 이미지 URL:`, slot.entry.imageUrl);
-        // 등록된 슬롯의 경우 저장된 이미지 URL 사용
-        slot.mascotImageUrl = slot.entry.imageUrl || '';
+        // 등록된 슬롯의 경우 저장된 이미지 URL 사용 (상대 경로 보정)
+        slot.mascotImageUrl = normalizeImageUrlClient(slot.entry.imageUrl || '');
         console.log(`전국 슬롯 ${i} 설정된 이미지 URL:`, slot.mascotImageUrl);
       }
     }
@@ -1314,6 +1367,8 @@ async function updateCampusSlotMascotImages() {
     console.error('교내 슬롯 마스코트 이미지 업데이트 실패:', error);
   }
 }
+
+// (중복 제거) normalizeImageUrlClient는 상단에 정의되어 있습니다.
 
 // 교내 랭킹 슬롯의 실제 랭킹 정보 업데이트 (득표수, 순위)
 async function updateCampusSlotRankingInfo() {
