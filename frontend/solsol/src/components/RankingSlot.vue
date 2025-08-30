@@ -42,7 +42,7 @@
       <!-- 마스코트 이미지 -->
       <div class="mascot-image-container mb-3">
         <img 
-          :src="mascotImageUrl" 
+          :src="imgSrc" 
           :alt="entry.title"
           class="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-lg mx-auto border-2 border-gray-200"
           @error="handleImageError"
@@ -100,10 +100,27 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-// 이미지 로드 에러 처리
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement;
-  img.src = '/mascot/pli.png'; // 기본 마스코트 이미지로 대체
+// 안전한 이미지 소스 관리 (Vue 바인딩이 에러 후 다시 덮어쓰는 문제 방지)
+import { ref, watch } from 'vue';
+import { getApiOrigin } from '../api/index';
+const BASE_URL = (import.meta as any).env?.BASE_URL || '/';
+const FALLBACK_IMG = BASE_URL + 'mascot/pli.png';
+function resolveSrc(val?: string): string {
+  const v = (val || '').trim();
+  if (!v) return FALLBACK_IMG;
+  if (v.startsWith('/uploads/')) return (getApiOrigin() || '') + v;
+  return v;
+}
+
+const imgSrc = ref<string>(resolveSrc(props.mascotImageUrl));
+
+watch(() => props.mascotImageUrl, (val) => {
+  imgSrc.value = resolveSrc(val);
+});
+
+// 이미지 로드 에러 처리: 내부 상태로 대체
+const handleImageError = () => {
+  imgSrc.value = FALLBACK_IMG;
 };
 
 // 날짜 포맷팅
@@ -183,4 +200,3 @@ const formatDate = (dateString: string): string => {
   @apply w-full;
 }
 </style>
-

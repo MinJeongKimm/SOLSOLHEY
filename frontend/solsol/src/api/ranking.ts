@@ -139,24 +139,6 @@ export async function createRankingEntryWithImage(
   rankingType: string
 ): Promise<EntryResponse> {
   try {
-    // 최신 CSRF 토큰 동기화: /health 호출로 쿠키/토큰 갱신
-    try {
-      const origin = getApiOrigin();
-      if (origin) {
-        const health = await fetch(`${origin}/health`, { credentials: 'include' });
-        // 토큰을 응답 바디에서 파싱
-        const text = await health.text();
-        if (text) {
-          try {
-            const json = JSON.parse(text);
-            const t = json?.data?.csrfToken || json?.csrfToken;
-            if (typeof t === 'string' && t.length > 0) {
-              // no-op; 아래에서 헤더에 사용
-            }
-          } catch {}
-        }
-      }
-    } catch {}
     // FormData 생성
     const formData = new FormData();
     formData.append('title', title);
@@ -165,29 +147,13 @@ export async function createRankingEntryWithImage(
     }
     formData.append('mascotImage', mascotImageBlob, 'mascot_ranking.png');
     formData.append('rankingType', rankingType);
-
-    // CSRF 토큰 가져오기
-    const csrfToken = getCookie('XSRF-TOKEN');
-    
-    // 이미지 업로드 API 호출 (FormData는 apiRequest 사용 시 Content-Type 이슈가 있어 직접 fetch)
-    const response = await fetch(`${getApiOrigin()}/api/ranking/entries/with-image`, {
+    // 이미지 업로드 API 호출 (apiRequest는 FormData에도 대응)
+    const response = await apiRequest<ApiResponse<EntryResponse>>(`${getApiOrigin()}/api/ranking/entries/with-image`, {
       method: 'POST',
-      credentials: 'include',
-      headers: {
-        'X-XSRF-TOKEN': csrfToken || '',
-      },
       body: formData,
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || '랭킹 참가 등록에 실패했습니다.');
-    }
-
-    const result = await response.json();
-    if (!result.data) throw new Error('응답 데이터가 없습니다.');
-    
-    return result.data;
+    if (!response.data) throw new Error('응답 데이터가 없습니다.');
+    return response.data;
   } catch (error) {
     console.error('랭킹 참가 등록 실패:', error);
     throw error;
@@ -258,6 +224,13 @@ export async function getCurrentUserMascotSnapshot(): Promise<MascotSnapshot | n
     console.error('마스코트 스냅샷 조회 실패:', error);
     return null;
   }
+}
+
+// 사용자의 스냅샷 목록 조회 (최근 20개)
+export async function getUserSnapshots(): Promise<MascotSnapshot[]> {
+  const response = await apiRequest<any>('/mascot/snapshots');
+  const list = (response && response.data) ? (response.data as MascotSnapshot[]) : [];
+  return Array.isArray(list) ? list : [];
 }
 
 // 마스코트 타입에 따른 이미지 URL 생성 (이미지 공유와 동일한 로직)
@@ -641,6 +614,9 @@ export async function getUserNationalVotedEntryIds(): Promise<number[]> {
 // 교내 랭킹 엔트리들에 대한 투표 가능 여부 조회
 export async function getCampusVoteableStatus(entryIds: number[]): Promise<Record<number, boolean>> {
   try {
+    if (!entryIds || entryIds.length === 0) {
+      return {};
+    }
     const res = await apiRequest<ApiResponse<Record<number, boolean>>>('/rankings/campus/voteable-status', {
       method: 'POST',
       body: JSON.stringify(entryIds),
@@ -660,6 +636,9 @@ export async function getCampusVoteableStatus(entryIds: number[]): Promise<Recor
 // 전국 랭킹 엔트리들에 대한 투표 가능 여부 조회
 export async function getNationalVoteableStatus(entryIds: number[]): Promise<Record<number, boolean>> {
   try {
+    if (!entryIds || entryIds.length === 0) {
+      return {};
+    }
     const res = await apiRequest<ApiResponse<Record<number, boolean>>>('/rankings/national/voteable-status', {
       method: 'POST',
       body: JSON.stringify(entryIds),
