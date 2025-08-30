@@ -42,6 +42,10 @@ public class MascotSnapshot {
     @Column(name = "image_url", length = 500, nullable = false)
     private String imageUrl;
 
+    // 동일 이미지 중복 저장 방지를 위한 콘텐츠 해시 (SHA-256 hex)
+    @Column(name = "content_hash", length = 64)
+    private String contentHash;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

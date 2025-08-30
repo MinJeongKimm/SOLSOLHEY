@@ -24,5 +24,9 @@ public interface MascotSnapshotRepository extends JpaRepository<MascotSnapshot, 
      */
     @Query("SELECT ms FROM MascotSnapshot ms WHERE ms.mascotId = :mascotId ORDER BY ms.createdAt DESC")
     List<MascotSnapshot> findByMascotIdOrderByCreatedAtDesc(@Param("mascotId") Long mascotId);
-}
 
+    /**
+     * 사용자의 동일 콘텐츠 해시 스냅샷을 최신순으로 1건 조회
+     */
+    java.util.Optional<MascotSnapshot> findFirstByUserIdAndContentHashOrderByCreatedAtDesc(Long userId, String contentHash);
+}
