@@ -60,11 +60,18 @@ public class SecurityConfig {
         var csrfAttrHandler = new CsrfTokenRequestAttributeHandler();
         csrfAttrHandler.setCsrfRequestAttributeName(null);
 
+        // Configure CSRF cookie attributes for cross-origin SPA
+        CookieCsrfTokenRepository csrfRepo = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfRepo.setCookieCustomizer((builder) -> builder
+            .secure(true)
+            .sameSite("None")
+        );
+
         http
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                .csrfTokenRepository(csrfRepo)
                 .csrfTokenRequestHandler(csrfAttrHandler)
                 // ★ Make absolutely sure auth endpoints bypass CSRF
                 .ignoringRequestMatchers(
@@ -72,7 +79,11 @@ public class SecurityConfig {
                     new AntPathRequestMatcher("/h2-console/**")
                 )
                 .ignoringRequestMatchers(
-                    new AntPathRequestMatcher("/api/v1/finance/**")
+                    new AntPathRequestMatcher("/api/v1/finance/**"),
+                    // 임시: 교차 출처 CSRF 토큰 동기화 이슈 우회 (보안 강화 시 제거 권장)
+                    new AntPathRequestMatcher("/api/v1/mascot/**"),
+                    new AntPathRequestMatcher("/api/v1/friends/**"),
+                    new AntPathRequestMatcher("/api/ranking/**")
                 )
 
             )

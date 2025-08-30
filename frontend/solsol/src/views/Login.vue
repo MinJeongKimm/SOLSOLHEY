@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-blue-100 to-blue-300 px-4">
+  <div class="min-h-screen flex flex-col justify-center items-center px-4" style="background: linear-gradient(to bottom, #6E72EF 0%, #E586E2 100%);">
     <div class="w-full max-w-sm bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-6" role="main" aria-label="로그인 폼">
       <h1 class="text-2xl font-bold text-center text-blue-600 mb-2" tabindex="0">쏠쏠Hey 로그인</h1>
       <form @submit.prevent="onSubmit" class="flex flex-col gap-4" autocomplete="on" aria-live="polite">

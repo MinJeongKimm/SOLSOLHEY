@@ -19,10 +19,11 @@ public class AiController {
     @PostMapping("/speech")
     public ResponseEntity<Map<String, Object>> generateSpeech(@AuthenticationPrincipal CustomUserDetails user) {
         Long userId = user.getUserId();
-        String msg = aiMessageService.generateSpeech(userId);
+        var res = aiMessageService.generateSpeech(userId);
         Map<String, Object> body = new HashMap<>();
         body.put("success", Boolean.TRUE);
-        body.put("message", msg);
+        body.put("message", res.getMessage());
+        body.put("kind", res.getKind());
         body.put("expiresInSec", Integer.valueOf(10));
         return ResponseEntity.ok(body);
     }

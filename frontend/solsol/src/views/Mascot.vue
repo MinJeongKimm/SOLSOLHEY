@@ -4,8 +4,8 @@
     <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-8">
       <!-- 상단 헤더 -->
       <div class="flex justify-between items-start mb-6">
-        <!-- 좌측: My Room 타이틀 -->
-        <h1 class="text-xl font-bold text-gray-800">My Room</h1>
+       <!-- 좌측: 마스코트 이름의 방 -->
+       <h1 class="text-xl font-bold text-gray-800">{{ (currentMascot && currentMascot.name) || '마스코트' }}의 방</h1>
         
         <!-- 우측: 포인트 & 좋아요 -->
         <div class="flex flex-col space-y-1">
@@ -19,7 +19,7 @@
             <img src="/icons/icon_like.png" alt="좋아요" class="w-5 h-5 mr-2" />
             <span class="font-bold text-gray-900 min-w-[60px] text-center">{{ userLikes }}</span>
           </div>
-        </div>
+          </div>
       </div>
 
       <!-- 마스코트가 있는 경우에만 메인 영역 렌더 (없으면 라우터가 생성 페이지로 이동) -->
@@ -55,11 +55,26 @@
                   @load="updateRects"
                   @error="handleImageError"
                 />
-                <!-- AI 말풍선: 마스코트 오른쪽 상단 -->
-                <div v-if="showBubble" class="absolute -right-2 -top-4">
-                  <SpeechBubble :text="bubbleText" tail="left" aria-live="polite" />
-                </div>
+                <!-- (말풍선은 이 래퍼 밖에서 렌더링하여 떠다니지 않도록 함) -->
               </div>
+            </div>
+
+            <!-- 고정 말풍선(마스코트 아래, 움직임 없음) -->
+            <div
+              v-if="showBubble"
+              class="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 cursor-pointer select-none"
+              role="button"
+              tabindex="0"
+              @click.stop="onBubbleClick"
+              @keydown.enter.prevent="onBubbleClick"
+            >
+              <SpeechBubble
+                :text="bubbleDisplayText"
+                tail="top"
+                aria-live="polite"
+                class="leading-snug whitespace-nowrap"
+                :style="{ whiteSpace: 'nowrap' }"
+              />
             </div>
 
             <!-- 레이어 3: 전경 아이템 (마스코트 앞) -->
@@ -73,15 +88,9 @@
               />
             </div>
 
-            <!-- 마스코트 이름 -->
-            <div class="absolute top-3 left-3">
-              <div class="bg-white bg-opacity-90 px-2 py-1 rounded-full">
-                <span class="text-xs font-medium text-gray-800">{{ currentMascot.name }}</span>
-              </div>
-            </div>
-            
+           
             <!-- 공유 버튼 -->
-            <div class="absolute top-3 right-3 z-50 pointer-events-auto">
+            <div class="absolute top-3 right-3 z-30 pointer-events-auto">
               <button 
                 @click="showSharePopup"
                 class="bg-white bg-opacity-90 p-1 rounded-lg hover:bg-opacity-100 transition-all flex items-center justify-center w-8 h-8"
@@ -287,14 +296,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, onActivated, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth, apiRequest, createShareLink, getAvailableTemplates, getMascot, handleApiError, ImageType, ShareType, getMascotCustomization, getShopItems, type ShareLinkCreateRequest, type MascotCustomization , getAiSpeech } from '../api/index';
 import { getFriendHome } from '../api/friend';
+import { apiRequest, auth, createShareLink, getAiSpeech, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
+import SpeechBubble from '../components/ui/SpeechBubble.vue';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
 import type { Mascot, ShopItem } from '../types/api';
-import SpeechBubble from '../components/ui/SpeechBubble.vue';
 import { toAbsoluteFromMascot } from '../utils/coordinates';
 
 const router = useRouter();
@@ -307,6 +316,7 @@ const currentMascot = ref<Mascot | null>(null);
 // 포인트/좋아요
 const userCoins = computed(() => pointStore.userPoints);
 const userLikes = ref(0);
+const userNickname = ref<string>('나의');
 
 // 서버 커스터마이징 + 아이템 카탈로그 (동기 렌더)
 const customization = ref<MascotCustomization | null>(null);
@@ -315,21 +325,72 @@ const shopItems = ref<ShopItem[]>([]);
 // AI 말풍선 상태
 const showBubble = ref(false);
 const bubbleText = ref('');
+const bubbleKind = ref<'ACADEMIC' | 'CHALLENGE' | null>(null);
+const bubbleLocked = ref(false); // 여러 번 클릭 방지 락
+// 모바일 일부 브라우저에서 줄바꿈 이슈가 있어, 강제 개행을 제거하고 브라우저 줄바꿈에 맡깁니다.
+const bubbleDisplayText = computed(() => (bubbleText.value || ''));
+function chunkByWords(text: string, maxCharsPerLine: number): string[] {
+  const raw = (text || '').trim();
+  if (!raw) return [''];
+  const words = raw.split(/\s+/);
+  const lines: string[] = [];
+  let current = '';
+  for (const w of words) {
+    if (current.length === 0) {
+      current = w;
+      continue;
+    }
+    // 다음 단어를 추가했을 때 길이 검사(공백 1 포함)
+    if ((current.length + 1 + w.length) <= maxCharsPerLine) {
+      current += ' ' + w;
+    } else {
+      lines.push(current);
+      current = w;
+    }
+  }
+  if (current.length) lines.push(current);
+  return lines;
+}
 let bubbleTimer: number | null = null;
 
+const bubblePlaceholders = [
+  '불렀어?',
+  '나 여기 있어!',
+  '응, 듣고 있어!',
+  '짜자잔 ~',
+  '뿅! 나타났어'
+];
+
 async function onMascotClick() {
+  // 여러 번 클릭 방지: 말풍선 라이프사이클 종료 전엔 무시
+  if (bubbleLocked.value) return;
+  bubbleLocked.value = true;
+
+  // 즉시 표시: 지연 없이 말풍선 노출 (귀여운 반응)
+  if (bubbleTimer) window.clearTimeout(bubbleTimer);
+  bubbleText.value = bubblePlaceholders[Math.floor(Math.random() * bubblePlaceholders.length)];
+  showBubble.value = true;
+  await nextTick();
+  updateRects(); // 표시 직후 가용 너비 재계산
   try {
     const res = await getAiSpeech();
-    bubbleText.value = res.message || '안녕하세요! 오늘도 반가워요 :)';
+    bubbleText.value = res.message || '오늘은 가벼운 챌린지 어때?';
+    bubbleKind.value = (res as any).kind || null;
   } catch (e) {
     console.warn('AI 말풍선 실패:', e);
-    bubbleText.value = '안녕하세요! 오늘도 반가워요 :)';
+    bubbleText.value = '오늘은 가벼운 챌린지 어때?';
+    bubbleKind.value = null;
   }
-  showBubble.value = true;
+  // 최종 문구 기준으로 5초 유지하고 락 해제
   if (bubbleTimer) window.clearTimeout(bubbleTimer);
-  bubbleTimer = window.setTimeout(() => { showBubble.value = false; }, 10000);
+  bubbleTimer = window.setTimeout(() => {
+    showBubble.value = false;
+    bubbleLocked.value = false;
+  }, 5000);
 }
 // 과거 폴백 제거됨
+
+// 리사이즈 핸들러 불필요(항상 오른쪽, 고정 10자 줄바꿈)
 
 // 타입 표준화 유틸 (Customize.vue와 동일 컨셉)
 function normalizeType(val: unknown): string {
@@ -375,6 +436,7 @@ const canvasEl = ref<HTMLElement>();
 const mascotEl = ref<HTMLElement>();
 const canvasRect = ref<DOMRect | null>(null);
 const mascotRect = ref<DOMRect | null>(null);
+// 말풍선 크기 계산 제거: 자연 크기 사용
 
 function updateRects() {
   if (canvasEl.value) {
@@ -383,6 +445,7 @@ function updateRects() {
   if (mascotEl.value) {
     mascotRect.value = mascotEl.value.getBoundingClientRect();
   }
+  // 말풍선 크기 계산 제거(자연 크기 사용)
 }
 
 function styleForItem(e: { relativePosition: { x: number; y: number }; scale: number; rotation: number }) {
@@ -401,6 +464,8 @@ function styleForItem(e: { relativePosition: { x: number; y: number }; scale: nu
     pointerEvents: 'none',
   } as Record<string, string>;
 }
+
+// 말풍선은 항상 오른쪽에 표시 (요청사항)
 
 // 토스트 알림
 const showToast = ref(false);
@@ -628,6 +693,15 @@ function goToChallenge() {
   router.push('/challenge');
 }
 
+function onBubbleClick() {
+  if (bubbleKind.value === 'CHALLENGE') {
+    router.push('/challenge');
+  }
+}
+
+// 길이 제한 유틸 (유니코드 안전)
+// (길이 트림 제거) AI가 25~35자 내로 생성하도록 백엔드 프롬프트 조정됨
+
 // 마스코트 생성 화면으로 이동
 function goToCreate() {
   router.push('/mascot/create');
@@ -852,16 +926,7 @@ onMounted(async () => {
     window.addEventListener('resize', updateRects);
 
     // 내 홈 요약(좋아요 누적) 로드
-    try {
-      let uid = (await auth.fetchUser())?.userId as number | undefined;
-      if (uid) {
-        const myHome = await getFriendHome(uid);
-        userLikes.value = Number(myHome?.likeCount ?? 0);
-      }
-    } catch (e) {
-      // 무시: 좋아요 수는 보조 정보
-      userLikes.value = 0;
-    }
+    await reloadLikes();
   } catch (err) {
     console.error('메인화면 데이터 로드 실패:', err);
     handleApiError(err);
@@ -870,7 +935,32 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateRects);
+  if (bubbleTimer) {
+    window.clearTimeout(bubbleTimer);
+    bubbleTimer = null as unknown as number;
+  }
+  bubbleLocked.value = false;
 });
+
+// 라우트 복귀 시 최신 좋아요 수 재조회
+onActivated(() => {
+  reloadLikes();
+});
+
+async function reloadLikes() {
+  try {
+    const u: any = await auth.fetchUser();
+    const uid = (u as any)?.userId as number | undefined;
+    userNickname.value = (u as any)?.nickname || '나의';
+    if (uid) {
+      const myHome = await getFriendHome(uid);
+      userLikes.value = Number(myHome?.likeCount ?? 0);
+    }
+  } catch (e) {
+    // 무시: 좋아요 수는 보조 정보
+    userLikes.value = 0;
+  }
+}
 </script>
 
 <script lang="ts">

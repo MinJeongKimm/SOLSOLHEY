@@ -39,5 +39,5 @@
 ## Security & Configuration Tips
 - Copy `env.example` to `.env` and never commit secrets.
 - Set strong `JWT_SECRET_KEY`; restrict `CORS_ALLOWED_ORIGINS`.
-- Profiles: `local` uses H2 (`.localdb`), `dev/prod` use PostgreSQL (see `application.yml`).
+- Profiles: `local` uses H2 (`.localdb`), `dev` uses PostgreSQL (see `application.yml`).
 - Quick check: GET `http://localhost:8080/health` returns service status and seeds CSRF cookie.

@@ -103,4 +103,10 @@ public interface FriendService {
      * 사용자가 대상 사용자로부터 친구 요청을 받았는지 확인
      */
     boolean hasPendingRequest(User user, User targetUser);
+
+    /**
+     * 좋아요 알림에 대한 즉시 답장 처리
+     * - 원본 알림은 즉시 읽음 처리됨
+     */
+    FriendInteractionResponse likeBack(User user, Long interactionId);
 }

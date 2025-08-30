@@ -15,7 +15,7 @@
 
                  <!-- 제목 -->
          <div class="text-center">
-           <h1 class="text-xl font-bold text-gray-800">Challenge</h1>
+           <h1 class="text-xl font-bold text-gray-800">챌린지</h1>
          </div>
 
         <!-- 보유 포인트 배지 -->
@@ -465,10 +465,11 @@ function selectChallenge(challenge: Challenge) {
   //   상세 화면에서는 '참여' 버튼이 보이게 한다.
   let ch: Challenge = challenge;
   const isFinance = challenge.categoryName === 'FINANCE';
+  const isFinanceSpecial = isFinance && isRecognizedFinanceAction(challenge.challengeName);
   const notCompleted = challenge.userStatus !== 'COMPLETED';
   const isPending = pendingFinance.value.has(challenge.challengeId);
   const notSucceeded = !succeededFinance.value.has(challenge.challengeId);
-  if (isFinance && notCompleted && (isPending || notSucceeded)) {
+  if (isFinanceSpecial && notCompleted && (isPending || notSucceeded)) {
     ch = { ...challenge, isJoined: false, userStatus: 'NOT_JOINED' } as any;
   }
   selectedChallenge.value = ch;
@@ -538,22 +539,26 @@ const pendingFinance = ref<Set<number>>(new Set());
 // 금융 챌린지 액션 성공 후(아직 완료 버튼 미누름) 상태
 const succeededFinance = ref<Set<number>>(new Set());
 
+function normalizeTitle(name: string): string {
+  return (name || '').toLowerCase().replace(/\s+/g, '');
+}
+
 function inferFinanceTabByName(name: string): FinanceTab {
-  const n = (name || '').toLowerCase();
-  if (n.includes('환율 전체') || n.includes('전체 환율') || n.includes('환율전체')) return 'EXCHANGE_RATES';
-  if (n.includes('환율 확인') || n.includes('단건') || n.includes('환율확인')) return 'SINGLE_RATE';
-  if (n.includes('환전') || n.includes('예상') || n.includes('환전예상')) return 'ESTIMATE';
-  if (n.includes('거래내역')) return 'TX_HISTORY';
+  const n = normalizeTitle(name);
+  if (n === '환율전체조회하기') return 'EXCHANGE_RATES';
+  if (n === '환율단건확인하기') return 'SINGLE_RATE';
+  if (n === '환전예상계산하기') return 'ESTIMATE';
+  if (n === '나의계좌거래내역조회') return 'TX_HISTORY';
   return 'EXCHANGE_RATES';
 }
 
 function isRecognizedFinanceAction(name: string): boolean {
-  const n = (name || '').toLowerCase();
+  const n = normalizeTitle(name);
   return (
-    n.includes('환율 전체') || n.includes('전체 환율') || n.includes('환율전체') ||
-    n.includes('환율 확인') || n.includes('단건') || n.includes('환율확인') ||
-    n.includes('환전') || n.includes('예상') || n.includes('환전예상') ||
-    n.includes('거래내역')
+    n === '환율전체조회하기' ||
+    n === '환율단건확인하기' ||
+    n === '환전예상계산하기' ||
+    n === '나의계좌거래내역조회'
   );
 }
 
@@ -665,13 +670,18 @@ async function joinSelectedChallenge() {
   try {
     const cid = selectedChallenge.value.challengeId;
     const isFinance = selectedChallenge.value.categoryName === 'FINANCE';
+    const isFinanceSpecial = isFinance && isRecognizedFinanceAction(selectedChallenge.value.challengeName);
     // 보류 중이거나(로컬) 이미 서버에서 참여 상태인 금융 챌린지는 재참여 API를 건너뛰고 모달만 연다
     const original = challenges.value.find(c => c.challengeId === cid);
     const alreadyJoinedOnServer = !!original?.isJoined;
-    if (isFinance && (pendingFinance.value.has(cid) || alreadyJoinedOnServer)) {
+    if (isFinanceSpecial && (pendingFinance.value.has(cid) || alreadyJoinedOnServer)) {
       const joined = selectedChallenge.value;
       selectedChallenge.value = null;
-      openFinanceModalFor(joined);
+      if (joined && isRecognizedFinanceAction(joined.challengeName)) {
+        openFinanceModalFor(joined);
+      } else {
+        await loadChallenges();
+      }
       return;
     }
 

@@ -5,7 +5,11 @@ export default {
     './solsol/src/**/*.{vue,js,ts,jsx,tsx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        brand: ['"Noto Sans KR"', 'system-ui', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 }

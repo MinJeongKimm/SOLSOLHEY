@@ -1,21 +1,10 @@
 <template>
   <div
-    class="relative inline-block max-w-xs sm:max-w-sm md:max-w-md bg-white text-gray-800 rounded-2xl shadow-lg px-4 py-3 border border-gray-200"
+    class="relative inline-block bg-white text-gray-800 rounded-2xl shadow-lg px-4 py-3 border border-gray-200 horizontal-text font-bubble"
     role="status"
     :aria-live="ariaLive"
   >
     <slot>{{ text }}</slot>
-    <!-- tail -->
-    <span
-      v-if="tail === 'left'"
-      class="absolute -left-2 top-5 w-0 h-0 border-t-8 border-b-8 border-r-8 border-t-transparent border-b-transparent border-r-white drop-shadow"
-      aria-hidden="true"
-    />
-    <span
-      v-else-if="tail === 'right'"
-      class="absolute -right-2 top-5 w-0 h-0 border-t-8 border-b-8 border-l-8 border-t-transparent border-b-transparent border-l-white drop-shadow"
-      aria-hidden="true"
-    />
   </div>
   
 </template>
@@ -23,12 +12,12 @@
 <script setup lang="ts">
 interface Props {
   text?: string;
-  tail?: 'left' | 'right';
+  tail?: 'top' | 'left' | 'right';
   ariaLive?: 'polite' | 'assertive' | 'off';
 }
 const props = withDefaults(defineProps<Props>(), {
   text: '',
-  tail: 'left',
+  tail: 'top',
   ariaLive: 'polite'
 });
 </script>
@@ -37,5 +26,18 @@ const props = withDefaults(defineProps<Props>(), {
 .drop-shadow {
   filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
 }
+/* 가로쓰기 강제 및 자연스러운 줄바꿈 */
+.horizontal-text {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed;
+  white-space: pre-wrap; /* \n을 줄바꿈으로 반영 */
+  overflow-wrap: break-word; /* Safari/구형 브라우저 호환 줄바꿈 */
+  word-break: break-word; /* 단어 중간 분리 허용(필요 시) */
+  line-break: anywhere;
+  line-height: 1.35;
+}
+/* 말풍선 전용 폰트 */
+.font-bubble {
+  font-family: 'OngleipParkDahyeon', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
 </style>
-

@@ -220,6 +220,25 @@ public class FriendController {
     }
 
     /**
+     * 좋아요 알림에 대한 즉시 답장 (원본 알림은 읽음 처리)
+     */
+    @PostMapping("/interactions/{interactionId}/like-back")
+    @Operation(summary = "좋아요 답장", description = "좋아요 알림에 대해 상대에게 즉시 좋아요를 보냅니다")
+    public ResponseEntity<ApiResponse<FriendInteractionResponse>> likeBack(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long interactionId
+    ) {
+        try {
+            log.info("좋아요 답장 API 호출: userId={}, interactionId={}", userDetails.getUserId(), interactionId);
+            FriendInteractionResponse response = friendService.likeBack(userDetails.getUser(), interactionId);
+            return ResponseEntity.ok(ApiResponse.success("좋아요 답장을 보냈습니다.", response));
+        } catch (Exception e) {
+            log.error("좋아요 답장 처리 중 오류 발생: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    /**
      * 받은 상호작용 목록 조회
      */
     @GetMapping("/interactions")
