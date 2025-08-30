@@ -12,7 +12,7 @@
 ## 🧰 기술 스택
 - **백엔드**: Spring Boot 3.4.8, Java 17, Spring Security, JPA, WebFlux, Flyway
 - **프론트엔드**: Vue 3, Vite 5, TypeScript, Vue Router, Tailwind CSS
-- **DB/인프라**: H2(local), PostgreSQL(dev)
+- **DB/인프라**: H2(local file), PostgreSQL(dev)
 
 ## 🗂️ 프로젝트 구조
 ```bash
@@ -22,6 +22,7 @@ SOLSOLHEY/
 │   │   ├── solsol/            # 인증, 공통, 설정, 챌린지 등
 │   │   └── mascot/, finance/  # 마스코트/금융 모듈
 │   ├── src/main/resources/application.yml
+│   ├── src/main/resources/db/migration/  # Flyway 마이그레이션 (VXX__*.sql)
 │   ├── build.gradle
 │   └── env.example            # .env 템플릿 (복사해 사용)
 └── frontend/
@@ -53,8 +54,10 @@ cp env.example .env
 cd SOLSOLHEY/backend/solsol
 ./gradlew bootRun
 ```
-- 프로필: 기본 `local` (H2 메모리 DB)
-- H2 Console: `http://localhost:8080/h2-console` (JDBC: `jdbc:h2:mem:testdb`, 사용자: `sa`)
+- 프로필: 기본 `local` (H2 파일 DB)
+- H2 Console: `http://localhost:8080/h2-console`
+  - JDBC: `jdbc:h2:file:./.localdb/solsol;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE`
+  - 사용자: `sa`
   - ⚠️ **보안**: 개발환경(`local`, `dev`)에서만 접근 가능
 
 ### 4) 프론트엔드 실행
@@ -67,7 +70,6 @@ npm run dev
 - API 베이스 URL(선택): `frontend/solsol/.env`에 `VITE_API_BASE_URL=http://localhost:8080` 설정 가능
 
 ## 🔌 API 요약
-아래 경로는 실제 컨트롤러 기준입니다.
 
 - **헬스체크/공개**
   - GET `/health`
@@ -97,12 +99,13 @@ npm run dev
   - GET `/my?status=` (내 챌린지)
 
 참고: **보안 강화됨** - CORS는 환경변수로 제한된 도메인만 허용. 개발환경: `localhost` 포트들, 배포 환경: 실제 도메인 설정 필요.
+헬스엔드포인트는 `/health` (permitAll)이며, Actuator 일부 경로도 허용됩니다.
 
 ## 🛡️ 보안 기능
 
 ### Rate Limiting
 - **일반 API**: 분당 100회 요청 제한 (설정 가능)
-- **로그인**: 15분당 5회 시도 제한 (설정 가능)
+- **로그인**: 15분당 10회 시도 제한 (설정 가능)
 - **IP 기반 차단**: 자동 정리 및 캐시 관리
 - **설정**: `env.example`의 `RATE_LIMIT_*` 변수로 조정
 
@@ -116,6 +119,10 @@ cd backend/solsol
 - `local`: H2, `ddl-auto=update`, 콘솔 활성화
 - `dev`: PostgreSQL(`jdbc:postgresql://localhost:5432/solsol_dev`), `ddl-auto=validate`
 - 로깅: `com.solsolhey=DEBUG`, WebClient DEBUG 활성
+
+### 마이그레이션(Flyway)
+- 마이그레이션 파일은 불변입니다. 기존 파일을 수정하지 말고 항상 새로운 버전을 추가하세요.
+- 로컬에서 체크섬 불일치 발생 시: `rm -rf backend/solsol/.localdb` 후 재기동하거나 `./gradlew flywayRepair` 실행(로컬에서만 권장).
 
 ## 🔒 보안 설정
 ### 주요 보안 기능
@@ -170,30 +177,6 @@ Remove      파일을 삭제하는 작업만 수행하는 경우
   - 로컬 파트 길이 보호: 40자로 절단. 재시도 시 동일 값으로 멱등 처리.
 - 실패 처리(옵션 B): 가입은 성공으로 유지. `users.finance_user_key`는 NULL이며, 스케줄러(60초 주기)가 재시도합니다.
 - 중복 응답 처리: 생성 시 중복이면 `/member/search`로 `userKey`를 조회하여 저장합니다.
-
-### 관련 DB/마이그레이션
-- `users.finance_user_key VARCHAR(100)` 컬럼 추가(Flyway V7), 유니크 인덱스 적용.
-
-### 환경 변수 (백엔드)
-- `FINANCE_API_KEY` 외에 다음을 지원합니다:
-  - `FINANCE_API_BASE_URL` (기본: `https://finopenapi.ssafy.io/ssafy/api/v1/edu`)
-  - `FINANCE_API_MEMBER_BASE_URL` (기본: `https://finopenapi.ssafy.io/ssafy/api/v1`)
-
-### Swagger 변경점
-- 인증 DTO에서 username 제거, 이메일을 주체로 통일.
-- 회원가입 응답은 `userId`, `email`만 포함. 금융 `userKey`는 내부 저장 필드입니다(응답에 노출되지 않음).
-
-## 🆘 트러블슈팅
-### 일반적인 문제
-- **H2 Console 404**: 프로필이 `local` 또는 `dev`인지 확인
-- **401 Unauthorized**: `Authorization: Bearer <accessToken>` 헤더 확인
-- **DB 연결 실패**: `.env`의 `DB_*` 값과 `application.yml` 프로파일 확인
-- **CORS 오류**: `CORS_ALLOWED_ORIGINS` 환경변수에 프론트엔드 도메인 추가 확인
-
-### 보안 관련 문제
-- **JWT 토큰 무효화**: Secret Key 변경 시 모든 기존 토큰이 무효됨 (정상 동작)
-- **Swagger UI 접근 불가**: 배포 환경에서 제한할 수 있음(도메인/CORS/보안 설정 확인)
-  - **개발용 엔드포인트 차단**: 프로필을 `local` 또는 `dev`로 변경 필요
 
 ## 📜 라이선스
 - 해커톤 진행용 내부 프로젝트 — 라이선스는 추후 결정 예정
