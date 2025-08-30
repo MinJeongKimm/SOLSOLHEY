@@ -142,6 +142,25 @@ function getMascotImageUrl(type?: string): string {
 const mascotImageUrl = computed(() => getMascotImageUrl(friendHome.value?.mascot?.type));
 
 const roomBackgroundStyle = computed(() => {
+  // backgroundColor와 backgroundPattern을 우선적으로 확인
+  const color = friendHome.value?.mascot?.backgroundColor;
+  const pattern = friendHome.value?.mascot?.backgroundPattern;
+  
+  // 커스터마이징된 배경이 있으면 해당 스타일 적용
+  if (color || pattern) {
+    const style: Record<string, string> = { backgroundColor: color || '#f5f7ff' };
+    
+    if (pattern === 'dots') {
+      style.backgroundImage = 'radial-gradient(circle, rgba(0,0,0,0.10) 1px, transparent 1px)';
+      style.backgroundSize = '12px 12px';
+    } else if (pattern === 'stripes') {
+      style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0 10px, transparent 10px 20px)';
+    }
+    
+    return style;
+  }
+  
+  // 커스터마이징된 배경이 없으면 backgroundId 사용
   const bg = friendHome.value?.mascot?.backgroundId;
   if (bg) {
     return {
@@ -151,6 +170,8 @@ const roomBackgroundStyle = computed(() => {
       backgroundRepeat: 'no-repeat',
     } as Record<string, string>;
   }
+  
+  // 아무것도 없으면 기본 그라데이션 사용
   return { background: 'linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%)' } as Record<string, string>;
 });
 
