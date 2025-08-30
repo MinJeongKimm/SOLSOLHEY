@@ -1,0 +1,131 @@
+package com.solsolhey.mascot.domain;
+
+import java.time.LocalDateTime;
+
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "mascots")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+@EntityListeners(AuditingEntityListener.class)
+public class Mascot {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+    
+    @Column(name = "name", nullable = false, length = 50)
+    private String name;
+    
+    @Column(name = "type", nullable = false, length = 20)
+    private String type;
+    
+    @Column(name = "equipped_item", length = 100)
+    private String equippedItem;
+
+    // 마스코트 커스터마이징 레이아웃(아이템 위치/스케일/회전 등)을 JSON 문자열로 저장
+    @Column(name = "equipped_layout", columnDefinition = "TEXT")
+    private String equippedLayout;
+
+    // 최신 꾸미기 스냅샷 이미지(Data URL 또는 URL)
+    // 단순화를 위해 우선 Data URL(CLOB)로 저장. 운영에서는 외부 스토리지 URL 권장.
+    @jakarta.persistence.Lob
+    @jakarta.persistence.Basic(fetch = jakarta.persistence.FetchType.LAZY)
+    @Column(name = "snapshot_image")
+    private String snapshotImage;
+    
+    @Column(name = "background_id", length = 50)
+    @Builder.Default
+    private String backgroundId = "bg_room_basic"; // 기본 배경
+
+    // 배경 커스터마이징: 색상(hex) 및 패턴(dots/stripes/none)
+    @Column(name = "background_color", length = 7)
+    private String backgroundColor; // 예: #ffffff
+
+    @Column(name = "background_pattern", length = 20)
+    private String backgroundPattern; // dots | stripes | none
+    
+    @Column(name = "exp", nullable = false)
+    @Builder.Default
+    private Integer exp = 0;
+    
+    @Column(name = "level", nullable = false)
+    @Builder.Default
+    private Integer level = 1;
+    
+    @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+    
+    @LastModifiedDate
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+    
+    // 경험치 증가 및 레벨업 로직
+    public void addExp(int expToAdd) {
+        this.exp += expToAdd;
+        updateLevel();
+    }
+    
+    // 레벨 계산 (경험치 100당 1레벨)
+    private void updateLevel() {
+        this.level = (this.exp / 100) + 1;
+    }
+    
+    // 아이템 장착
+    public void equipItem(String item) {
+        this.equippedItem = item;
+    }
+
+    // 커스터마이징 레이아웃 저장
+    public void updateEquippedLayout(String layoutJson) {
+        this.equippedLayout = layoutJson;
+    }
+
+    // 스냅샷 이미지 저장/업데이트
+    public void updateSnapshotImage(String snapshotImage) {
+        this.snapshotImage = snapshotImage;
+    }
+    
+    // 이름 변경
+    public void changeName(String newName) {
+        this.name = newName;
+    }
+    
+    // 배경 변경
+    public void changeBackground(String backgroundId) {
+        this.backgroundId = backgroundId;
+    }
+    
+    // 기본 배경으로 초기화
+    public void resetToDefaultBackground() {
+        this.backgroundId = "bg_room_basic";
+    }
+
+    // 배경 커스터마이징 업데이트
+    public void updateBackgroundCustomization(String color, String pattern) {
+        this.backgroundColor = color;
+        this.backgroundPattern = pattern;
+    }
+}

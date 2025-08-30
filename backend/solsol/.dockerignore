@@ -1,0 +1,23 @@
+# Build outputs
+build/
+out/
+
+# Gradle caches (keep wrapper)
+.gradle/
+!gradle/wrapper/
+
+# IDE/OS files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Local data
+.localdb/
+uploads/
+
+# Env files (do not bake secrets into image)
+.env
+../.env
+*.env
+

@@ -7,16 +7,23 @@ export interface ApiResponse<T = any> {
 }
 
 // 회원가입 관련 타입
-export interface SignupRequest {
+export type Campus = {
+  id: number;
+  name: string;
+};
+
+export type SignupRequest = {
   userId: string;
   password: string;
   nickname: string;
+  campus: string;
 }
 
 export interface SignupResponse {
   success: boolean;
   message: string;
-  username?: number;
+  userId?: number;
+  email?: string;
   errors?: Record<string, string>;
 }
 
@@ -29,8 +36,9 @@ export interface LoginRequest {
 export interface LoginResponse {
   success: boolean;
   message: string;
-  token?: string;
-  username?: string;
+  data?: {
+    token: string;
+  };
   errors?: Record<string, string>;
 }
 
@@ -49,9 +57,33 @@ export interface ErrorResponse {
 
 // 사용자 정보 타입
 export interface User {
-  username: string;
-  userId: string;
+  userId: number;
   nickname: string;
+}
+
+// 마스코트 관련 타입 (백엔드 응답 구조에 맞춤)
+export interface MascotCreateRequest {
+  name: string;
+  type: string;
+}
+
+export interface MascotResponse {
+  id: number;
+  userId: number;
+  name: string;
+  type: string;
+  equippedItem?: string;
+  exp: number;
+  level: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MascotApiResponse {
+  success: boolean;
+  message: string;
+  data?: MascotResponse;
+  errors?: Record<string, string>;
 }
 
 // API 에러 클래스
@@ -66,6 +98,316 @@ export class ApiError extends Error {
   }
 }
 
+// 마스코트 관련 타입 (백엔드 응답 구조에 맞춤)
+export interface Mascot {
+  id: number;
+  name: string;
+  type: string; // 마스코트 종류 (ex: 'soll', 'ray', 'rino', 'pli' 등)
+  level: number;
+  exp: number; // 백엔드의 exp 필드와 일치
+  equippedItem?: string; // 백엔드의 equippedItem 필드와 일치 (단순 문자열)
+  equippedLayout?: string; // 백엔드의 equippedLayout 필드와 일치 (JSON 문자열)
+  backgroundColor?: string;
+  backgroundPattern?: string; // 'dots' | 'stripes' | 'none'
+  createdAt?: string;
+  updatedAt?: string;
+  snapshotImage?: string; // 최근 저장된 스냅샷(Data URL 또는 URL)
+}
 
+// 배경 커스터마이징 요청
+export interface MascotBackgroundUpdateRequest {
+  backgroundColor: string; // HEX color, e.g., #FFFFFF
+  patternType?: 'dots' | 'stripes' | 'none';
+}
 
+// evolutionStage는 level 기반으로 계산 (프론트엔드에서 처리)
+export interface EquippedItems {
+  clothing?: Item;
+  background?: Item;
+  accessory?: Item;
+  head?: Item;
+}
 
+export interface Item {
+  id: number;
+  name: string;
+  type: 'clothing' | 'background' | 'accessory' | 'head';
+  description: string;
+  price: number;
+  imageUrl?: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  isOwned?: boolean;
+}
+
+// 마스코트 생성 요청/응답 (백엔드 구조에 맞춤)
+export interface CreateMascotRequest {
+  name: string;
+  type: string;
+  equippedItem?: string; // 백엔드의 equippedItem 필드와 일치
+}
+
+export interface CreateMascotResponse {
+  success: boolean;
+  message: string;
+  mascot?: Mascot;
+  errors?: Record<string, string>;
+}
+
+// 마스코트 꾸미기 요청/응답 (백엔드 구조에 맞춤)
+export interface EquipItemsRequest {
+  equippedItem: string; // 백엔드의 equippedItem 필드와 일치
+}
+
+export interface EquipItemsResponse {
+  success: boolean;
+  message: string;
+  mascot?: Mascot;
+  errors?: Record<string, string>;
+}
+
+// 마스코트 수정 요청/응답 (백엔드 구조에 맞춤)
+export interface UpdateMascotRequest {
+  name?: string;
+  equippedItem?: string; // 백엔드의 equippedItem 필드와 일치
+  expToAdd?: number; // 백엔드의 expToAdd 필드와 일치
+}
+
+export interface UpdateMascotResponse {
+  success: boolean;
+  message: string;
+  mascot?: Mascot;
+  errors?: Record<string, string>;
+}
+
+// 마스코트 조회 응답
+export interface GetMascotResponse {
+  success: boolean;
+  message: string;
+  mascot?: Mascot;
+  errors?: Record<string, string>;
+}
+
+// 아이템 목록 조회 응답
+export interface GetItemsResponse {
+  success: boolean;
+  message: string;
+  items?: Item[];
+  errors?: Record<string, string>;
+}
+
+// 챌린지 관련 타입 정의 (백엔드 ChallengeListResponseDto에 맞춤)
+export interface Challenge {
+  challengeId: number;
+  challengeName: string;
+  description: string;
+  rewardPoints: number;
+  rewardExp: number;
+  challengeType: string;
+  difficulty: string;
+  categoryName: string;
+  categoryDisplayName: string;
+  startDate?: string;
+  endDate?: string;
+  targetCount: number;
+  isActive: boolean;
+  isAvailable: boolean;
+  participantCount?: number;
+  completedCount?: number;
+  isJoined: boolean;
+  userStatus: string;
+}
+
+export interface ChallengeListResponse {
+  success: boolean;
+  message: string;
+  data?: Challenge[];
+  errors?: Record<string, string>;
+}
+
+export interface ChallengeDetailResponse {
+  success: boolean;
+  message: string;
+  data?: Challenge;
+  errors?: Record<string, string>;
+}
+
+export interface ChallengeJoinRequest {
+  challengeId: number;
+}
+
+export interface ChallengeJoinResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    challengeId: number;
+    userId: number;
+    status: string;
+  };
+  errors?: Record<string, string>;
+}
+
+export interface ChallengeProgressRequest {
+  step: number;
+  payload?: string;
+}
+
+export interface ChallengeProgressResponse {
+  success: boolean;
+  message: string;
+  userChallenge?: {
+    userChallengeId: number;
+    status: string;
+    statusDisplayName: string;
+    progressCount: number;
+    targetCount: number;
+    progressRate: number;
+    startedAt: string;
+    completedAt?: string;
+    progressData?: string;
+  };
+  isCompleted?: boolean;
+  rewardPoints?: number;
+  rewardExp?: number;
+  errors?: Record<string, string>;
+}
+
+// 사용자 관련 타입 정의
+export interface UserResponse {
+  userId: number;
+  email: string;
+  nickname: string;
+  campus?: string;
+  totalPoints: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// 상점 관련 타입 정의
+export interface ShopItem {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  type: string;
+  imageUrl: string;
+  // 백엔드 DTO(ItemResponse)에 존재하는 필드이나 타입에서 누락되어 있어 추가
+  category?: string; // 'head' | 'clothing' | 'accessory' | 'background'
+  isActive: boolean;
+  owned?: boolean;
+  // 레벨 잠금 기능을 위한 필드 (백엔드 미제공 시 FE에서 임시 계산하여 채움)
+  requiredLevel?: number;
+}
+
+export interface Gifticon {
+  id: number;
+  name: string;
+  imageUrl: string;
+  price: number;
+  description: string;
+  sku: string;
+}
+
+// 보관함 기프티콘 목록 타입
+export interface PurchasedGifticon {
+  id: number;
+  name: string;
+  imageUrl: string;
+  status: 'ACTIVE' | 'REDEEMED' | 'EXPIRED';
+  expiresAt?: string;
+}
+
+// 보관함 기프티콘 상세 타입
+export interface PurchasedGifticonDetail extends PurchasedGifticon {
+  sku: string;
+  barcode: string;
+}
+
+export interface OrderRequest {
+  type: 'ITEM' | 'GIFTICON';
+  itemId?: number;
+  quantity?: number;
+  sku?: string;
+}
+
+export interface OrderResponse {
+  id: number;
+  userId: number;
+  type: string;
+  totalPrice: number;
+  status: string;
+  message: string;
+}
+
+export interface UserItem {
+  id: number;
+  userId: number;
+  itemId: number;
+  quantity: number;
+  item: ShopItem;
+}
+
+// 랭킹 관련 타입 정의
+export interface SchoolInfo {
+  id: number;
+  name: string;
+}
+
+export interface RankingEntry {
+  rank: number;
+  mascotId: number;
+  ownerNickname: string;
+  votes: number;
+  backgroundId: string;
+  school?: SchoolInfo;
+}
+
+export interface RankingResponse {
+  entries: RankingEntry[];
+  total: number;
+  page: number;
+  size: number;
+  period: string;
+  campus?: {
+    campusName: string;
+  };
+}
+
+// MascotView 관련 타입들 추가
+export interface MascotViewResponse {
+  owner: OwnerSummary;
+  viewer: ViewerSummary;
+  viewMode: 'SELF' | 'OTHER' | 'UNKNOWN';
+  permissions: Permissions;
+  mascot: MascotSummary;
+}
+
+export interface OwnerSummary {
+  id: number;
+  nickname: string;
+  level: number;
+}
+
+export interface ViewerSummary {
+  id: number | null;
+}
+
+export interface MascotSummary {
+  id: number;
+  name: string;
+  type: string;
+  equippedItem: string | null;
+  level: number;
+  exp: number;
+  backgroundColor?: string;
+  backgroundPattern?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  snapshotImage?: string;
+}
+
+export interface Permissions {
+  canSendFriendRequest: boolean;
+  canCheer: boolean;
+  canViewDetails: boolean;
+}

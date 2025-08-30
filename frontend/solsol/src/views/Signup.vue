@@ -1,7 +1,17 @@
 <template>
-  <div class="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-blue-100 to-blue-300 px-4">
+  <div class="min-h-screen flex flex-col justify-center items-center px-4" style="background: linear-gradient(to bottom, #6E72EF 0%, #E586E2 100%);">
     <div class="w-full max-w-sm bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-6" role="main" aria-label="회원가입 폼">
-      <h1 class="text-2xl font-bold text-center text-blue-600 mb-2" tabindex="0">회원가입</h1>
+      <!-- 상단 헤더: 뒤로가기 + 타이틀 -->
+      <div class="relative mb-2">
+        <button
+          @click="goLogin"
+          class="absolute left-0 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
+          aria-label="로그인으로 돌아가기"
+        >
+          <img src="/icons/icon_back.png" alt="" class="w-5 h-5" />
+        </button>
+        <h1 class="text-2xl font-bold text-center text-blue-600" tabindex="0">회원가입</h1>
+      </div>
       <form v-if="!successMessage" @submit.prevent="onSubmit" class="flex flex-col gap-4" autocomplete="on" aria-live="polite">
         <div>
           <label for="userId" class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
@@ -51,13 +61,13 @@
             type="password"
             autocomplete="new-password"
             required
-            minlength="6"
+            minlength="8"
             aria-required="true"
             aria-invalid="true"
             aria-describedby="passwordError"
             class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none text-base min-h-[44px]"
             :class="{'border-red-400 ring-2 ring-red-300': passwordError, 'focus:ring-blue-400': !passwordError}"
-            placeholder="비밀번호 (6자 이상)"
+            placeholder="비밀번호 (8자 이상)"
             @input="passwordError = validatePassword(password)"
           />
           <transition name="fade">
@@ -84,11 +94,36 @@
             <p v-if="password2Error" id="password2Error" class="text-xs text-red-500 mt-1 animate-shake">{{ password2Error }}</p>
           </transition>
         </div>
+
+        <!-- 캠퍼스 선택 -->
+        <div>
+          <label for="campus" class="block text-sm font-medium text-gray-700 mb-1">
+            캠퍼스 선택 <span class="text-red-500">*</span>
+          </label>
+          <select
+            id="campus"
+            v-model="campus"
+            required
+            aria-required="true"
+            aria-invalid="true"
+            aria-describedby="campusError"
+            class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none text-base min-h-[44px]"
+            :class="{'border-red-400 ring-2 ring-red-300': campusError, 'focus:ring-blue-400': !campusError}"
+          >
+            <option value="" disabled>캠퍼스를 선택해주세요</option>
+            <option v-for="c in campusList" :key="c.id" :value="c.name">{{ c.name }}</option>
+          </select>
+          <transition name="fade">
+            <p v-if="campusError" id="campusError" class="text-xs text-red-500 mt-1 animate-shake">
+              {{ campusError }}
+            </p>
+          </transition>
+        </div>
+
         <button
           type="submit"
           class="w-full py-3 mt-2 rounded-lg bg-blue-500 text-white font-semibold text-lg shadow-md hover:bg-blue-600 transition active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
           :disabled="loading"
-          aria-busy="loading"
         >
           <span v-if="loading" class="flex items-center justify-center gap-2">
             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
@@ -112,15 +147,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { signup, handleApiError } from '../api/index';
-import type { SignupRequest } from '../types/api';
+import { signup, handleApiError, logout } from '../api/index';
+import { getCampusList } from '../api/campus';
+import type { SignupRequest, Campus } from '../types/api';
 
 const userId = ref('');
 const nickname = ref('');
 const password = ref('');
 const password2 = ref('');
+const campus = ref('');
+const campusList = ref<Campus[]>([]);
 const loading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
@@ -128,7 +166,17 @@ const userIdError = ref('');
 const nicknameError = ref('');
 const passwordError = ref('');
 const password2Error = ref('');
+const campusError = ref('');
 const router = useRouter();
+
+onMounted(async () => {
+  try {
+    campusList.value = await getCampusList();
+  } catch (error) {
+    errorMessage.value = '캠퍼스 목록을 불러오는데 실패했습니다.';
+    console.error('캠퍼스 목록 조회 오류:', error);
+  }
+});
 
 function validateUserId(value: string) {
   if (!value) return '이메일을 입력하세요.';
@@ -145,7 +193,7 @@ function validateNickname(value: string) {
 
 function validatePassword(value: string) {
   if (!value) return '비밀번호를 입력하세요.';
-  if (value.length < 6) return '비밀번호는 6자 이상이어야 합니다.';
+  if (value.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
   return '';
 }
 
@@ -155,8 +203,13 @@ function validatePassword2(value: string) {
   return '';
 }
 
+function validateCampus(value: string) {
+  if (!value) return '캠퍼스를 선택해주세요.';
+  return '';
+}
+
 function goLogin() {
-  router.push('/');
+  router.push('/login');
 }
 
 async function onSubmit() {
@@ -164,11 +217,12 @@ async function onSubmit() {
   userIdError.value = validateUserId(userId.value);
   nicknameError.value = validateNickname(nickname.value);
   passwordError.value = validatePassword(password.value);
-  password2Error.value = validatePassword2(password2.value);
+  password2Error.value = validatePassword2(password.value);
+  campusError.value = validateCampus(campus.value);
   errorMessage.value = '';
   successMessage.value = '';
   
-  if (userIdError.value || nicknameError.value || passwordError.value || password2Error.value) {
+  if (userIdError.value || nicknameError.value || passwordError.value || password2Error.value || campusError.value) {
     return;
   }
 
@@ -179,6 +233,7 @@ async function onSubmit() {
       userId: userId.value,
       password: password.value,
       nickname: nickname.value,
+      campus: campus.value,
     };
 
     const response = await signup(signupData);
@@ -191,10 +246,13 @@ async function onSubmit() {
       nickname.value = '';
       password.value = '';
       password2.value = '';
-      
+      campus.value = '';
+
+      // 혹시 남아있을 수 있는 인증 쿠키/세션을 정리하고 로그인 화면으로 이동
+      try { await logout(); } catch { /* ignore */ }
       // 1.5초 후 로그인 페이지로 이동
       setTimeout(() => {
-        router.push('/');
+        router.push('/login');
       }, 1500);
     } else {
       // 서버에서 성공하지 않은 응답을 보낸 경우
@@ -213,6 +271,9 @@ async function onSubmit() {
         }
         if (response.errors.password) {
           passwordError.value = response.errors.password;
+        }
+        if (response.errors.campus) {
+          campusError.value = response.errors.campus;
         }
       }
     }

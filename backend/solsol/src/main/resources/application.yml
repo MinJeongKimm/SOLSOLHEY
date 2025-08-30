@@ -1,139 +1,143 @@
+# Finance API 설정
+finance:
+  api:
+    base-url: ${FINANCE_API_BASE_URL}
+    member-base-url: ${FINANCE_API_MEMBER_BASE_URL}
+    timeout: ${FINANCE_API_TIMEOUT:10}
+    api-key: ${FINANCE_API_KEY}
+
+# JWT 인증 설정
+jwt:
+  secret: ${JWT_SECRET_KEY:YOUR_BASE64_SECRET}        # 256+ bit key, Base64 encoded
+  access-minutes: ${JWT_ACCESS_MINUTES:15}
+  refresh-days: ${JWT_REFRESH_DAYS:14}
+  secret-key: ${JWT_SECRET_KEY}                       # 기존 호환성 유지
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
+
+# Spring 설정
 spring:
   application:
     name: solsol
-
-  # 프로파일별 설정
   profiles:
-    active: local
-
-  # 데이터베이스 설정
-  datasource:
-    url: ${DB_URL:jdbc:h2:mem:testdb}
-    username: ${DB_USERNAME:sa}
-    password: ${DB_PASSWORD:}
-    driver-class-name: ${DB_DRIVER:org.h2.Driver}
-
-  # JPA 설정
-  jpa:
-    hibernate:
-      ddl-auto: ${DDL_AUTO:update}
-    show-sql: ${SHOW_SQL:true}
-    properties:
-      hibernate:
-        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.H2Dialect}
-        format_sql: true
-        use_sql_comments: true
-
-  # H2 Console (로컬 개발용)
-  h2:
-    console:
-      enabled: ${H2_CONSOLE_ENABLED:true}
-      path: /h2-console
-
-  # Flyway 설정
-  flyway:
-    enabled: ${FLYWAY_ENABLED:false}
-    baseline-on-migrate: true
-    locations: classpath:db/migration
-
-# 서버 설정
-server:
-  port: ${SERVER_PORT:8080}
-  servlet:
-    context-path: /api
-
-# JWT 설정
-jwt:
-  secret-key: ${JWT_SECRET_KEY:mySecretKeyForSolsolHeyHackathon2024VeryLongSecretKey}
-  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000} # 1시간
-  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000} # 7일
-
-# 신한 API 설정
-shinhan:
-  api:
-    base-url: ${SHINHAN_API_BASE_URL:https://finopenapi.ssafy.io/ssafy/api/v1}
-    user-key: ${SHINHAN_API_USER_KEY:}
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    import:
+      - "optional:file:../.env[.properties]"
+      - "optional:file:../.env"
     
-# 로깅 설정
-logging:
-  level:
-    com.solsolhey.solsol: ${LOG_LEVEL:DEBUG}
-    org.springframework.security: ${SECURITY_LOG_LEVEL:DEBUG}
-    org.hibernate.SQL: ${SQL_LOG_LEVEL:DEBUG}
-    org.hibernate.type.descriptor.sql.BasicBinder: ${SQL_BIND_LOG_LEVEL:TRACE}
-
+# 로컬 개발 환경 (H2)
 ---
-# 로컬 개발 환경
 spring:
   config:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:h2:mem:testdb
+    url: jdbc:h2:file:./.localdb/solsol;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
     username: sa
     password: 
-    driver-class-name: org.h2.Driver
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
   h2:
     console:
       enabled: true
-  flyway:
-    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  sql:
+    init:
+      mode: never
+    properties:
+      hibernate:
+        format_sql: true
 
----
+# 로컬 환경 Rate Limiting 비활성화
+rate-limit:
+  enabled: false
+
 # 개발 환경 (PostgreSQL)
+---
 spring:
   config:
     activate:
       on-profile: dev
+    import:
+      - "optional:file:.env[.properties]"
+      - "optional:file:.env"
+      - "optional:file:../.env[.properties]"
+      - "optional:file:../.env"
   datasource:
-    url: jdbc:postgresql://localhost:5432/solsolhey_dev
-    username: solsol_user
-    password: solsol_password
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${DB_USER:solsol}
+    password: ${DB_PASSWORD:solsol123}
     driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-  h2:
-    console:
-      enabled: false
   flyway:
     enabled: true
-
----
-# 운영 환경
-spring:
-  config:
-    activate:
-      on-profile: prod
-  datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
+    locations: classpath:db/migration
   jpa:
     hibernate:
-      ddl-auto: validate
-    show-sql: false
+      ddl-auto: ${JPA_HIBERNATE_DDL_AUTO:update}
+    show-sql: ${JPA_SHOW_SQL:true}
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-  h2:
-    console:
-      enabled: false
-  flyway:
-    enabled: true
+        format_sql: ${JPA_FORMAT_SQL:true}
+  sql:
+    init:
+      mode: ${SPRING_SQL_INIT_MODE:never}
 
+# CORS 설정
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+  allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,PATCH,DELETE,OPTIONS}
+  allowed-headers: ${CORS_ALLOWED_HEADERS:*}
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+  max-age: ${CORS_MAX_AGE:3600}
+
+# Rate Limiting 설정 (전역)
+rate-limit:
+  general:
+    requests-per-minute: ${RATE_LIMIT_GENERAL_REQUESTS_PER_MINUTE:100}
+  login:
+    attempts-per-15min: ${RATE_LIMIT_LOGIN_ATTEMPTS_PER_15MIN:10}
+  cleanup:
+    interval-hours: ${RATE_LIMIT_CLEANUP_INTERVAL_HOURS:1}
+  enabled: ${RATE_LIMIT_ENABLED:true}
+
+# 로깅 설정
 logging:
   level:
-    com.solsolhey.solsol: INFO
-    org.springframework.security: WARN
-    org.hibernate.SQL: WARN
+    com.solsolhey: DEBUG
+    com.solsolhey.common.security: DEBUG
+    com.solsolhey.auth.jwt: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.security.web: DEBUG
+    org.springframework.security.web.csrf: DEBUG
+    org.springframework.security.web.authentication: DEBUG
+    org.springframework.security.web.filter: DEBUG
+    org.springframework.web.filter: DEBUG
+    org.springframework.web.reactive.function.client: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Tomcat 서버 설정
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    uri-encoding: ${SERVER_TOMCAT_URI_ENCODING:UTF-8}
+    connection-timeout: ${SERVER_TOMCAT_CONNECTION_TIMEOUT:20000}
+    # relaxed-* settings are optional; remove defaults to avoid binding issues
+    # relaxed-query-chars: ${SERVER_TOMCAT_RELAXED_QUERY_CHARS}
+    # relaxed-path-chars: ${SERVER_TOMCAT_RELAXED_PATH_CHARS}
+  servlet:
+    encoding:
+      charset: ${SERVER_SERVLET_ENCODING_CHARSET:UTF-8}
+      force: ${SERVER_SERVLET_ENCODING_FORCE:true}
+      enabled: ${SERVER_SERVLET_ENCODING_ENABLED:true}
+
+# Media storage
+media:
+  upload-dir: ${MEDIA_UPLOAD_DIR:./uploads}
+  snapshot-max-entries: ${MEDIA_SNAPSHOT_MAX_ENTRIES:20}

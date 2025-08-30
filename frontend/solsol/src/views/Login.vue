@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col justify-center items-center bg-gradient-to-b from-blue-100 to-blue-300 px-4">
+  <div class="min-h-screen flex flex-col justify-center items-center px-4" style="background: linear-gradient(to bottom, #6E72EF 0%, #E586E2 100%);">
     <div class="w-full max-w-sm bg-white rounded-2xl shadow-lg p-6 flex flex-col gap-6" role="main" aria-label="로그인 폼">
       <h1 class="text-2xl font-bold text-center text-blue-600 mb-2" tabindex="0">쏠쏠Hey 로그인</h1>
       <form @submit.prevent="onSubmit" class="flex flex-col gap-4" autocomplete="on" aria-live="polite">
@@ -31,7 +31,7 @@
             type="password"
             autocomplete="current-password"
             required
-            minlength="6"
+            minlength="8"
             aria-required="true"
             aria-invalid="true"
             aria-describedby="passwordError"
@@ -49,7 +49,7 @@
           type="submit"
           class="w-full py-3 mt-2 rounded-lg bg-blue-500 text-white font-semibold text-lg shadow-md hover:bg-blue-600 transition active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
           :disabled="loading"
-          aria-busy="loading"
+          :aria-busy="loading"
         >
           <span v-if="loading" class="flex items-center justify-center gap-2">
             <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
@@ -71,8 +71,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { login, auth, handleApiError } from '../api/index';
+import { useRouter, useRoute } from 'vue-router';
+import { loginAndBootstrap, handleApiError, getMascot, getUserInfo, prefillAiSpeech } from '../api/index';
+import { usePointStore } from '../stores/point';
 import type { LoginRequest } from '../types/api';
 
 const userId = ref('');
@@ -82,6 +83,7 @@ const errorMessage = ref('');
 const userIdError = ref('');
 const passwordError = ref('');
 const router = useRouter();
+const route = useRoute();
 
 function validateUserId(value: string) {
   if (!value) return '이메일을 입력하세요.';
@@ -92,7 +94,7 @@ function validateUserId(value: string) {
 
 function validatePassword(value: string) {
   if (!value) return '비밀번호를 입력하세요.';
-  if (value.length < 6) return '비밀번호는 6자 이상이어야 합니다.';
+  if (value.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
   return '';
 }
 
@@ -114,22 +116,40 @@ async function onSubmit() {
       password: password.value,
     };
 
-    const response = await login(loginData);
+    const response = await loginAndBootstrap(loginData);
     
-    if (response.success && response.token) {
-      // 토큰 저장
-      auth.setToken(response.token);
+    if (response.success && response.data) {
+      // loginAndBootstrap()에서 이미 bootstrapAuth()가 호출됨
+      // 사용자 정보가 캐시에 반영되어 있음
       
-      // 사용자 정보 저장 (있는 경우)
-      if (response.username) {
-        auth.setUser({
-          username: response.username,
-          userId: userId.value,
-        });
+      // 포인트 스토어에서 사용자 포인트 정보 로드
+      const pointStore = usePointStore();
+      await pointStore.loadPoints();
+      
+      // AI 말풍선 버퍼 프리필을 로그인 직후 시작(비차단, 2/타입 → 총 4개)
+      prefillAiSpeech(2).catch(() => {});
+
+      // 리디렉션 처리
+      if (typeof route.query.redirect === 'string' && route.query.redirect) {
+        router.push(route.query.redirect);
+        return;
       }
-      
-      // 대시보드로 리다이렉트
-      router.push('/dashboard');
+
+      // 마스코트 존재 여부 확인
+      try {
+        const mascotData = await getMascot();
+        if (mascotData) {
+          // 마스코트가 있으면 마스코트 메인 화면으로 리다이렉트
+          router.push('/mascot');
+        } else {
+          // 마스코트가 없으면 마스코트 생성 화면으로 리다이렉트
+          router.push('/mascot/create');
+        }
+      } catch (error) {
+        // 마스코트 조회 실패 시 마스코트 생성 화면으로 이동
+        console.warn('마스코트 조회 실패, 생성 화면으로 이동:', error);
+        router.push('/mascot/create');
+      }
     } else {
       // 서버에서 성공하지 않은 응답을 보낸 경우
       errorMessage.value = response.message || '로그인에 실패했습니다.';
