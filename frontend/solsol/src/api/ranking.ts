@@ -226,6 +226,13 @@ export async function getCurrentUserMascotSnapshot(): Promise<MascotSnapshot | n
   }
 }
 
+// 사용자의 스냅샷 목록 조회 (최근 20개)
+export async function getUserSnapshots(): Promise<MascotSnapshot[]> {
+  const response = await apiRequest<any>('/mascot/snapshots');
+  const list = (response && response.data) ? (response.data as MascotSnapshot[]) : [];
+  return Array.isArray(list) ? list : [];
+}
+
 // 마스코트 타입에 따른 이미지 URL 생성 (이미지 공유와 동일한 로직)
 function getMascotImageUrl(type: string): string {
   if (!type) return '/mascot/soll.png';
