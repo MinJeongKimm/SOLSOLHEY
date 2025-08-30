@@ -31,7 +31,6 @@ public class AiMessageService {
 
     public com.solsolhey.ai.dto.AiSpeechGenResult generateSpeech(Long userId) {
         var user = userRepository.findById(userId).orElse(null);
-        var mascot = mascotRepository.findByUserId(userId).orElse(null);
         String campus = null;
         String nickname = null;
         Integer level = null;
@@ -40,9 +39,8 @@ public class AiMessageService {
             campus = null;
             nickname = null;
         }
-        if (mascot != null) {
-            level = mascot.getLevel();
-        }
+        // LOB 접근 회피: 레벨만 경량 쿼리로 조회
+        try { level = mascotRepository.findLevelByUserId(userId); } catch (Exception ignore) { level = null; }
         // 번갈아가며 출력: 이전 타입 기준으로 다음 타입 결정(기본은 학사 먼저)
         SpeechType prev = lastTypeByUser.getOrDefault(userId, SpeechType.CHALLENGE);
         SpeechType desired = (prev == SpeechType.ACADEMIC) ? SpeechType.CHALLENGE : SpeechType.ACADEMIC;
