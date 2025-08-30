@@ -58,14 +58,7 @@
             <!-- 팔레트 아이콘 -->
             <span class="text-lg">🎨</span>
           </button>
-          <!-- 커스터마이즈 배경 -->
-          <!--08.27 임시 삭제 코드 by 민정-->
-          <!-- <img 
-            src="/backgrounds/base/bg_blue.png" 
-            alt="꾸미기 배경" 
-            class="absolute inset-0 w-full h-full object-cover"
-          />
-           -->
+          <!-- 커스터마이즈 배경: 색상/패턴으로만 구성 (이미지 배경 제거) -->
           <!-- 마스코트 + 장착된 아이템들 -->
           <div 
             ref="mascotCanvas"
@@ -533,7 +526,8 @@ async function loadUserItems() {
   }
 }
 
-// 스냅샷 합성: 배경 → 마스코트 → 아이템(위치/스케일/회전)
+// 스냅샷 합성: 꾸미기 화면과 동일한 순서/크기로 렌더링
+// 레이어: (1) 배경색/패턴 → (2) 배경 아이템 → (3) 마스코트 → (4) 전경 아이템(타입별 z-index)
 async function composeSnapshotDataUrl(): Promise<string> {
   const DPR = Math.max(1, Math.min(3, Math.floor(window.devicePixelRatio || 1)));
   const canvasSize = 800;
@@ -552,22 +546,72 @@ async function composeSnapshotDataUrl(): Promise<string> {
     img.src = src;
   });
 
-  // 배경
-  const bgImg = await loadImage('/backgrounds/base/bg_blue.png');
-  ctx.drawImage(bgImg, 0, 0, canvasSize, canvasSize);
+  // (1) 배경색/패턴: 꾸미기 미리보기(previewBackgroundStyle)와 동일하게 캔버스에 직접 그리기
+  const bgFill = bgColor.value || '#ffffff';
+  ctx.fillStyle = bgFill;
+  ctx.fillRect(0, 0, canvasSize, canvasSize);
 
-  // 마스코트
+  if (bgPattern.value === 'dots') {
+    // 도트 패턴
+    ctx.fillStyle = 'rgba(0,0,0,0.12)';
+    for (let x = 6; x < canvasSize; x += 12) {
+      for (let y = 6; y < canvasSize; y += 12) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+    }
+  } else if (bgPattern.value === 'stripes') {
+    // 대각선 스트라이프 (45도)
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    const stripeWidth = 10;
+    const stripeGap = 20;
+    for (let offset = -canvasSize * 1.5; offset < canvasSize * 2.5; offset += stripeGap) {
+      ctx.save();
+      ctx.translate(offset, 0);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillRect(0, -canvasSize * 1.5, stripeWidth, canvasSize * 3);
+      ctx.restore();
+    }
+  }
+
+  // (2) 배경 아이템: 캔버스 전체를 덮도록 렌더링 (DOM에서도 object-cover)
+  const backgroundItems = equippedItemsList.value.filter(e => normalizeType(e.item?.type) === 'background');
+  for (const e of backgroundItems) {
+    try {
+      const img = await loadImage(e.item.imageUrl || '');
+      ctx.drawImage(img, 0, 0, canvasSize, canvasSize);
+    } catch {}
+  }
+
+  // (3) 마스코트: 꾸미기 화면의 실제 크기(192px)와 비율을 일치시키기 위해 60% 사용
   const mascotUrl = currentMascot.value ? getMascotImageUrl(currentMascot.value.type) : '/mascot/soll.png';
   const mascotImg = await loadImage(mascotUrl);
-  const mascotBoxSize = Math.floor(canvasSize * 0.5); // 중앙 50%
+  const mascotBoxSize = Math.floor(canvasSize * 0.6); // 꾸미기 UI의 w-48(192px) : 컨테이너 h-80(320px) ≈ 60%
   const mascotX = (canvasSize - mascotBoxSize) / 2;
   const mascotY = (canvasSize - mascotBoxSize) / 2;
   ctx.drawImage(mascotImg, mascotX, mascotY, mascotBoxSize, mascotBoxSize);
 
-  // 아이템들
-  const UI_MASCOT_PX = 128;
-  const baseItemSize = (120 /* BASE_ITEM_SIZE */ / UI_MASCOT_PX) * mascotBoxSize;
-  for (const e of equippedItemsList.value) {
+  // (4) 전경 아이템: DraggableItem의 z-index 규칙을 반영하여 타입별 레이어링 정렬
+  // 동일 z-index 내에서는 장착 순서(원래 배열 순서)를 유지
+  const zIndexFor = (t: string) => ({
+    background: 1,
+    clothing: 5,
+    head: 10,
+    accessory: 15,
+  } as Record<string, number>)[t] ?? 5;
+
+  const foregroundItems = equippedItemsList.value
+    .filter(e => normalizeType(e.item?.type) !== 'background')
+    .map((e, idx) => ({ e, idx, z: zIndexFor(normalizeType(e.item?.type)) }))
+    .sort((a, b) => (a.z - b.z) || (a.idx - b.idx)); // 낮은 z 먼저(뒤), 같은 z는 기존 순서 유지
+
+  // 크기 계산: 꾸미기 화면과 동일한 기준(BASE_ITEM_SIZE=120, UI_MASCOT_PX=192)
+  const UI_MASCOT_PX = 192; // w-48 = 192px
+  const BASE_ITEM_SIZE = 120; // DraggableItem 기준과 동일
+  const baseItemSize = (BASE_ITEM_SIZE / UI_MASCOT_PX) * mascotBoxSize;
+
+  for (const { e } of foregroundItems) {
     try {
       const img = await loadImage(e.item.imageUrl || '');
       const centerX = mascotX + (e.relativePosition.x * mascotBoxSize);
@@ -582,7 +626,7 @@ async function composeSnapshotDataUrl(): Promise<string> {
     } catch {}
   }
 
-  // Data URL 반환 (용량을 위해 기본 PNG)
+  // Data URL 반환
   try {
     return canvas.toDataURL('image/png');
   } catch {
