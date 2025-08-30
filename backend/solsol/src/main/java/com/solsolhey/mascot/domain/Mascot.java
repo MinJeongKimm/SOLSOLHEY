@@ -51,6 +51,7 @@ public class Mascot {
     // 최신 꾸미기 스냅샷 이미지(Data URL 또는 URL)
     // 단순화를 위해 우선 Data URL(CLOB)로 저장. 운영에서는 외부 스토리지 URL 권장.
     @jakarta.persistence.Lob
+    @jakarta.persistence.Basic(fetch = jakarta.persistence.FetchType.LAZY)
     @Column(name = "snapshot_image")
     private String snapshotImage;
     
