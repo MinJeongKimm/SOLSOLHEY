@@ -841,3 +841,20 @@ export async function getAiSpeech(): Promise<{ success: boolean; message: string
     method: 'POST',
   });
 }
+
+// AI 말풍선: 버퍼에서 다음 문구 즉시 소비
+export async function getAiSpeechNext(): Promise<{ success: boolean; message: string; kind?: 'ACADEMIC' | 'CHALLENGE'; expiresInSec?: number }>
+{
+  return apiRequest<{ success: boolean; message: string; kind?: 'ACADEMIC' | 'CHALLENGE'; expiresInSec?: number }>(`/ai/speech/next`, {
+    method: 'POST',
+  });
+}
+
+// AI 말풍선: 사용자별 버퍼 프리필(타입별 count 개수 목표)
+export async function prefillAiSpeech(perType: number = 3): Promise<{ success: boolean; message: string }>
+{
+  const p = Math.max(1, Math.min(perType, 6));
+  return apiRequest<{ success: boolean; message: string }>(`/ai/speech/prefill?perType=${p}`, {
+    method: 'POST',
+  });
+}

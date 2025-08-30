@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { loginAndBootstrap, handleApiError, getMascot, getUserInfo } from '../api/index';
+import { loginAndBootstrap, handleApiError, getMascot, getUserInfo, prefillAiSpeech } from '../api/index';
 import { usePointStore } from '../stores/point';
 import type { LoginRequest } from '../types/api';
 
@@ -126,6 +126,9 @@ async function onSubmit() {
       const pointStore = usePointStore();
       await pointStore.loadPoints();
       
+      // AI 말풍선 버퍼 프리필을 로그인 직후 시작(비차단, 2/타입 → 총 4개)
+      prefillAiSpeech(2).catch(() => {});
+
       // 리디렉션 처리
       if (typeof route.query.redirect === 'string' && route.query.redirect) {
         router.push(route.query.redirect);

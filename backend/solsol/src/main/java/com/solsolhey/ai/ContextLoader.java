@@ -62,8 +62,34 @@ public class ContextLoader {
                 events.add(new AcademicContext.Event("종강", end.format(ISO), "SEMESTER", "학기"));
             }
 
-            var schedule = List.<AcademicContext.Today>of();
-            var notices = List.<AcademicContext.Notice>of();
+            // 확장 섹션 병합: upcoming_events, today_schedule, notices
+            if (academicCommon.upcoming_events != null) {
+                for (var e : academicCommon.upcoming_events) {
+                    if (e == null) continue;
+                    events.add(new AcademicContext.Event(
+                            nvl(e.title, "일정"), nvl(e.dueAtISO, today.atTime(23,59).format(ISO)),
+                            nvl(e.category, "EVENT"), nvl(e.course, "")));
+                }
+            }
+
+            var schedule = new java.util.ArrayList<AcademicContext.Today>();
+            if (academicCommon.today_schedule != null) {
+                for (var t : academicCommon.today_schedule) {
+                    if (t == null) continue;
+                    schedule.add(new AcademicContext.Today(
+                            nvl(t.name, "일정"), nvl(t.startAtISO, today.atTime(9,0).format(ISO)),
+                            nvl(t.endAtISO, today.atTime(18,0).format(ISO)), nvl(t.location, "")));
+                }
+            }
+
+            var notices = new java.util.ArrayList<AcademicContext.Notice>();
+            if (academicCommon.notices != null) {
+                for (var n : academicCommon.notices) {
+                    if (n == null) continue;
+                    notices.add(new AcademicContext.Notice(nvl(n.title, "공지"), nvl(n.postedAtISO, today.atStartOfDay().format(ISO))));
+                }
+            }
+
             return Optional.of(new AcademicContext(events, schedule, notices));
         } catch (Exception e) {
             log.warn("학사 공통 데이터 파싱 실패: {}", e.getMessage());
@@ -153,18 +179,34 @@ public class ContextLoader {
     private void loadIfNeeded() {
         if (userA == null || userB == null || academicCommon == null) {
             try {
-                // 1) documents/data 우선
+                // 0) 단일 파일 우선 (documents/data 또는 classpath)
+                Combined maybeCombined = readCombinedIfExists();
+                if (maybeCombined != null) {
+                    if (maybeCombined.academic != null) academicCommon = maybeCombined.academic;
+                    if (maybeCombined.userA != null) userA = maybeCombined.userA;
+                    if (maybeCombined.userB != null) userB = maybeCombined.userB;
+                }
+
+                // 1) documents/data 개별 파일 우선
                 File docDir = new File("documents/data");
                 if (docDir.exists()) {
                     File ua = new File(docDir, "userA.json");
                     File ub = new File(docDir, "userB.json");
                     File ac = new File(docDir, "academic_common.json");
-                    if (ua.exists()) userA = mapper.readValue(Files.readAllBytes(ua.toPath()), UserContext.class);
-                    if (ub.exists()) userB = mapper.readValue(Files.readAllBytes(ub.toPath()), UserContext.class);
-                    if (ac.exists()) academicCommon = mapper.readValue(Files.readAllBytes(ac.toPath()), AcademicCommon.class);
+                    if (userA == null && ua.exists()) userA = mapper.readValue(Files.readAllBytes(ua.toPath()), UserContext.class);
+                    if (userB == null && ub.exists()) userB = mapper.readValue(Files.readAllBytes(ub.toPath()), UserContext.class);
+                    if (academicCommon == null && ac.exists()) academicCommon = mapper.readValue(Files.readAllBytes(ac.toPath()), AcademicCommon.class);
                 }
 
-                // 2) classpath:ai/ 폴백
+                // 2) classpath:ai/ 폴백 (단일 파일 먼저)
+                if (userA == null || userB == null || academicCommon == null) {
+                    Combined cp = readClasspathJson("ai/combined.json", Combined.class);
+                    if (cp != null) {
+                        if (academicCommon == null) academicCommon = cp.academic;
+                        if (userA == null) userA = cp.userA;
+                        if (userB == null) userB = cp.userB;
+                    }
+                }
                 if (userA == null) userA = readClasspathJson("ai/userA.json", UserContext.class);
                 if (userB == null) userB = readClasspathJson("ai/userB.json", UserContext.class);
                 if (academicCommon == null) academicCommon = readClasspathJson("ai/academic_common.json", AcademicCommon.class);
@@ -184,6 +226,27 @@ public class ContextLoader {
             }
         } catch (Exception ignored) {}
         return null;
+    }
+
+    private static String nvl(String v, String d) { return (v == null || v.isBlank()) ? d : v; }
+
+    private Combined readCombinedIfExists() {
+        try {
+            File docDir = new File("documents/data");
+            File combinedInDoc = new File(docDir, "combined.json");
+            if (combinedInDoc.exists()) {
+                return mapper.readValue(Files.readAllBytes(combinedInDoc.toPath()), Combined.class);
+            }
+            // classpath will be tried later in loadIfNeeded (so return null here)
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    // 단일 파일(JSON) 파싱용 컨테이너
+    public static class Combined {
+        public AcademicCommon academic;
+        public UserContext userA;
+        public UserContext userB;
     }
 }
 
