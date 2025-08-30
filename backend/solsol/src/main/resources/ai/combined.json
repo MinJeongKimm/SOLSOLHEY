@@ -1,0 +1,41 @@
+{
+  "academic": {
+    "today": "2025-08-30",
+    "timezone": "Asia/Seoul",
+    "exam_period": { "start": "2025-10-20", "end": "2025-10-31" },
+    "semester_end": "2025-12-20",
+    "vacation_start": "2025-12-21",
+    "upcoming_events": [
+      { "title": "알고리즘 과제#2 제출", "dueAtISO": "2025-09-02T23:59:00", "category": "ASSIGNMENT", "course": "알고리즘" },
+      { "title": "캡스톤 중간발표 자료 업로드", "dueAtISO": "2025-09-05T18:00:00", "category": "ASSIGNMENT", "course": "캡스톤 설계" },
+      { "title": "데이터베이스 퀴즈", "dueAtISO": "2025-09-04T09:00:00", "category": "EXAM", "course": "데이터베이스" }
+    ],
+    "today_schedule": [
+      { "name": "자료구조 강의", "startAtISO": "2025-08-30T10:00:00", "endAtISO": "2025-08-30T11:15:00", "location": "공대 302호" },
+      { "name": "팀미팅(캡스톤)", "startAtISO": "2025-08-30T15:00:00", "endAtISO": "2025-08-30T16:00:00", "location": "스터디룸 A" }
+    ],
+    "notices": [
+      { "title": "수강신청 변경 기간 안내", "postedAtISO": "2025-08-29T09:00:00" },
+      { "title": "도서관 좌석 시스템 점검", "postedAtISO": "2025-08-28T18:00:00" }
+    ]
+  },
+  "userA": {
+    "user_id": "uA",
+    "role_tags": ["freshman"],
+    "major_group": "미대",
+    "stats": { "likes": 128, "friends": 76, "items": 45, "join_rate": 0.80, "success_rate": 0.72, "points": 12450 },
+    "timetable": { "morning": true, "afternoon": true, "back_to_back": true, "long_free_day": false },
+    "library": { "streak_days": 3 },
+    "notes": "닉네임/캠퍼스 직접 언급 금지"
+  },
+  "userB": {
+    "user_id": "uB",
+    "role_tags": ["graduating"],
+    "major_group": "공대",
+    "stats": { "likes": 12, "friends": 8, "items": 6, "join_rate": 0.18, "success_rate": 0.10, "points": 950 },
+    "timetable": { "morning": false, "afternoon": true, "back_to_back": false, "long_free_day": true },
+    "library": { "streak_days": 21 },
+    "notes": "소셜 수치 낮음 → 소셜 언급 회피"
+  }
+}
+

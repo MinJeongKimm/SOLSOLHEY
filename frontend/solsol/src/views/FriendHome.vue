@@ -44,6 +44,7 @@
                   :src="mascotImageUrl"
                   :alt="friendHome?.mascot?.name || 'mascot'"
                   class="w-44 h-44 object-contain"
+                  @load="updateRects"
                 />
               </div>
             </div>
@@ -51,11 +52,11 @@
             <!-- 레이어 3: 전경 아이템 (간이 배치: 중앙 정렬, 약간씩 좌우 오프셋) -->
             <div class="absolute inset-0 z-20 pointer-events-none">
               <img
-                v-for="(it, idx) in foregroundEquippedItems"
-                :key="`${it.id}-${idx}`"
+                v-for="it in foregroundEquippedItems"
+                :key="it.key"
                 :src="it.imageUrl"
-                class="absolute object-contain"
-                :style="styleForSimpleItem(idx)"
+                class="absolute object-contain pointer-events-none"
+                :style="styleForItem(it)"
                 alt="장착 아이템"
               />
             </div>
@@ -106,13 +107,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getFriendHome, sendLike, type FriendHomeResponse } from '../api/friend';
 import { useToastStore } from '../stores/toast';
 import { mascotTypes } from '../data/mockData';
 import { getShopItems } from '../api';
 import type { ShopItem } from '../types/api';
+import { toAbsoluteFromMascot } from '../utils/coordinates';
+import { CSSProperties } from 'vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -139,6 +142,25 @@ function getMascotImageUrl(type?: string): string {
 const mascotImageUrl = computed(() => getMascotImageUrl(friendHome.value?.mascot?.type));
 
 const roomBackgroundStyle = computed(() => {
+  // backgroundColor와 backgroundPattern을 우선적으로 확인
+  const color = friendHome.value?.mascot?.backgroundColor;
+  const pattern = friendHome.value?.mascot?.backgroundPattern;
+  
+  // 커스터마이징된 배경이 있으면 해당 스타일 적용
+  if (color || pattern) {
+    const style: Record<string, string> = { backgroundColor: color || '#f5f7ff' };
+    
+    if (pattern === 'dots') {
+      style.backgroundImage = 'radial-gradient(circle, rgba(0,0,0,0.10) 1px, transparent 1px)';
+      style.backgroundSize = '12px 12px';
+    } else if (pattern === 'stripes') {
+      style.backgroundImage = 'repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0 10px, transparent 10px 20px)';
+    }
+    
+    return style;
+  }
+  
+  // 커스터마이징된 배경이 없으면 backgroundId 사용
   const bg = friendHome.value?.mascot?.backgroundId;
   if (bg) {
     return {
@@ -148,18 +170,97 @@ const roomBackgroundStyle = computed(() => {
       backgroundRepeat: 'no-repeat',
     } as Record<string, string>;
   }
+  
+  // 아무것도 없으면 기본 그라데이션 사용
   return { background: 'linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 100%)' } as Record<string, string>;
 });
 
-// equippedItem 문자열에 포함된 아이템 추출 (이름 기반, 간이 매칭)
-const equippedItemsByName = computed(() => {
-  const eq = friendHome.value?.mascot?.equippedItem || '';
-  if (!eq || !shopItems.value.length) return [] as ShopItem[];
-  return shopItems.value.filter(item => eq.includes(item.name));
+// equippedLayout JSON을 파싱해서 equippedItems 배열 추출
+const equippedItemsFromLayout = computed(() => {
+  if (!friendHome.value?.mascot?.equippedLayout) {
+    console.log('❌ equippedLayout이 없음');
+    return [];
+  }
+
+  try {
+    // equippedLayout JSON을 파싱
+    console.log('🔍 JSON 파싱 시작:', friendHome.value.mascot.equippedLayout);
+    const equippedLayoutData = JSON.parse(friendHome.value.mascot.equippedLayout);
+    console.log('🔍 파싱된 equippedLayoutData:', equippedLayoutData);
+    
+    // equippedLayoutData.equippedItems 배열 추출
+    const equippedItems = equippedLayoutData?.equippedItems;
+    console.log('🔍 추출된 equippedItems:', equippedItems);
+    
+    if (!equippedItems || !Array.isArray(equippedItems)) {
+      console.log('❌ equippedItems가 배열이 아님');
+      return [];
+    }
+
+    return equippedItems;
+  } catch (error) {
+    console.error('❌ equippedLayout 파싱 오류:', error);
+    return [];
+  }
 });
 
-const backgroundEquippedItems = computed(() => equippedItemsByName.value.filter(i => String(i.type).toLowerCase() === 'background'));
-const foregroundEquippedItems = computed(() => equippedItemsByName.value.filter(i => String(i.type).toLowerCase() !== 'background'));
+const backgroundEquippedItems = computed(() => {
+  if (!equippedItemsFromLayout.value.length || !shopItems.value.length) {
+    return [];
+  }
+
+  // 배경 아이템만 필터링 (itemId === 31)
+  const backgroundItems = equippedItemsFromLayout.value.filter(item => item.itemId === 31);
+  console.log('🔍 배경 아이템 31 필터링:', backgroundItems);
+
+  // shopItems에서 실제 아이템 정보 찾기
+  return backgroundItems.map(item => {
+    const shopItem = shopItems.value.find(shopItem => shopItem.id === item.itemId);
+    console.log('🔍 배경 아이템 31 변환 결과:', { 
+      item, 
+      shopItem,
+      shopItemId: shopItem?.id,
+      shopItemImageUrl: shopItem?.imageUrl,
+      shopItemName: shopItem?.name
+    });
+    
+    return {
+      key: `${item.itemId}-bg`,
+      ...item,
+      imageUrl: shopItem?.imageUrl || '/items/item_placeholder.png',
+      name: shopItem?.name || 'Unknown Item'
+    };
+  });
+});
+
+const foregroundEquippedItems = computed(() => {
+  if (!equippedItemsFromLayout.value.length || !shopItems.value.length) {
+    return [];
+  }
+
+  // 전경 아이템만 필터링 (itemId !== 31)
+  const foregroundItems = equippedItemsFromLayout.value.filter(item => item.itemId !== 31);
+  console.log('🔍 전경 아이템 필터링:', foregroundItems);
+
+  // shopItems에서 실제 아이템 정보 찾기
+  return foregroundItems.map(item => {
+    const shopItem = shopItems.value.find(shopItem => shopItem.id === item.itemId);
+    console.log('🔍 전경 아이템 변환 결과:', { 
+      item, 
+      shopItem,
+      shopItemId: shopItem?.id,
+      shopItemImageUrl: shopItem?.imageUrl,
+      shopItemName: shopItem?.name
+    });
+    
+    return {
+      key: `${item.itemId}-fg`,
+      ...item,
+      imageUrl: shopItem?.imageUrl || '/items/item_placeholder.png',
+      name: shopItem?.name || 'Unknown Item'
+    };
+  });
+});
 
 async function fetchHome() {
   loading.value = true;
@@ -172,6 +273,11 @@ async function fetchHome() {
     ]);
     friendHome.value = home;
     shopItems.value = catalog as any;
+    
+    // 데이터 로드 완료 후 rect 정보 업데이트
+    nextTick(() => {
+      updateRects();
+    });
   } catch (e: any) {
     error.value = e?.message || '불러오기 실패';
   } finally {
@@ -197,26 +303,41 @@ function goBack() {
   router.back();
 }
 
-onMounted(fetchHome);
-
-// 간이 전경 아이템 배치: 중앙 기준으로 좌우로 퍼뜨림
+// 정확한 좌표, 스케일, 회전 정보를 이용한 아이템 렌더링
 const canvasEl = ref<HTMLElement>();
 const mascotEl = ref<HTMLElement>();
-function styleForSimpleItem(idx: number) {
-  // 기준 박스 크기와 위치
-  const baseSize = 64; // px
-  const centerX = '50%';
-  const centerY = '50%';
-  const offset = (idx - Math.floor(foregroundEquippedItems.value.length / 2)) * 28; // 좌우 간격
-  return {
-    left: `calc(${centerX} + ${offset}px)`,
-    top: centerY,
-    width: `${baseSize}px`,
-    height: `${baseSize}px`,
-    transform: 'translate(-50%, -50%)',
-    pointerEvents: 'none',
-  } as Record<string, string>;
+const canvasRect = ref<DOMRect | null>(null);
+const mascotRect = ref<DOMRect | null>(null);
+
+function updateRects() {
+  if (canvasEl.value) canvasRect.value = canvasEl.value.getBoundingClientRect();
+  if (mascotEl.value) mascotRect.value = mascotEl.value.getBoundingClientRect();
 }
+
+const BASE_ITEM_SIZE = 120;
+function styleForItem(e: any): CSSProperties {
+  if (!canvasRect.value || !mascotRect.value) return {};
+  const center = toAbsoluteFromMascot(e.relativePosition, mascotRect.value);
+  const left = center.x - canvasRect.value.left;
+  const top = center.y - canvasRect.value.top;
+  const size = Math.max(12, BASE_ITEM_SIZE * (e.scale ?? 1));
+  return { 
+    position: 'absolute', 
+    left: `${left}px`, 
+    top: `${top}px`, 
+    width: `${size}px`, 
+    height: `${size}px`, 
+    transform: `translate(-50%, -50%) rotate(${e.rotation || 0}deg)` 
+  };
+}
+
+onMounted(() => {
+  fetchHome();
+  // 컴포넌트 마운트 후 rect 정보 업데이트
+  nextTick(() => {
+    updateRects();
+  });
+});
 </script>
 
 <style scoped>

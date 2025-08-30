@@ -20,27 +20,28 @@
       <!-- 마스코트 미리보기 영역 -->
       <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl mb-6 w-full">
         <!-- 배경 커스터마이징 UI -->
-        <div v-if="showBgPanel" class="mb-4 bg-white bg-opacity-80 rounded-lg p-3 flex items-center gap-4">
+        <div v-if="showBgPanel" class="mb-4 bg-white bg-opacity-80 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-700">배경색</span>
-            <input type="color" v-model="bgColor" class="w-8 h-8 rounded cursor-pointer border" />
+            <span class="text-sm text-gray-700 whitespace-nowrap">배경색</span>
+            <input type="color" v-model="bgColor" class="w-6 h-6 sm:w-8 sm:h-8 rounded cursor-pointer border" />
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-sm text-gray-700">패턴</span>
-            <button 
-              class="px-2 py-1 rounded text-xs border"
-              :class="bgPattern === 'none' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'"
-              @click="bgPattern = 'none'">없음</button>
-            <button 
-              class="px-2 py-1 rounded text-xs border"
-              :class="bgPattern === 'dots' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'"
-              @click="bgPattern = 'dots'">도트</button>
-            <button 
-              class="px-2 py-1 rounded text-xs border"
-              :class="bgPattern === 'stripes' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700'"
-              @click="bgPattern = 'stripes'">스트라이프</button>
+            <span class="text-sm text-gray-700 whitespace-nowrap">패턴</span>
+            <div class="flex gap-1 sm:gap-2">
+              <button 
+                class="px-2 py-1 sm:px-3 sm:py-2 rounded text-xs sm:text-sm border whitespace-nowrap transition-all hover:scale-105"
+                :class="bgPattern === 'none' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50'"
+                @click="bgPattern = 'none'">없음</button>
+              <button 
+                class="px-2 py-1 sm:px-3 sm:py-2 rounded text-xs sm:text-sm border whitespace-nowrap transition-all hover:scale-105"
+                :class="bgPattern === 'dots' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50'"
+                @click="bgPattern = 'dots'">도트</button>
+              <button 
+                class="px-2 py-1 sm:px-3 sm:py-2 rounded text-xs sm:text-sm border whitespace-nowrap transition-all hover:scale-105"
+                :class="bgPattern === 'stripes' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 hover:bg-gray-50'"
+                @click="bgPattern = 'stripes'">스트라이프</button>
+            </div>
           </div>
-          <!-- 저장 버튼 제거: 메인 저장에 통합됨 -->
         </div>
         <!-- 모바일 도움말 제거 -->
         

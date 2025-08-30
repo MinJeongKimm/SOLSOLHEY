@@ -275,31 +275,182 @@
 
     <!-- EXP 요약 모달 -->
     <div v-if="showExpSummary" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-bold text-gray-800">EXP 요약</h3>
-          <button @click="closeExpSummary" class="text-gray-400 hover:text-gray-600 text-2xl">×</button>
+      <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4 p-6 pb-4">
+          <h3 class="text-lg font-bold text-gray-800">오늘의 활동 요약</h3>
+          <button @click="closeExpSummary" class="text-gray-400 hover:text-gray-600 text-2xl p-1">×</button>
         </div>
-        <div v-if="expSummary" class="space-y-3">
-          <div class="flex justify-between text-sm"><span class="text-gray-600">총 EXP</span><span class="font-semibold">{{ expSummary.totalExp }}</span></div>
-          <div class="flex justify-between text-sm"><span class="text-gray-600">레벨</span><span class="font-semibold">{{ expSummary.level }}</span></div>
-          <div class="mt-2">
-            <p class="text-sm text-gray-700 font-medium">오늘 상태 (KST)</p>
-            <ul class="mt-1 text-sm text-gray-700 space-y-1">
-              <li>출석: <span class="font-semibold">{{ expSummary.today?.attendance ? '완료' : '미완료' }}</span></li>
-              <li>7연속 보너스: <span class="font-semibold">{{ expSummary.today?.streak7 ? '지급' : '미지급' }}</span></li>
-              <li>친구 방문(내가): <span class="font-semibold">{{ expSummary.today?.friend?.active?.count }}</span>회 (남은 +3: {{ expSummary.today?.friend?.active?.remainingTop3 }})</li>
-              <li>친구 방문(나에게): <span class="font-semibold">{{ expSummary.today?.friend?.passive?.count }}</span>회</li>
-              <li>카테고리: 
-                <span class="font-semibold">F: {{ expSummary.today?.categories?.FINANCE ? '✔' : '✗' }}, 
-                A: {{ expSummary.today?.categories?.ACADEMIC ? '✔' : '✗' }}, 
-                S: {{ expSummary.today?.categories?.SOCIAL ? '✔' : '✗' }}, 
-                E: {{ expSummary.today?.categories?.EVENT ? '✔' : '✗' }}</span>
-              </li>
-            </ul>
+        
+        <div v-if="expSummary" class="px-6 pb-6 space-y-4">
+          <!-- 오늘 상태 헤더 -->
+          <div class="text-center">
+            <p class="text-xs text-gray-500 font-medium">오늘 상태 (KST)</p>
+          </div>
+          
+          <!-- 출석 체크 -->
+          <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-100">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span class="font-medium text-gray-700">출석 체크</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span v-if="expSummary.today?.attendance" class="text-green-600 text-sm font-medium">완료</span>
+                <span v-else class="text-red-500 text-sm font-medium">미완료</span>
+                <div v-if="expSummary.today?.attendance" class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div v-else class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 7연속 보너스 -->
+          <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-100">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                  <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <span class="font-medium text-gray-700">7연속 보너스</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span v-if="expSummary.today?.streak7" class="text-purple-600 text-sm font-medium">지급</span>
+                <span v-else class="text-gray-500 text-sm font-medium">미지급</span>
+                <div v-if="expSummary.today?.streak7" class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div v-else class="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 친구 방문 (내가) -->
+          <div class="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-100">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <span class="font-medium text-gray-700">친구 방문 (내가)</span>
+                  <p class="text-xs text-gray-500 mt-1">{{ expSummary.today?.friend?.active?.count || 0 }}회 방문</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-medium text-blue-600">{{ expSummary.today?.friend?.active?.remainingTop3 || 0 }}회 남음</div>
+                <div class="text-xs text-gray-500">+3 보너스</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 친구 방문 (나에게) -->
+          <div class="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-100">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <span class="font-medium text-gray-700">친구 방문 (나에게)</span>
+              </div>
+              <div class="text-right">
+                <div class="text-lg font-bold text-indigo-600">{{ expSummary.today?.friend?.passive?.count || 0 }}회</div>
+                <div class="text-xs text-gray-500">받은 방문</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 챌린지 카테고리 -->
+          <div class="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl p-4 border border-orange-100">
+            <div class="space-y-3">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                  <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <span class="font-medium text-gray-700">챌린지 카테고리</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="flex items-center justify-between p-2 bg-white rounded-lg">
+                  <span class="text-sm text-gray-600">학사</span>
+                  <div v-if="expSummary.today?.categories?.ACADEMIC" class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div v-else class="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between p-2 bg-white rounded-lg">
+                  <span class="text-sm text-gray-600">금융</span>
+                  <div v-if="expSummary.today?.categories?.FINANCE" class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div v-else class="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between p-2 bg-white rounded-lg">
+                  <span class="text-sm text-gray-600">소셜</span>
+                  <div v-if="expSummary.today?.categories?.SOCIAL" class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div v-else class="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between p-2 bg-white rounded-lg">
+                  <span class="text-sm text-gray-600">이벤트</span>
+                  <div v-if="expSummary.today?.categories?.EVENT" class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div v-else class="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div v-else class="text-center text-gray-500 text-sm">요약을 불러오는 중...</div>
+        <div v-else class="text-center text-gray-500 text-sm p-6">요약을 불러오는 중...</div>
       </div>
     </div>
 
@@ -317,7 +468,7 @@
 import { computed, nextTick, onMounted, onUnmounted, onActivated, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { getFriendHome } from '../api/friend';
-import { apiRequest, auth, createShareLink, getAiSpeech, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
+import { apiRequest, auth, createShareLink, getAiSpeechNext, prefillAiSpeech, getAvailableTemplates, getMascot, getMascotCustomization, getShopItems, handleApiError, ShareType, type MascotCustomization, type ShareLinkCreateRequest } from '../api/index';
 import SpeechBubble from '../components/ui/SpeechBubble.vue';
 import { levelExperience, mascotTypes } from '../data/mockData';
 import { usePointStore } from '../stores/point';
@@ -371,27 +522,15 @@ function chunkByWords(text: string, maxCharsPerLine: number): string[] {
 }
 let bubbleTimer: number | null = null;
 
-const bubblePlaceholders = [
-  '불렀어?',
-  '나 여기 있어!',
-  '응, 듣고 있어!',
-  '짜자잔 ~',
-  '뿅! 나타났어'
-];
-
 async function onMascotClick() {
   // 여러 번 클릭 방지: 말풍선 라이프사이클 종료 전엔 무시
   if (bubbleLocked.value) return;
   bubbleLocked.value = true;
 
-  // 즉시 표시: 지연 없이 말풍선 노출 (귀여운 반응)
+  // 버퍼에서 즉시 소비하여 문구 수신 후 표시
   if (bubbleTimer) window.clearTimeout(bubbleTimer);
-  bubbleText.value = bubblePlaceholders[Math.floor(Math.random() * bubblePlaceholders.length)];
-  showBubble.value = true;
-  await nextTick();
-  updateRects(); // 표시 직후 가용 너비 재계산
   try {
-    const res = await getAiSpeech();
+    const res = await getAiSpeechNext();
     bubbleText.value = res.message || '오늘은 가벼운 챌린지 어때?';
     bubbleKind.value = (res as any).kind || null;
   } catch (e) {
@@ -399,6 +538,10 @@ async function onMascotClick() {
     bubbleText.value = '오늘은 가벼운 챌린지 어때?';
     bubbleKind.value = null;
   }
+  // 문구가 준비된 뒤 노출
+  showBubble.value = true;
+  await nextTick();
+  updateRects();
   // 최종 문구 기준으로 5초 유지하고 락 해제
   if (bubbleTimer) window.clearTimeout(bubbleTimer);
   bubbleTimer = window.setTimeout(() => {
@@ -1004,6 +1147,13 @@ onMounted(async () => {
 
     // 내 홈 요약(좋아요 누적) 로드
     await reloadLikes();
+
+    // AI 말풍선 버퍼 프리필 (타입별 2개 → 총 4개 목표)
+    try {
+      await prefillAiSpeech(2);
+    } catch (e) {
+      console.warn('AI 말풍선 프리필 실패:', e);
+    }
   } catch (err) {
     console.error('메인화면 데이터 로드 실패:', err);
     handleApiError(err);
